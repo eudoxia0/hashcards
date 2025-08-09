@@ -12,19 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-mod cli;
-mod error;
+use std::fmt::Display;
+use std::fmt::Formatter;
 
-use std::process::ExitCode;
+pub struct ErrorReport {
+    message: String,
+}
 
-use crate::cli::entrypoint;
-
-fn main() -> ExitCode {
-    match entrypoint() {
-        Ok(_) => ExitCode::SUCCESS,
-        Err(e) => {
-            eprintln!("hashcards: {e}");
-            ExitCode::FAILURE
+impl From<std::io::Error> for ErrorReport {
+    fn from(value: std::io::Error) -> Self {
+        ErrorReport {
+            message: format!("I/O error: {:#}", value),
         }
     }
 }
+
+impl Display for ErrorReport {
+    // This trait requires `fmt` with this exact signature.
+    fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
+        write!(f, "{}", self.message)
+    }
+}
+
+pub type Fallible<T> = Result<T, ErrorReport>;
