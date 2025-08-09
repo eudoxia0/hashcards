@@ -37,3 +37,30 @@ jobs:
 
       - name: cargo machete
         run: cargo machete
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: cache rust deps
+        uses: Swatinem/rust-cache@v2
+
+      - name: install cargo-llvm-cov
+        uses: taiki-e/install-action@cargo-llvm-cov
+
+      - name: fetch deps
+        run: cargo fetch
+
+      - name: build tests
+        run: cargo test --no-run
+
+      - name: run tests
+        run: cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
+
+      - name: upload to codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: lcov.info
