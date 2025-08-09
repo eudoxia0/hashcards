@@ -1,5 +1,7 @@
 # hashcards
 
+[![Test](https://github.com/eudoxia0/hashcards/actions/workflows/test.yaml/badge.svg)](https://github.com/eudoxia0/hashcards/actions/workflows/test.yaml)
+
 A plain text-based spaced repetition system.
 
 ## Example
