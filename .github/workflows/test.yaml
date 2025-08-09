@@ -22,3 +22,18 @@ jobs:
 
       - name: cargo clippy
         run: cargo clippy --all-targets -- -D warnings
+
+  machete:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: cache rust deps
+        uses: Swatinem/rust-cache@v2
+
+      - name: install cargo-machete
+        run: cargo install cargo-machete
+
+      - name: cargo machete
+        run: cargo machete
