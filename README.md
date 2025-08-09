@@ -33,3 +33,7 @@ Cloze cards use square brackets to denote cloze deletions:
 ```
 The [order] of a group is [the cardinality of its underlying set].
 ```
+
+## Database
+
+The review history and card performance are stored in an SQLite database at the root of the deck directory.
