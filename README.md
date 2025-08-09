@@ -3,7 +3,12 @@
 [![Test](https://github.com/eudoxia0/hashcards/actions/workflows/test.yaml/badge.svg)](https://github.com/eudoxia0/hashcards/actions/workflows/test.yaml)
 [![codecov](https://codecov.io/gh/eudoxia0/hashcards/branch/master/graph/badge.svg?token=GDV3CYZMHQ)](https://codecov.io/gh/eudoxia0/hashcards)
 
-A plain text-based spaced repetition system.
+A plain text-based spaced repetition system. Features.
+
+- **Plain Text:** all your flashcards are stored as plain text files, so you can operate on them with standard tools, and track changes in a VCS.
+- **Content Addressable:** cards are identified by the hash of their text. This means a card's progress is reset when the card is edited.
+- **Low Friction:** you create flashcards by typing into a textfile, using a lightweight notation to denote flashcard sides and cloze deletions.
+- **Simple:** the only card types are front-back and cloze cards. More complex workflows (e.g.: Anki-style note types, card templates, automation) be can implemented using a Makefile and some scripts.
 
 ## Example
 
