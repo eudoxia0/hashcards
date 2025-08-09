@@ -17,6 +17,7 @@ use std::path::PathBuf;
 use clap::Parser;
 
 use crate::error::Fallible;
+use crate::error::fail;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -37,6 +38,9 @@ pub fn entrypoint() -> Fallible<()> {
                 None => std::env::current_dir()?,
             };
             println!("Drilling in {directory:?}.");
+            if !directory.exists() {
+                return fail("directory does not exist.");
+            }
             Ok(())
         }
     }

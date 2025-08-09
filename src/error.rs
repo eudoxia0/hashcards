@@ -30,8 +30,14 @@ impl From<std::io::Error> for ErrorReport {
 impl Display for ErrorReport {
     // This trait requires `fmt` with this exact signature.
     fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
-        write!(f, "{}", self.message)
+        write!(f, "error: {}", self.message)
     }
 }
 
 pub type Fallible<T> = Result<T, ErrorReport>;
+
+pub fn fail<T>(msg: impl Into<String>) -> Fallible<T> {
+    Err(ErrorReport {
+        message: msg.into(),
+    })
+}
