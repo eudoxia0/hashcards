@@ -22,7 +22,7 @@ pub struct ErrorReport {
 impl From<std::io::Error> for ErrorReport {
     fn from(value: std::io::Error) -> Self {
         ErrorReport {
-            message: format!("I/O error: {:#}", value),
+            message: format!("I/O error: {value:#?}"),
         }
     }
 }
