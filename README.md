@@ -10,9 +10,9 @@ A plain text-based spaced repetition system.
 The following Markdown file is a valid hashcards deck:
 
 ```
-Term for the difference in electric potential between two points. / Voltage
+What is the capital of France? / Paris
 
-A voltage exists whenever [positive and negative charges are separated].
+[Paris] is the capital of [France].
 ```
 
 ## Format
