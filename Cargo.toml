@@ -6,3 +6,4 @@ license = "Apache-2.0"
 
 [dependencies]
 clap = { version = "4.5.43", features = ["derive"] }
+walkdir = "2"
