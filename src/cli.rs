@@ -30,10 +30,10 @@ enum Command {
 }
 
 pub fn entrypoint() -> Fallible<()> {
-    let cli = Command::parse();
+    let cli: Command = Command::parse();
     match cli {
         Command::Drill { directory } => {
-            let directory = match directory {
+            let directory: PathBuf = match directory {
                 Some(dir) => PathBuf::from(dir),
                 None => std::env::current_dir()?,
             };
