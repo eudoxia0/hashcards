@@ -45,7 +45,7 @@ pub fn entrypoint() -> Fallible<()> {
             for entry in WalkDir::new(directory) {
                 let entry = entry?;
                 let path = entry.path();
-                if path.is_file() && path.extension().map_or(false, |ext| ext == "md") {
+                if path.is_file() && path.extension().is_some_and(|ext| ext == "md") {
                     let contents = std::fs::read_to_string(path)?;
                 }
             }
