@@ -64,10 +64,6 @@ pub fn parse_cards(content: &str) -> Vec<Card> {
         .collect();
 
     for card_text in cards {
-        if card_text.trim().is_empty() {
-            continue;
-        }
-
         if let Some(separator_pos) = card_text.find(" / ") {
             let question = card_text[..separator_pos].trim().to_string();
             let answer = card_text[separator_pos + 3..].trim().to_string();
