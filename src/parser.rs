@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use blake3::Hash;
+use blake3::Hasher;
+
 pub enum Card {
     Basic {
         question: String,
@@ -26,6 +29,28 @@ pub enum Card {
 pub struct ClozeRange {
     pub start: usize,
     pub end: usize,
+}
+
+impl Card {
+    pub fn hash(&self) -> Hash {
+        let mut hasher = Hasher::new();
+        match self {
+            Card::Basic { question, answer } => {
+                hasher.update(b"Basic");
+                hasher.update(question.as_bytes());
+                hasher.update(answer.as_bytes());
+            }
+            Card::Cloze { text, deletions } => {
+                hasher.update(b"Cloze");
+                hasher.update(text.as_bytes());
+                for deletion in deletions {
+                    hasher.update(deletion.start.to_le_bytes().as_ref());
+                    hasher.update(deletion.end.to_le_bytes().as_ref());
+                }
+            }
+        }
+        hasher.finalize()
+    }
 }
 
 pub fn parse_cards(content: &str) -> Vec<Card> {
