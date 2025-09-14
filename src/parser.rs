@@ -48,10 +48,11 @@ pub fn parse_flashcards(content: &str) -> Vec<Card> {
             if !question.is_empty() && !answer.is_empty() {
                 flashcards.push(Card::Basic { question, answer });
             }
-        } else if card_text.contains('[') && card_text.contains(']') {
-            if let Some(cloze) = parse_cloze_card(card_text) {
-                flashcards.push(cloze);
-            }
+        } else if card_text.contains('[')
+            && card_text.contains(']')
+            && let Some(cloze) = parse_cloze_card(card_text)
+        {
+            flashcards.push(cloze);
         }
     }
 
