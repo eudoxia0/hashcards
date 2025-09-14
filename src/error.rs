@@ -27,6 +27,14 @@ impl From<std::io::Error> for ErrorReport {
     }
 }
 
+impl From<walkdir::Error> for ErrorReport {
+    fn from(value: walkdir::Error) -> Self {
+        ErrorReport {
+            message: format!("directory traversal error: {value:#?}"),
+        }
+    }
+}
+
 impl Display for ErrorReport {
     // This trait requires `fmt` with this exact signature.
     fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {

@@ -15,6 +15,7 @@
 use std::path::PathBuf;
 
 use clap::Parser;
+use walkdir::WalkDir;
 
 use crate::error::Fallible;
 use crate::error::fail;
@@ -40,6 +41,13 @@ pub fn entrypoint() -> Fallible<()> {
             println!("Drilling in {directory:?}.");
             if !directory.exists() {
                 return fail("directory does not exist.");
+            }
+            for entry in WalkDir::new(directory) {
+                let entry = entry?;
+                let path = entry.path();
+                if path.is_file() && path.extension().map_or(false, |ext| ext == "md") {
+                    let contents = std::fs::read_to_string(path)?;
+                }
             }
             Ok(())
         }
