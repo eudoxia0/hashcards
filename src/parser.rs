@@ -143,7 +143,7 @@ mod tests {
     #[test]
     fn test_parse_basic() {
         let content = "What is the capital of France? / Paris";
-        let cards = parse_flashcards(content);
+        let cards = parse_cards(content);
 
         assert_eq!(cards.len(), 1);
         match &cards[0] {
@@ -158,7 +158,7 @@ mod tests {
     #[test]
     fn test_parse_cloze() {
         let content = "[Berlin] is the capital of [Germany].";
-        let cards = parse_flashcards(content);
+        let cards = parse_cards(content);
 
         assert_eq!(cards.len(), 1);
         match &cards[0] {
@@ -182,7 +182,7 @@ mod tests {
     fn test_parse_multiple_cards() {
         let content =
             "What is the capital of France? / Paris\n\n[Berlin] is the capital of [Germany].";
-        let cards = parse_flashcards(content);
+        let cards = parse_cards(content);
 
         assert_eq!(cards.len(), 2);
         assert!(matches!(cards[0], Card::Basic { .. }));
@@ -192,7 +192,7 @@ mod tests {
     #[test]
     fn test_parse_with_extra_whitespace() {
         let content = "  What is 2+2? / 4  \n\n\n[Python] is a programming language.  ";
-        let cards = parse_flashcards(content);
+        let cards = parse_cards(content);
 
         assert_eq!(cards.len(), 2);
         match &cards[0] {
@@ -207,14 +207,14 @@ mod tests {
     #[test]
     fn test_empty_input() {
         let content = "";
-        let cards = parse_flashcards(content);
+        let cards = parse_cards(content);
         assert_eq!(cards.len(), 0);
     }
 
     #[test]
     fn test_invalid_cards_ignored() {
         let content = "This is not a valid card\n\nWhat is valid? / Yes\n\nAlso not valid";
-        let cards = parse_flashcards(content);
+        let cards = parse_cards(content);
         assert_eq!(cards.len(), 1);
         match &cards[0] {
             Card::Basic { question, answer } => {
@@ -228,7 +228,7 @@ mod tests {
     #[test]
     fn test_cloze_with_multiple_words() {
         let content = "[The quick brown fox] jumps over [the lazy dog].";
-        let cards = parse_flashcards(content);
+        let cards = parse_cards(content);
 
         assert_eq!(cards.len(), 1);
         match &cards[0] {
@@ -247,7 +247,7 @@ mod tests {
     #[test]
     fn test_multiline_question_answer() {
         let content = "What is\nthe capital of Russia? / Moscow";
-        let cards = parse_flashcards(content);
+        let cards = parse_cards(content);
 
         assert_eq!(cards.len(), 1);
         match &cards[0] {
