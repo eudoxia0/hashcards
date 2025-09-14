@@ -124,14 +124,10 @@ fn parse_cloze_card(text: &str) -> Option<Card> {
         }
     }
 
-    if !deletions.is_empty() {
-        Some(Card::Cloze {
-            text: clean_text,
-            deletions,
-        })
-    } else {
-        None
-    }
+    Some(Card::Cloze {
+        text: clean_text,
+        deletions,
+    })
 }
 
 #[cfg(test)]
