@@ -265,4 +265,36 @@ mod tests {
             _ => panic!("Expected Basic card"),
         }
     }
+
+    #[test]
+    fn test_basic_card_hash() {
+        let card1 = Card::Basic {
+            question: "What is the capital of France?".to_string(),
+            answer: "Paris".to_string(),
+        };
+        let card2 = Card::Basic {
+            question: "What is the capital of France?".to_string(),
+            answer: "Pariz".to_string(),
+        };
+        assert_ne!(card1.hash(), card2.hash());
+    }
+
+    #[test]
+    fn test_cloze_card_hash() {
+        let card1 = Card::Cloze {
+            text: "Berlin is the capital of Germany.".to_string(),
+            deletions: vec![
+                ClozeRange { start: 0, end: 6 },
+                ClozeRange { start: 25, end: 32 },
+            ],
+        };
+        let card2 = Card::Cloze {
+            text: "Berlin is the capital of Germany.".to_string(),
+            deletions: vec![
+                ClozeRange { start: 0, end: 7 },
+                ClozeRange { start: 25, end: 32 },
+            ],
+        };
+        assert_ne!(card1.hash(), card2.hash());
+    }
 }
