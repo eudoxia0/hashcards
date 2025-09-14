@@ -32,6 +32,7 @@ pub struct ClozeRange {
 }
 
 impl Card {
+    #[allow(dead_code)]
     pub fn hash(&self) -> Hash {
         let mut hasher = Hasher::new();
         match self {
