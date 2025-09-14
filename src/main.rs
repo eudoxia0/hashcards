@@ -14,6 +14,7 @@
 
 mod cli;
 mod error;
+mod parser;
 
 use std::process::ExitCode;
 
