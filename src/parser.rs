@@ -212,6 +212,13 @@ mod tests {
     }
 
     #[test]
+    fn test_empty_basic() {
+        let content = " / ";
+        let cards = parse_cards(content);
+        assert_eq!(cards.len(), 0);
+    }
+
+    #[test]
     fn test_invalid_cards_ignored() {
         let content = "This is not a valid card\n\nWhat is valid? / Yes\n\nAlso not valid";
         let cards = parse_cards(content);
