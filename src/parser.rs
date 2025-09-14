@@ -115,10 +115,8 @@ fn parse_cloze_card(text: &str) -> Option<Card> {
                 clean_text.push_str(&deletion_content);
                 current_pos += deletion_content.len();
             } else {
-                clean_text.push(ch);
-                current_pos += 1;
-                clean_text.push_str(&deletion_content);
-                current_pos += deletion_content.len();
+                // If we didn't find a closing bracket, abort this card.
+                return None;
             }
         } else {
             clean_text.push(ch);
@@ -303,5 +301,12 @@ mod tests {
             ],
         };
         assert_ne!(card1.hash(), card2.hash());
+    }
+
+    #[test]
+    fn test_empty_deletions() {
+        let content = "[Foo] and [].";
+        let cards = parse_cards(content);
+        assert_eq!(cards.len(), 0);
     }
 }
