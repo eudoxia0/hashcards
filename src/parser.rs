@@ -72,7 +72,7 @@ fn parse_cloze_card(text: &str) -> Option<Card> {
 
             // Collect characters until we find the closing bracket
             let mut found_closing = false;
-            while let Some(inner_ch) = chars.next() {
+            for inner_ch in chars.by_ref() {
                 if inner_ch == ']' {
                     found_closing = true;
                     break;
