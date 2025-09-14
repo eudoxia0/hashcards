@@ -212,6 +212,13 @@ mod tests {
     }
 
     #[test]
+    fn test_empty_whitespace_input() {
+        let content = "\n   \n  \n";
+        let cards = parse_cards(content);
+        assert_eq!(cards.len(), 0);
+    }
+
+    #[test]
     fn test_empty_basic() {
         let content = " / ";
         let cards = parse_cards(content);
