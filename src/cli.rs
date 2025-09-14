@@ -19,6 +19,7 @@ use walkdir::WalkDir;
 
 use crate::error::Fallible;
 use crate::error::fail;
+use crate::parser::parse_cards;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -47,6 +48,7 @@ pub fn entrypoint() -> Fallible<()> {
                 let path = entry.path();
                 if path.is_file() && path.extension().is_some_and(|ext| ext == "md") {
                     let contents = std::fs::read_to_string(path)?;
+                    let _cards = parse_cards(&contents);
                 }
             }
             Ok(())

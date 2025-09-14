@@ -28,7 +28,7 @@ pub struct ClozeRange {
     pub end: usize,
 }
 
-pub fn parse_flashcards(content: &str) -> Vec<Card> {
+pub fn parse_cards(content: &str) -> Vec<Card> {
     let mut flashcards = Vec::new();
 
     let cards: Vec<&str> = content
