@@ -89,8 +89,8 @@ pub fn entrypoint() -> Fallible<()> {
                 match card {
                     Card::Basic { question, answer } => {
                         println!("Q: {question}");
-                        println!("[press space to reveal]");
-                        wait_for_space();
+                        println!("[press any key to reveal]");
+                        wait_for_keypress();
                         println!("A: {answer}");
                     }
                     Card::Cloze { text, start, end } => {
@@ -98,8 +98,8 @@ pub fn entrypoint() -> Fallible<()> {
                         let mut prompt = text.clone();
                         prompt.replace_range(start..end + 1, "[...]");
                         println!("Q: {prompt}");
-                        println!("[press space to reveal]");
-                        wait_for_space();
+                        println!("[press any key to reveal]");
+                        wait_for_keypress();
                         let mut answer = text.clone();
                         answer.replace_range(start..end + 1, &format!("[{cloze_text}]"));
                         println!("A: {answer}");
@@ -112,13 +112,9 @@ pub fn entrypoint() -> Fallible<()> {
     }
 }
 
-fn wait_for_space() {
-    loop {
-        let ch = std::io::stdin().bytes().next();
-        if let Some(Ok(b' ')) = ch {
-            break;
-        }
-    }
+fn wait_for_keypress() {
+    let mut buffer = [0; 1];
+    let _ = std::io::stdin().read(&mut buffer);
 }
 
 fn read_grade() -> Grade {
