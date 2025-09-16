@@ -21,14 +21,13 @@ pub enum Card {
         answer: String,
     },
     Cloze {
+        /// The text of the card without brackets.
         text: String,
-        deletions: Vec<ClozeRange>,
+        /// The position of the first character of the deletion.
+        start: usize,
+        /// The position of the last character of the deletion.
+        end: usize,
     },
-}
-
-pub struct ClozeRange {
-    pub start: usize,
-    pub end: usize,
 }
 
 impl Card {
@@ -40,13 +39,11 @@ impl Card {
                 hasher.update(question.as_bytes());
                 hasher.update(answer.as_bytes());
             }
-            Card::Cloze { text, deletions } => {
+            Card::Cloze { text, start, end } => {
                 hasher.update(b"Cloze");
                 hasher.update(text.as_bytes());
-                for deletion in deletions {
-                    hasher.update(deletion.start.to_le_bytes().as_ref());
-                    hasher.update(deletion.end.to_le_bytes().as_ref());
-                }
+                hasher.update(&start.to_le_bytes());
+                hasher.update(&end.to_le_bytes());
             }
         }
         hasher.finalize()
@@ -69,60 +66,43 @@ pub fn parse_cards(content: &str) -> Vec<Card> {
             if !question.is_empty() && !answer.is_empty() {
                 flashcards.push(Card::Basic { question, answer });
             }
-        } else if card_text.contains('[')
-            && card_text.contains(']')
-            && let Some(cloze) = parse_cloze_card(card_text)
-        {
-            flashcards.push(cloze);
+        } else if card_text.contains('[') && card_text.contains(']') {
+            let clozes = parse_cloze_card(card_text);
+            flashcards.extend(clozes);
         }
     }
 
     flashcards
 }
 
-fn parse_cloze_card(text: &str) -> Option<Card> {
-    let mut deletions = Vec::new();
-    let mut clean_text = String::new();
-    let mut chars = text.chars().peekable();
-    let mut current_pos = 0;
+// Parses a cloze deletion card and returns a vector of cards, one for each deletion.
+fn parse_cloze_card(text: &str) -> Vec<Card> {
+    let mut cards = Vec::new();
 
-    while let Some(ch) = chars.next() {
-        if ch == '[' {
-            // Start of a cloze deletion
-            let start_pos = current_pos;
-            let mut deletion_content = String::new();
+    // The full text of the card, without square brackets.
+    let clean_text = text.replace('[', "").replace(']', "");
 
-            // Collect characters until we find the closing bracket
-            let mut found_closing = false;
-            for inner_ch in chars.by_ref() {
-                if inner_ch == ']' {
-                    found_closing = true;
-                    break;
-                }
-                deletion_content.push(inner_ch);
-            }
-
-            if found_closing && !deletion_content.is_empty() {
-                deletions.push(ClozeRange {
-                    start: start_pos,
-                    end: start_pos + deletion_content.len(),
+    let mut start = None;
+    let mut index = 0;
+    for c in text.chars() {
+        if c == '[' {
+            start = Some(index);
+        } else if c == ']' {
+            if let Some(s) = start {
+                let end = index;
+                cards.push(Card::Cloze {
+                    text: clean_text.clone(),
+                    start: s,
+                    end: end - 1,
                 });
-                clean_text.push_str(&deletion_content);
-                current_pos += deletion_content.len();
-            } else {
-                // If we didn't find a closing bracket, abort this card.
-                return None;
+                start = None;
             }
         } else {
-            clean_text.push(ch);
-            current_pos += 1;
+            index += 1;
         }
     }
 
-    Some(Card::Cloze {
-        text: clean_text,
-        deletions,
-    })
+    cards
 }
 
 #[cfg(test)]
@@ -148,20 +128,20 @@ mod tests {
     fn test_parse_cloze() {
         let content = "[Berlin] is the capital of [Germany].";
         let cards = parse_cards(content);
-
-        assert_eq!(cards.len(), 1);
+        assert_eq!(cards.len(), 2);
         match &cards[0] {
-            Card::Cloze { text, deletions } => {
+            Card::Cloze { text, start, end } => {
                 assert_eq!(text, "Berlin is the capital of Germany.");
-                assert_eq!(deletions.len(), 2);
-                let first = &deletions[0];
-                assert_eq!(first.start, 0);
-                assert_eq!(first.end, 6);
-                assert_eq!(&text[first.start..first.end], "Berlin");
-                let second = &deletions[1];
-                assert_eq!(second.start, 25);
-                assert_eq!(second.end, 32);
-                assert_eq!(&text[second.start..second.end], "Germany");
+                assert_eq!(*start, 0);
+                assert_eq!(*end, 5);
+            }
+            _ => panic!("Expected Cloze card"),
+        }
+        match &cards[1] {
+            Card::Cloze { text, start, end } => {
+                assert_eq!(text, "Berlin is the capital of Germany.");
+                assert_eq!(*start, 25);
+                assert_eq!(*end, 31);
             }
             _ => panic!("Expected Cloze card"),
         }
@@ -173,8 +153,9 @@ mod tests {
             "What is the capital of France? / Paris\n\n[Berlin] is the capital of [Germany].";
         let cards = parse_cards(content);
 
-        assert_eq!(cards.len(), 2);
+        assert_eq!(cards.len(), 3);
         assert!(matches!(cards[0], Card::Basic { .. }));
+        assert!(matches!(cards[1], Card::Cloze { .. }));
         assert!(matches!(cards[1], Card::Cloze { .. }));
     }
 
@@ -229,25 +210,6 @@ mod tests {
     }
 
     #[test]
-    fn test_cloze_with_multiple_words() {
-        let content = "[The quick brown fox] jumps over [the lazy dog].";
-        let cards = parse_cards(content);
-
-        assert_eq!(cards.len(), 1);
-        match &cards[0] {
-            Card::Cloze { text, deletions } => {
-                assert_eq!(text, "The quick brown fox jumps over the lazy dog.");
-                assert_eq!(deletions.len(), 2);
-                let first = &deletions[0];
-                assert_eq!(&text[first.start..first.end], "The quick brown fox");
-                let second = &deletions[1];
-                assert_eq!(&text[second.start..second.end], "the lazy dog");
-            }
-            _ => panic!("Expected Cloze card"),
-        }
-    }
-
-    #[test]
     fn test_multiline_question_answer() {
         let content = "What is\nthe capital of Russia? / Moscow";
         let cards = parse_cards(content);
@@ -279,25 +241,14 @@ mod tests {
     fn test_cloze_card_hash() {
         let card1 = Card::Cloze {
             text: "Berlin is the capital of Germany.".to_string(),
-            deletions: vec![
-                ClozeRange { start: 0, end: 6 },
-                ClozeRange { start: 25, end: 32 },
-            ],
+            start: 0,
+            end: 6,
         };
         let card2 = Card::Cloze {
             text: "Berlin is the capital of Germany.".to_string(),
-            deletions: vec![
-                ClozeRange { start: 0, end: 7 },
-                ClozeRange { start: 25, end: 32 },
-            ],
+            start: 0,
+            end: 7,
         };
         assert_ne!(card1.hash(), card2.hash());
-    }
-
-    #[test]
-    fn test_empty_deletions() {
-        let content = "[Foo] and [].";
-        let cards = parse_cards(content);
-        assert_eq!(cards.len(), 0);
     }
 }

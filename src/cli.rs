@@ -93,7 +93,7 @@ pub fn entrypoint() -> Fallible<()> {
                         wait_for_space();
                         println!("A: {answer}");
                     }
-                    Card::Cloze { text, deletions } => {
+                    Card::Cloze { text, start, end } => {
                         todo!()
                     }
                 }
