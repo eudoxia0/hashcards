@@ -17,6 +17,7 @@ pub struct Database {
     inner: HashMap<Hash, Performance>,
 }
 
+#[allow(dead_code)]
 pub enum Performance {
     New,
     Reviewed {
