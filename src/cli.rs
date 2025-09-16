@@ -13,6 +13,7 @@
 // limitations under the License.
 
 use std::collections::HashSet;
+use std::io::Read;
 use std::path::PathBuf;
 
 use blake3::Hash;
@@ -23,6 +24,8 @@ use crate::db::Database;
 use crate::db::Performance;
 use crate::error::Fallible;
 use crate::error::fail;
+use crate::fsrs::Grade;
+use crate::parser::Card;
 use crate::parser::parse_cards;
 
 #[derive(Parser)]
@@ -77,8 +80,50 @@ pub fn entrypoint() -> Fallible<()> {
                 db.insert(hash, Performance::New);
             }
             // Find cards due today.
-            let _due_today = db.due_today();
+            let due_today = db.due_today();
+            let due_today: Vec<Card> = all_cards
+                .into_iter()
+                .filter(|card| due_today.contains(&card.hash()))
+                .collect::<Vec<_>>();
+            for card in due_today.into_iter() {
+                match card {
+                    Card::Basic { question, answer } => {
+                        println!("Q: {question}");
+                        println!("[press space to reveal]");
+                        wait_for_space();
+                        println!("A: {answer}");
+                    }
+                    Card::Cloze { text, deletions } => {
+                        todo!()
+                    }
+                }
+                let _grade: Grade = read_grade();
+            }
             Ok(())
+        }
+    }
+}
+
+fn wait_for_space() {
+    loop {
+        let ch = std::io::stdin().bytes().next();
+        if let Some(Ok(b' ')) = ch {
+            break;
+        }
+    }
+}
+
+fn read_grade() -> Grade {
+    loop {
+        println!("Grade: (1 = Forgot, 2 = Hard, 3 = Good, 4 = Easy)");
+        let mut input = String::new();
+        std::io::stdin().read_line(&mut input).unwrap();
+        match input.trim().parse::<u8>() {
+            Ok(1) => return Grade::Forgot,
+            Ok(2) => return Grade::Hard,
+            Ok(3) => return Grade::Good,
+            Ok(4) => return Grade::Easy,
+            _ => println!("Invalid input. Please enter a number between 1 and 4."),
         }
     }
 }
