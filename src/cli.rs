@@ -17,6 +17,7 @@ use std::path::PathBuf;
 use clap::Parser;
 use walkdir::WalkDir;
 
+use crate::db::Database;
 use crate::error::Fallible;
 use crate::error::fail;
 use crate::parser::parse_cards;
@@ -43,6 +44,12 @@ pub fn entrypoint() -> Fallible<()> {
             if !directory.exists() {
                 return fail("directory does not exist.");
             }
+            let db_path = directory.join("performance.csv");
+            let db = if db_path.exists() {
+                Database::from_csv(&db_path)?
+            } else {
+                Database::empty()
+            };
             for entry in WalkDir::new(directory) {
                 let entry = entry?;
                 let path = entry.path();
