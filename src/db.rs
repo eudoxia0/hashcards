@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::collections::HashSet;
 use std::path::PathBuf;
 
 use blake3::Hash;
@@ -68,7 +69,15 @@ impl Database {
         Ok(Database { inner: db })
     }
 
-    pub fn keys(&self) -> impl Iterator<Item = &Hash> {
-        self.inner.keys()
+    pub fn keys(&self) -> HashSet<Hash> {
+        self.inner.keys().cloned().collect()
+    }
+
+    pub fn insert(&mut self, hash: Hash, performance: Performance) {
+        self.inner.insert(hash, performance);
+    }
+
+    pub fn remove(&mut self, hash: &Hash) {
+        self.inner.remove(hash);
     }
 }

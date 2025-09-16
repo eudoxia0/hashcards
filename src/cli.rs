@@ -12,12 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::collections::HashSet;
 use std::path::PathBuf;
 
+use blake3::Hash;
 use clap::Parser;
 use walkdir::WalkDir;
 
 use crate::db::Database;
+use crate::db::Performance;
 use crate::error::Fallible;
 use crate::error::fail;
 use crate::parser::parse_cards;
@@ -45,7 +48,7 @@ pub fn entrypoint() -> Fallible<()> {
                 return fail("directory does not exist.");
             }
             let db_path = directory.join("performance.csv");
-            let db = if db_path.exists() {
+            let mut db = if db_path.exists() {
                 Database::from_csv(&db_path)?
             } else {
                 Database::empty()
@@ -61,7 +64,18 @@ pub fn entrypoint() -> Fallible<()> {
                 }
             }
             println!("Found {} cards.", all_cards.len());
-
+            let db_keys: HashSet<Hash> = db.keys();
+            let dir_keys: HashSet<Hash> = all_cards.iter().map(|card| card.hash()).collect();
+            // If a card is in the DB, but not in the directory, it was deleted. Therefore, remove it from the database.
+            let to_remove: Vec<Hash> = db_keys.difference(&dir_keys).cloned().collect();
+            for hash in to_remove {
+                db.remove(&hash);
+            }
+            // If a card is in the directory, but not in the DB, it is new. Add it to the database.
+            let to_add: Vec<Hash> = dir_keys.difference(&db_keys).cloned().collect();
+            for hash in to_add {
+                db.insert(hash, Performance::New);
+            }
             Ok(())
         }
     }
