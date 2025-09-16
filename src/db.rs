@@ -180,11 +180,11 @@ impl Database {
 
     pub fn to_csv(&self, path: &PathBuf) -> Fallible<()> {
         let mut writer = csv::Writer::from_path(path)?;
-        writer.write_record(&["hash", "last_review", "stability", "difficulty", "due_date"])?;
+        writer.write_record(["hash", "last_review", "stability", "difficulty", "due_date"])?;
         for (hash, performance) in &self.inner {
             match performance {
                 Performance::New => {
-                    writer.write_record(&[hash.to_hex().as_str(), "", "", "", ""])?;
+                    writer.write_record([hash.to_hex().as_str(), "", "", "", ""])?;
                 }
                 Performance::Reviewed {
                     last_review,
@@ -192,7 +192,7 @@ impl Database {
                     difficulty,
                     due_date,
                 } => {
-                    writer.write_record(&[
+                    writer.write_record([
                         hash.to_hex().as_str(),
                         &last_review.format("%Y-%m-%d").to_string(),
                         &stability.to_string(),
