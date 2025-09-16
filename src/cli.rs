@@ -50,14 +50,17 @@ pub fn entrypoint() -> Fallible<()> {
             } else {
                 Database::empty()
             };
+            let mut all_cards = Vec::new();
             for entry in WalkDir::new(directory) {
                 let entry = entry?;
                 let path = entry.path();
                 if path.is_file() && path.extension().is_some_and(|ext| ext == "md") {
                     let contents = std::fs::read_to_string(path)?;
-                    let _cards = parse_cards(&contents);
+                    let cards = parse_cards(&contents);
+                    all_cards.extend(cards);
                 }
             }
+            println!("Found {} cards.", all_cards.len());
             Ok(())
         }
     }
