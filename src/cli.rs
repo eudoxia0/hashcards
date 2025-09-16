@@ -94,7 +94,15 @@ pub fn entrypoint() -> Fallible<()> {
                         println!("A: {answer}");
                     }
                     Card::Cloze { text, start, end } => {
-                        todo!()
+                        let cloze_text = &text[start..end + 1];
+                        let mut prompt = text.clone();
+                        prompt.replace_range(start..end + 1, "[...]");
+                        println!("Q: {prompt}");
+                        println!("[press space to reveal]");
+                        wait_for_space();
+                        let mut answer = text.clone();
+                        answer.replace_range(start..end + 1, &format!("[{cloze_text}]"));
+                        println!("A: {answer}");
                     }
                 }
                 let _grade: Grade = read_grade();
