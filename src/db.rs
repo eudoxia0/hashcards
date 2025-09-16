@@ -25,25 +25,78 @@ use crate::error::ErrorReport;
 use crate::error::Fallible;
 use crate::error::fail;
 use crate::fsrs::D;
+use crate::fsrs::Grade;
 use crate::fsrs::S;
+use crate::fsrs::d_0;
+use crate::fsrs::interval;
+use crate::fsrs::new_difficulty;
+use crate::fsrs::new_stability;
+use crate::fsrs::retrievability;
+use crate::fsrs::s_0;
+
+const TARGET_RECALL: f64 = 0.9;
 
 pub struct Database {
     inner: HashMap<Hash, Performance>,
 }
 
-#[allow(dead_code)]
+#[derive(Clone)]
 pub enum Performance {
     New,
     Reviewed {
+        last_review: NaiveDate,
         stability: S,
         difficulty: D,
         due_date: NaiveDate,
     },
 }
 
+impl Performance {
+    pub fn update(self, grade: Grade) -> Self {
+        match self {
+            Performance::New => {
+                let stability = s_0(grade);
+                let difficulty = d_0(grade);
+                let interval = f64::max(interval(TARGET_RECALL, stability).round(), 1.0);
+                let today = Local::now().naive_local().date();
+                let interval_duration = chrono::Duration::days(interval as i64);
+                let due_date = today + interval_duration;
+                Performance::Reviewed {
+                    last_review: today,
+                    stability,
+                    difficulty,
+                    due_date,
+                }
+            }
+            Performance::Reviewed {
+                last_review,
+                stability,
+                difficulty,
+                ..
+            } => {
+                let today = Local::now().naive_local().date();
+                let time = (today - last_review).num_days() as f64;
+                let retr = retrievability(time, stability);
+                let stability = new_stability(difficulty, stability, retr, grade);
+                let difficulty = new_difficulty(difficulty, grade);
+                let interval = f64::max(interval(TARGET_RECALL, stability).round(), 1.0);
+                let interval_duration = chrono::Duration::days(interval as i64);
+                let due_date = today + interval_duration;
+                Performance::Reviewed {
+                    last_review: today,
+                    stability,
+                    difficulty,
+                    due_date,
+                }
+            }
+        }
+    }
+}
+
 #[derive(Deserialize)]
 struct DatabaseRow {
     hash: String,
+    last_review: Option<String>,
     stability: Option<S>,
     difficulty: Option<D>,
     due_date: Option<String>,
@@ -51,14 +104,21 @@ struct DatabaseRow {
 
 impl DatabaseRow {
     pub fn parse(self) -> Fallible<(Hash, Performance)> {
-        let performance = match (self.stability, self.difficulty, self.due_date) {
-            (Some(s), Some(d), Some(dd)) => Ok(Performance::Reviewed {
+        let performance = match (
+            self.last_review,
+            self.stability,
+            self.difficulty,
+            self.due_date,
+        ) {
+            (Some(lr), Some(s), Some(d), Some(dd)) => Ok(Performance::Reviewed {
+                last_review: NaiveDate::parse_from_str(&lr, "%Y-%m-%d")
+                    .map_err(|_| ErrorReport::new("invalid last review date"))?,
                 stability: s,
                 difficulty: d,
                 due_date: NaiveDate::parse_from_str(&dd, "%Y-%m-%d")
                     .map_err(|_| ErrorReport::new("invalid due date"))?,
             }),
-            (None, None, None) => Ok(Performance::New),
+            (None, None, None, None) => Ok(Performance::New),
             _ => fail("broken performance database"),
         };
         let hash = Hash::from_hex(&self.hash)
@@ -108,5 +168,41 @@ impl Database {
                 _ => None,
             })
             .collect()
+    }
+
+    pub fn get(&self, hash: Hash) -> Option<Performance> {
+        self.inner.get(&hash).cloned()
+    }
+
+    pub fn update(&mut self, hash: Hash, performance: Performance) {
+        self.inner.insert(hash, performance);
+    }
+
+    pub fn to_csv(&self, path: &PathBuf) -> Fallible<()> {
+        let mut writer = csv::Writer::from_path(path)?;
+        writer.write_record(&["hash", "last_review", "stability", "difficulty", "due_date"])?;
+        for (hash, performance) in &self.inner {
+            match performance {
+                Performance::New => {
+                    writer.write_record(&[hash.to_hex().as_str(), "", "", "", ""])?;
+                }
+                Performance::Reviewed {
+                    last_review,
+                    stability,
+                    difficulty,
+                    due_date,
+                } => {
+                    writer.write_record(&[
+                        hash.to_hex().as_str(),
+                        &last_review.format("%Y-%m-%d").to_string(),
+                        &stability.to_string(),
+                        &difficulty.to_string(),
+                        &due_date.format("%Y-%m-%d").to_string(),
+                    ])?;
+                }
+            }
+        }
+        writer.flush()?;
+        Ok(())
     }
 }

@@ -86,6 +86,8 @@ pub fn entrypoint() -> Fallible<()> {
                 .filter(|card| due_today.contains(&card.hash()))
                 .collect::<Vec<_>>();
             for card in due_today.into_iter() {
+                let hash = card.hash();
+                let performance = db.get(hash).unwrap();
                 match card {
                     Card::Basic { question, answer } => {
                         println!("Q: {question}");
@@ -105,8 +107,11 @@ pub fn entrypoint() -> Fallible<()> {
                         println!("A: {answer}");
                     }
                 }
-                let _grade: Grade = read_grade();
+                let grade: Grade = read_grade();
+                let performance = performance.update(grade);
+                db.update(hash, performance);
             }
+            db.to_csv(&db_path)?;
             Ok(())
         }
     }

@@ -82,7 +82,7 @@ fn s_fail(d: D, s: S, r: R) -> S {
     f64::min(s_f, s)
 }
 
-pub fn stability(d: D, s: S, r: R, g: Grade) -> S {
+pub fn new_stability(d: D, s: S, r: R, g: Grade) -> S {
     if g == Grade::Forgot {
         s_fail(d, s, r)
     } else {
@@ -99,7 +99,7 @@ pub fn d_0(g: Grade) -> D {
     clamp_d(W[4] - f64::exp(W[5] * (g - 1.0)) + 1.0)
 }
 
-pub fn difficulty(d: D, g: Grade) -> D {
+pub fn new_difficulty(d: D, g: Grade) -> D {
     clamp_d(W[7] * d_0(Grade::Easy) + (1.0 - W[7]) * dp(d, g))
 }
 
@@ -183,8 +183,8 @@ mod tests {
         for g in grades {
             t += i;
             let r: R = retrievability(i, s);
-            s = stability(d, s, r, g);
-            d = difficulty(d, g);
+            s = new_stability(d, s, r, g);
+            d = new_difficulty(d, g);
             i = f64::max(interval(r_d, s).round(), 1.0);
             steps.push(Step { t, s, d, i });
         }
