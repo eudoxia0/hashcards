@@ -61,6 +61,7 @@ pub fn entrypoint() -> Fallible<()> {
                 }
             }
             println!("Found {} cards.", all_cards.len());
+
             Ok(())
         }
     }

@@ -67,4 +67,8 @@ impl Database {
         }
         Ok(Database { inner: db })
     }
+
+    pub fn keys(&self) -> impl Iterator<Item = &Hash> {
+        self.inner.keys()
+    }
 }
