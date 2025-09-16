@@ -3,6 +3,7 @@ use std::collections::HashSet;
 use std::path::PathBuf;
 
 use blake3::Hash;
+use chrono::Local;
 use chrono::NaiveDate;
 use serde::Deserialize;
 
@@ -79,5 +80,18 @@ impl Database {
 
     pub fn remove(&mut self, hash: &Hash) {
         self.inner.remove(hash);
+    }
+
+    // Return new cards and cards due today.
+    pub fn due_today(&self) -> HashSet<Hash> {
+        let today = Local::now().naive_local().date();
+        self.inner
+            .iter()
+            .filter_map(|(hash, performance)| match performance {
+                Performance::New => Some(*hash),
+                Performance::Reviewed { due_date, .. } if *due_date <= today => Some(*hash),
+                _ => None,
+            })
+            .collect()
     }
 }
