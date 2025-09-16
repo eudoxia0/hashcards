@@ -80,7 +80,7 @@ fn parse_cloze_card(text: &str) -> Vec<Card> {
     let mut cards = Vec::new();
 
     // The full text of the card, without square brackets.
-    let clean_text = text.replace('[', "").replace(']', "");
+    let clean_text = text.replace(['[', ']'], "");
 
     let mut start = None;
     let mut index = 0;
