@@ -13,6 +13,7 @@
 // limitations under the License.
 
 mod cli;
+mod db;
 mod error;
 mod fsrs;
 mod parser;
