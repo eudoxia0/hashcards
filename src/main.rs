@@ -15,7 +15,6 @@
 mod cli;
 mod db;
 mod error;
-#[allow(dead_code)]
 mod fsrs;
 mod parser;
 
