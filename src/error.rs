@@ -19,6 +19,14 @@ pub struct ErrorReport {
     message: String,
 }
 
+impl ErrorReport {
+    pub fn new(msg: impl Into<String>) -> Self {
+        ErrorReport {
+            message: msg.into(),
+        }
+    }
+}
+
 impl From<std::io::Error> for ErrorReport {
     fn from(value: std::io::Error) -> Self {
         ErrorReport {
@@ -31,6 +39,14 @@ impl From<walkdir::Error> for ErrorReport {
     fn from(value: walkdir::Error) -> Self {
         ErrorReport {
             message: format!("directory traversal error: {value:#?}"),
+        }
+    }
+}
+
+impl From<csv::Error> for ErrorReport {
+    fn from(value: csv::Error) -> Self {
+        ErrorReport {
+            message: format!("CSV error: {value:#?}"),
         }
     }
 }
