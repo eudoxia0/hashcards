@@ -77,7 +77,7 @@ pub fn entrypoint() -> Fallible<()> {
                 db.insert(hash, Performance::New);
             }
             // Find cards due today.
-            let due_today = db.due_today();
+            let _due_today = db.due_today();
             Ok(())
         }
     }
