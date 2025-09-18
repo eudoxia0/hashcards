@@ -169,7 +169,7 @@ impl Database {
 
         // Write the cards in a predictable order: smaller hashes to bigger ones.
         let mut sorted: Vec<Hash> = self.inner.keys().cloned().collect();
-        sorted.sort_by(|a, b| a.to_hex().cmp(&b.to_hex()));
+        sorted.sort_by_key(|h| h.as_bytes().to_owned());
 
         for hash in sorted {
             let performance = self.inner.get(&hash).unwrap();
