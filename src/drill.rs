@@ -18,6 +18,7 @@ use std::path::PathBuf;
 use blake3::Hash;
 use chrono::NaiveDate;
 use console::Term;
+use csv::Reader;
 use walkdir::WalkDir;
 
 use crate::db::Database;
@@ -35,7 +36,8 @@ pub fn drill(directory: PathBuf, today: NaiveDate) -> Fallible<()> {
     }
     let db_path = directory.join("performance.csv");
     let mut db = if db_path.exists() {
-        Database::from_csv(&db_path)?
+        let mut reader = Reader::from_path(&db_path)?;
+        Database::from_csv(&mut reader)?
     } else {
         Database::empty()
     };

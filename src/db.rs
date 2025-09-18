@@ -14,10 +14,12 @@
 
 use std::collections::HashMap;
 use std::collections::HashSet;
+use std::io::Read;
 use std::path::PathBuf;
 
 use blake3::Hash;
 use chrono::NaiveDate;
+use csv::Reader;
 use serde::Deserialize;
 
 use crate::error::ErrorReport;
@@ -120,8 +122,7 @@ impl Database {
         }
     }
 
-    pub fn from_csv(path: &PathBuf) -> Fallible<Self> {
-        let mut reader = csv::Reader::from_path(path)?;
+    pub fn from_csv<R: Read>(reader: &mut Reader<R>) -> Fallible<Self> {
         let mut db = HashMap::new();
         for record in reader.records() {
             let row: DatabaseRow = record?.deserialize(None)?;
