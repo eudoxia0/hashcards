@@ -67,6 +67,10 @@ pub fn drill(directory: PathBuf, today: NaiveDate) -> Fallible<()> {
         .into_iter()
         .filter(|card| due_today.contains(&card.hash()))
         .collect::<Vec<_>>();
+    if due_today.is_empty() {
+        println!("No cards due today.");
+        return Ok(());
+    }
     for card in due_today.into_iter() {
         term.clear_screen()?;
         let hash = card.hash();
