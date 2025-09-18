@@ -73,7 +73,6 @@ impl Performance {
                 difficulty,
                 ..
             } => {
-                let today = Local::now().naive_local().date();
                 let time = (today - last_review).num_days() as f64;
                 let retr = retrievability(time, stability);
                 let stability = new_stability(difficulty, stability, retr, grade);
