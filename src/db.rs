@@ -166,7 +166,13 @@ impl Database {
     pub fn to_csv(&self, path: &PathBuf) -> Fallible<()> {
         let mut writer = csv::Writer::from_path(path)?;
         writer.write_record(["hash", "last_review", "stability", "difficulty", "due_date"])?;
-        for (hash, performance) in &self.inner {
+
+        // Write the cards in a predictable order: smaller hashes to bigger ones.
+        let mut sorted: Vec<Hash> = self.inner.keys().cloned().collect();
+        sorted.sort_by(|a, b| a.to_hex().cmp(&b.to_hex()));
+
+        for hash in sorted {
+            let performance = self.inner.get(&hash).unwrap();
             match performance {
                 Performance::New => {
                     writer.write_record([hash.to_hex().as_str(), "", "", "", ""])?;
