@@ -65,7 +65,7 @@ pub fn drill(directory: PathBuf, today: NaiveDate) -> Fallible<()> {
     }
     // Find cards due today.
     let due_today = db.due_today(today);
-    let due_today: Vec<Card> = all_cards
+    let mut due_today: Vec<Card> = all_cards
         .into_iter()
         .filter(|card| due_today.contains(&card.hash()))
         .collect::<Vec<_>>();
@@ -73,30 +73,36 @@ pub fn drill(directory: PathBuf, today: NaiveDate) -> Fallible<()> {
         println!("No cards due today.");
         return Ok(());
     }
-    for card in due_today.into_iter() {
+    while !due_today.is_empty() {
+        // Pop the first card.
+        let card = due_today.remove(0);
         term.clear_screen()?;
         let hash = card.hash();
         let performance = db.get(hash).unwrap();
-        match card {
+        match &card {
             Card::Basic { question, answer } => {
                 term.write_line(&format!("Q: {question}"))?;
                 wait_for_keypress(&term)?;
                 term.write_line(&format!("A: {answer}"))?;
             }
             Card::Cloze { text, start, end } => {
-                let cloze_text = &text[start..end + 1];
+                let cloze_text = &text[*start..*end + 1];
                 let mut prompt = text.clone();
-                prompt.replace_range(start..end + 1, "[...]");
+                prompt.replace_range(*start..*end + 1, "[...]");
                 term.write_line(&format!("Q: {prompt}"))?;
                 wait_for_keypress(&term)?;
                 let mut answer = text.clone();
-                answer.replace_range(start..end + 1, &format!("[{cloze_text}]"));
+                answer.replace_range(*start..*end + 1, &format!("[{cloze_text}]"));
                 term.write_line(&format!("A: {answer}"))?;
             }
         }
         let grade: Grade = read_grade(&term)?;
         let performance = performance.update(grade, today);
         db.update(hash, performance);
+        // Was the card forgotten? Put it at the back.
+        if grade == Grade::Forgot {
+            due_today.push(card);
+        }
     }
     let mut writer = csv::Writer::from_path(&db_path)?;
     db.to_csv(&mut writer)?;
