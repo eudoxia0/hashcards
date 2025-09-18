@@ -67,7 +67,7 @@ pub fn drill(directory: Option<String>, today: NaiveDate) -> Fallible<()> {
         db.insert(hash, Performance::New);
     }
     // Find cards due today.
-    let due_today = db.due_today();
+    let due_today = db.due_today(today);
     let due_today: Vec<Card> = all_cards
         .into_iter()
         .filter(|card| due_today.contains(&card.hash()))

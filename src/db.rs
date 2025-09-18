@@ -17,7 +17,6 @@ use std::collections::HashSet;
 use std::path::PathBuf;
 
 use blake3::Hash;
-use chrono::Local;
 use chrono::NaiveDate;
 use serde::Deserialize;
 
@@ -156,8 +155,7 @@ impl Database {
     }
 
     // Return new cards and cards due today.
-    pub fn due_today(&self) -> HashSet<Hash> {
-        let today = Local::now().naive_local().date();
+    pub fn due_today(&self, today: NaiveDate) -> HashSet<Hash> {
         self.inner
             .iter()
             .filter_map(|(hash, performance)| match performance {
