@@ -52,13 +52,12 @@ pub enum Performance {
 }
 
 impl Performance {
-    pub fn update(self, grade: Grade) -> Self {
+    pub fn update(self, grade: Grade, today: NaiveDate) -> Self {
         match self {
             Performance::New => {
                 let stability = s_0(grade);
                 let difficulty = d_0(grade);
                 let interval = f64::max(interval(TARGET_RECALL, stability).round(), 1.0);
-                let today = Local::now().naive_local().date();
                 let interval_duration = chrono::Duration::days(interval as i64);
                 let due_date = today + interval_duration;
                 Performance::Reviewed {

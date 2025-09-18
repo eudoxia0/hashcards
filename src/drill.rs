@@ -17,6 +17,7 @@ use std::io::Read;
 use std::path::PathBuf;
 
 use blake3::Hash;
+use chrono::Local;
 use walkdir::WalkDir;
 
 use crate::db::Database;
@@ -28,6 +29,7 @@ use crate::parser::Card;
 use crate::parser::parse_cards;
 
 pub fn drill(directory: Option<String>) -> Fallible<()> {
+    let today = Local::now().naive_local().date();
     let directory: PathBuf = match directory {
         Some(dir) => PathBuf::from(dir),
         None => std::env::current_dir()?,
@@ -94,7 +96,7 @@ pub fn drill(directory: Option<String>) -> Fallible<()> {
             }
         }
         let grade: Grade = read_grade();
-        let performance = performance.update(grade);
+        let performance = performance.update(grade, today);
         db.update(hash, performance);
     }
     db.to_csv(&db_path)?;
