@@ -52,20 +52,8 @@ pub enum Performance {
 
 impl Performance {
     pub fn update(self, grade: Grade, today: NaiveDate) -> Self {
-        match self {
-            Performance::New => {
-                let stability = s_0(grade);
-                let difficulty = d_0(grade);
-                let interval = f64::max(interval(TARGET_RECALL, stability).round(), 1.0);
-                let interval_duration = chrono::Duration::days(interval as i64);
-                let due_date = today + interval_duration;
-                Performance::Reviewed {
-                    last_review: today,
-                    stability,
-                    difficulty,
-                    due_date,
-                }
-            }
+        let (stability, difficulty) = match self {
+            Performance::New => (s_0(grade), d_0(grade)),
             Performance::Reviewed {
                 last_review,
                 stability,
@@ -76,16 +64,17 @@ impl Performance {
                 let retr = retrievability(time, stability);
                 let stability = new_stability(difficulty, stability, retr, grade);
                 let difficulty = new_difficulty(difficulty, grade);
-                let interval = f64::max(interval(TARGET_RECALL, stability).round(), 1.0);
-                let interval_duration = chrono::Duration::days(interval as i64);
-                let due_date = today + interval_duration;
-                Performance::Reviewed {
-                    last_review: today,
-                    stability,
-                    difficulty,
-                    due_date,
-                }
+                (stability, difficulty)
             }
+        };
+        let interval = f64::max(interval(TARGET_RECALL, stability).round(), 1.0);
+        let interval_duration = chrono::Duration::days(interval as i64);
+        let due_date = today + interval_duration;
+        Performance::Reviewed {
+            last_review: today,
+            stability,
+            difficulty,
+            due_date,
         }
     }
 }
