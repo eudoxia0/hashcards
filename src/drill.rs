@@ -28,11 +28,7 @@ use crate::fsrs::Grade;
 use crate::parser::Card;
 use crate::parser::parse_cards;
 
-pub fn drill(directory: Option<String>, today: NaiveDate) -> Fallible<()> {
-    let directory: PathBuf = match directory {
-        Some(dir) => PathBuf::from(dir),
-        None => std::env::current_dir()?,
-    };
+pub fn drill(directory: PathBuf, today: NaiveDate) -> Fallible<()> {
     println!("Drilling in {directory:?}.");
     if !directory.exists() {
         return fail("directory does not exist.");
