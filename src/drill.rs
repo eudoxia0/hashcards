@@ -98,7 +98,8 @@ pub fn drill(directory: PathBuf, today: NaiveDate) -> Fallible<()> {
         let performance = performance.update(grade, today);
         db.update(hash, performance);
     }
-    db.to_csv(&db_path)?;
+    let mut writer = csv::Writer::from_path(&db_path)?;
+    db.to_csv(&mut writer)?;
     Ok(())
 }
 

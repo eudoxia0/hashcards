@@ -15,11 +15,12 @@
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::io::Read;
-use std::path::PathBuf;
+use std::io::Write;
 
 use blake3::Hash;
 use chrono::NaiveDate;
 use csv::Reader;
+use csv::Writer;
 use serde::Deserialize;
 
 use crate::error::ErrorReport;
@@ -164,8 +165,7 @@ impl Database {
         self.inner.insert(hash, performance);
     }
 
-    pub fn to_csv(&self, path: &PathBuf) -> Fallible<()> {
-        let mut writer = csv::Writer::from_path(path)?;
+    pub fn to_csv<W: Write>(&self, writer: &mut Writer<W>) -> Fallible<()> {
         writer.write_record(["hash", "last_review", "stability", "difficulty", "due_date"])?;
 
         // Write the cards in a predictable order: smaller hashes to bigger ones.
