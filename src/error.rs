@@ -15,6 +15,7 @@
 use std::fmt::Display;
 use std::fmt::Formatter;
 
+#[derive(Debug)]
 pub struct ErrorReport {
     message: String,
 }

@@ -42,7 +42,7 @@ pub struct Database {
     inner: HashMap<Hash, Performance>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Performance {
     New,
     Reviewed {
@@ -195,6 +195,55 @@ impl Database {
             }
         }
         writer.flush()?;
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::error::Fallible;
+
+    fn date(year: i32, month: u32, day: u32) -> Fallible<NaiveDate> {
+        NaiveDate::from_ymd_opt(year, month, day).ok_or(ErrorReport::new("invalid date"))
+    }
+
+    /// Create a database, write it to an in-memory buffer, read it back, and
+    /// check the contents are the same.
+    #[test]
+    fn test_write_read_db() -> Fallible<()> {
+        // Create the database.
+        let mut db = Database::empty();
+        let a_hash = blake3::hash(b"a");
+        let a_perf = Performance::New;
+        let b_hash = blake3::hash(b"b");
+        let b_perf = Performance::Reviewed {
+            last_review: date(2025, 1, 1)?,
+            stability: 2.5,
+            difficulty: 4.0,
+            due_date: date(2025, 1, 2)?,
+        };
+        db.insert(a_hash, a_perf.clone());
+        db.insert(b_hash, b_perf.clone());
+
+        // Write the database.
+        let mut buffer = Vec::new();
+        {
+            let mut writer = Writer::from_writer(&mut buffer);
+            db.to_csv(&mut writer)?;
+        }
+
+        // Read the database back.
+        let db2 = {
+            let mut reader = Reader::from_reader(buffer.as_slice());
+            Database::from_csv(&mut reader)?
+        };
+
+        // Assertions.
+        assert_eq!(db2.inner.len(), 2);
+        assert_eq!(db2.get(a_hash), Some(a_perf));
+        assert_eq!(db2.get(b_hash), Some(b_perf));
+
         Ok(())
     }
 }
