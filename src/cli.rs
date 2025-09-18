@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use chrono::Local;
 use clap::Parser;
 
 use crate::drill::drill;
@@ -30,6 +31,9 @@ enum Command {
 pub fn entrypoint() -> Fallible<()> {
     let cli: Command = Command::parse();
     match cli {
-        Command::Drill { directory } => drill(directory),
+        Command::Drill { directory } => {
+            let today = Local::now().naive_local().date();
+            drill(directory, today)
+        }
     }
 }
