@@ -18,6 +18,7 @@ use chrono::Local;
 use clap::Parser;
 
 use crate::drill::drill;
+use crate::drill_web::drill_web;
 use crate::error::Fallible;
 
 #[derive(Parser)]
@@ -28,9 +29,14 @@ enum Command {
         /// Optional path to the deck directory.
         directory: Option<String>,
     },
+    /// Drill cards through a web interface.
+    DrillWeb {
+        /// Optional path to the deck directory.
+        directory: Option<String>,
+    },
 }
 
-pub fn entrypoint() -> Fallible<()> {
+pub async fn entrypoint() -> Fallible<()> {
     let cli: Command = Command::parse();
     match cli {
         Command::Drill { directory } => {
@@ -40,6 +46,14 @@ pub fn entrypoint() -> Fallible<()> {
             };
             let today = Local::now().naive_local().date();
             drill(directory, today)
+        }
+        Command::DrillWeb { directory } => {
+            let directory: PathBuf = match directory {
+                Some(dir) => PathBuf::from(dir),
+                None => std::env::current_dir()?,
+            };
+            let today = Local::now().naive_local().date();
+            drill_web(directory, today).await
         }
     }
 }

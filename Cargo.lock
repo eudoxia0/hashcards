@@ -398,6 +398,7 @@ dependencies = [
  "console",
  "csv",
  "serde",
+ "tokio",
  "walkdir",
 ]
 

@@ -15,6 +15,7 @@
 mod cli;
 mod db;
 mod drill;
+mod drill_web;
 mod error;
 mod fsrs;
 mod parser;
@@ -23,8 +24,9 @@ use std::process::ExitCode;
 
 use crate::cli::entrypoint;
 
-fn main() -> ExitCode {
-    match entrypoint() {
+#[tokio::main]
+async fn main() -> ExitCode {
+    match entrypoint().await {
         Ok(_) => ExitCode::SUCCESS,
         Err(e) => {
             eprintln!("hashcards: {e}");
