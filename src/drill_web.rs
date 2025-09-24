@@ -84,6 +84,5 @@ async fn root(State(state): State<ServerState>) -> String {
 }
 
 async fn not_found_handler() -> (StatusCode, Html<String>) {
-    let html = format!("Not Found");
-    (StatusCode::OK, Html(html))
+    (StatusCode::OK, Html("Not Found".to_string()))
 }
