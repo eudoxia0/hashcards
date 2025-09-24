@@ -9,6 +9,8 @@ use axum::routing::get;
 use blake3::Hash;
 use chrono::NaiveDate;
 use csv::Reader;
+use maud::DOCTYPE;
+use maud::html;
 use tokio::net::TcpListener;
 use walkdir::WalkDir;
 
@@ -78,9 +80,24 @@ pub async fn drill_web(directory: PathBuf, today: NaiveDate) -> Fallible<()> {
     todo!()
 }
 
-async fn root(State(state): State<ServerState>) -> String {
+async fn root(State(state): State<ServerState>) -> (StatusCode, Html<String>) {
     let card_count = state.cards.len();
-    format!("Cards due today: {}", card_count)
+    let html = html! {
+        (DOCTYPE)
+        html lang="en" {
+            head {
+                meta charset="utf-8";
+                meta name="viewport" content="width=device-width, initial-scale=1";
+                title { "hashcards" }
+            }
+            body {
+                p {
+                    (format!("Cards due today: {}", card_count))
+                }
+            }
+        }
+    };
+    (StatusCode::OK, Html(html.into_string()))
 }
 
 async fn not_found_handler() -> (StatusCode, Html<String>) {
