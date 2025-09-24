@@ -5,6 +5,7 @@ edition = "2024"
 license = "Apache-2.0"
 
 [dependencies]
+axum = "0.8.4"
 blake3 = "1.8.2"
 chrono = "0.4.42"
 clap = { version = "4", features = ["derive"] }
