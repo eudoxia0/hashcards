@@ -1,5 +1,7 @@
 use std::collections::HashSet;
 use std::path::PathBuf;
+use std::sync::Arc;
+use std::sync::Mutex;
 
 use axum::Router;
 use axum::extract::State;
@@ -24,7 +26,7 @@ use crate::parser::parse_cards;
 
 #[derive(Clone)]
 pub struct ServerState {
-    cards: Vec<Card>,
+    cards: Arc<Mutex<Vec<Card>>>,
 }
 
 pub async fn drill_web(directory: PathBuf, today: NaiveDate) -> Fallible<()> {
@@ -71,7 +73,9 @@ pub async fn drill_web(directory: PathBuf, today: NaiveDate) -> Fallible<()> {
         return Ok(());
     }
 
-    let state = ServerState { cards: due_today };
+    let state = ServerState {
+        cards: Arc::new(Mutex::new(due_today)),
+    };
     let app = Router::new();
     let app = app.route("/", get(root));
     let app = app.fallback(not_found_handler);
@@ -82,10 +86,36 @@ pub async fn drill_web(directory: PathBuf, today: NaiveDate) -> Fallible<()> {
 }
 
 async fn root(State(state): State<ServerState>) -> (StatusCode, Html<String>) {
-    let card_count = state.cards.len();
-    let body = html! {
-        p {
-            (format!("Cards due today: {}", card_count))
+    let mut cards = state.cards.lock().unwrap();
+    let body = if cards.is_empty() {
+        html! {
+            p { "Finished!" }
+        }
+    } else {
+        let card = cards.remove(0);
+        match &card {
+            Card::Basic { question, .. } => {
+                html! {
+                    p {
+                        "Q: " (question)
+                    }
+                    button {
+                        "Reveal"
+                    }
+                }
+            }
+            Card::Cloze { text, start, end } => {
+                let mut prompt = text.clone();
+                prompt.replace_range(*start..*end + 1, "[...]");
+                html! {
+                    p {
+                        "Q: " (prompt)
+                    }
+                    button {
+                        "Reveal"
+                    }
+                }
+            }
         }
     };
     let html = page_template(body);
