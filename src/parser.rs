@@ -15,6 +15,7 @@
 use blake3::Hash;
 use blake3::Hasher;
 
+#[derive(Clone)]
 pub enum Card {
     Basic {
         question: String,
