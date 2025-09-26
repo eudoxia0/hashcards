@@ -71,4 +71,5 @@ input {
     font-size: 24px;
     margin: 0 16px;
     font-family: "Times New Roman", "Times", serif;
+    cursor: pointer;
 }
