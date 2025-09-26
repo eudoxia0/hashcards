@@ -50,13 +50,13 @@ use crate::parser::parse_deck;
 
 #[derive(Clone)]
 pub struct ServerState {
+    today: NaiveDate,
     mutable: Arc<Mutex<MutableState>>,
 }
 
 pub struct MutableState {
     macros: Vec<(String, String)>,
     db_path: PathBuf,
-    today: NaiveDate,
     reveal: bool,
     db: Database,
     cards: Vec<Card>,
@@ -122,10 +122,10 @@ pub async fn drill(directory: PathBuf, today: NaiveDate) -> Fallible<()> {
     }
 
     let state = ServerState {
+        today,
         mutable: Arc::new(Mutex::new(MutableState {
             macros,
             db_path,
-            today,
             reveal: false,
             db,
             cards: due_today,
@@ -169,6 +169,7 @@ async fn action(
     State(state): State<ServerState>,
     Form(form): Form<FormData>,
 ) -> (StatusCode, Html<String>) {
+    let today = state.today;
     let mut state = state.mutable.lock().unwrap();
     match form.action {
         Action::Reveal => {
@@ -192,7 +193,7 @@ async fn action(
                     Action::Easy => Grade::Easy,
                     _ => unreachable!(),
                 };
-                let performance = performance.update(grade, state.today);
+                let performance = performance.update(grade, today);
                 state.db.update(hash, performance);
                 // Was the card forgotten? Put it at the back.
                 if grade == Grade::Forgot {
