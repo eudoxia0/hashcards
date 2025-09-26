@@ -65,6 +65,7 @@ pub async fn drill(directory: PathBuf, today: NaiveDate) -> Fallible<()> {
     if !directory.exists() {
         return fail("directory does not exist.");
     }
+
     let db_path = directory.join("performance.csv");
     let mut db = if db_path.exists() {
         log::debug!("Loading performance database...");
@@ -76,12 +77,14 @@ pub async fn drill(directory: PathBuf, today: NaiveDate) -> Fallible<()> {
         log::debug!("Using empty performance database.");
         Database::empty()
     };
+
     log::debug!("Loading deck...");
     let start = Instant::now();
     let all_cards = parse_deck(directory)?;
     let end = Instant::now();
     let duration = end.duration_since(start).as_millis();
     log::debug!("Deck loaded in {duration}ms.");
+
     let db_keys: HashSet<Hash> = db.keys();
     let dir_keys: HashSet<Hash> = all_cards.iter().map(|card| card.hash()).collect();
     // If a card is in the DB, but not in the directory, it was deleted. Therefore, remove it from the database.
@@ -94,6 +97,7 @@ pub async fn drill(directory: PathBuf, today: NaiveDate) -> Fallible<()> {
     for hash in to_add {
         db.insert(hash, Performance::New);
     }
+
     // Find cards due today.
     let due_today = db.due_today(today);
     let due_today: Vec<Card> = all_cards

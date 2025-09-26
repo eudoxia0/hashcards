@@ -1,1 +1,1 @@
-What does $e^{i \pi} + 1$ evaluate to? / $$0$$
+What does $\euler$ evaluate to? / $$0$$
