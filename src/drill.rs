@@ -345,7 +345,7 @@ async fn script(
             "MACROS[String.raw`{name}`] = String.raw`{definition}`;\n"
         ));
     }
-    content.push_str("\n");
+    content.push('\n');
     content.push_str(include_str!("script.js"));
     (StatusCode::OK, [(CONTENT_TYPE, "text/javascript")], content)
 }
