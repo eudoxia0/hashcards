@@ -14,7 +14,6 @@
 
 mod cli;
 mod db;
-mod drill;
 mod drill_web;
 mod error;
 mod fsrs;
