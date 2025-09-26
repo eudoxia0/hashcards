@@ -66,6 +66,18 @@ body {
     height: 500px;
 }
 
+.question,
+.answer,
+.prompt {
+    overflow-y: scroll;
+}
+
+img {
+    max-width: 70%;
+    display: block;
+    margin: 0 auto;
+}
+
 .controls form {
     display: flex;
     flex-direction: row;

@@ -93,7 +93,7 @@ impl CardContent {
     }
 }
 
-pub fn parse_deck(directory: PathBuf) -> Fallible<Vec<Card>> {
+pub fn parse_deck(directory: &PathBuf) -> Fallible<Vec<Card>> {
     let mut all_cards = Vec::new();
     for entry in WalkDir::new(directory) {
         let entry = entry?;

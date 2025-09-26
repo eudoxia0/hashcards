@@ -20,6 +20,7 @@ use std::time::Duration;
 use std::time::Instant;
 
 use axum::Router;
+use axum::extract::Path;
 use axum::extract::State;
 use axum::http::HeaderName;
 use axum::http::StatusCode;
@@ -76,7 +77,7 @@ pub async fn start_server(directory: PathBuf, today: NaiveDate) -> Fallible<()> 
 
     log::debug!("Loading deck...");
     let start = Instant::now();
-    let all_cards = parse_deck(directory)?;
+    let all_cards = parse_deck(&directory)?;
     let end = Instant::now();
     let duration = end.duration_since(start).as_millis();
     log::debug!("Deck loaded in {duration}ms.");
@@ -107,6 +108,7 @@ pub async fn start_server(directory: PathBuf, today: NaiveDate) -> Fallible<()> 
 
     let state = ServerState {
         today,
+        directory,
         db_path,
         macros,
         mutable: Arc::new(Mutex::new(MutableState {
@@ -120,6 +122,7 @@ pub async fn start_server(directory: PathBuf, today: NaiveDate) -> Fallible<()> 
     let app = app.route("/", post(post_handler));
     let app = app.route("/script.js", get(script_handler));
     let app = app.route("/style.css", get(style_handler));
+    let app = app.route("/image/{*path}", get(image_handler));
     let app = app.fallback(not_found_handler);
     let app = app.with_state(state);
     let bind = "0.0.0.0:8000";
@@ -173,4 +176,32 @@ async fn style_handler() -> (StatusCode, [(HeaderName, &'static str); 2], &'stat
 
 async fn not_found_handler() -> (StatusCode, Html<String>) {
     (StatusCode::NOT_FOUND, Html("Not Found".to_string()))
+}
+
+async fn image_handler(
+    State(state): State<ServerState>,
+    Path(path): Path<String>,
+) -> (StatusCode, [(HeaderName, &'static str); 1], Vec<u8>) {
+    let path = PathBuf::from(path);
+    let path = state.directory.join(path);
+    if !path.exists() {
+        return (
+            StatusCode::NOT_FOUND,
+            [(CONTENT_TYPE, "text/plain")],
+            b"Not Found".to_vec(),
+        );
+    }
+    let content = tokio::fs::read(path).await;
+    match content {
+        Ok(bytes) => (
+            StatusCode::OK,
+            [(CONTENT_TYPE, "application/octet-stream")],
+            bytes,
+        ),
+        Err(_) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            [(CONTENT_TYPE, "text/plain")],
+            b"Internal Server Error".to_vec(),
+        ),
+    }
 }

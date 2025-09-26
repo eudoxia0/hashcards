@@ -24,6 +24,7 @@ use crate::parser::Card;
 #[derive(Clone)]
 pub struct ServerState {
     pub today: NaiveDate,
+    pub directory: PathBuf,
     pub db_path: PathBuf,
     pub macros: Vec<(String, String)>,
     pub mutable: Arc<Mutex<MutableState>>,

@@ -24,6 +24,7 @@ use serde::Deserialize;
 use crate::drill::state::ServerState;
 use crate::drill::template::page_template;
 use crate::fsrs::Grade;
+use crate::markdown::markdown_to_html;
 use crate::parser::CardContent;
 
 pub async fn get_handler(State(state): State<ServerState>) -> (StatusCode, Html<String>) {
@@ -100,8 +101,8 @@ fn render_page(state: ServerState, action: Option<Action>) -> (StatusCode, Html<
         let card = mutable.cards[0].clone();
         let card_content: Markup = match card.content() {
             CardContent::Basic { question, answer } => {
-                let question = markdown::to_html(question);
-                let answer = markdown::to_html(answer);
+                let question = markdown_to_html(question);
+                let answer = markdown_to_html(answer);
                 if mutable.reveal {
                     html! {
                         div.question {
@@ -132,7 +133,7 @@ fn render_page(state: ServerState, action: Option<Action>) -> (StatusCode, Html<
                     let mut answer = text.clone();
                     answer
                         .replace_range(*start..*end + 1, &format!("[{cloze_text}](cloze_reveal)"));
-                    let answer = markdown::to_html(&answer);
+                    let answer = markdown_to_html(&answer);
                     html! {
                         div.prompt {
                             p {
@@ -143,7 +144,7 @@ fn render_page(state: ServerState, action: Option<Action>) -> (StatusCode, Html<
                 } else {
                     let mut prompt = text.clone();
                     prompt.replace_range(*start..*end + 1, "[.............](cloze)");
-                    let prompt = markdown::to_html(&prompt);
+                    let prompt = markdown_to_html(&prompt);
                     html! {
                         div.prompt {
                             p {
