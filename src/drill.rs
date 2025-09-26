@@ -16,6 +16,7 @@ use std::collections::HashSet;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::Mutex;
+use std::sync::MutexGuard;
 use std::time::Instant;
 
 use axum::Form;
@@ -26,7 +27,6 @@ use axum::http::StatusCode;
 use axum::http::header::CACHE_CONTROL;
 use axum::http::header::CONTENT_TYPE;
 use axum::response::Html;
-use axum::response::Redirect;
 use axum::routing::get;
 use axum::routing::post;
 use blake3::Hash;
@@ -147,6 +147,66 @@ pub async fn drill(directory: PathBuf, today: NaiveDate) -> Fallible<()> {
 
 async fn root(State(state): State<StateContainer>) -> (StatusCode, Html<String>) {
     let state = state.inner.lock().unwrap();
+    let html = render_page(state);
+    (StatusCode::OK, Html(html.into_string()))
+}
+
+#[derive(Debug, Deserialize)]
+enum Action {
+    Reveal,
+    Forgot,
+    Hard,
+    Good,
+    Easy,
+}
+
+#[derive(Deserialize)]
+struct FormData {
+    action: Action,
+}
+
+async fn action(
+    State(state): State<StateContainer>,
+    Form(form): Form<FormData>,
+) -> (StatusCode, Html<String>) {
+    let mut state = state.inner.lock().unwrap();
+    match form.action {
+        Action::Reveal => {
+            if state.reveal {
+                log::error!("Revealing a card that is already revealed.");
+            } else {
+                state.reveal = true;
+            }
+        }
+        _ => {
+            if !state.reveal {
+                log::error!("Answering a card that is not revealed.");
+            } else {
+                let card = state.cards.remove(0);
+                let hash = card.hash();
+                let performance = state.db.get(hash).unwrap();
+                let grade: Grade = match form.action {
+                    Action::Forgot => Grade::Forgot,
+                    Action::Hard => Grade::Hard,
+                    Action::Good => Grade::Good,
+                    Action::Easy => Grade::Easy,
+                    _ => unreachable!(),
+                };
+                let performance = performance.update(grade, state.today);
+                state.db.update(hash, performance);
+                // Was the card forgotten? Put it at the back.
+                if grade == Grade::Forgot {
+                    state.cards.push(card);
+                }
+                state.reveal = false;
+            }
+        }
+    }
+    let html = render_page(state);
+    (StatusCode::OK, Html(html.into_string()))
+}
+
+fn render_page(state: MutexGuard<'_, ServerState>) -> Markup {
     let body = if state.cards.is_empty() {
         let mut writer = csv::Writer::from_path(&state.db_path).unwrap();
         log::debug!("Writing performance database");
@@ -249,59 +309,7 @@ async fn root(State(state): State<StateContainer>) -> (StatusCode, Html<String>)
             }
         }
     };
-    let html = page_template(body);
-    (StatusCode::OK, Html(html.into_string()))
-}
-
-#[derive(Debug, Deserialize)]
-enum Action {
-    Reveal,
-    Forgot,
-    Hard,
-    Good,
-    Easy,
-}
-
-#[derive(Deserialize)]
-struct FormData {
-    action: Action,
-}
-
-async fn action(State(state): State<StateContainer>, Form(form): Form<FormData>) -> Redirect {
-    let mut state = state.inner.lock().unwrap();
-    match form.action {
-        Action::Reveal => {
-            if state.reveal {
-                log::error!("Revealing a card that is already revealed.");
-            } else {
-                state.reveal = true;
-            }
-        }
-        _ => {
-            if !state.reveal {
-                log::error!("Answering a card that is not revealed.");
-            } else {
-                let card = state.cards.remove(0);
-                let hash = card.hash();
-                let performance = state.db.get(hash).unwrap();
-                let grade: Grade = match form.action {
-                    Action::Forgot => Grade::Forgot,
-                    Action::Hard => Grade::Hard,
-                    Action::Good => Grade::Good,
-                    Action::Easy => Grade::Easy,
-                    _ => unreachable!(),
-                };
-                let performance = performance.update(grade, state.today);
-                state.db.update(hash, performance);
-                // Was the card forgotten? Put it at the back.
-                if grade == Grade::Forgot {
-                    state.cards.push(card);
-                }
-                state.reveal = false;
-            }
-        }
-    }
-    Redirect::to("/")
+    page_template(body)
 }
 
 fn page_template(body: Markup) -> Markup {
