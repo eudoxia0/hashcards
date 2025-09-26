@@ -43,7 +43,7 @@ body {
 .deck,
 .question,
 .answer {
-    border-bottom: 1px solid black;
+    border-bottom: 1px solid #bbb;
 }
 
 .deck h1 {
@@ -61,13 +61,14 @@ body {
 .controls form {
     display: flex;
     flex-direction: row;
-    justify-content: space-between;
+    justify-content: center;
 }
 
 input {
-    border: 1px solid black;
+    border: 1px solid #bbb;
     padding: 16px;
     background: white;
     font-size: 24px;
+    margin: 0 16px;
     font-family: "Times New Roman", "Times", serif;
 }
