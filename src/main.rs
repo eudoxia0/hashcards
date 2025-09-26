@@ -26,6 +26,7 @@ use crate::cli::entrypoint;
 
 #[tokio::main]
 async fn main() -> ExitCode {
+    env_logger::init();
     match entrypoint().await {
         Ok(_) => ExitCode::SUCCESS,
         Err(e) => {

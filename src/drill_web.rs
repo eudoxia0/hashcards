@@ -41,6 +41,7 @@ pub async fn drill_web(directory: PathBuf, today: NaiveDate) -> Fallible<()> {
         Database::empty()
     };
     let mut all_cards = Vec::new();
+    log::debug!("Loading deck...");
     for entry in WalkDir::new(directory) {
         let entry = entry?;
         let path = entry.path();
@@ -50,6 +51,7 @@ pub async fn drill_web(directory: PathBuf, today: NaiveDate) -> Fallible<()> {
             all_cards.extend(cards);
         }
     }
+    log::debug!("Deck loaded");
     let db_keys: HashSet<Hash> = db.keys();
     let dir_keys: HashSet<Hash> = all_cards.iter().map(|card| card.hash()).collect();
     // If a card is in the DB, but not in the directory, it was deleted. Therefore, remove it from the database.
