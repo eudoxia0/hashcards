@@ -54,6 +54,7 @@ pub struct StateContainer {
 }
 
 pub struct ServerState {
+    macros: Vec<(String, String)>,
     db_path: PathBuf,
     today: NaiveDate,
     reveal: bool,
@@ -77,6 +78,17 @@ pub async fn drill(directory: PathBuf, today: NaiveDate) -> Fallible<()> {
         log::debug!("Using empty performance database.");
         Database::empty()
     };
+
+    let mut macros = Vec::new();
+    let macros_path = directory.join("macros.tex");
+    if macros_path.exists() {
+        let content = std::fs::read_to_string(macros_path)?;
+        for line in content.lines() {
+            if let Some((name, definition)) = line.split_once(' ') {
+                macros.push((name.to_string(), definition.to_string()));
+            }
+        }
+    }
 
     log::debug!("Loading deck...");
     let start = Instant::now();
@@ -111,6 +123,7 @@ pub async fn drill(directory: PathBuf, today: NaiveDate) -> Fallible<()> {
 
     let state = StateContainer {
         inner: Arc::new(Mutex::new(ServerState {
+            macros,
             db_path,
             today,
             reveal: false,
@@ -312,16 +325,20 @@ fn page_template(body: Markup) -> Markup {
     }
 }
 
-async fn script() -> (StatusCode, [(HeaderName, &'static str); 2], &'static [u8]) {
-    let bytes = include_bytes!("script.js");
-    (
-        StatusCode::OK,
-        [
-            (CONTENT_TYPE, "text/javascript"),
-            (CACHE_CONTROL, "public, max-age=604800, immutable"),
-        ],
-        bytes,
-    )
+async fn script(
+    State(state): State<StateContainer>,
+) -> (StatusCode, [(HeaderName, &'static str); 1], String) {
+    let state = state.inner.lock().unwrap();
+    let mut content = String::new();
+    content.push_str("let MACROS = {};\n");
+    for (name, definition) in &state.macros {
+        content.push_str(&format!(
+            "MACROS[String.raw`{name}`] = String.raw`{definition}`;\n"
+        ));
+    }
+    content.push_str("\n");
+    content.push_str(include_str!("script.js"));
+    (StatusCode::OK, [(CONTENT_TYPE, "text/javascript")], content)
 }
 
 async fn stylesheet() -> (StatusCode, [(HeaderName, &'static str); 2], &'static [u8]) {
