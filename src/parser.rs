@@ -169,21 +169,19 @@ fn parse_cloze_card(deck_name: String, file_path: PathBuf, text: &str) -> Vec<Ca
             if image_mode {
                 // We are in image mode, so this closing bracket is part of a markdown image.
                 image_mode = false;
-            } else {
-                if let Some(s) = start {
-                    let end = index;
-                    let card = Card::new(
-                        deck_name.clone(),
-                        file_path.clone(),
-                        CardContent::Cloze {
-                            text: clean_text.clone(),
-                            start: s,
-                            end: end - 1,
-                        },
-                    );
-                    cards.push(card);
-                    start = None;
-                }
+            } else if let Some(s) = start {
+                let end = index;
+                let card = Card::new(
+                    deck_name.clone(),
+                    file_path.clone(),
+                    CardContent::Cloze {
+                        text: clean_text.clone(),
+                        start: s,
+                        end: end - 1,
+                    },
+                );
+                cards.push(card);
+                start = None;
             }
         } else if c == '!' {
             image_mode = true;
