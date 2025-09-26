@@ -48,7 +48,12 @@ pub fn drill(directory: PathBuf, today: NaiveDate) -> Fallible<()> {
         let path = entry.path();
         if path.is_file() && path.extension().is_some_and(|ext| ext == "md") {
             let contents = std::fs::read_to_string(path)?;
-            let cards = parse_cards(&contents);
+            let deck_name: String = path
+                .file_stem()
+                .and_then(|os_str| os_str.to_str())
+                .unwrap_or("None")
+                .to_string();
+            let cards = parse_cards(deck_name, &contents);
             all_cards.extend(cards);
         }
     }

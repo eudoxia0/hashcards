@@ -17,6 +17,9 @@ use blake3::Hasher;
 
 #[derive(Clone)]
 pub struct Card {
+    /// The name of the deck this card belongs to.
+    pub deck_name: String,
+    /// The card's content.
     pub content: CardContent,
 }
 
@@ -62,7 +65,7 @@ impl CardContent {
     }
 }
 
-pub fn parse_cards(content: &str) -> Vec<Card> {
+pub fn parse_cards(deck_name: String, content: &str) -> Vec<Card> {
     let mut flashcards = Vec::new();
 
     let cards: Vec<&str> = content
@@ -77,12 +80,13 @@ pub fn parse_cards(content: &str) -> Vec<Card> {
             let answer = card_text[separator_pos + 3..].trim().to_string();
             if !question.is_empty() && !answer.is_empty() {
                 let card = Card {
+                    deck_name: deck_name.clone(),
                     content: CardContent::Basic { question, answer },
                 };
                 flashcards.push(card);
             }
         } else if card_text.contains('[') && card_text.contains(']') {
-            let clozes = parse_cloze_card(card_text);
+            let clozes = parse_cloze_card(deck_name.clone(), card_text);
             flashcards.extend(clozes);
         }
     }
@@ -91,7 +95,7 @@ pub fn parse_cards(content: &str) -> Vec<Card> {
 }
 
 // Parses a cloze deletion card and returns a vector of cards, one for each deletion.
-fn parse_cloze_card(text: &str) -> Vec<Card> {
+fn parse_cloze_card(deck_name: String, text: &str) -> Vec<Card> {
     let mut cards = Vec::new();
 
     // The full text of the card, without square brackets.
@@ -106,6 +110,7 @@ fn parse_cloze_card(text: &str) -> Vec<Card> {
             if let Some(s) = start {
                 let end = index;
                 let card = Card {
+                    deck_name: deck_name.clone(),
                     content: CardContent::Cloze {
                         text: clean_text.clone(),
                         start: s,
@@ -130,7 +135,7 @@ mod tests {
     #[test]
     fn test_parse_basic() {
         let content = "What is the capital of France? / Paris";
-        let cards = parse_cards(content);
+        let cards = parse_cards("".to_string(), content);
 
         assert_eq!(cards.len(), 1);
         match &cards[0].content {
@@ -145,7 +150,7 @@ mod tests {
     #[test]
     fn test_parse_cloze() {
         let content = "[Berlin] is the capital of [Germany].";
-        let cards = parse_cards(content);
+        let cards = parse_cards("".to_string(), content);
         assert_eq!(cards.len(), 2);
         match &cards[0].content {
             CardContent::Cloze { text, start, end } => {
@@ -169,7 +174,7 @@ mod tests {
     fn test_parse_multiple_cards() {
         let content =
             "What is the capital of France? / Paris\n\n[Berlin] is the capital of [Germany].";
-        let cards = parse_cards(content);
+        let cards = parse_cards("".to_string(), content);
 
         assert_eq!(cards.len(), 3);
         assert!(matches!(cards[0].content, CardContent::Basic { .. }));
@@ -180,7 +185,7 @@ mod tests {
     #[test]
     fn test_parse_with_extra_whitespace() {
         let content = "  What is 2+2? / 4  \n\n\n[Python] is a programming language.  ";
-        let cards = parse_cards(content);
+        let cards = parse_cards("".to_string(), content);
 
         assert_eq!(cards.len(), 2);
         match &cards[0].content {
@@ -195,28 +200,28 @@ mod tests {
     #[test]
     fn test_empty_input() {
         let content = "";
-        let cards = parse_cards(content);
+        let cards = parse_cards("".to_string(), content);
         assert_eq!(cards.len(), 0);
     }
 
     #[test]
     fn test_empty_whitespace_input() {
         let content = "\n   \n  \n";
-        let cards = parse_cards(content);
+        let cards = parse_cards("".to_string(), content);
         assert_eq!(cards.len(), 0);
     }
 
     #[test]
     fn test_empty_basic() {
         let content = " / ";
-        let cards = parse_cards(content);
+        let cards = parse_cards("".to_string(), content);
         assert_eq!(cards.len(), 0);
     }
 
     #[test]
     fn test_invalid_cards_ignored() {
         let content = "This is not a valid card\n\nWhat is valid? / Yes\n\nAlso not valid";
-        let cards = parse_cards(content);
+        let cards = parse_cards("".to_string(), content);
         assert_eq!(cards.len(), 1);
         match &cards[0].content {
             CardContent::Basic { question, answer } => {
@@ -230,7 +235,7 @@ mod tests {
     #[test]
     fn test_multiline_question_answer() {
         let content = "What is\nthe capital of Russia? / Moscow";
-        let cards = parse_cards(content);
+        let cards = parse_cards("".to_string(), content);
 
         assert_eq!(cards.len(), 1);
         match &cards[0].content {
