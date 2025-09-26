@@ -28,6 +28,7 @@ use crate::db::Database;
 use crate::db::Performance;
 use crate::error::Fallible;
 use crate::error::fail;
+use crate::fsrs::Grade;
 use crate::parser::Card;
 use crate::parser::CardContent;
 use crate::parser::parse_deck;
@@ -38,7 +39,9 @@ pub struct StateContainer {
 }
 
 pub struct ServerState {
+    today: NaiveDate,
     reveal: bool,
+    db: Database,
     cards: Vec<Card>,
 }
 
@@ -88,7 +91,9 @@ pub async fn drill_web(directory: PathBuf, today: NaiveDate) -> Fallible<()> {
 
     let state = StateContainer {
         inner: Arc::new(Mutex::new(ServerState {
+            today,
             reveal: false,
+            db,
             cards: due_today,
         })),
     };
@@ -170,6 +175,22 @@ async fn root(State(state): State<StateContainer>) -> (StatusCode, Html<String>)
                 }
             }
         };
+        let card_controls = if state.reveal {
+            html! {
+                form action="/" method="post" {
+                    input type="submit" value="Forgot" name="action";
+                    input type="submit" value="Hard" name="action";
+                    input type="submit" value="Good" name="action";
+                    input type="submit" value="Easy" name="action";
+                }
+            }
+        } else {
+            html! {
+                form action="/" method="post" {
+                    input type="submit" value="Reveal" name="action";
+                }
+            }
+        };
         html! {
             div.root {
                 div.card {
@@ -180,9 +201,7 @@ async fn root(State(state): State<StateContainer>) -> (StatusCode, Html<String>)
                     }
                     (card_content)
                     div.controls {
-                        form action="/" method="post" {
-                            input type="submit" value="Reveal" name="action";
-                        }
+                        (card_controls)
                     }
                 }
             }
@@ -195,7 +214,10 @@ async fn root(State(state): State<StateContainer>) -> (StatusCode, Html<String>)
 #[derive(Debug, Deserialize)]
 enum Action {
     Reveal,
-    Grade,
+    Forgot,
+    Hard,
+    Good,
+    Easy,
 }
 
 #[derive(Deserialize)]
@@ -213,7 +235,29 @@ async fn action(State(state): State<StateContainer>, Form(form): Form<FormData>)
                 state.reveal = true;
             }
         }
-        Action::Grade => {}
+        _ => {
+            if !state.reveal {
+                log::error!("Answering a card that is not revealed.");
+            } else {
+                let card = state.cards.remove(0);
+                let hash = card.hash();
+                let performance = state.db.get(hash).unwrap();
+                let grade: Grade = match form.action {
+                    Action::Forgot => Grade::Forgot,
+                    Action::Hard => Grade::Hard,
+                    Action::Good => Grade::Good,
+                    Action::Easy => Grade::Easy,
+                    _ => unreachable!(),
+                };
+                let performance = performance.update(grade, state.today);
+                state.db.update(hash, performance);
+                // Was the card forgotten? Put it at the back.
+                if grade == Grade::Forgot {
+                    state.cards.push(card);
+                }
+                state.reveal = false;
+            }
+        }
     }
     Redirect::to("/")
 }
