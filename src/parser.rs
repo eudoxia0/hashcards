@@ -159,24 +159,34 @@ fn parse_cloze_card(deck_name: String, file_path: PathBuf, text: &str) -> Vec<Ca
 
     let mut start = None;
     let mut index = 0;
+    let mut image_mode = false;
     for c in text.chars() {
         if c == '[' {
-            start = Some(index);
-        } else if c == ']' {
-            if let Some(s) = start {
-                let end = index;
-                let card = Card::new(
-                    deck_name.clone(),
-                    file_path.clone(),
-                    CardContent::Cloze {
-                        text: clean_text.clone(),
-                        start: s,
-                        end: end - 1,
-                    },
-                );
-                cards.push(card);
-                start = None;
+            if !image_mode {
+                start = Some(index);
             }
+        } else if c == ']' {
+            if image_mode {
+                // We are in image mode, so this closing bracket is part of a markdown image.
+                image_mode = false;
+            } else {
+                if let Some(s) = start {
+                    let end = index;
+                    let card = Card::new(
+                        deck_name.clone(),
+                        file_path.clone(),
+                        CardContent::Cloze {
+                            text: clean_text.clone(),
+                            start: s,
+                            end: end - 1,
+                        },
+                    );
+                    cards.push(card);
+                    start = None;
+                }
+            }
+        } else if c == '!' {
+            image_mode = true;
         } else {
             index += 1;
         }
@@ -334,5 +344,12 @@ mod tests {
             end: 7,
         };
         assert_ne!(card1.hash(), card2.hash());
+    }
+
+    #[test]
+    fn test_markdown_images_dont_parse_as_clozes() {
+        let content = "![Alt text](image.jpg) is an image.";
+        let cards = parse(content);
+        assert_eq!(cards.len(), 0);
     }
 }
