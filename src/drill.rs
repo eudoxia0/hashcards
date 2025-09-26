@@ -27,6 +27,7 @@ use crate::error::Fallible;
 use crate::error::fail;
 use crate::fsrs::Grade;
 use crate::parser::Card;
+use crate::parser::CardContent;
 use crate::parser::parse_cards;
 
 pub fn drill(directory: PathBuf, today: NaiveDate) -> Fallible<()> {
@@ -79,13 +80,13 @@ pub fn drill(directory: PathBuf, today: NaiveDate) -> Fallible<()> {
         term.clear_screen()?;
         let hash = card.hash();
         let performance = db.get(hash).unwrap();
-        match &card {
-            Card::Basic { question, answer } => {
+        match &card.content {
+            CardContent::Basic { question, answer } => {
                 term.write_line(&format!("Q: {question}"))?;
                 wait_for_keypress(&term)?;
                 term.write_line(&format!("A: {answer}"))?;
             }
-            Card::Cloze { text, start, end } => {
+            CardContent::Cloze { text, start, end } => {
                 let cloze_text = &text[*start..*end + 1];
                 let mut prompt = text.clone();
                 prompt.replace_range(*start..*end + 1, "[...]");

@@ -16,7 +16,12 @@ use blake3::Hash;
 use blake3::Hasher;
 
 #[derive(Clone)]
-pub enum Card {
+pub struct Card {
+    pub content: CardContent,
+}
+
+#[derive(Clone)]
+pub enum CardContent {
     Basic {
         question: String,
         answer: String,
@@ -33,14 +38,20 @@ pub enum Card {
 
 impl Card {
     pub fn hash(&self) -> Hash {
+        self.content.hash()
+    }
+}
+
+impl CardContent {
+    pub fn hash(&self) -> Hash {
         let mut hasher = Hasher::new();
-        match self {
-            Card::Basic { question, answer } => {
+        match &self {
+            CardContent::Basic { question, answer } => {
                 hasher.update(b"Basic");
                 hasher.update(question.as_bytes());
                 hasher.update(answer.as_bytes());
             }
-            Card::Cloze { text, start, end } => {
+            CardContent::Cloze { text, start, end } => {
                 hasher.update(b"Cloze");
                 hasher.update(text.as_bytes());
                 hasher.update(&start.to_le_bytes());
@@ -65,7 +76,10 @@ pub fn parse_cards(content: &str) -> Vec<Card> {
             let question = card_text[..separator_pos].trim().to_string();
             let answer = card_text[separator_pos + 3..].trim().to_string();
             if !question.is_empty() && !answer.is_empty() {
-                flashcards.push(Card::Basic { question, answer });
+                let card = Card {
+                    content: CardContent::Basic { question, answer },
+                };
+                flashcards.push(card);
             }
         } else if card_text.contains('[') && card_text.contains(']') {
             let clozes = parse_cloze_card(card_text);
@@ -91,11 +105,14 @@ fn parse_cloze_card(text: &str) -> Vec<Card> {
         } else if c == ']' {
             if let Some(s) = start {
                 let end = index;
-                cards.push(Card::Cloze {
-                    text: clean_text.clone(),
-                    start: s,
-                    end: end - 1,
-                });
+                let card = Card {
+                    content: CardContent::Cloze {
+                        text: clean_text.clone(),
+                        start: s,
+                        end: end - 1,
+                    },
+                };
+                cards.push(card);
                 start = None;
             }
         } else {
@@ -116,8 +133,8 @@ mod tests {
         let cards = parse_cards(content);
 
         assert_eq!(cards.len(), 1);
-        match &cards[0] {
-            Card::Basic { question, answer } => {
+        match &cards[0].content {
+            CardContent::Basic { question, answer } => {
                 assert_eq!(question, "What is the capital of France?");
                 assert_eq!(answer, "Paris");
             }
@@ -130,16 +147,16 @@ mod tests {
         let content = "[Berlin] is the capital of [Germany].";
         let cards = parse_cards(content);
         assert_eq!(cards.len(), 2);
-        match &cards[0] {
-            Card::Cloze { text, start, end } => {
+        match &cards[0].content {
+            CardContent::Cloze { text, start, end } => {
                 assert_eq!(text, "Berlin is the capital of Germany.");
                 assert_eq!(*start, 0);
                 assert_eq!(*end, 5);
             }
             _ => panic!("Expected Cloze card"),
         }
-        match &cards[1] {
-            Card::Cloze { text, start, end } => {
+        match &cards[1].content {
+            CardContent::Cloze { text, start, end } => {
                 assert_eq!(text, "Berlin is the capital of Germany.");
                 assert_eq!(*start, 25);
                 assert_eq!(*end, 31);
@@ -155,9 +172,9 @@ mod tests {
         let cards = parse_cards(content);
 
         assert_eq!(cards.len(), 3);
-        assert!(matches!(cards[0], Card::Basic { .. }));
-        assert!(matches!(cards[1], Card::Cloze { .. }));
-        assert!(matches!(cards[1], Card::Cloze { .. }));
+        assert!(matches!(cards[0].content, CardContent::Basic { .. }));
+        assert!(matches!(cards[1].content, CardContent::Cloze { .. }));
+        assert!(matches!(cards[1].content, CardContent::Cloze { .. }));
     }
 
     #[test]
@@ -166,8 +183,8 @@ mod tests {
         let cards = parse_cards(content);
 
         assert_eq!(cards.len(), 2);
-        match &cards[0] {
-            Card::Basic { question, answer } => {
+        match &cards[0].content {
+            CardContent::Basic { question, answer } => {
                 assert_eq!(question, "What is 2+2?");
                 assert_eq!(answer, "4");
             }
@@ -201,8 +218,8 @@ mod tests {
         let content = "This is not a valid card\n\nWhat is valid? / Yes\n\nAlso not valid";
         let cards = parse_cards(content);
         assert_eq!(cards.len(), 1);
-        match &cards[0] {
-            Card::Basic { question, answer } => {
+        match &cards[0].content {
+            CardContent::Basic { question, answer } => {
                 assert_eq!(question, "What is valid?");
                 assert_eq!(answer, "Yes");
             }
@@ -216,8 +233,8 @@ mod tests {
         let cards = parse_cards(content);
 
         assert_eq!(cards.len(), 1);
-        match &cards[0] {
-            Card::Basic { question, answer } => {
+        match &cards[0].content {
+            CardContent::Basic { question, answer } => {
                 assert_eq!(question, "What is\nthe capital of Russia?");
                 assert_eq!(answer, "Moscow");
             }
@@ -227,11 +244,11 @@ mod tests {
 
     #[test]
     fn test_basic_card_hash() {
-        let card1 = Card::Basic {
+        let card1 = CardContent::Basic {
             question: "What is the capital of France?".to_string(),
             answer: "Paris".to_string(),
         };
-        let card2 = Card::Basic {
+        let card2 = CardContent::Basic {
             question: "What is the capital of France?".to_string(),
             answer: "Pariz".to_string(),
         };
@@ -240,12 +257,12 @@ mod tests {
 
     #[test]
     fn test_cloze_card_hash() {
-        let card1 = Card::Cloze {
+        let card1 = CardContent::Cloze {
             text: "Berlin is the capital of Germany.".to_string(),
             start: 0,
             end: 6,
         };
-        let card2 = Card::Cloze {
+        let card2 = CardContent::Cloze {
             text: "Berlin is the capital of Germany.".to_string(),
             start: 0,
             end: 7,

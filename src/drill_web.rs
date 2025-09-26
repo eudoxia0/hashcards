@@ -23,6 +23,7 @@ use crate::db::Performance;
 use crate::error::Fallible;
 use crate::error::fail;
 use crate::parser::Card;
+use crate::parser::CardContent;
 use crate::parser::parse_cards;
 
 #[derive(Clone)]
@@ -103,8 +104,8 @@ async fn root(State(state): State<ServerState>) -> (StatusCode, Html<String>) {
         }
     } else {
         let card = cards.remove(0);
-        match &card {
-            Card::Basic { question, .. } => {
+        match &card.content {
+            CardContent::Basic { question, .. } => {
                 html! {
                     p {
                         "Q: " (question)
@@ -114,7 +115,7 @@ async fn root(State(state): State<ServerState>) -> (StatusCode, Html<String>) {
                     }
                 }
             }
-            Card::Cloze { text, start, end } => {
+            CardContent::Cloze { text, start, end } => {
                 let mut prompt = text.clone();
                 prompt.replace_range(*start..*end + 1, "[...]");
                 html! {
