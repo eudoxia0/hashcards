@@ -17,7 +17,7 @@ use std::path::PathBuf;
 use chrono::Local;
 use clap::Parser;
 
-use crate::drill::drill;
+use crate::drill::server::start_server;
 use crate::error::Fallible;
 
 #[derive(Parser)]
@@ -39,7 +39,7 @@ pub async fn entrypoint() -> Fallible<()> {
                 None => std::env::current_dir()?,
             };
             let today = Local::now().naive_local().date();
-            drill(directory, today).await
+            start_server(directory, today).await
         }
     }
 }
