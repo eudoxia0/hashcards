@@ -108,8 +108,8 @@ pub async fn start_server(directory: PathBuf, today: NaiveDate) -> Fallible<()> 
     let state = ServerState {
         today,
         db_path,
+        macros,
         mutable: Arc::new(Mutex::new(MutableState {
-            macros,
             reveal: false,
             db,
             cards: due_today,
@@ -148,7 +148,6 @@ pub async fn start_server(directory: PathBuf, today: NaiveDate) -> Fallible<()> 
 async fn script(
     State(state): State<ServerState>,
 ) -> (StatusCode, [(HeaderName, &'static str); 1], String) {
-    let state = state.mutable.lock().unwrap();
     let mut content = String::new();
     content.push_str("let MACROS = {};\n");
     for (name, definition) in &state.macros {
