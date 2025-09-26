@@ -14,7 +14,7 @@
 
 mod cli;
 mod db;
-mod drill_web;
+mod drill;
 mod error;
 mod fsrs;
 mod parser;

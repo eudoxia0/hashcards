@@ -46,7 +46,7 @@ pub struct ServerState {
     cards: Vec<Card>,
 }
 
-pub async fn drill_web(directory: PathBuf, today: NaiveDate) -> Fallible<()> {
+pub async fn drill(directory: PathBuf, today: NaiveDate) -> Fallible<()> {
     if !directory.exists() {
         return fail("directory does not exist.");
     }
