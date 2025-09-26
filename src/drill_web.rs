@@ -2,6 +2,7 @@ use std::collections::HashSet;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::Mutex;
+use std::time::Instant;
 
 use axum::Router;
 use axum::extract::State;
@@ -35,13 +36,18 @@ pub async fn drill_web(directory: PathBuf, today: NaiveDate) -> Fallible<()> {
     }
     let db_path = directory.join("performance.csv");
     let mut db = if db_path.exists() {
+        log::debug!("Loading performance database...");
         let mut reader = Reader::from_path(&db_path)?;
-        Database::from_csv(&mut reader)?
+        let db = Database::from_csv(&mut reader)?;
+        log::debug!("Database loaded.");
+        db
     } else {
+        log::debug!("Using empty performance database.");
         Database::empty()
     };
     let mut all_cards = Vec::new();
     log::debug!("Loading deck...");
+    let start = Instant::now();
     for entry in WalkDir::new(directory) {
         let entry = entry?;
         let path = entry.path();
@@ -51,7 +57,9 @@ pub async fn drill_web(directory: PathBuf, today: NaiveDate) -> Fallible<()> {
             all_cards.extend(cards);
         }
     }
-    log::debug!("Deck loaded");
+    let end = Instant::now();
+    let duration = end.duration_since(start).as_millis();
+    log::debug!("Deck loaded in {duration}ms.");
     let db_keys: HashSet<Hash> = db.keys();
     let dir_keys: HashSet<Hash> = all_cards.iter().map(|card| card.hash()).collect();
     // If a card is in the DB, but not in the directory, it was deleted. Therefore, remove it from the database.
