@@ -34,6 +34,7 @@ use chrono::NaiveDate;
 use csv::Reader;
 use maud::DOCTYPE;
 use maud::Markup;
+use maud::PreEscaped;
 use maud::html;
 use serde::Deserialize;
 use tokio::net::TcpListener;
@@ -140,16 +141,18 @@ async fn root(State(state): State<StateContainer>) -> (StatusCode, Html<String>)
         let card = state.cards[0].clone();
         let card_content: Markup = match &card.content {
             CardContent::Basic { question, answer } => {
+                let question = markdown::to_html(question);
+                let answer = markdown::to_html(answer);
                 if state.reveal {
                     html! {
                         div.question {
                             p {
-                                (question)
+                                (PreEscaped(question))
                             }
                         }
                         div.answer {
                             p {
-                                (answer)
+                                (PreEscaped(answer))
                             }
                         }
                     }
@@ -157,7 +160,7 @@ async fn root(State(state): State<StateContainer>) -> (StatusCode, Html<String>)
                     html! {
                         div.question {
                             p {
-                                (question)
+                                (PreEscaped(question))
                             }
                         }
                         div.answer {}
@@ -168,18 +171,20 @@ async fn root(State(state): State<StateContainer>) -> (StatusCode, Html<String>)
                 let cloze_text = &text[*start..*end + 1];
                 let mut prompt = text.clone();
                 prompt.replace_range(*start..*end + 1, "[...]");
+                let prompt = markdown::to_html(&prompt);
                 let mut answer = text.clone();
                 answer.replace_range(*start..*end + 1, &format!("[{cloze_text}]"));
+                let answer = markdown::to_html(&answer);
                 if state.reveal {
                     html! {
                         div.question {
                             p {
-                                (prompt)
+                                (PreEscaped(prompt))
                             }
                         }
                         div.answer {
                             p {
-                                (answer)
+                                (PreEscaped(answer))
                             }
                         }
                     }
@@ -187,7 +192,7 @@ async fn root(State(state): State<StateContainer>) -> (StatusCode, Html<String>)
                     html! {
                         div.question {
                             p {
-                                (prompt)
+                                (PreEscaped(prompt))
                             }
                         }
                         div.answer {}
