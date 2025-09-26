@@ -23,9 +23,9 @@ use crate::hash::Hasher;
 #[derive(Clone)]
 pub struct Card {
     /// The name of the deck this card belongs to.
-    pub deck_name: String,
+    deck_name: String,
     /// The card's content.
-    pub content: CardContent,
+    content: CardContent,
 }
 
 #[derive(Clone)]
@@ -45,6 +45,14 @@ pub enum CardContent {
 }
 
 impl Card {
+    pub fn deck_name(&self) -> &str {
+        &self.deck_name
+    }
+
+    pub fn content(&self) -> &CardContent {
+        &self.content
+    }
+
     pub fn hash(&self) -> Hash {
         self.content.hash()
     }

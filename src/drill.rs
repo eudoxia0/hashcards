@@ -216,7 +216,7 @@ fn render_page(state: ServerState, action: Option<Action>) -> (StatusCode, Html<
         }
     } else {
         let card = mutable.cards[0].clone();
-        let card_content: Markup = match &card.content {
+        let card_content: Markup = match card.content() {
             CardContent::Basic { question, answer } => {
                 let question = markdown::to_html(question);
                 let answer = markdown::to_html(answer);
@@ -298,7 +298,7 @@ fn render_page(state: ServerState, action: Option<Action>) -> (StatusCode, Html<
                 div.card {
                     div.deck {
                         h1 {
-                            (card.deck_name)
+                            (card.deck_name())
                         }
                     }
                     (card_content)
