@@ -17,7 +17,6 @@ use std::collections::HashSet;
 use std::io::Read;
 use std::io::Write;
 
-use blake3::Hash;
 use chrono::NaiveDate;
 use csv::Reader;
 use csv::Writer;
@@ -35,6 +34,7 @@ use crate::fsrs::new_difficulty;
 use crate::fsrs::new_stability;
 use crate::fsrs::retrievability;
 use crate::fsrs::s_0;
+use crate::hash::Hash;
 
 const TARGET_RECALL: f64 = 0.9;
 
@@ -110,8 +110,7 @@ impl DatabaseRow {
             (None, None, None, None) => Ok(Performance::New),
             _ => fail("broken performance database"),
         };
-        let hash = Hash::from_hex(&self.hash)
-            .map_err(|_| ErrorReport::new("invalid hash in performance database"))?;
+        let hash = Hash::from_hex(&self.hash)?;
         Ok((hash, performance?))
     }
 }
@@ -169,10 +168,10 @@ impl Database {
         writer.write_record(["hash", "last_review", "stability", "difficulty", "due_date"])?;
 
         // Write the cards in a predictable order: smaller hashes to bigger ones.
-        let mut sorted: Vec<Hash> = self.inner.keys().cloned().collect();
-        sorted.sort_by_key(|h| h.as_bytes().to_owned());
+        let mut sorted_hashes: Vec<Hash> = self.inner.keys().cloned().collect();
+        sorted_hashes.sort();
 
-        for hash in sorted {
+        for hash in sorted_hashes {
             let performance = self.inner.get(&hash).unwrap();
             match performance {
                 Performance::New => {
@@ -214,9 +213,9 @@ mod tests {
     fn test_write_read_db() -> Fallible<()> {
         // Create the database.
         let mut db = Database::empty();
-        let a_hash = blake3::hash(b"a");
+        let a_hash = Hash::hash(b"a");
         let a_perf = Performance::New;
-        let b_hash = blake3::hash(b"b");
+        let b_hash = Hash::hash(b"b");
         let b_perf = Performance::Reviewed {
             last_review: date(2025, 1, 1)?,
             stability: 2.5,

@@ -17,6 +17,7 @@ mod db;
 mod drill;
 mod error;
 mod fsrs;
+mod hash;
 mod parser;
 
 use std::process::ExitCode;

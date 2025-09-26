@@ -14,11 +14,11 @@
 
 use std::path::PathBuf;
 
-use blake3::Hash;
-use blake3::Hasher;
 use walkdir::WalkDir;
 
 use crate::error::Fallible;
+use crate::hash::Hash;
+use crate::hash::Hasher;
 
 #[derive(Clone)]
 pub struct Card {
