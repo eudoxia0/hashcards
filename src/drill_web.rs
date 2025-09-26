@@ -93,24 +93,20 @@ pub async fn drill_web(directory: PathBuf, today: NaiveDate) -> Fallible<()> {
 }
 
 async fn root(State(state): State<ServerState>) -> (StatusCode, Html<String>) {
-    let mut cards = state.cards.lock().unwrap();
+    let cards = state.cards.lock().unwrap();
     let body = if cards.is_empty() {
         html! {
             p { "Finished!" }
         }
     } else {
-        let card = cards.remove(0);
-        match &card.content {
+        let card = cards[0].clone();
+        let card_content = match &card.content {
             CardContent::Basic { question, .. } => {
                 html! {
-                    h1 {
-                        (card.deck_name)
-                    }
-                    p {
-                        "Q: " (question)
-                    }
-                    button {
-                        "Reveal"
+                    div.question {
+                        p {
+                            (question)
+                        }
                     }
                 }
             }
@@ -118,14 +114,27 @@ async fn root(State(state): State<ServerState>) -> (StatusCode, Html<String>) {
                 let mut prompt = text.clone();
                 prompt.replace_range(*start..*end + 1, "[...]");
                 html! {
-                    h1 {
-                        (card.deck_name)
+                    div.prompt {
+                        p {
+                            (prompt)
+                        }
                     }
-                    p {
-                        "Q: " (prompt)
+                }
+            }
+        };
+        html! {
+            div.root {
+                div.card {
+                    div.deck {
+                        h1 {
+                            (card.deck_name)
+                        }
                     }
-                    button {
-                        "Reveal"
+                    (card_content)
+                    div.controls {
+                        form action="/reveal" method="post" {
+                            input type="submit" value="Reveal";
+                        }
                     }
                 }
             }
