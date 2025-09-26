@@ -12,8 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::path::PathBuf;
+
 use blake3::Hash;
 use blake3::Hasher;
+use walkdir::WalkDir;
+
+use crate::error::Fallible;
 
 #[derive(Clone)]
 pub struct Card {
@@ -65,7 +70,26 @@ impl CardContent {
     }
 }
 
-pub fn parse_cards(deck_name: String, content: &str) -> Vec<Card> {
+pub fn parse_deck(directory: PathBuf) -> Fallible<Vec<Card>> {
+    let mut all_cards = Vec::new();
+    for entry in WalkDir::new(directory) {
+        let entry = entry?;
+        let path = entry.path();
+        if path.is_file() && path.extension().is_some_and(|ext| ext == "md") {
+            let contents = std::fs::read_to_string(path)?;
+            let deck_name: String = path
+                .file_stem()
+                .and_then(|os_str| os_str.to_str())
+                .unwrap_or("None")
+                .to_string();
+            let cards = parse_cards(deck_name, &contents);
+            all_cards.extend(cards);
+        }
+    }
+    Ok(all_cards)
+}
+
+fn parse_cards(deck_name: String, content: &str) -> Vec<Card> {
     let mut flashcards = Vec::new();
 
     let cards: Vec<&str> = content

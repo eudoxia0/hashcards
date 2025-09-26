@@ -16,7 +16,6 @@ use maud::DOCTYPE;
 use maud::Markup;
 use maud::html;
 use tokio::net::TcpListener;
-use walkdir::WalkDir;
 
 use crate::db::Database;
 use crate::db::Performance;
@@ -24,7 +23,7 @@ use crate::error::Fallible;
 use crate::error::fail;
 use crate::parser::Card;
 use crate::parser::CardContent;
-use crate::parser::parse_cards;
+use crate::parser::parse_deck;
 
 #[derive(Clone)]
 pub struct ServerState {
@@ -46,23 +45,9 @@ pub async fn drill_web(directory: PathBuf, today: NaiveDate) -> Fallible<()> {
         log::debug!("Using empty performance database.");
         Database::empty()
     };
-    let mut all_cards = Vec::new();
     log::debug!("Loading deck...");
     let start = Instant::now();
-    for entry in WalkDir::new(directory) {
-        let entry = entry?;
-        let path = entry.path();
-        if path.is_file() && path.extension().is_some_and(|ext| ext == "md") {
-            let contents = std::fs::read_to_string(path)?;
-            let deck_name: String = path
-                .file_stem()
-                .and_then(|os_str| os_str.to_str())
-                .unwrap_or("None")
-                .to_string();
-            let cards = parse_cards(deck_name, &contents);
-            all_cards.extend(cards);
-        }
-    }
+    let all_cards = parse_deck(directory)?;
     let end = Instant::now();
     let duration = end.duration_since(start).as_millis();
     log::debug!("Deck loaded in {duration}ms.");

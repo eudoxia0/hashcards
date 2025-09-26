@@ -14,12 +14,12 @@
 
 use std::collections::HashSet;
 use std::path::PathBuf;
+use std::time::Instant;
 
 use blake3::Hash;
 use chrono::NaiveDate;
 use console::Term;
 use csv::Reader;
-use walkdir::WalkDir;
 
 use crate::db::Database;
 use crate::db::Performance;
@@ -28,7 +28,7 @@ use crate::error::fail;
 use crate::fsrs::Grade;
 use crate::parser::Card;
 use crate::parser::CardContent;
-use crate::parser::parse_cards;
+use crate::parser::parse_deck;
 
 pub fn drill(directory: PathBuf, today: NaiveDate) -> Fallible<()> {
     let term = Term::stdout();
@@ -42,21 +42,12 @@ pub fn drill(directory: PathBuf, today: NaiveDate) -> Fallible<()> {
     } else {
         Database::empty()
     };
-    let mut all_cards = Vec::new();
-    for entry in WalkDir::new(directory) {
-        let entry = entry?;
-        let path = entry.path();
-        if path.is_file() && path.extension().is_some_and(|ext| ext == "md") {
-            let contents = std::fs::read_to_string(path)?;
-            let deck_name: String = path
-                .file_stem()
-                .and_then(|os_str| os_str.to_str())
-                .unwrap_or("None")
-                .to_string();
-            let cards = parse_cards(deck_name, &contents);
-            all_cards.extend(cards);
-        }
-    }
+    log::debug!("Loading deck...");
+    let start = Instant::now();
+    let all_cards = parse_deck(directory)?;
+    let end = Instant::now();
+    let duration = end.duration_since(start).as_millis();
+    log::debug!("Deck loaded in {duration}ms.");
     let db_keys: HashSet<Hash> = db.keys();
     let dir_keys: HashSet<Hash> = all_cards.iter().map(|card| card.hash()).collect();
     // If a card is in the DB, but not in the directory, it was deleted. Therefore, remove it from the database.
