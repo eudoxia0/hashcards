@@ -49,11 +49,11 @@ use crate::parser::CardContent;
 use crate::parser::parse_deck;
 
 #[derive(Clone)]
-pub struct StateContainer {
-    inner: Arc<Mutex<ServerState>>,
+pub struct ServerState {
+    mutable: Arc<Mutex<MutableState>>,
 }
 
-pub struct ServerState {
+pub struct MutableState {
     macros: Vec<(String, String)>,
     db_path: PathBuf,
     today: NaiveDate,
@@ -121,8 +121,8 @@ pub async fn drill(directory: PathBuf, today: NaiveDate) -> Fallible<()> {
         return Ok(());
     }
 
-    let state = StateContainer {
-        inner: Arc::new(Mutex::new(ServerState {
+    let state = ServerState {
+        mutable: Arc::new(Mutex::new(MutableState {
             macros,
             db_path,
             today,
@@ -145,8 +145,8 @@ pub async fn drill(directory: PathBuf, today: NaiveDate) -> Fallible<()> {
     todo!()
 }
 
-async fn root(State(state): State<StateContainer>) -> (StatusCode, Html<String>) {
-    let state = state.inner.lock().unwrap();
+async fn root(State(state): State<ServerState>) -> (StatusCode, Html<String>) {
+    let state = state.mutable.lock().unwrap();
     let html = render_page(state);
     (StatusCode::OK, Html(html.into_string()))
 }
@@ -166,10 +166,10 @@ struct FormData {
 }
 
 async fn action(
-    State(state): State<StateContainer>,
+    State(state): State<ServerState>,
     Form(form): Form<FormData>,
 ) -> (StatusCode, Html<String>) {
-    let mut state = state.inner.lock().unwrap();
+    let mut state = state.mutable.lock().unwrap();
     match form.action {
         Action::Reveal => {
             if state.reveal {
@@ -206,7 +206,7 @@ async fn action(
     (StatusCode::OK, Html(html.into_string()))
 }
 
-fn render_page(state: MutexGuard<'_, ServerState>) -> Markup {
+fn render_page(state: MutexGuard<'_, MutableState>) -> Markup {
     let body = if state.cards.is_empty() {
         let mut writer = csv::Writer::from_path(&state.db_path).unwrap();
         log::debug!("Writing performance database");
@@ -334,9 +334,9 @@ fn page_template(body: Markup) -> Markup {
 }
 
 async fn script(
-    State(state): State<StateContainer>,
+    State(state): State<ServerState>,
 ) -> (StatusCode, [(HeaderName, &'static str); 1], String) {
-    let state = state.inner.lock().unwrap();
+    let state = state.mutable.lock().unwrap();
     let mut content = String::new();
     content.push_str("let MACROS = {};\n");
     for (name, definition) in &state.macros {
