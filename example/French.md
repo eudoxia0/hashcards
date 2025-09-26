@@ -1,0 +1,2 @@
+English: [fire]
+French: [feu]
