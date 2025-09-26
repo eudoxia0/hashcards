@@ -37,7 +37,8 @@ pub async fn entrypoint() -> Fallible<()> {
             let directory: PathBuf = match directory {
                 Some(dir) => PathBuf::from(dir),
                 None => std::env::current_dir()?,
-            };
+            }
+            .canonicalize()?;
             let today = Local::now().naive_local().date();
             start_server(directory, today).await
         }
