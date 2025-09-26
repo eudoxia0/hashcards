@@ -116,6 +116,7 @@ async fn root(State(state): State<StateContainer>) -> (StatusCode, Html<String>)
     let state = state.inner.lock().unwrap();
     let body = if state.cards.is_empty() {
         let mut writer = csv::Writer::from_path(&state.db_path).unwrap();
+        log::debug!("Writing performance database");
         state.db.to_csv(&mut writer).unwrap();
         html! {
             p { "Finished!" }
