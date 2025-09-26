@@ -33,8 +33,12 @@ use crate::parser::CardContent;
 use crate::parser::parse_deck;
 
 #[derive(Clone)]
+pub struct StateContainer {
+    inner: Arc<Mutex<ServerState>>,
+}
+
 pub struct ServerState {
-    cards: Arc<Mutex<Vec<Card>>>,
+    cards: Vec<Card>,
 }
 
 pub async fn drill_web(directory: PathBuf, today: NaiveDate) -> Fallible<()> {
@@ -81,8 +85,8 @@ pub async fn drill_web(directory: PathBuf, today: NaiveDate) -> Fallible<()> {
         return Ok(());
     }
 
-    let state = ServerState {
-        cards: Arc::new(Mutex::new(due_today)),
+    let state = StateContainer {
+        inner: Arc::new(Mutex::new(ServerState { cards: due_today })),
     };
     let app = Router::new();
     let app = app.route("/", get(root));
@@ -97,14 +101,14 @@ pub async fn drill_web(directory: PathBuf, today: NaiveDate) -> Fallible<()> {
     todo!()
 }
 
-async fn root(State(state): State<ServerState>) -> (StatusCode, Html<String>) {
-    let cards = state.cards.lock().unwrap();
-    let body = if cards.is_empty() {
+async fn root(State(state): State<StateContainer>) -> (StatusCode, Html<String>) {
+    let state = state.inner.lock().unwrap();
+    let body = if state.cards.is_empty() {
         html! {
             p { "Finished!" }
         }
     } else {
-        let card = cards[0].clone();
+        let card = state.cards[0].clone();
         let card_content = match &card.content {
             CardContent::Basic { question, .. } => {
                 html! {
@@ -160,7 +164,7 @@ struct FormData {
     action: Action,
 }
 
-async fn action(State(state): State<ServerState>, Form(form): Form<FormData>) -> Redirect {
+async fn action(State(state): State<StateContainer>, Form(form): Form<FormData>) -> Redirect {
     match form.action {
         Action::Reveal => {}
         Action::Grade => {}
