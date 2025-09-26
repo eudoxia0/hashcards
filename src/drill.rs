@@ -171,7 +171,7 @@ async fn root(State(state): State<StateContainer>) -> (StatusCode, Html<String>)
                 answer.replace_range(*start..*end + 1, &format!("[{cloze_text}]"));
                 if state.reveal {
                     html! {
-                        div.prompt {
+                        div.question {
                             p {
                                 (prompt)
                             }
@@ -184,7 +184,7 @@ async fn root(State(state): State<StateContainer>) -> (StatusCode, Html<String>)
                     }
                 } else {
                     html! {
-                        div.prompt {
+                        div.question {
                             p {
                                 (prompt)
                             }
