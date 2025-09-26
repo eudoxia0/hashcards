@@ -36,12 +36,14 @@ body {
 .deck,
 .question,
 .answer,
+.prompt,
 .controls {
     padding: 32px;
 }
 
 .deck,
 .question,
+.prompt,
 .answer {
     border-bottom: 1px solid #bbb;
 }
@@ -56,6 +58,12 @@ body {
     font-size: 30px;
     width: 900px;
     height: 250px;
+}
+
+.prompt {
+    font-size: 30px;
+    width: 900px;
+    height: 500px;
 }
 
 .controls form {

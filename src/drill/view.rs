@@ -127,34 +127,29 @@ fn render_page(state: ServerState, action: Option<Action>) -> (StatusCode, Html<
                 }
             }
             CardContent::Cloze { text, start, end } => {
-                let cloze_text = &text[*start..*end + 1];
-                let mut prompt = text.clone();
-                prompt.replace_range(*start..*end + 1, "[.............](cloze)");
-                let prompt = markdown::to_html(&prompt);
-                let mut answer = text.clone();
-                answer.replace_range(*start..*end + 1, &format!("[{cloze_text}](cloze_reveal)"));
-                let answer = markdown::to_html(&answer);
                 if mutable.reveal {
+                    let cloze_text = &text[*start..*end + 1];
+                    let mut answer = text.clone();
+                    answer
+                        .replace_range(*start..*end + 1, &format!("[{cloze_text}](cloze_reveal)"));
+                    let answer = markdown::to_html(&answer);
                     html! {
-                        div.question {
-                            p {
-                                (PreEscaped(prompt))
-                            }
-                        }
-                        div.answer {
+                        div.prompt {
                             p {
                                 (PreEscaped(answer))
                             }
                         }
                     }
                 } else {
+                    let mut prompt = text.clone();
+                    prompt.replace_range(*start..*end + 1, "[.............](cloze)");
+                    let prompt = markdown::to_html(&prompt);
                     html! {
-                        div.question {
+                        div.prompt {
                             p {
                                 (PreEscaped(prompt))
                             }
                         }
-                        div.answer {}
                     }
                 }
             }
