@@ -107,9 +107,9 @@ pub async fn start_server(directory: PathBuf, today: NaiveDate) -> Fallible<()> 
 
     let state = ServerState {
         today,
+        db_path,
         mutable: Arc::new(Mutex::new(MutableState {
             macros,
-            db_path,
             reveal: false,
             db,
             cards: due_today,

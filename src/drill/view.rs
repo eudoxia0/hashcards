@@ -90,7 +90,7 @@ fn render_page(state: ServerState, action: Option<Action>) -> (StatusCode, Html<
     }
 
     let body = if mutable.cards.is_empty() {
-        let mut writer = csv::Writer::from_path(&mutable.db_path).unwrap();
+        let mut writer = csv::Writer::from_path(&state.db_path).unwrap();
         log::debug!("Writing performance database");
         mutable.db.to_csv(&mut writer).unwrap();
         html! {
