@@ -73,3 +73,19 @@ input {
     font-family: "Times New Roman", "Times", serif;
     cursor: pointer;
 }
+
+a[href="cloze"] {
+    background: #a0a0a0;
+    color: transparent;
+    text-decoration: none;
+    border-radius: 8px;
+    pointer-events: none;
+    cursor: text;
+}
+
+a[href="cloze_reveal"] {
+    color: royalblue;
+    text-decoration: none;
+    pointer-events: none;
+    cursor: text;
+}

@@ -170,10 +170,10 @@ async fn root(State(state): State<StateContainer>) -> (StatusCode, Html<String>)
             CardContent::Cloze { text, start, end } => {
                 let cloze_text = &text[*start..*end + 1];
                 let mut prompt = text.clone();
-                prompt.replace_range(*start..*end + 1, "[...]");
+                prompt.replace_range(*start..*end + 1, "[.............](cloze)");
                 let prompt = markdown::to_html(&prompt);
                 let mut answer = text.clone();
-                answer.replace_range(*start..*end + 1, &format!("[{cloze_text}]"));
+                answer.replace_range(*start..*end + 1, &format!("[{cloze_text}](cloze_reveal)"));
                 let answer = markdown::to_html(&answer);
                 if state.reveal {
                     html! {
