@@ -113,24 +113,59 @@ async fn root(State(state): State<StateContainer>) -> (StatusCode, Html<String>)
         }
     } else {
         let card = state.cards[0].clone();
-        let card_content = match &card.content {
-            CardContent::Basic { question, .. } => {
-                html! {
-                    div.question {
-                        p {
-                            (question)
+        let card_content: Markup = match &card.content {
+            CardContent::Basic { question, answer } => {
+                if state.reveal {
+                    html! {
+                        div.question {
+                            p {
+                                (question)
+                            }
                         }
+                        div.answer {
+                            p {
+                                (answer)
+                            }
+                        }
+                    }
+                } else {
+                    html! {
+                        div.question {
+                            p {
+                                (question)
+                            }
+                        }
+                        div.answer {}
                     }
                 }
             }
             CardContent::Cloze { text, start, end } => {
+                let cloze_text = &text[*start..*end + 1];
                 let mut prompt = text.clone();
                 prompt.replace_range(*start..*end + 1, "[...]");
-                html! {
-                    div.prompt {
-                        p {
-                            (prompt)
+                let mut answer = text.clone();
+                answer.replace_range(*start..*end + 1, &format!("[{cloze_text}]"));
+                if state.reveal {
+                    html! {
+                        div.prompt {
+                            p {
+                                (prompt)
+                            }
                         }
+                        div.answer {
+                            p {
+                                (answer)
+                            }
+                        }
+                    }
+                } else {
+                    html! {
+                        div.prompt {
+                            p {
+                                (prompt)
+                            }
+                        }
+                        div.answer {}
                     }
                 }
             }
