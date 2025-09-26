@@ -39,6 +39,7 @@ pub struct StateContainer {
 }
 
 pub struct ServerState {
+    db_path: PathBuf,
     today: NaiveDate,
     reveal: bool,
     db: Database,
@@ -91,6 +92,7 @@ pub async fn drill_web(directory: PathBuf, today: NaiveDate) -> Fallible<()> {
 
     let state = StateContainer {
         inner: Arc::new(Mutex::new(ServerState {
+            db_path,
             today,
             reveal: false,
             db,
@@ -113,6 +115,8 @@ pub async fn drill_web(directory: PathBuf, today: NaiveDate) -> Fallible<()> {
 async fn root(State(state): State<StateContainer>) -> (StatusCode, Html<String>) {
     let state = state.inner.lock().unwrap();
     let body = if state.cards.is_empty() {
+        let mut writer = csv::Writer::from_path(&state.db_path).unwrap();
+        state.db.to_csv(&mut writer).unwrap();
         html! {
             p { "Finished!" }
         }
