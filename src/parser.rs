@@ -92,7 +92,7 @@ pub fn parse_deck(directory: PathBuf) -> Fallible<Vec<Card>> {
     // both the debugging benefits of determinism, and the learning benefits of
     // randomization (mixing cards from different decks) without needing an
     // RNG.
-    // TODO
+    all_cards.sort_by_key(|c| c.hash());
 
     Ok(all_cards)
 }
