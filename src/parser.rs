@@ -26,6 +26,8 @@ pub struct Card {
     deck_name: String,
     /// The card's content.
     content: CardContent,
+    /// The cached hash of the card's content.
+    hash: Hash,
 }
 
 #[derive(Clone)]
@@ -45,6 +47,15 @@ pub enum CardContent {
 }
 
 impl Card {
+    fn new(deck_name: String, content: CardContent) -> Self {
+        let hash = content.hash();
+        Self {
+            deck_name,
+            content,
+            hash,
+        }
+    }
+
     pub fn deck_name(&self) -> &str {
         &self.deck_name
     }
@@ -54,7 +65,7 @@ impl Card {
     }
 
     pub fn hash(&self) -> Hash {
-        self.content.hash()
+        self.hash
     }
 }
 
@@ -119,10 +130,7 @@ fn parse_cards(deck_name: String, content: &str) -> Vec<Card> {
             let question = card_text[..separator_pos].trim().to_string();
             let answer = card_text[separator_pos + 3..].trim().to_string();
             if !question.is_empty() && !answer.is_empty() {
-                let card = Card {
-                    deck_name: deck_name.clone(),
-                    content: CardContent::Basic { question, answer },
-                };
+                let card = Card::new(deck_name.clone(), CardContent::Basic { question, answer });
                 flashcards.push(card);
             }
         } else if card_text.contains('[') && card_text.contains(']') {
@@ -149,14 +157,14 @@ fn parse_cloze_card(deck_name: String, text: &str) -> Vec<Card> {
         } else if c == ']' {
             if let Some(s) = start {
                 let end = index;
-                let card = Card {
-                    deck_name: deck_name.clone(),
-                    content: CardContent::Cloze {
+                let card = Card::new(
+                    deck_name.clone(),
+                    CardContent::Cloze {
                         text: clean_text.clone(),
                         start: s,
                         end: end - 1,
                     },
-                };
+                );
                 cards.push(card);
                 start = None;
             }
