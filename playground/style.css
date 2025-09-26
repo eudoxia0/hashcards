@@ -58,6 +58,12 @@ body {
     height: 250px;
 }
 
+.controls form {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
 input {
     border: 1px solid black;
     padding: 16px;
