@@ -81,7 +81,9 @@ pub async fn drill_web(directory: PathBuf, today: NaiveDate) -> Fallible<()> {
     let app = app.route("/", get(root));
     let app = app.fallback(not_found_handler);
     let app = app.with_state(state);
-    let listener = TcpListener::bind("0.0.0.0:8000").await?;
+    let bind = "0.0.0.0:8000";
+    log::debug!("Starting server on {bind}");
+    let listener = TcpListener::bind(bind).await?;
     axum::serve(listener, app).await?;
     todo!()
 }
