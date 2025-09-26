@@ -198,16 +198,16 @@ async fn root(State(state): State<StateContainer>) -> (StatusCode, Html<String>)
         let card_controls = if state.reveal {
             html! {
                 form action="/" method="post" {
-                    input id="forgot" type="submit" value="Forgot" name="action";
-                    input id="hard" type="submit" value="Hard" name="action";
-                    input id="good" type="submit" value="Good" name="action";
-                    input id="easy" type="submit" value="Easy" name="action";
+                    input id="forgot" type="submit" name="action" value="Forgot";
+                    input id="hard" type="submit" name="action" value="Hard";
+                    input id="good" type="submit" name="action" value="Good";
+                    input id="easy" type="submit" name="action" value="Easy";
                 }
             }
         } else {
             html! {
                 form action="/" method="post" {
-                    input id="reveal" type="submit" value="Reveal" name="action";
+                    input id="reveal" type="submit" name="action" value="Reveal";
                 }
             }
         };
