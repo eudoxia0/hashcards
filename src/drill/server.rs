@@ -118,7 +118,6 @@ pub async fn start_server(directory: PathBuf, today: NaiveDate) -> Fallible<()> 
     let app = Router::new();
     let app = app.route("/", get(root));
     let app = app.route("/", post(action));
-    let app = app.route("/health", get(health));
     let app = app.route("/script.js", get(script));
     let app = app.route("/style.css", get(stylesheet));
     let app = app.fallback(not_found_handler);
@@ -174,8 +173,4 @@ async fn stylesheet() -> (StatusCode, [(HeaderName, &'static str); 2], &'static 
 
 async fn not_found_handler() -> (StatusCode, Html<String>) {
     (StatusCode::OK, Html("Not Found".to_string()))
-}
-
-async fn health() -> (StatusCode, &'static str) {
-    (StatusCode::OK, "OK")
 }
