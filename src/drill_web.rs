@@ -112,6 +112,9 @@ async fn root(State(state): State<ServerState>) -> (StatusCode, Html<String>) {
         match &card.content {
             CardContent::Basic { question, .. } => {
                 html! {
+                    h1 {
+                        (card.deck_name)
+                    }
                     p {
                         "Q: " (question)
                     }
@@ -124,6 +127,9 @@ async fn root(State(state): State<ServerState>) -> (StatusCode, Html<String>) {
                 let mut prompt = text.clone();
                 prompt.replace_range(*start..*end + 1, "[...]");
                 html! {
+                    h1 {
+                        (card.deck_name)
+                    }
                     p {
                         "Q: " (prompt)
                     }
