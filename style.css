@@ -9,3 +9,26 @@
 *::after {
     box-sizing: border-box;
 }
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+body {
+    background: #eee;
+}
+
+.root {
+    background: white;
+    padding: 64px;
+    border: 1px solid black;
+}
