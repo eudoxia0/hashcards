@@ -4,6 +4,7 @@ use std::sync::Arc;
 use std::sync::Mutex;
 use std::time::Instant;
 
+use axum::Form;
 use axum::Router;
 use axum::extract::State;
 use axum::http::HeaderName;
@@ -11,13 +12,16 @@ use axum::http::StatusCode;
 use axum::http::header::CACHE_CONTROL;
 use axum::http::header::CONTENT_TYPE;
 use axum::response::Html;
+use axum::response::Redirect;
 use axum::routing::get;
+use axum::routing::post;
 use blake3::Hash;
 use chrono::NaiveDate;
 use csv::Reader;
 use maud::DOCTYPE;
 use maud::Markup;
 use maud::html;
+use serde::Deserialize;
 use tokio::net::TcpListener;
 
 use crate::db::Database;
@@ -82,6 +86,7 @@ pub async fn drill_web(directory: PathBuf, today: NaiveDate) -> Fallible<()> {
     };
     let app = Router::new();
     let app = app.route("/", get(root));
+    let app = app.route("/", post(action));
     let app = app.route("/style.css", get(stylesheet));
     let app = app.fallback(not_found_handler);
     let app = app.with_state(state);
@@ -132,8 +137,8 @@ async fn root(State(state): State<ServerState>) -> (StatusCode, Html<String>) {
                     }
                     (card_content)
                     div.controls {
-                        form action="/reveal" method="post" {
-                            input type="submit" value="Reveal";
+                        form action="/" method="post" {
+                            input type="submit" value="Reveal" name="action";
                         }
                     }
                 }
@@ -142,6 +147,25 @@ async fn root(State(state): State<ServerState>) -> (StatusCode, Html<String>) {
     };
     let html = page_template(body);
     (StatusCode::OK, Html(html.into_string()))
+}
+
+#[derive(Debug, Deserialize)]
+enum Action {
+    Reveal,
+    Grade,
+}
+
+#[derive(Deserialize)]
+struct FormData {
+    action: Action,
+}
+
+async fn action(State(state): State<ServerState>, Form(form): Form<FormData>) -> Redirect {
+    match form.action {
+        Action::Reveal => {}
+        Action::Grade => {}
+    }
+    Redirect::to("/")
 }
 
 fn page_template(body: Markup) -> Markup {
