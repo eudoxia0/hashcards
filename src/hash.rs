@@ -26,7 +26,7 @@ pub struct Hash {
 
 impl Hash {
     #[cfg(test)]
-    pub fn hash(bytes: &[u8]) -> Self {
+    pub fn hash_bytes(bytes: &[u8]) -> Self {
         Self {
             inner: blake3::hash(bytes),
         }

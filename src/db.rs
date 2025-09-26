@@ -213,9 +213,9 @@ mod tests {
     fn test_write_read_db() -> Fallible<()> {
         // Create the database.
         let mut db = Database::empty();
-        let a_hash = Hash::hash(b"a");
+        let a_hash = Hash::hash_bytes(b"a");
         let a_perf = Performance::New;
-        let b_hash = Hash::hash(b"b");
+        let b_hash = Hash::hash_bytes(b"b");
         let b_perf = Performance::Reviewed {
             last_review: date(2025, 1, 1)?,
             stability: 2.5,
