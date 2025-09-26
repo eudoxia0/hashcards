@@ -26,7 +26,7 @@ use crate::drill::template::page_template;
 use crate::fsrs::Grade;
 use crate::parser::CardContent;
 
-pub async fn root(State(state): State<ServerState>) -> (StatusCode, Html<String>) {
+pub async fn get_handler(State(state): State<ServerState>) -> (StatusCode, Html<String>) {
     render_page(state, None)
 }
 
@@ -44,7 +44,7 @@ pub struct FormData {
     action: Action,
 }
 
-pub async fn action(
+pub async fn post_handler(
     State(state): State<ServerState>,
     Form(form): Form<FormData>,
 ) -> (StatusCode, Html<String>) {

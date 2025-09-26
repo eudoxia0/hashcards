@@ -38,8 +38,8 @@ use crate::db::Database;
 use crate::db::Performance;
 use crate::drill::state::MutableState;
 use crate::drill::state::ServerState;
-use crate::drill::view::action;
-use crate::drill::view::root;
+use crate::drill::view::get_handler;
+use crate::drill::view::post_handler;
 use crate::error::Fallible;
 use crate::error::fail;
 use crate::hash::Hash;
@@ -116,10 +116,10 @@ pub async fn start_server(directory: PathBuf, today: NaiveDate) -> Fallible<()> 
         })),
     };
     let app = Router::new();
-    let app = app.route("/", get(root));
-    let app = app.route("/", post(action));
-    let app = app.route("/script.js", get(script));
-    let app = app.route("/style.css", get(stylesheet));
+    let app = app.route("/", get(get_handler));
+    let app = app.route("/", post(post_handler));
+    let app = app.route("/script.js", get(script_handler));
+    let app = app.route("/style.css", get(style_handler));
     let app = app.fallback(not_found_handler);
     let app = app.with_state(state);
     let bind = "0.0.0.0:8000";
@@ -144,7 +144,7 @@ pub async fn start_server(directory: PathBuf, today: NaiveDate) -> Fallible<()> 
     Ok(())
 }
 
-async fn script(
+async fn script_handler(
     State(state): State<ServerState>,
 ) -> (StatusCode, [(HeaderName, &'static str); 1], String) {
     let mut content = String::new();
@@ -159,7 +159,7 @@ async fn script(
     (StatusCode::OK, [(CONTENT_TYPE, "text/javascript")], content)
 }
 
-async fn stylesheet() -> (StatusCode, [(HeaderName, &'static str); 2], &'static [u8]) {
+async fn style_handler() -> (StatusCode, [(HeaderName, &'static str); 2], &'static [u8]) {
     let bytes = include_bytes!("style.css");
     (
         StatusCode::OK,
