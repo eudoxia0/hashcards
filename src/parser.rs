@@ -25,6 +25,7 @@ pub struct Card {
     /// The name of the deck this card belongs to.
     deck_name: String,
     /// The absolute path to the file this card was parsed from.
+    #[allow(dead_code)]
     file_path: PathBuf,
     /// The card's content.
     content: CardContent,
