@@ -21,7 +21,6 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-
     font-family: "Times New Roman", "Times", serif;
 }
 
@@ -49,11 +48,14 @@ body {
 
 .deck h1 {
     font-size: 36px;
+    font-weight: 300;
 }
 
 .question,
 .answer {
     font-size: 30px;
+    width: 900px;
+    height: 250px;
 }
 
 input {
@@ -61,5 +63,5 @@ input {
     padding: 16px;
     background: white;
     font-size: 24px;
-    font-family: "Times New Roman", sans-serif;
+    font-family: "Times New Roman", "Times", serif;
 }
