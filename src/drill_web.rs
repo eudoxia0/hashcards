@@ -38,6 +38,7 @@ pub struct StateContainer {
 }
 
 pub struct ServerState {
+    reveal: bool,
     cards: Vec<Card>,
 }
 
@@ -86,7 +87,10 @@ pub async fn drill_web(directory: PathBuf, today: NaiveDate) -> Fallible<()> {
     }
 
     let state = StateContainer {
-        inner: Arc::new(Mutex::new(ServerState { cards: due_today })),
+        inner: Arc::new(Mutex::new(ServerState {
+            reveal: false,
+            cards: due_today,
+        })),
     };
     let app = Router::new();
     let app = app.route("/", get(root));
@@ -165,8 +169,15 @@ struct FormData {
 }
 
 async fn action(State(state): State<StateContainer>, Form(form): Form<FormData>) -> Redirect {
+    let mut state = state.inner.lock().unwrap();
     match form.action {
-        Action::Reveal => {}
+        Action::Reveal => {
+            if state.reveal {
+                log::error!("Revealing a card that is already revealed.");
+            } else {
+                state.reveal = true;
+            }
+        }
         Action::Grade => {}
     }
     Redirect::to("/")
