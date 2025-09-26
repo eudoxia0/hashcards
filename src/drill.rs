@@ -16,7 +16,6 @@ use std::collections::HashSet;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::Mutex;
-use std::sync::MutexGuard;
 use std::time::Instant;
 
 use axum::Form;
@@ -146,9 +145,7 @@ pub async fn drill(directory: PathBuf, today: NaiveDate) -> Fallible<()> {
 }
 
 async fn root(State(state): State<ServerState>) -> (StatusCode, Html<String>) {
-    let state = state.mutable.lock().unwrap();
-    let html = render_page(state);
-    (StatusCode::OK, Html(html.into_string()))
+    render_page(state, None)
 }
 
 #[derive(Debug, Deserialize)]
@@ -169,59 +166,61 @@ async fn action(
     State(state): State<ServerState>,
     Form(form): Form<FormData>,
 ) -> (StatusCode, Html<String>) {
-    let today = state.today;
-    let mut state = state.mutable.lock().unwrap();
-    match form.action {
-        Action::Reveal => {
-            if state.reveal {
-                log::error!("Revealing a card that is already revealed.");
-            } else {
-                state.reveal = true;
-            }
-        }
-        _ => {
-            if !state.reveal {
-                log::error!("Answering a card that is not revealed.");
-            } else {
-                let card = state.cards.remove(0);
-                let hash = card.hash();
-                let performance = state.db.get(hash).unwrap();
-                let grade: Grade = match form.action {
-                    Action::Forgot => Grade::Forgot,
-                    Action::Hard => Grade::Hard,
-                    Action::Good => Grade::Good,
-                    Action::Easy => Grade::Easy,
-                    _ => unreachable!(),
-                };
-                let performance = performance.update(grade, today);
-                state.db.update(hash, performance);
-                // Was the card forgotten? Put it at the back.
-                if grade == Grade::Forgot {
-                    state.cards.push(card);
+    render_page(state, Some(form.action))
+}
+
+fn render_page(state: ServerState, action: Option<Action>) -> (StatusCode, Html<String>) {
+    let mut mutable = state.mutable.lock().unwrap();
+
+    if let Some(action) = action {
+        match action {
+            Action::Reveal => {
+                if mutable.reveal {
+                    log::error!("Revealing a card that is already revealed.");
+                } else {
+                    mutable.reveal = true;
                 }
-                state.reveal = false;
+            }
+            _ => {
+                if !mutable.reveal {
+                    log::error!("Answering a card that is not revealed.");
+                } else {
+                    let card = mutable.cards.remove(0);
+                    let hash = card.hash();
+                    let performance = mutable.db.get(hash).unwrap();
+                    let grade: Grade = match action {
+                        Action::Forgot => Grade::Forgot,
+                        Action::Hard => Grade::Hard,
+                        Action::Good => Grade::Good,
+                        Action::Easy => Grade::Easy,
+                        _ => unreachable!(),
+                    };
+                    let performance = performance.update(grade, state.today);
+                    mutable.db.update(hash, performance);
+                    // Was the card forgotten? Put it at the back.
+                    if grade == Grade::Forgot {
+                        mutable.cards.push(card);
+                    }
+                    mutable.reveal = false;
+                }
             }
         }
     }
-    let html = render_page(state);
-    (StatusCode::OK, Html(html.into_string()))
-}
 
-fn render_page(state: MutexGuard<'_, MutableState>) -> Markup {
-    let body = if state.cards.is_empty() {
-        let mut writer = csv::Writer::from_path(&state.db_path).unwrap();
+    let body = if mutable.cards.is_empty() {
+        let mut writer = csv::Writer::from_path(&mutable.db_path).unwrap();
         log::debug!("Writing performance database");
-        state.db.to_csv(&mut writer).unwrap();
+        mutable.db.to_csv(&mut writer).unwrap();
         html! {
             p { "Finished!" }
         }
     } else {
-        let card = state.cards[0].clone();
+        let card = mutable.cards[0].clone();
         let card_content: Markup = match &card.content {
             CardContent::Basic { question, answer } => {
                 let question = markdown::to_html(question);
                 let answer = markdown::to_html(answer);
-                if state.reveal {
+                if mutable.reveal {
                     html! {
                         div.question {
                             p {
@@ -253,7 +252,7 @@ fn render_page(state: MutexGuard<'_, MutableState>) -> Markup {
                 let mut answer = text.clone();
                 answer.replace_range(*start..*end + 1, &format!("[{cloze_text}](cloze_reveal)"));
                 let answer = markdown::to_html(&answer);
-                if state.reveal {
+                if mutable.reveal {
                     html! {
                         div.question {
                             p {
@@ -278,7 +277,7 @@ fn render_page(state: MutexGuard<'_, MutableState>) -> Markup {
                 }
             }
         };
-        let card_controls = if state.reveal {
+        let card_controls = if mutable.reveal {
             html! {
                 form action="/" method="post" {
                     input id="forgot" type="submit" name="action" value="Forgot";
@@ -310,7 +309,8 @@ fn render_page(state: MutexGuard<'_, MutableState>) -> Markup {
             }
         }
     };
-    page_template(body)
+    let html = page_template(body);
+    (StatusCode::OK, Html(html.into_string()))
 }
 
 fn page_template(body: Markup) -> Markup {
