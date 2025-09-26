@@ -141,7 +141,7 @@ pub async fn drill(directory: PathBuf, today: NaiveDate) -> Fallible<()> {
     log::debug!("Starting server on {bind}");
     let listener = TcpListener::bind(bind).await?;
     axum::serve(listener, app).await?;
-    todo!()
+    Ok(())
 }
 
 async fn root(State(state): State<ServerState>) -> (StatusCode, Html<String>) {
