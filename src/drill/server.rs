@@ -16,6 +16,7 @@ use std::collections::HashSet;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::Mutex;
+use std::time::Duration;
 use std::time::Instant;
 
 use axum::Router;
@@ -30,6 +31,8 @@ use axum::routing::post;
 use chrono::NaiveDate;
 use csv::Reader;
 use tokio::net::TcpListener;
+use tokio::net::TcpStream;
+use tokio::time::sleep;
 
 use crate::db::Database;
 use crate::db::Performance;
@@ -115,11 +118,27 @@ pub async fn start_server(directory: PathBuf, today: NaiveDate) -> Fallible<()> 
     let app = Router::new();
     let app = app.route("/", get(root));
     let app = app.route("/", post(action));
+    let app = app.route("/health", get(health));
     let app = app.route("/script.js", get(script));
     let app = app.route("/style.css", get(stylesheet));
     let app = app.fallback(not_found_handler);
     let app = app.with_state(state);
     let bind = "0.0.0.0:8000";
+
+    // Start a separate task to open the browser.
+    let url = format!("http://{bind}/");
+    tokio::spawn(async move {
+        loop {
+            if let Ok(stream) = TcpStream::connect(bind).await {
+                drop(stream);
+                break;
+            }
+            sleep(Duration::from_millis(1)).await;
+        }
+        let _ = open::that(url);
+    });
+
+    // Start the server.
     log::debug!("Starting server on {bind}");
     let listener = TcpListener::bind(bind).await?;
     axum::serve(listener, app).await?;
@@ -156,4 +175,8 @@ async fn stylesheet() -> (StatusCode, [(HeaderName, &'static str); 2], &'static 
 
 async fn not_found_handler() -> (StatusCode, Html<String>) {
     (StatusCode::OK, Html("Not Found".to_string()))
+}
+
+async fn health() -> (StatusCode, &'static str) {
+    (StatusCode::OK, "OK")
 }
