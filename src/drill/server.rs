@@ -172,5 +172,5 @@ async fn style_handler() -> (StatusCode, [(HeaderName, &'static str); 2], &'stat
 }
 
 async fn not_found_handler() -> (StatusCode, Html<String>) {
-    (StatusCode::OK, Html("Not Found".to_string()))
+    (StatusCode::NOT_FOUND, Html("Not Found".to_string()))
 }
