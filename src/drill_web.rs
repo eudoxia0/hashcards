@@ -6,7 +6,10 @@ use std::time::Instant;
 
 use axum::Router;
 use axum::extract::State;
+use axum::http::HeaderName;
 use axum::http::StatusCode;
+use axum::http::header::CACHE_CONTROL;
+use axum::http::header::CONTENT_TYPE;
 use axum::response::Html;
 use axum::routing::get;
 use blake3::Hash;
@@ -79,6 +82,7 @@ pub async fn drill_web(directory: PathBuf, today: NaiveDate) -> Fallible<()> {
     };
     let app = Router::new();
     let app = app.route("/", get(root));
+    let app = app.route("/style.css", get(stylesheet));
     let app = app.fallback(not_found_handler);
     let app = app.with_state(state);
     let bind = "0.0.0.0:8000";
@@ -139,12 +143,25 @@ fn page_template(body: Markup) -> Markup {
                 meta charset="utf-8";
                 meta name="viewport" content="width=device-width, initial-scale=1";
                 title { "hashcards" }
+                link rel="stylesheet" href="/style.css";
             }
             body {
                 (body)
             }
         }
     }
+}
+
+async fn stylesheet() -> (StatusCode, [(HeaderName, &'static str); 2], &'static [u8]) {
+    let bytes = include_bytes!("style.css");
+    (
+        StatusCode::OK,
+        [
+            (CONTENT_TYPE, "text/css"),
+            (CACHE_CONTROL, "public, max-age=604800, immutable"),
+        ],
+        bytes,
+    )
 }
 
 async fn not_found_handler() -> (StatusCode, Html<String>) {
