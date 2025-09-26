@@ -116,6 +116,7 @@ pub async fn drill(directory: PathBuf, today: NaiveDate) -> Fallible<()> {
     let app = Router::new();
     let app = app.route("/", get(root));
     let app = app.route("/", post(action));
+    let app = app.route("/script.js", get(script));
     let app = app.route("/style.css", get(stylesheet));
     let app = app.fallback(not_found_handler);
     let app = app.with_state(state);
@@ -290,12 +291,28 @@ fn page_template(body: Markup) -> Markup {
                 meta name="viewport" content="width=device-width, initial-scale=1";
                 title { "hashcards" }
                 link rel="stylesheet" href="/style.css";
+                link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" integrity="sha384-5TcZemv2l/9On385z///+d7MSYlvIEw9FuZTIdZ14vJLqWphw7e7ZPuOiCHJcFCP" crossorigin="anonymous";
+                script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js" integrity="sha384-cMkvdD8LoxVzGF/RPUKAcvmm49FQ0oxwDF3BGKtDXcEc+T1b2N+teh/OJfpU0jr6" crossorigin="anonymous" {};
+                script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js" integrity="sha384-hCXGrW6PitJEwbkoStFjeJxv+fSOOQKOPbJxSfM6G5sWZjAyWhXiTIIAmQqnlLlh" crossorigin="anonymous" {};
             }
             body {
                 (body)
+                script src="/script.js" {};
             }
         }
     }
+}
+
+async fn script() -> (StatusCode, [(HeaderName, &'static str); 2], &'static [u8]) {
+    let bytes = include_bytes!("script.js");
+    (
+        StatusCode::OK,
+        [
+            (CONTENT_TYPE, "text/javascript"),
+            (CACHE_CONTROL, "public, max-age=604800, immutable"),
+        ],
+        bytes,
+    )
 }
 
 async fn stylesheet() -> (StatusCode, [(HeaderName, &'static str); 2], &'static [u8]) {
