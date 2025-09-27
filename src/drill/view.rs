@@ -28,6 +28,8 @@ use crate::fsrs::Grade;
 use crate::markdown::markdown_to_html;
 use crate::parser::CardContent;
 
+const CLOZE_TAG: &str = "CLOZE_DELETION";
+
 pub async fn get_handler(State(state): State<ServerState>) -> (StatusCode, Html<String>) {
     let mutable = state.mutable.lock().unwrap();
     let body = if mutable.cards.is_empty() {
@@ -75,10 +77,10 @@ pub async fn get_handler(State(state): State<ServerState>) -> (StatusCode, Html<
                 if mutable.reveal {
                     let cloze_text = &text[*start..*end + 1];
                     let mut answer = text.clone();
-                    answer.replace_range(*start..*end + 1, "CLOZE_DELETION");
+                    answer.replace_range(*start..*end + 1, CLOZE_TAG);
                     let answer = markdown_to_html(&answer);
                     let answer = answer.replace(
-                        "CLOZE_DELETION",
+                        CLOZE_TAG,
                         &format!("<span class='cloze-reveal'>{}</span>", cloze_text),
                     );
                     html! {
@@ -92,10 +94,10 @@ pub async fn get_handler(State(state): State<ServerState>) -> (StatusCode, Html<
                     }
                 } else {
                     let mut prompt = text.clone();
-                    prompt.replace_range(*start..*end + 1, "CLOZE_DELETION");
+                    prompt.replace_range(*start..*end + 1, CLOZE_TAG);
                     let prompt = markdown_to_html(&prompt);
-                    let prompt = prompt
-                        .replace("CLOZE_DELETION", "<span class='cloze'>.............</span>");
+                    let prompt =
+                        prompt.replace(CLOZE_TAG, "<span class='cloze'>.............</span>");
                     html! {
                         div.content {
                             div.prompt .rich-text {
