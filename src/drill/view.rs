@@ -16,6 +16,7 @@ use axum::Form;
 use axum::extract::State;
 use axum::http::StatusCode;
 use axum::response::Html;
+use axum::response::Redirect;
 use maud::Markup;
 use maud::PreEscaped;
 use maud::html;
@@ -28,68 +29,7 @@ use crate::markdown::markdown_to_html;
 use crate::parser::CardContent;
 
 pub async fn get_handler(State(state): State<ServerState>) -> (StatusCode, Html<String>) {
-    render_page(state, None)
-}
-
-#[derive(Debug, Deserialize)]
-enum Action {
-    Reveal,
-    Forgot,
-    Hard,
-    Good,
-    Easy,
-}
-
-#[derive(Deserialize)]
-pub struct FormData {
-    action: Action,
-}
-
-pub async fn post_handler(
-    State(state): State<ServerState>,
-    Form(form): Form<FormData>,
-) -> (StatusCode, Html<String>) {
-    render_page(state, Some(form.action))
-}
-
-fn render_page(state: ServerState, action: Option<Action>) -> (StatusCode, Html<String>) {
-    let mut mutable = state.mutable.lock().unwrap();
-
-    if let Some(action) = action {
-        match action {
-            Action::Reveal => {
-                if mutable.reveal {
-                    log::error!("Revealing a card that is already revealed.");
-                } else {
-                    mutable.reveal = true;
-                }
-            }
-            _ => {
-                if !mutable.reveal {
-                    log::error!("Answering a card that is not revealed.");
-                } else {
-                    let card = mutable.cards.remove(0);
-                    let hash = card.hash();
-                    let performance = mutable.db.get(hash).unwrap();
-                    let grade: Grade = match action {
-                        Action::Forgot => Grade::Forgot,
-                        Action::Hard => Grade::Hard,
-                        Action::Good => Grade::Good,
-                        Action::Easy => Grade::Easy,
-                        _ => unreachable!(),
-                    };
-                    let performance = performance.update(grade, state.today);
-                    mutable.db.update(hash, performance);
-                    // Was the card forgotten? Put it at the back.
-                    if grade == Grade::Forgot {
-                        mutable.cards.push(card);
-                    }
-                    mutable.reveal = false;
-                }
-            }
-        }
-    }
-
+    let mutable = state.mutable.lock().unwrap();
     let body = if mutable.cards.is_empty() {
         let mut writer = csv::Writer::from_path(&state.db_path).unwrap();
         log::debug!("Writing performance database");
@@ -197,4 +137,59 @@ fn render_page(state: ServerState, action: Option<Action>) -> (StatusCode, Html<
     };
     let html = page_template(body);
     (StatusCode::OK, Html(html.into_string()))
+}
+
+#[derive(Debug, Deserialize)]
+enum Action {
+    Reveal,
+    Forgot,
+    Hard,
+    Good,
+    Easy,
+}
+
+#[derive(Deserialize)]
+pub struct FormData {
+    action: Action,
+}
+
+pub async fn post_handler(
+    State(state): State<ServerState>,
+    Form(form): Form<FormData>,
+) -> Redirect {
+    let mut mutable = state.mutable.lock().unwrap();
+    let action = form.action;
+    match action {
+        Action::Reveal => {
+            if mutable.reveal {
+                log::error!("Revealing a card that is already revealed.");
+            } else {
+                mutable.reveal = true;
+            }
+        }
+        Action::Forgot | Action::Hard | Action::Good | Action::Easy => {
+            if !mutable.reveal {
+                log::error!("Answering a card that is not revealed.");
+            } else {
+                let card = mutable.cards.remove(0);
+                let hash = card.hash();
+                let performance = mutable.db.get(hash).unwrap();
+                let grade: Grade = match action {
+                    Action::Forgot => Grade::Forgot,
+                    Action::Hard => Grade::Hard,
+                    Action::Good => Grade::Good,
+                    Action::Easy => Grade::Easy,
+                    _ => unreachable!(),
+                };
+                let performance = performance.update(grade, state.today);
+                mutable.db.update(hash, performance);
+                // Was the card forgotten? Put it at the back.
+                if grade == Grade::Forgot {
+                    mutable.cards.push(card);
+                }
+                mutable.reveal = false;
+            }
+        }
+    }
+    Redirect::to("/")
 }
