@@ -111,6 +111,7 @@ pub async fn start_server(directory: PathBuf, today: NaiveDate) -> Fallible<()> 
         directory,
         db_path,
         macros,
+        total_cards: due_today.len(),
         mutable: Arc::new(Mutex::new(MutableState {
             reveal: false,
             db,

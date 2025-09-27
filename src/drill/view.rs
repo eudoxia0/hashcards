@@ -41,6 +41,11 @@ pub async fn get_handler(State(state): State<ServerState>) -> (StatusCode, Html<
             }
         }
     } else {
+        let progress = format!(
+            "{} / {}",
+            state.total_cards - mutable.cards.len(),
+            state.total_cards
+        );
         let card = mutable.cards[0].clone();
         let card_content: Markup = match card.content() {
             CardContent::Basic { question, answer } => {
@@ -130,9 +135,12 @@ pub async fn get_handler(State(state): State<ServerState>) -> (StatusCode, Html<
         html! {
             div.root {
                 div.card {
-                    div.deck {
+                    div.header {
                         h1 {
                             (card.deck_name())
+                        }
+                        div.progress {
+                            (progress)
                         }
                     }
                     (card_content)

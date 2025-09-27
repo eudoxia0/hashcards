@@ -35,7 +35,7 @@ body {
     flex: 1;
 }
 
-.deck,
+.header,
 .question,
 .answer,
 .prompt,
@@ -43,7 +43,7 @@ body {
     padding: 32px;
 }
 
-.deck,
+.header,
 .question,
 .answer,
 .prompt {
@@ -51,9 +51,21 @@ body {
     border-bottom: 1px solid black;
 }
 
-.deck h1 {
-    font-size: 36px;
-    font-weight: 300;
+.header {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+
+    h1 {
+        font-size: 36px;
+        font-weight: 300;
+        flex: 1;
+    }
+
+    .progress {
+        font-size: 24px;
+    }
 }
 
 .question,

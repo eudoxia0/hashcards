@@ -27,6 +27,7 @@ pub struct ServerState {
     pub directory: PathBuf,
     pub db_path: PathBuf,
     pub macros: Vec<(String, String)>,
+    pub total_cards: usize,
     pub mutable: Arc<Mutex<MutableState>>,
 }
 
