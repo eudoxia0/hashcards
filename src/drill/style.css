@@ -55,21 +55,23 @@ body {
 
 .question,
 .answer {
-    font-size: 30px;
     width: 900px;
     min-height: 250px;
 }
 
 .prompt {
-    font-size: 30px;
     width: 900px;
     min-height: 500px;
 }
 
-img {
-    max-width: 70%;
-    display: block;
-    margin: 0 auto;
+.rich-text {
+    font-size: 30px;
+
+    img {
+        max-width: 70%;
+        display: block;
+        margin: 8px auto;
+    }
 }
 
 .controls form {
