@@ -75,7 +75,7 @@ pub async fn get_handler(State(state): State<ServerState>) -> (StatusCode, Html<
                 if mutable.reveal {
                     let cloze_text = &text[*start..*end + 1];
                     let mut answer = text.clone();
-                    answer.replace_range(*start..*end + 1, &format!("CLOZE_DELETION"));
+                    answer.replace_range(*start..*end + 1, "CLOZE_DELETION");
                     let answer = markdown_to_html(&answer);
                     let answer = answer.replace(
                         "CLOZE_DELETION",
@@ -94,10 +94,8 @@ pub async fn get_handler(State(state): State<ServerState>) -> (StatusCode, Html<
                     let mut prompt = text.clone();
                     prompt.replace_range(*start..*end + 1, "CLOZE_DELETION");
                     let prompt = markdown_to_html(&prompt);
-                    let prompt = prompt.replace(
-                        "CLOZE_DELETION",
-                        &"<span class='cloze'>.............</span>",
-                    );
+                    let prompt = prompt
+                        .replace("CLOZE_DELETION", "<span class='cloze'>.............</span>");
                     html! {
                         div.content {
                             div.prompt .rich-text {
