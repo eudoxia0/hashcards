@@ -52,6 +52,14 @@ impl From<csv::Error> for ErrorReport {
     }
 }
 
+impl From<rusqlite::Error> for ErrorReport {
+    fn from(value: rusqlite::Error) -> Self {
+        ErrorReport {
+            message: format!("rusqlite: {value:#?}"),
+        }
+    }
+}
+
 impl Display for ErrorReport {
     // This trait requires `fmt` with this exact signature.
     fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {

@@ -19,6 +19,7 @@ mod error;
 mod fsrs;
 mod hash;
 mod markdown;
+mod new_db;
 mod parser;
 
 use std::process::ExitCode;
