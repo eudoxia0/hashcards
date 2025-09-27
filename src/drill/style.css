@@ -100,18 +100,14 @@ input {
     cursor: pointer;
 }
 
-a[href="cloze"] {
+.cloze {
+    width: 30px;
     background: #a0a0a0;
-    color: transparent;
     text-decoration: none;
     border-radius: 8px;
-    pointer-events: none;
-    cursor: text;
+    color: transparent;
 }
 
-a[href="cloze_reveal"] {
+.cloze-reveal {
     color: royalblue;
-    text-decoration: none;
-    pointer-events: none;
-    cursor: text;
 }
