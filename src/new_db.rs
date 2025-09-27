@@ -17,10 +17,19 @@ use std::sync::Mutex;
 use std::sync::MutexGuard;
 
 use rusqlite::Connection;
+use rusqlite::ToSql;
 use rusqlite::Transaction;
 use rusqlite::config::DbConfig;
+use rusqlite::types::FromSql;
+use rusqlite::types::FromSqlError;
+use rusqlite::types::FromSqlResult;
+use rusqlite::types::ToSqlOutput;
+use rusqlite::types::ValueRef;
 
+use crate::error::ErrorReport;
 use crate::error::Fallible;
+use crate::error::fail;
+use crate::hash::Hash;
 
 #[derive(Clone)]
 pub struct Database {
@@ -45,6 +54,82 @@ impl Database {
     pub fn acquire(&self) -> MutexGuard<'_, Connection> {
         self.conn.lock().unwrap()
     }
+}
+
+// create table cards (
+//     card_hash text primary key,
+//     card_type text not null,
+//     deck_name text not null,
+//     question text not null,
+//     answer text not null,
+//     cloze_start integer not null,
+//     cloze_end integer not null
+// ) strict;
+
+enum CardType {
+    Basic,
+    Cloze,
+}
+
+impl CardType {
+    fn as_str(&self) -> &str {
+        match self {
+            CardType::Basic => "basic",
+            CardType::Cloze => "cloze",
+        }
+    }
+}
+
+impl TryFrom<String> for CardType {
+    type Error = ErrorReport;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        match value.as_str() {
+            "basic" => Ok(CardType::Basic),
+            "cloze" => Ok(CardType::Cloze),
+            _ => fail(format!("Invalid card type: {}", value)),
+        }
+    }
+}
+
+impl ToSql for CardType {
+    fn to_sql(&self) -> rusqlite::Result<ToSqlOutput<'_>> {
+        Ok(ToSqlOutput::from(self.as_str()))
+    }
+}
+
+impl FromSql for CardType {
+    fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
+        let string: String = FromSql::column_result(value)?;
+        CardType::try_from(string).map_err(|e| FromSqlError::Other(Box::new(e)))
+    }
+}
+
+struct CardRow {
+    card_hash: Hash,
+    card_type: CardType,
+    deck_name: String,
+    question: String,
+    answer: String,
+    cloze_start: usize,
+    cloze_end: usize,
+}
+
+fn insert_card(tx: &Transaction, card: &CardRow) -> Fallible<()> {
+    let sql = "insert into cards (card_hash, card_type, deck_name, question, answer, cloze_start, cloze_end) values (?, ?, ?, ?, ?, ?, ?);";
+    tx.execute(
+        sql,
+        (
+            card.card_hash,
+            &card.card_type,
+            &card.deck_name,
+            &card.question,
+            &card.answer,
+            card.cloze_start,
+            card.cloze_end,
+        ),
+    )?;
+    Ok(())
 }
 
 fn probe_schema_exists(tx: &Transaction) -> Fallible<bool> {
