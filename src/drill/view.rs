@@ -33,9 +33,6 @@ const CLOZE_TAG: &str = "CLOZE_DELETION";
 pub async fn get_handler(State(state): State<ServerState>) -> (StatusCode, Html<String>) {
     let mutable = state.mutable.lock().unwrap();
     let body = if mutable.cards.is_empty() {
-        let mut writer = csv::Writer::from_path(&state.db_path).unwrap();
-        log::debug!("Writing performance database");
-        mutable.db.to_csv(&mut writer).unwrap();
         html! {
             p { "Finished!" }
         }
@@ -195,6 +192,13 @@ pub async fn post_handler(
                     mutable.cards.push(card);
                 }
                 mutable.reveal = false;
+
+                // Was this the last card?
+                if mutable.cards.is_empty() {
+                    let mut writer = csv::Writer::from_path(&state.db_path).unwrap();
+                    log::debug!("Writing performance database");
+                    mutable.db.to_csv(&mut writer).unwrap();
+                }
             }
         }
     }
