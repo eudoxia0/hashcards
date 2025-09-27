@@ -18,8 +18,14 @@ create table sessions (
 
 create table reviews (
     review_id integer primary key,
-    session_id integer not null references sessions (session_id) on update cascade on delete cascade,
-    card_hash text not null references cards (card_hash) on update cascade on delete cascade,
+    session_id integer not null
+        references sessions (session_id)
+        on update cascade
+        on delete cascade,
+    card_hash text not null
+        references cards (card_hash)
+        on update cascade
+        on delete cascade,
     reviewed_at text not null,
     grade text not null,
     stability real not null,
