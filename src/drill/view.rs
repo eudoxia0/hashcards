@@ -34,7 +34,11 @@ pub async fn get_handler(State(state): State<ServerState>) -> (StatusCode, Html<
     let mutable = state.mutable.lock().unwrap();
     let body = if mutable.cards.is_empty() {
         html! {
-            p { "Finished!" }
+            div.finished {
+                h1 {
+                    "Session Completed"
+                }
+            }
         }
     } else {
         let card = mutable.cards[0].clone();
