@@ -33,3 +33,10 @@ Cloze cards use square brackets to denote cloze deletions:
 ```
 The [order] of a group is [the cardinality of its underlying set].
 ```
+
+## Prior Art
+
+- [org-fc](https://github.com/l3kn/org-fc)
+- [org-drill](https://orgmode.org/worg/org-contrib/org-drill.html)
+- [hascard](https://hackage.haskell.org/package/hascard)
+- [carddown](https://github.com/martintrojer/carddown)
