@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::error::Error;
 use std::fmt::Display;
 use std::fmt::Formatter;
 
@@ -61,9 +62,14 @@ impl From<rusqlite::Error> for ErrorReport {
 }
 
 impl Display for ErrorReport {
-    // This trait requires `fmt` with this exact signature.
     fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
         write!(f, "error: {}", self.message)
+    }
+}
+
+impl Error for ErrorReport {
+    fn description(&self) -> &str {
+        &self.message
     }
 }
 
