@@ -105,25 +105,29 @@ fn render_page(state: ServerState, action: Option<Action>) -> (StatusCode, Html<
                 let answer = markdown_to_html(answer);
                 if mutable.reveal {
                     html! {
-                        div .question .rich-text {
-                            p {
-                                (PreEscaped(question))
+                        div.content {
+                            div .question .rich-text {
+                                p {
+                                    (PreEscaped(question))
+                                }
                             }
-                        }
-                        div .answer .rich-text {
-                            p {
-                                (PreEscaped(answer))
+                            div .answer .rich-text {
+                                p {
+                                    (PreEscaped(answer))
+                                }
                             }
                         }
                     }
                 } else {
                     html! {
-                        div.question .rich-text {
-                            p {
-                                (PreEscaped(question))
+                        div.content {
+                            div.question .rich-text {
+                                p {
+                                    (PreEscaped(question))
+                                }
                             }
+                            div.answer .rich-text {}
                         }
-                        div.answer .rich-text {}
                     }
                 }
             }
@@ -135,9 +139,11 @@ fn render_page(state: ServerState, action: Option<Action>) -> (StatusCode, Html<
                         .replace_range(*start..*end + 1, &format!("[{cloze_text}](cloze_reveal)"));
                     let answer = markdown_to_html(&answer);
                     html! {
-                        div.prompt .rich-text {
-                            p {
-                                (PreEscaped(answer))
+                        div.content{
+                            div.prompt .rich-text {
+                                p {
+                                    (PreEscaped(answer))
+                                }
                             }
                         }
                     }
@@ -146,9 +152,11 @@ fn render_page(state: ServerState, action: Option<Action>) -> (StatusCode, Html<
                     prompt.replace_range(*start..*end + 1, "[.............](cloze)");
                     let prompt = markdown_to_html(&prompt);
                     html! {
-                        div.prompt .rich-text {
-                            p {
-                                (PreEscaped(prompt))
+                        div.content {
+                            div.prompt .rich-text {
+                                p {
+                                    (PreEscaped(prompt))
+                                }
                             }
                         }
                     }

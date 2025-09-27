@@ -11,26 +11,28 @@
 }
 
 html,
-body {
-    width: 100%;
-    height: 100%;
+body,
+.root,
+.card {
+    width: 100vw;
+    height: 100vh;
 }
 
 body {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
     font-family: "Times New Roman", "Times", serif;
 }
 
-body {
-    background: #eee;
+.root {
+    max-height: 100vh;
 }
 
-.root {
-    background: white;
-    border: 1px solid black;
+.card {
+    display: flex;
+    flex-direction: column;
+}
+
+.content {
+    flex: 1;
 }
 
 .deck,
@@ -43,9 +45,10 @@ body {
 
 .deck,
 .question,
-.prompt,
-.answer {
-    border-bottom: 1px solid #bbb;
+.answer,
+.prompt {
+    width: 100%;
+    border-bottom: 1px solid black;
 }
 
 .deck h1 {
@@ -54,14 +57,21 @@ body {
 }
 
 .question,
+.answer,
+.prompt {
+    overflow-y: auto;
+}
+
+.question {
+    height: 75%;
+}
+
 .answer {
-    width: 900px;
-    min-height: 250px;
+    height: 25%;
 }
 
 .prompt {
-    width: 900px;
-    min-height: 500px;
+    height: 100%;
 }
 
 .rich-text {
