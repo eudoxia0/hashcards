@@ -105,12 +105,12 @@ fn render_page(state: ServerState, action: Option<Action>) -> (StatusCode, Html<
                 let answer = markdown_to_html(answer);
                 if mutable.reveal {
                     html! {
-                        div.question {
+                        div .question .rich-text {
                             p {
                                 (PreEscaped(question))
                             }
                         }
-                        div.answer {
+                        div .answer .rich-text {
                             p {
                                 (PreEscaped(answer))
                             }
@@ -118,12 +118,12 @@ fn render_page(state: ServerState, action: Option<Action>) -> (StatusCode, Html<
                     }
                 } else {
                     html! {
-                        div.question {
+                        div.question .rich-text {
                             p {
                                 (PreEscaped(question))
                             }
                         }
-                        div.answer {}
+                        div.answer .rich-text {}
                     }
                 }
             }
@@ -135,7 +135,7 @@ fn render_page(state: ServerState, action: Option<Action>) -> (StatusCode, Html<
                         .replace_range(*start..*end + 1, &format!("[{cloze_text}](cloze_reveal)"));
                     let answer = markdown_to_html(&answer);
                     html! {
-                        div.prompt {
+                        div.prompt .rich-text {
                             p {
                                 (PreEscaped(answer))
                             }
@@ -146,7 +146,7 @@ fn render_page(state: ServerState, action: Option<Action>) -> (StatusCode, Html<
                     prompt.replace_range(*start..*end + 1, "[.............](cloze)");
                     let prompt = markdown_to_html(&prompt);
                     html! {
-                        div.prompt {
+                        div.prompt .rich-text {
                             p {
                                 (PreEscaped(prompt))
                             }
