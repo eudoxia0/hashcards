@@ -28,8 +28,8 @@ pub const W: [f64; 19] = [
 ];
 
 pub type R = f64;
-pub type S = f64;
-pub type D = f64;
+pub type Stability = f64;
+pub type Difficulty = f64;
 
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Grade {
@@ -93,15 +93,15 @@ pub type T = f64;
 const F: f64 = 19.0 / 81.0;
 const C: f64 = -0.5;
 
-pub fn retrievability(t: T, s: S) -> R {
+pub fn retrievability(t: T, s: Stability) -> R {
     (1.0 + F * (t / s)).powf(C)
 }
 
-pub fn interval(r_d: R, s: S) -> T {
+pub fn interval(r_d: R, s: Stability) -> T {
     (s / F) * (r_d.powf(1.0 / C) - 1.0)
 }
 
-pub fn s_0(g: Grade) -> S {
+pub fn initial_stability(g: Grade) -> Stability {
     match g {
         Grade::Forgot => W[0],
         Grade::Hard => W[1],
@@ -110,7 +110,7 @@ pub fn s_0(g: Grade) -> S {
     }
 }
 
-fn s_success(d: D, s: S, r: R, g: Grade) -> S {
+fn s_success(d: Difficulty, s: Stability, r: R, g: Grade) -> Stability {
     let t_d = 11.0 - d;
     let t_s = s.powf(-W[9]);
     let t_r = f64::exp(W[10] * (1.0 - r)) - 1.0;
@@ -121,7 +121,7 @@ fn s_success(d: D, s: S, r: R, g: Grade) -> S {
     s * alpha
 }
 
-fn s_fail(d: D, s: S, r: R) -> S {
+fn s_fail(d: Difficulty, s: Stability, r: R) -> Stability {
     let d_f = d.powf(-W[12]);
     let s_f = (s + 1.0).powf(W[13]) - 1.0;
     let r_f = f64::exp(W[14] * (1.0 - r));
@@ -130,7 +130,7 @@ fn s_fail(d: D, s: S, r: R) -> S {
     f64::min(s_f, s)
 }
 
-pub fn new_stability(d: D, s: S, r: R, g: Grade) -> S {
+pub fn new_stability(d: Difficulty, s: Stability, r: R, g: Grade) -> Stability {
     if g == Grade::Forgot {
         s_fail(d, s, r)
     } else {
@@ -138,20 +138,20 @@ pub fn new_stability(d: D, s: S, r: R, g: Grade) -> S {
     }
 }
 
-fn clamp_d(d: D) -> D {
+fn clamp_d(d: Difficulty) -> Difficulty {
     d.clamp(1.0, 10.0)
 }
 
-pub fn d_0(g: Grade) -> D {
+pub fn initial_difficulty(g: Grade) -> Difficulty {
     let g: f64 = g.into();
     clamp_d(W[4] - f64::exp(W[5] * (g - 1.0)) + 1.0)
 }
 
-pub fn new_difficulty(d: D, g: Grade) -> D {
-    clamp_d(W[7] * d_0(Grade::Easy) + (1.0 - W[7]) * dp(d, g))
+pub fn new_difficulty(d: Difficulty, g: Grade) -> Difficulty {
+    clamp_d(W[7] * initial_difficulty(Grade::Easy) + (1.0 - W[7]) * dp(d, g))
 }
 
-fn dp(d: D, g: Grade) -> f64 {
+fn dp(d: Difficulty, g: Grade) -> f64 {
     d + delta_d(g) * ((10.0 - d) / 9.0)
 }
 
@@ -187,7 +187,7 @@ mod tests {
     /// D_0(1) = w_4
     #[test]
     fn test_initial_difficulty_of_forgetting() {
-        assert_eq!(d_0(Grade::Forgot), W[4])
+        assert_eq!(initial_difficulty(Grade::Forgot), W[4])
     }
 
     /// A simulation step.
@@ -196,9 +196,9 @@ mod tests {
         /// The time when the review took place.
         t: T,
         /// New stability.
-        s: S,
+        s: Stability,
         /// New difficulty.
-        d: D,
+        d: Difficulty,
         /// Next interval.
         i: T,
     }
@@ -222,8 +222,8 @@ mod tests {
         assert!(!grades.is_empty());
         let mut grades = grades.clone();
         let g: Grade = grades.remove(0);
-        let mut s: S = s_0(g);
-        let mut d: D = d_0(g);
+        let mut s: Stability = initial_stability(g);
+        let mut d: Difficulty = initial_difficulty(g);
         let mut i: T = f64::max(interval(r_d, s).round(), 1.0);
         steps.push(Step { t, s, d, i });
 

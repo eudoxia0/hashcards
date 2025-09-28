@@ -34,15 +34,15 @@ use rusqlite::types::ValueRef;
 use crate::error::ErrorReport;
 use crate::error::Fallible;
 use crate::error::fail;
-use crate::fsrs::D;
+use crate::fsrs::Difficulty;
 use crate::fsrs::Grade;
-use crate::fsrs::S;
-use crate::fsrs::d_0;
+use crate::fsrs::Stability;
+use crate::fsrs::initial_difficulty;
+use crate::fsrs::initial_stability;
 use crate::fsrs::interval;
 use crate::fsrs::new_difficulty;
 use crate::fsrs::new_stability;
 use crate::fsrs::retrievability;
-use crate::fsrs::s_0;
 use crate::hash::Hash;
 use crate::parser::Card;
 use crate::parser::CardContent;
@@ -143,8 +143,8 @@ impl Database {
         let mut rows = stmt.query([hash])?;
         if let Some(row) = rows.next()? {
             let reviewed_at: Timestamp = row.get(0)?;
-            let stability: S = row.get(1)?;
-            let difficulty: D = row.get(2)?;
+            let stability: Stability = row.get(1)?;
+            let difficulty: Difficulty = row.get(2)?;
             let due_date: Date = row.get(3)?;
             Ok(Some(Performance {
                 last_review: reviewed_at.into_date(),
@@ -192,8 +192,8 @@ pub struct Review {
     pub card_hash: Hash,
     pub reviewed_at: Timestamp,
     pub grade: Grade,
-    pub stability: S,
-    pub difficulty: D,
+    pub stability: Stability,
+    pub difficulty: Difficulty,
     pub due_date: Date,
 }
 
@@ -344,8 +344,8 @@ struct InsertReview {
     card_hash: Hash,
     reviewed_at: Timestamp,
     grade: Grade,
-    stability: S,
-    difficulty: D,
+    stability: Stability,
+    difficulty: Difficulty,
     due_date: Date,
 }
 
@@ -374,8 +374,8 @@ const TARGET_RECALL: f64 = 0.9;
 #[derive(Clone, Debug, PartialEq)]
 pub struct Performance {
     pub last_review: Date,
-    pub stability: S,
-    pub difficulty: D,
+    pub stability: Stability,
+    pub difficulty: Difficulty,
     pub due_date: Date,
 }
 
@@ -396,7 +396,7 @@ impl Performance {
                 let difficulty = new_difficulty(difficulty, grade);
                 (stability, difficulty)
             }
-            None => (s_0(grade), d_0(grade)),
+            None => (initial_stability(grade), initial_difficulty(grade)),
         };
         let interval = f64::max(interval(TARGET_RECALL, stability).round(), 1.0);
         let interval_duration = chrono::Duration::days(interval as i64);
