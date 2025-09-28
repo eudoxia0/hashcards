@@ -245,8 +245,9 @@ async fn action_handler(state: ServerState, action: Action) -> Fallible<()> {
                     parameters.due_date.into_inner()
                 );
 
-                // Was the card forgotten? Put it at the back.
-                if grade == Grade::Forgot {
+                // Cards graded `Forgot` or `Hard` are put at the back of the
+                // queue.
+                if grade == Grade::Forgot || grade == Grade::Hard {
                     mutable.cards.push(card);
                 }
                 mutable.reveal = false;
