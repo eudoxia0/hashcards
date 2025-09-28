@@ -15,6 +15,7 @@
 pub mod card;
 pub mod card_type;
 pub mod date;
+pub mod hash;
 pub mod perf;
 pub mod review;
 pub mod timestamp;

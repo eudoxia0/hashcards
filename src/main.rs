@@ -17,7 +17,6 @@ mod db;
 mod drill;
 mod error;
 mod fsrs;
-mod hash;
 mod markdown;
 mod parser;
 mod types;

@@ -14,8 +14,8 @@
 
 use std::path::PathBuf;
 
-use crate::hash::Hash;
-use crate::hash::Hasher;
+use crate::types::hash::Hash;
+use crate::types::hash::Hasher;
 
 #[derive(Clone)]
 pub struct Card {

@@ -15,8 +15,8 @@
 use crate::fsrs::Difficulty;
 use crate::fsrs::Grade;
 use crate::fsrs::Stability;
-use crate::hash::Hash;
 use crate::types::date::Date;
+use crate::types::hash::Hash;
 use crate::types::timestamp::Timestamp;
 
 pub struct Review {

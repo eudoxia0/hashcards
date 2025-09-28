@@ -41,10 +41,10 @@ use crate::drill::view::post_handler;
 use crate::error::ErrorReport;
 use crate::error::Fallible;
 use crate::error::fail;
-use crate::hash::Hash;
 use crate::parser::parse_deck;
 use crate::types::card::Card;
 use crate::types::date::Date;
+use crate::types::hash::Hash;
 use crate::types::timestamp::Timestamp;
 
 pub async fn start_server(directory: PathBuf, today: Date) -> Fallible<()> {
