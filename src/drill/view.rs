@@ -238,7 +238,7 @@ async fn action_handler(state: ServerState, action: Action) -> Fallible<()> {
                 let diff_percent = ((parameters.difficulty - 1.0) / (9.0)) * 100.0;
                 log::debug!(
                     "{} {} S={:.2}d D={}% due={}",
-                    hash.to_hex()[..8].to_string(),
+                    &hash.to_hex()[..8],
                     grade.as_str(),
                     parameters.stability,
                     diff_percent,
