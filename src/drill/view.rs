@@ -188,6 +188,7 @@ pub async fn post_handler(
 
 async fn action_handler(state: ServerState, action: Action) -> Fallible<()> {
     let mut mutable = state.mutable.lock().unwrap();
+    let today = state.session_started_at.into_date();
     match action {
         Action::Reveal => {
             if mutable.reveal {
@@ -210,7 +211,7 @@ async fn action_handler(state: ServerState, action: Action) -> Fallible<()> {
                     Action::Easy => Grade::Easy,
                     _ => unreachable!(),
                 };
-                let parameters = update_card(latest_review, grade, state.today);
+                let parameters = update_card(latest_review, grade, today);
                 let review = Review {
                     card_hash: hash,
                     reviewed_at: Timestamp::now(),

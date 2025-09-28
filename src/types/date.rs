@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use chrono::Local;
 use chrono::NaiveDate;
 use rusqlite::ToSql;
 use rusqlite::types::FromSql;
@@ -29,10 +28,6 @@ pub struct Date(NaiveDate);
 impl Date {
     pub fn new(naive_date: NaiveDate) -> Self {
         Self(naive_date)
-    }
-
-    pub fn today() -> Self {
-        Self(Local::now().naive_local().date())
     }
 
     pub fn into_inner(self) -> NaiveDate {

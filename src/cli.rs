@@ -18,7 +18,7 @@ use clap::Parser;
 
 use crate::drill::server::start_server;
 use crate::error::Fallible;
-use crate::types::date::Date;
+use crate::types::timestamp::Timestamp;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -39,8 +39,7 @@ pub async fn entrypoint() -> Fallible<()> {
                 None => std::env::current_dir()?,
             }
             .canonicalize()?;
-            let today = Date::today();
-            start_server(directory, today).await
+            start_server(directory, Timestamp::now()).await
         }
     }
 }

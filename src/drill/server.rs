@@ -43,12 +43,11 @@ use crate::error::Fallible;
 use crate::error::fail;
 use crate::parser::parse_deck;
 use crate::types::card::Card;
-use crate::types::date::Date;
 use crate::types::hash::Hash;
 use crate::types::timestamp::Timestamp;
 
-pub async fn start_server(directory: PathBuf, today: Date) -> Fallible<()> {
-    let session_started_at = Timestamp::now();
+pub async fn start_server(directory: PathBuf, session_started_at: Timestamp) -> Fallible<()> {
+    let today = session_started_at.into_date();
 
     if !directory.exists() {
         return fail("directory does not exist.");
@@ -101,7 +100,6 @@ pub async fn start_server(directory: PathBuf, today: Date) -> Fallible<()> {
     }
 
     let state = ServerState {
-        today,
         directory,
         macros,
         total_cards: due_today.len(),
