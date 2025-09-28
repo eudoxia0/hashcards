@@ -43,6 +43,7 @@ use crate::error::fail;
 use crate::hash::Hash;
 use crate::new_db::Database;
 use crate::new_db::Date;
+use crate::new_db::Timestamp;
 use crate::parser::Card;
 use crate::parser::parse_deck;
 
@@ -77,7 +78,6 @@ pub async fn start_server(directory: PathBuf, today: Date) -> Fallible<()> {
     log::debug!("Deck loaded in {duration}ms.");
 
     let db_hashes: HashSet<Hash> = db.card_hashes()?;
-    let dir_hashes: HashSet<Hash> = all_cards.iter().map(|card| card.hash()).collect();
 
     // If a card is in the directory, but not in the DB, it is new. Add it to
     // the database.
@@ -104,6 +104,7 @@ pub async fn start_server(directory: PathBuf, today: Date) -> Fallible<()> {
         db_path,
         macros,
         total_cards: due_today.len(),
+        session_started_at: Timestamp::now(),
         mutable: Arc::new(Mutex::new(MutableState {
             reveal: false,
             db,

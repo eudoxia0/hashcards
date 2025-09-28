@@ -18,6 +18,7 @@ use std::sync::Mutex;
 
 use crate::new_db::Database;
 use crate::new_db::Date;
+use crate::new_db::Timestamp;
 use crate::parser::Card;
 
 #[derive(Clone)]
@@ -27,6 +28,7 @@ pub struct ServerState {
     pub db_path: PathBuf,
     pub macros: Vec<(String, String)>,
     pub total_cards: usize,
+    pub session_started_at: Timestamp,
     pub mutable: Arc<Mutex<MutableState>>,
 }
 
