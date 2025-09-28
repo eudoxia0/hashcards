@@ -16,18 +16,19 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::Mutex;
 
-use chrono::NaiveDate;
-
 use crate::db::Database;
+use crate::db::Date;
+use crate::db::Review;
+use crate::db::Timestamp;
 use crate::parser::Card;
 
 #[derive(Clone)]
 pub struct ServerState {
-    pub today: NaiveDate,
+    pub today: Date,
     pub directory: PathBuf,
-    pub db_path: PathBuf,
     pub macros: Vec<(String, String)>,
     pub total_cards: usize,
+    pub session_started_at: Timestamp,
     pub mutable: Arc<Mutex<MutableState>>,
 }
 
@@ -35,4 +36,5 @@ pub struct MutableState {
     pub reveal: bool,
     pub db: Database,
     pub cards: Vec<Card>,
+    pub reviews: Vec<Review>,
 }

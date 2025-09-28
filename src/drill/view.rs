@@ -22,8 +22,12 @@ use maud::PreEscaped;
 use maud::html;
 use serde::Deserialize;
 
+use crate::db::Performance;
+use crate::db::Review;
+use crate::db::Timestamp;
 use crate::drill::state::ServerState;
 use crate::drill::template::page_template;
+use crate::error::Fallible;
 use crate::fsrs::Grade;
 use crate::markdown::markdown_to_html;
 use crate::parser::CardContent;
@@ -173,8 +177,17 @@ pub async fn post_handler(
     State(state): State<ServerState>,
     Form(form): Form<FormData>,
 ) -> Redirect {
+    match action_handler(state, form.action).await {
+        Ok(_) => {}
+        Err(e) => {
+            log::error!("error: {e}");
+        }
+    }
+    Redirect::to("/")
+}
+
+async fn action_handler(state: ServerState, action: Action) -> Fallible<()> {
     let mut mutable = state.mutable.lock().unwrap();
-    let action = form.action;
     match action {
         Action::Reveal => {
             if mutable.reveal {
@@ -189,7 +202,7 @@ pub async fn post_handler(
             } else {
                 let card = mutable.cards.remove(0);
                 let hash = card.hash();
-                let performance = mutable.db.get(hash).unwrap();
+                let performance = mutable.db.get_card_performance(hash)?;
                 let grade: Grade = match action {
                     Action::Forgot => Grade::Forgot,
                     Action::Hard => Grade::Hard,
@@ -197,8 +210,17 @@ pub async fn post_handler(
                     Action::Easy => Grade::Easy,
                     _ => unreachable!(),
                 };
-                let performance = performance.update(grade, state.today);
-                mutable.db.update(hash, performance);
+                let performance = Performance::update(performance, grade, state.today);
+                let review = Review {
+                    card_hash: hash,
+                    reviewed_at: Timestamp::now(),
+                    grade,
+                    stability: performance.stability,
+                    difficulty: performance.difficulty,
+                    due_date: performance.due_date,
+                };
+                mutable.reviews.push(review);
+
                 // Was the card forgotten? Put it at the back.
                 if grade == Grade::Forgot {
                     mutable.cards.push(card);
@@ -207,12 +229,16 @@ pub async fn post_handler(
 
                 // Was this the last card?
                 if mutable.cards.is_empty() {
-                    let mut writer = csv::Writer::from_path(&state.db_path).unwrap();
-                    log::debug!("Writing performance database");
-                    mutable.db.to_csv(&mut writer).unwrap();
+                    log::debug!("Session completed");
+                    let session_ended_at = Timestamp::now();
+                    mutable.db.save_session(
+                        state.session_started_at,
+                        session_ended_at,
+                        &mutable.reviews,
+                    )?;
                 }
             }
         }
     }
-    Redirect::to("/")
+    Ok(())
 }

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::error::Error;
 use std::fmt::Display;
 use std::fmt::Formatter;
 
@@ -44,18 +45,23 @@ impl From<walkdir::Error> for ErrorReport {
     }
 }
 
-impl From<csv::Error> for ErrorReport {
-    fn from(value: csv::Error) -> Self {
+impl From<rusqlite::Error> for ErrorReport {
+    fn from(value: rusqlite::Error) -> Self {
         ErrorReport {
-            message: format!("CSV error: {value:#?}"),
+            message: format!("rusqlite: {value:#?}"),
         }
     }
 }
 
 impl Display for ErrorReport {
-    // This trait requires `fmt` with this exact signature.
     fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
         write!(f, "error: {}", self.message)
+    }
+}
+
+impl Error for ErrorReport {
+    fn description(&self) -> &str {
+        &self.message
     }
 }
 

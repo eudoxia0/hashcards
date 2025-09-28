@@ -13,6 +13,15 @@
 // limitations under the License.
 
 use std::cmp::Ordering;
+use std::fmt::Display;
+use std::fmt::Formatter;
+
+use rusqlite::ToSql;
+use rusqlite::types::FromSql;
+use rusqlite::types::FromSqlError;
+use rusqlite::types::FromSqlResult;
+use rusqlite::types::ToSqlOutput;
+use rusqlite::types::ValueRef;
 
 use crate::error::ErrorReport;
 use crate::error::Fallible;
@@ -26,20 +35,21 @@ pub struct Hash {
 
 impl Hash {
     #[cfg(test)]
+    #[allow(dead_code)]
     pub fn hash_bytes(bytes: &[u8]) -> Self {
         Self {
             inner: blake3::hash(bytes),
         }
     }
 
+    pub fn to_hex(self) -> String {
+        self.inner.to_hex().to_string()
+    }
+
     pub fn from_hex(s: &str) -> Fallible<Self> {
         let inner = blake3::Hash::from_hex(s)
             .map_err(|_| ErrorReport::new("invalid hash in performance database"))?;
         Ok(Self { inner })
-    }
-
-    pub fn to_hex(self) -> String {
-        self.inner.to_hex().to_string()
     }
 }
 
@@ -52,6 +62,25 @@ impl PartialOrd for Hash {
 impl Ord for Hash {
     fn cmp(&self, other: &Self) -> Ordering {
         self.inner.as_bytes().cmp(other.inner.as_bytes())
+    }
+}
+
+impl ToSql for Hash {
+    fn to_sql(&self) -> rusqlite::Result<ToSqlOutput<'_>> {
+        Ok(ToSqlOutput::from(self.to_hex()))
+    }
+}
+
+impl FromSql for Hash {
+    fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
+        let string: String = FromSql::column_result(value)?;
+        Hash::from_hex(&string).map_err(|e| FromSqlError::Other(Box::new(e)))
+    }
+}
+
+impl Display for Hash {
+    fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
+        write!(f, "{}", self.to_hex())
     }
 }
 

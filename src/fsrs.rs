@@ -12,6 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use rusqlite::ToSql;
+use rusqlite::types::FromSql;
+use rusqlite::types::FromSqlError;
+use rusqlite::types::FromSqlResult;
+use rusqlite::types::ToSqlOutput;
+use rusqlite::types::ValueRef;
+
+use crate::error::ErrorReport;
+use crate::error::fail;
+
 pub const W: [f64; 19] = [
     0.40255, 1.18385, 3.173, 15.69105, 7.1949, 0.5345, 1.4604, 0.0046, 1.54575, 0.1192, 1.01925,
     1.9395, 0.11, 0.29605, 2.2698, 0.2315, 2.9898, 0.51655, 0.6621,
@@ -37,6 +47,44 @@ impl From<Grade> for f64 {
             Grade::Good => 3.0,
             Grade::Easy => 4.0,
         }
+    }
+}
+
+impl Grade {
+    fn as_str(&self) -> &str {
+        match self {
+            Grade::Forgot => "forgot",
+            Grade::Hard => "hard",
+            Grade::Good => "good",
+            Grade::Easy => "easy",
+        }
+    }
+}
+
+impl TryFrom<String> for Grade {
+    type Error = ErrorReport;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        match value.as_str() {
+            "forgot" => Ok(Grade::Forgot),
+            "hard" => Ok(Grade::Hard),
+            "good" => Ok(Grade::Good),
+            "easy" => Ok(Grade::Easy),
+            _ => fail("invalid grade string: {value}"),
+        }
+    }
+}
+
+impl ToSql for Grade {
+    fn to_sql(&self) -> rusqlite::Result<ToSqlOutput<'_>> {
+        Ok(ToSqlOutput::from(self.as_str()))
+    }
+}
+
+impl FromSql for Grade {
+    fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
+        let string: String = FromSql::column_result(value)?;
+        Grade::try_from(string).map_err(|e| FromSqlError::Other(Box::new(e)))
     }
 }
 

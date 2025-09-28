@@ -12,15 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::collections::HashMap;
 use std::collections::HashSet;
-use std::io::Read;
-use std::io::Write;
+use std::sync::Arc;
+use std::sync::Mutex;
+use std::sync::MutexGuard;
 
+use chrono::DateTime;
+use chrono::Local;
 use chrono::NaiveDate;
-use csv::Reader;
-use csv::Writer;
-use serde::Deserialize;
+use chrono::Utc;
+use rusqlite::Connection;
+use rusqlite::ToSql;
+use rusqlite::Transaction;
+use rusqlite::config::DbConfig;
+use rusqlite::types::FromSql;
+use rusqlite::types::FromSqlError;
+use rusqlite::types::FromSqlResult;
+use rusqlite::types::ToSqlOutput;
+use rusqlite::types::ValueRef;
 
 use crate::error::ErrorReport;
 use crate::error::Fallible;
@@ -35,214 +44,374 @@ use crate::fsrs::new_stability;
 use crate::fsrs::retrievability;
 use crate::fsrs::s_0;
 use crate::hash::Hash;
+use crate::parser::Card;
+use crate::parser::CardContent;
+
+#[derive(Clone)]
+pub struct Database {
+    conn: Arc<Mutex<Connection>>,
+}
+
+impl Database {
+    pub fn new(database_path: &str) -> Fallible<Self> {
+        let mut conn = Connection::open(database_path)?;
+        conn.set_db_config(DbConfig::SQLITE_DBCONFIG_ENABLE_FKEY, true)?;
+        {
+            let tx = conn.transaction()?;
+            if !probe_schema_exists(&tx)? {
+                tx.execute_batch(include_str!("schema.sql"))?;
+                tx.commit()?;
+            }
+        }
+        let conn = Arc::new(Mutex::new(conn));
+        Ok(Self { conn })
+    }
+
+    /// Return the set of all card hashes in the database.
+    pub fn card_hashes(&self) -> Fallible<HashSet<Hash>> {
+        let mut hashes = HashSet::new();
+        let conn = self.acquire();
+        let mut stmt = conn.prepare("select card_hash from cards;")?;
+        let mut rows = stmt.query([])?;
+        while let Some(row) = rows.next()? {
+            let hash: Hash = row.get(0)?;
+            hashes.insert(hash);
+        }
+        Ok(hashes)
+    }
+
+    /// Add a new card to the database.
+    pub fn add_card(&self, card: &Card) -> Fallible<()> {
+        log::debug!("Adding new card: {}", card.hash());
+        let card_row = match card.content() {
+            CardContent::Basic { question, answer } => CardRow {
+                card_hash: card.hash(),
+                card_type: CardType::Basic,
+                deck_name: card.deck_name().to_string(),
+                question: question.to_string(),
+                answer: answer.to_string(),
+                cloze_start: 0,
+                cloze_end: 0,
+            },
+            CardContent::Cloze { text, start, end } => CardRow {
+                card_hash: card.hash(),
+                card_type: CardType::Cloze,
+                deck_name: card.deck_name().to_string(),
+                question: text.to_string(),
+                answer: "".to_string(),
+                cloze_start: *start,
+                cloze_end: *end,
+            },
+        };
+        let mut conn = self.acquire();
+        let tx = conn.transaction()?;
+        insert_card(&tx, &card_row)?;
+        tx.commit()?;
+        Ok(())
+    }
+
+    /// Find the set of cards due today.
+    pub fn due_today(&self, today: Date) -> Fallible<HashSet<Hash>> {
+        let mut due = HashSet::new();
+        let conn = self.acquire();
+        let mut stmt = conn.prepare("select c.card_hash, max(r.due_date) from cards c left outer join reviews r on r.card_hash = c.card_hash group by c.card_hash;")?;
+        let mut rows = stmt.query([])?;
+        while let Some(row) = rows.next()? {
+            let hash: Hash = row.get(0)?;
+            let due_date: Option<Date> = row.get(1)?;
+            match due_date {
+                None => {
+                    // Never reviewed, so it's due.
+                    due.insert(hash);
+                }
+                Some(due_date) => {
+                    if due_date <= today {
+                        due.insert(hash);
+                    }
+                }
+            }
+        }
+        Ok(due)
+    }
+
+    /// Get the most recent performance for a card. If the card has never been
+    /// reviewed, return None.
+    pub fn get_card_performance(&self, hash: Hash) -> Fallible<Option<Performance>> {
+        let conn = self.acquire();
+        let sql = "select reviewed_at, stability, difficulty, due_date from reviews where card_hash = ? order by reviewed_at desc limit 1;";
+        let mut stmt = conn.prepare(sql)?;
+        let mut rows = stmt.query([hash])?;
+        if let Some(row) = rows.next()? {
+            let reviewed_at: Timestamp = row.get(0)?;
+            let stability: S = row.get(1)?;
+            let difficulty: D = row.get(2)?;
+            let due_date: Date = row.get(3)?;
+            Ok(Some(Performance {
+                last_review: reviewed_at.into_date(),
+                stability,
+                difficulty,
+                due_date,
+            }))
+        } else {
+            Ok(None)
+        }
+    }
+
+    /// Save a study session and its reviews to the database.
+    pub fn save_session(
+        &self,
+        started_at: Timestamp,
+        ended_at: Timestamp,
+        reviews: &[Review],
+    ) -> Fallible<()> {
+        let mut conn = self.acquire();
+        let tx = conn.transaction()?;
+        let session_id = insert_session(&tx, started_at, ended_at)?;
+        for review in reviews {
+            let row = InsertReview {
+                session_id,
+                card_hash: review.card_hash,
+                reviewed_at: review.reviewed_at.clone(),
+                grade: review.grade,
+                stability: review.stability,
+                difficulty: review.difficulty,
+                due_date: review.due_date,
+            };
+            insert_review(&tx, &row)?;
+        }
+        tx.commit()?;
+        Ok(())
+    }
+
+    fn acquire(&self) -> MutexGuard<'_, Connection> {
+        self.conn.lock().unwrap()
+    }
+}
+
+pub struct Review {
+    pub card_hash: Hash,
+    pub reviewed_at: Timestamp,
+    pub grade: Grade,
+    pub stability: S,
+    pub difficulty: D,
+    pub due_date: Date,
+}
+
+enum CardType {
+    Basic,
+    Cloze,
+}
+
+impl CardType {
+    fn as_str(&self) -> &str {
+        match self {
+            CardType::Basic => "basic",
+            CardType::Cloze => "cloze",
+        }
+    }
+}
+
+impl TryFrom<String> for CardType {
+    type Error = ErrorReport;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        match value.as_str() {
+            "basic" => Ok(CardType::Basic),
+            "cloze" => Ok(CardType::Cloze),
+            _ => fail(format!("Invalid card type: {}", value)),
+        }
+    }
+}
+
+impl ToSql for CardType {
+    fn to_sql(&self) -> rusqlite::Result<ToSqlOutput<'_>> {
+        Ok(ToSqlOutput::from(self.as_str()))
+    }
+}
+
+impl FromSql for CardType {
+    fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
+        let string: String = FromSql::column_result(value)?;
+        CardType::try_from(string).map_err(|e| FromSqlError::Other(Box::new(e)))
+    }
+}
+
+struct CardRow {
+    card_hash: Hash,
+    card_type: CardType,
+    deck_name: String,
+    question: String,
+    answer: String,
+    cloze_start: usize,
+    cloze_end: usize,
+}
+
+fn insert_card(tx: &Transaction, card: &CardRow) -> Fallible<()> {
+    let sql = "insert into cards (card_hash, card_type, deck_name, question, answer, cloze_start, cloze_end) values (?, ?, ?, ?, ?, ?, ?);";
+    tx.execute(
+        sql,
+        (
+            card.card_hash,
+            &card.card_type,
+            &card.deck_name,
+            &card.question,
+            &card.answer,
+            card.cloze_start,
+            card.cloze_end,
+        ),
+    )?;
+    Ok(())
+}
+
+#[derive(Clone)]
+pub struct Timestamp(DateTime<Utc>);
+
+impl Timestamp {
+    pub fn now() -> Self {
+        Self(Utc::now())
+    }
+
+    pub fn into_date(self) -> Date {
+        Date(self.0.naive_utc().date())
+    }
+}
+
+impl ToSql for Timestamp {
+    fn to_sql(&self) -> rusqlite::Result<ToSqlOutput<'_>> {
+        let str = self.0.to_rfc3339();
+        Ok(ToSqlOutput::from(str))
+    }
+}
+
+impl FromSql for Timestamp {
+    fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
+        let string: String = FromSql::column_result(value)?;
+        let ts =
+            DateTime::parse_from_rfc3339(&string).map_err(|e| FromSqlError::Other(Box::new(e)))?;
+        let ts = ts.with_timezone(&Utc);
+        Ok(Timestamp(ts))
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
+pub struct Date(NaiveDate);
+
+impl Date {
+    pub fn new(naive_date: NaiveDate) -> Self {
+        Self(naive_date)
+    }
+
+    pub fn today() -> Self {
+        Self(Local::now().naive_local().date())
+    }
+
+    pub fn into_inner(self) -> NaiveDate {
+        self.0
+    }
+}
+
+impl ToSql for Date {
+    fn to_sql(&self) -> rusqlite::Result<ToSqlOutput<'_>> {
+        let str = self.0.format("%Y-%m-%d").to_string();
+        Ok(ToSqlOutput::from(str))
+    }
+}
+
+impl FromSql for Date {
+    fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
+        let string: String = FromSql::column_result(value)?;
+        let date = NaiveDate::parse_from_str(&string, "%Y-%m-%d")
+            .map_err(|_| ErrorReport::new(format!("invalid date: {}", string)))
+            .map_err(|e| FromSqlError::Other(Box::new(e)))?;
+        Ok(Date(date))
+    }
+}
+
+type SessionId = i64;
+
+fn insert_session(
+    tx: &Transaction,
+    started_at: Timestamp,
+    ended_at: Timestamp,
+) -> Fallible<SessionId> {
+    let sql = "insert into sessions (started_at, ended_at) values (?, ?) returning session_id;";
+    let session_id: SessionId = tx.query_row(sql, (started_at, ended_at), |row| row.get(0))?;
+    Ok(session_id)
+}
+
+struct InsertReview {
+    session_id: SessionId,
+    card_hash: Hash,
+    reviewed_at: Timestamp,
+    grade: Grade,
+    stability: S,
+    difficulty: D,
+    due_date: Date,
+}
+
+type ReviewId = i64;
+
+fn insert_review(tx: &Transaction, review: &InsertReview) -> Fallible<ReviewId> {
+    let sql = "insert into reviews (session_id, card_hash, reviewed_at, grade, stability, difficulty, due_date) values (?, ?, ?, ?, ?, ?, ?) returning review_id;";
+    let review_id: ReviewId = tx.query_row(
+        sql,
+        (
+            review.session_id,
+            &review.card_hash,
+            &review.reviewed_at,
+            review.grade,
+            review.stability,
+            review.difficulty,
+            &review.due_date,
+        ),
+        |row| row.get(0),
+    )?;
+    Ok(review_id)
+}
 
 const TARGET_RECALL: f64 = 0.9;
 
-pub struct Database {
-    inner: HashMap<Hash, Performance>,
-}
-
 #[derive(Clone, Debug, PartialEq)]
-pub enum Performance {
-    New,
-    Reviewed {
-        last_review: NaiveDate,
-        stability: S,
-        difficulty: D,
-        due_date: NaiveDate,
-    },
+pub struct Performance {
+    pub last_review: Date,
+    pub stability: S,
+    pub difficulty: D,
+    pub due_date: Date,
 }
 
 impl Performance {
-    pub fn update(self, grade: Grade, today: NaiveDate) -> Self {
-        let (stability, difficulty) = match self {
-            Performance::New => (s_0(grade), d_0(grade)),
-            Performance::Reviewed {
+    pub fn update(p: Option<Performance>, grade: Grade, today: Date) -> Self {
+        let today = today.into_inner();
+        let (stability, difficulty) = match p {
+            Some(Performance {
                 last_review,
                 stability,
                 difficulty,
                 ..
-            } => {
+            }) => {
+                let last_review = last_review.into_inner();
                 let time = (today - last_review).num_days() as f64;
                 let retr = retrievability(time, stability);
                 let stability = new_stability(difficulty, stability, retr, grade);
                 let difficulty = new_difficulty(difficulty, grade);
                 (stability, difficulty)
             }
+            None => (s_0(grade), d_0(grade)),
         };
         let interval = f64::max(interval(TARGET_RECALL, stability).round(), 1.0);
         let interval_duration = chrono::Duration::days(interval as i64);
         let due_date = today + interval_duration;
-        Performance::Reviewed {
-            last_review: today,
+        Performance {
+            last_review: Date::new(today),
             stability,
             difficulty,
-            due_date,
+            due_date: Date::new(due_date),
         }
     }
 }
 
-#[derive(Deserialize)]
-struct DatabaseRow {
-    hash: String,
-    last_review: Option<String>,
-    stability: Option<S>,
-    difficulty: Option<D>,
-    due_date: Option<String>,
-}
-
-impl DatabaseRow {
-    pub fn parse(self) -> Fallible<(Hash, Performance)> {
-        let performance = match (
-            self.last_review,
-            self.stability,
-            self.difficulty,
-            self.due_date,
-        ) {
-            (Some(lr), Some(s), Some(d), Some(dd)) => Ok(Performance::Reviewed {
-                last_review: NaiveDate::parse_from_str(&lr, "%Y-%m-%d")
-                    .map_err(|_| ErrorReport::new("invalid last review date"))?,
-                stability: s,
-                difficulty: d,
-                due_date: NaiveDate::parse_from_str(&dd, "%Y-%m-%d")
-                    .map_err(|_| ErrorReport::new("invalid due date"))?,
-            }),
-            (None, None, None, None) => Ok(Performance::New),
-            _ => fail("broken performance database"),
-        };
-        let hash = Hash::from_hex(&self.hash)?;
-        Ok((hash, performance?))
-    }
-}
-
-impl Database {
-    pub fn empty() -> Self {
-        Database {
-            inner: HashMap::new(),
-        }
-    }
-
-    pub fn from_csv<R: Read>(reader: &mut Reader<R>) -> Fallible<Self> {
-        let mut db = HashMap::new();
-        for record in reader.records() {
-            let row: DatabaseRow = record?.deserialize(None)?;
-            let (hash, performance) = row.parse()?;
-            db.insert(hash, performance);
-        }
-        Ok(Database { inner: db })
-    }
-
-    pub fn keys(&self) -> HashSet<Hash> {
-        self.inner.keys().cloned().collect()
-    }
-
-    pub fn insert(&mut self, hash: Hash, performance: Performance) {
-        self.inner.insert(hash, performance);
-    }
-
-    pub fn remove(&mut self, hash: &Hash) {
-        self.inner.remove(hash);
-    }
-
-    // Return new cards and cards due today.
-    pub fn due_today(&self, today: NaiveDate) -> HashSet<Hash> {
-        self.inner
-            .iter()
-            .filter_map(|(hash, performance)| match performance {
-                Performance::New => Some(*hash),
-                Performance::Reviewed { due_date, .. } if *due_date <= today => Some(*hash),
-                _ => None,
-            })
-            .collect()
-    }
-
-    pub fn get(&self, hash: Hash) -> Option<Performance> {
-        self.inner.get(&hash).cloned()
-    }
-
-    pub fn update(&mut self, hash: Hash, performance: Performance) {
-        self.inner.insert(hash, performance);
-    }
-
-    pub fn to_csv<W: Write>(&self, writer: &mut Writer<W>) -> Fallible<()> {
-        writer.write_record(["hash", "last_review", "stability", "difficulty", "due_date"])?;
-
-        // Write the cards in a predictable order: smaller hashes to bigger ones.
-        let mut sorted_hashes: Vec<Hash> = self.inner.keys().cloned().collect();
-        sorted_hashes.sort();
-
-        for hash in sorted_hashes {
-            let performance = self.inner.get(&hash).unwrap();
-            match performance {
-                Performance::New => {
-                    writer.write_record([hash.to_hex().as_str(), "", "", "", ""])?;
-                }
-                Performance::Reviewed {
-                    last_review,
-                    stability,
-                    difficulty,
-                    due_date,
-                } => {
-                    writer.write_record([
-                        hash.to_hex().as_str(),
-                        &last_review.format("%Y-%m-%d").to_string(),
-                        &stability.to_string(),
-                        &difficulty.to_string(),
-                        &due_date.format("%Y-%m-%d").to_string(),
-                    ])?;
-                }
-            }
-        }
-        writer.flush()?;
-        Ok(())
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::error::Fallible;
-
-    fn date(year: i32, month: u32, day: u32) -> Fallible<NaiveDate> {
-        NaiveDate::from_ymd_opt(year, month, day).ok_or(ErrorReport::new("invalid date"))
-    }
-
-    /// Create a database, write it to an in-memory buffer, read it back, and
-    /// check the contents are the same.
-    #[test]
-    fn test_write_read_db() -> Fallible<()> {
-        // Create the database.
-        let mut db = Database::empty();
-        let a_hash = Hash::hash_bytes(b"a");
-        let a_perf = Performance::New;
-        let b_hash = Hash::hash_bytes(b"b");
-        let b_perf = Performance::Reviewed {
-            last_review: date(2025, 1, 1)?,
-            stability: 2.5,
-            difficulty: 4.0,
-            due_date: date(2025, 1, 2)?,
-        };
-        db.insert(a_hash, a_perf.clone());
-        db.insert(b_hash, b_perf.clone());
-
-        // Write the database.
-        let mut buffer = Vec::new();
-        {
-            let mut writer = Writer::from_writer(&mut buffer);
-            db.to_csv(&mut writer)?;
-        }
-
-        // Read the database back.
-        let db2 = {
-            let mut reader = Reader::from_reader(buffer.as_slice());
-            Database::from_csv(&mut reader)?
-        };
-
-        // Assertions.
-        assert_eq!(db2.inner.len(), 2);
-        assert_eq!(db2.get(a_hash), Some(a_perf));
-        assert_eq!(db2.get(b_hash), Some(b_perf));
-
-        Ok(())
-    }
+fn probe_schema_exists(tx: &Transaction) -> Fallible<bool> {
+    let sql = "select count(*) from sqlite_master where type='table' AND name=?;";
+    let count: i64 = tx.query_row(sql, ["cards"], |row| row.get(0))?;
+    Ok(count > 0)
 }
