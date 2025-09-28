@@ -152,7 +152,8 @@ impl Database {
     ) -> Fallible<()> {
         let mut conn = self.acquire();
         let tx = conn.transaction()?;
-        let session_id = insert_session(&tx, started_at, ended_at)?;
+        let sql = "insert into sessions (started_at, ended_at) values (?, ?) returning session_id;";
+        let session_id: i64 = tx.query_row(sql, (started_at, ended_at), |row| row.get(0))?;
         for review in reviews {
             let sql = "insert into reviews (session_id, card_hash, reviewed_at, grade, stability, difficulty, due_date) values (?, ?, ?, ?, ?, ?, ?);";
             tx.execute(
@@ -202,18 +203,6 @@ fn insert_card(tx: &Transaction, card: &CardRow) -> Fallible<()> {
         ),
     )?;
     Ok(())
-}
-
-type SessionId = i64;
-
-fn insert_session(
-    tx: &Transaction,
-    started_at: Timestamp,
-    ended_at: Timestamp,
-) -> Fallible<SessionId> {
-    let sql = "insert into sessions (started_at, ended_at) values (?, ?) returning session_id;";
-    let session_id: SessionId = tx.query_row(sql, (started_at, ended_at), |row| row.get(0))?;
-    Ok(session_id)
 }
 
 fn probe_schema_exists(tx: &Transaction) -> Fallible<bool> {
