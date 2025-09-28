@@ -23,7 +23,6 @@ use rusqlite::config::DbConfig;
 
 use crate::error::Fallible;
 use crate::fsrs::Difficulty;
-use crate::fsrs::Grade;
 use crate::fsrs::Stability;
 use crate::types::card::Card;
 use crate::types::card::CardContent;
@@ -155,16 +154,19 @@ impl Database {
         let tx = conn.transaction()?;
         let session_id = insert_session(&tx, started_at, ended_at)?;
         for review in reviews {
-            let row = InsertReview {
-                session_id,
-                card_hash: review.card_hash,
-                reviewed_at: review.reviewed_at.clone(),
-                grade: review.grade,
-                stability: review.stability,
-                difficulty: review.difficulty,
-                due_date: review.due_date,
-            };
-            insert_review(&tx, &row)?;
+            let sql = "insert into reviews (session_id, card_hash, reviewed_at, grade, stability, difficulty, due_date) values (?, ?, ?, ?, ?, ?, ?);";
+            tx.execute(
+                sql,
+                (
+                    session_id,
+                    &review.card_hash,
+                    &review.reviewed_at,
+                    review.grade,
+                    review.stability,
+                    review.difficulty,
+                    &review.due_date,
+                ),
+            )?;
         }
         tx.commit()?;
         Ok(())
@@ -212,36 +214,6 @@ fn insert_session(
     let sql = "insert into sessions (started_at, ended_at) values (?, ?) returning session_id;";
     let session_id: SessionId = tx.query_row(sql, (started_at, ended_at), |row| row.get(0))?;
     Ok(session_id)
-}
-
-struct InsertReview {
-    session_id: SessionId,
-    card_hash: Hash,
-    reviewed_at: Timestamp,
-    grade: Grade,
-    stability: Stability,
-    difficulty: Difficulty,
-    due_date: Date,
-}
-
-type ReviewId = i64;
-
-fn insert_review(tx: &Transaction, review: &InsertReview) -> Fallible<ReviewId> {
-    let sql = "insert into reviews (session_id, card_hash, reviewed_at, grade, stability, difficulty, due_date) values (?, ?, ?, ?, ?, ?, ?) returning review_id;";
-    let review_id: ReviewId = tx.query_row(
-        sql,
-        (
-            review.session_id,
-            &review.card_hash,
-            &review.reviewed_at,
-            review.grade,
-            review.stability,
-            review.difficulty,
-            &review.due_date,
-        ),
-        |row| row.get(0),
-    )?;
-    Ok(review_id)
 }
 
 fn probe_schema_exists(tx: &Transaction) -> Fallible<bool> {
