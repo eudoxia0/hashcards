@@ -136,3 +136,7 @@ input {
         font-weight: bold;
     }
 }
+
+.spacer {
+    flex: 1;
+}

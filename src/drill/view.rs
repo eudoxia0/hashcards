@@ -123,16 +123,24 @@ pub async fn get_handler(State(state): State<ServerState>) -> (StatusCode, Html<
         let card_controls = if mutable.reveal {
             html! {
                 form action="/" method="post" {
+                    input id="undo" type="submit" name="action" value="Undo";
+                    div.spacer {}
                     input id="forgot" type="submit" name="action" value="Forgot";
                     input id="hard" type="submit" name="action" value="Hard";
                     input id="good" type="submit" name="action" value="Good";
                     input id="easy" type="submit" name="action" value="Easy";
+                    div.spacer {}
+                    input id="end" type="submit" name="action" value="End";
                 }
             }
         } else {
             html! {
                 form action="/" method="post" {
+                    input id="undo" type="submit" name="action" value="Undo";
+                    div.spacer {}
                     input id="reveal" type="submit" name="action" value="Reveal";
+                    div.spacer {}
+                    input id="end" type="submit" name="action" value="End";
                 }
             }
         };
@@ -162,6 +170,8 @@ pub async fn get_handler(State(state): State<ServerState>) -> (StatusCode, Html<
 #[derive(Debug, Deserialize)]
 enum Action {
     Reveal,
+    Undo,
+    End,
     Forgot,
     Hard,
     Good,
@@ -196,6 +206,12 @@ async fn action_handler(state: ServerState, action: Action) -> Fallible<()> {
             } else {
                 mutable.reveal = true;
             }
+        }
+        Action::Undo => {
+            todo!()
+        }
+        Action::End => {
+            todo!()
         }
         Action::Forgot | Action::Hard | Action::Good | Action::Easy => {
             if !mutable.reveal {
