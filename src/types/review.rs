@@ -29,7 +29,7 @@ use crate::types::timestamp::Timestamp;
 const TARGET_RECALL: f64 = 0.9;
 
 /// The minimum review interval in days.
-const MIN_INTERVAL: f64 = 1.0;
+const MIN_INTERVAL: f64 = 0.0;
 
 /// The maximum review interval in days.
 const MAX_INTERVAL: f64 = 128.0;

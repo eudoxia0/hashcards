@@ -51,7 +51,7 @@ impl From<Grade> for f64 {
 }
 
 impl Grade {
-    fn as_str(&self) -> &str {
+    pub fn as_str(&self) -> &str {
         match self {
             Grade::Forgot => "forgot",
             Grade::Hard => "hard",

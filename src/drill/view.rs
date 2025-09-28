@@ -222,6 +222,15 @@ async fn action_handler(state: ServerState, action: Action) -> Fallible<()> {
                 };
                 mutable.reviews.push(review);
 
+                log::debug!(
+                    "{} {} S={:.2}d D={:.2} due={}",
+                    hash.to_hex()[..8].to_string(),
+                    grade.as_str(),
+                    parameters.stability,
+                    parameters.difficulty,
+                    parameters.due_date.into_inner()
+                );
+
                 // Was the card forgotten? Put it at the back.
                 if grade == Grade::Forgot {
                     mutable.cards.push(card);
