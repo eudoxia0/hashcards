@@ -203,7 +203,20 @@ async fn action_handler(state: ServerState, action: Action) -> Fallible<()> {
             } else {
                 let card = mutable.cards.remove(0);
                 let hash = card.hash();
-                let latest_review = mutable.db.get_latest_review(hash)?;
+                let latest_review = match mutable.db.get_latest_review(hash)? {
+                    Some(r) => Some(r),
+                    None => {
+                        // Look through the in-memory review database.
+                        let mut found: Option<Review> = None;
+                        for r in mutable.reviews.iter().rev() {
+                            if r.card_hash == hash {
+                                found = Some(r.clone());
+                                break;
+                            }
+                        }
+                        found
+                    }
+                };
                 let grade: Grade = match action {
                     Action::Forgot => Grade::Forgot,
                     Action::Hard => Grade::Hard,
@@ -222,12 +235,13 @@ async fn action_handler(state: ServerState, action: Action) -> Fallible<()> {
                 };
                 mutable.reviews.push(review);
 
+                let diff_percent = ((parameters.difficulty - 1.0) / (9.0)) * 100.0;
                 log::debug!(
-                    "{} {} S={:.2}d D={:.2} due={}",
+                    "{} {} S={:.2}d D={}% due={}",
                     hash.to_hex()[..8].to_string(),
                     grade.as_str(),
                     parameters.stability,
-                    parameters.difficulty,
+                    diff_percent,
                     parameters.due_date.into_inner()
                 );
 

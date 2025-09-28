@@ -34,6 +34,7 @@ const MIN_INTERVAL: f64 = 0.0;
 /// The maximum review interval in days.
 const MAX_INTERVAL: f64 = 128.0;
 
+#[derive(Clone)]
 pub struct Review {
     pub card_hash: Hash,
     pub reviewed_at: Timestamp,
