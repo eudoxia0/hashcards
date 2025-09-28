@@ -20,6 +20,7 @@ mod fsrs;
 mod hash;
 mod markdown;
 mod parser;
+mod types;
 
 use std::process::ExitCode;
 

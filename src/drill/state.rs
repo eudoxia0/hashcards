@@ -17,10 +17,10 @@ use std::sync::Arc;
 use std::sync::Mutex;
 
 use crate::db::Database;
-use crate::db::Date;
 use crate::db::Review;
 use crate::db::Timestamp;
 use crate::parser::Card;
+use crate::types::date::Date;
 
 #[derive(Clone)]
 pub struct ServerState {

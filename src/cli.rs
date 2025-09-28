@@ -16,9 +16,9 @@ use std::path::PathBuf;
 
 use clap::Parser;
 
-use crate::db::Date;
 use crate::drill::server::start_server;
 use crate::error::Fallible;
+use crate::types::date::Date;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]

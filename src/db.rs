@@ -18,8 +18,6 @@ use std::sync::Mutex;
 use std::sync::MutexGuard;
 
 use chrono::DateTime;
-use chrono::Local;
-use chrono::NaiveDate;
 use chrono::Utc;
 use rusqlite::Connection;
 use rusqlite::ToSql;
@@ -46,6 +44,7 @@ use crate::fsrs::retrievability;
 use crate::hash::Hash;
 use crate::parser::Card;
 use crate::parser::CardContent;
+use crate::types::date::Date;
 
 #[derive(Clone)]
 pub struct Database {
@@ -272,7 +271,7 @@ impl Timestamp {
     }
 
     pub fn into_date(self) -> Date {
-        Date(self.0.naive_utc().date())
+        Date::new(self.0.naive_utc().date())
     }
 }
 
@@ -290,40 +289,6 @@ impl FromSql for Timestamp {
             DateTime::parse_from_rfc3339(&string).map_err(|e| FromSqlError::Other(Box::new(e)))?;
         let ts = ts.with_timezone(&Utc);
         Ok(Timestamp(ts))
-    }
-}
-
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
-pub struct Date(NaiveDate);
-
-impl Date {
-    pub fn new(naive_date: NaiveDate) -> Self {
-        Self(naive_date)
-    }
-
-    pub fn today() -> Self {
-        Self(Local::now().naive_local().date())
-    }
-
-    pub fn into_inner(self) -> NaiveDate {
-        self.0
-    }
-}
-
-impl ToSql for Date {
-    fn to_sql(&self) -> rusqlite::Result<ToSqlOutput<'_>> {
-        let str = self.0.format("%Y-%m-%d").to_string();
-        Ok(ToSqlOutput::from(str))
-    }
-}
-
-impl FromSql for Date {
-    fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
-        let string: String = FromSql::column_result(value)?;
-        let date = NaiveDate::parse_from_str(&string, "%Y-%m-%d")
-            .map_err(|_| ErrorReport::new(format!("invalid date: {}", string)))
-            .map_err(|e| FromSqlError::Other(Box::new(e)))?;
-        Ok(Date(date))
     }
 }
 

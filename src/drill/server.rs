@@ -34,7 +34,6 @@ use tokio::net::TcpStream;
 use tokio::time::sleep;
 
 use crate::db::Database;
-use crate::db::Date;
 use crate::db::Timestamp;
 use crate::drill::state::MutableState;
 use crate::drill::state::ServerState;
@@ -46,6 +45,7 @@ use crate::error::fail;
 use crate::hash::Hash;
 use crate::parser::Card;
 use crate::parser::parse_deck;
+use crate::types::date::Date;
 
 pub async fn start_server(directory: PathBuf, today: Date) -> Fallible<()> {
     if !directory.exists() {
