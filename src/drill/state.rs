@@ -16,10 +16,10 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::Mutex;
 
-use crate::new_db::Database;
-use crate::new_db::Date;
-use crate::new_db::Review;
-use crate::new_db::Timestamp;
+use crate::db::Database;
+use crate::db::Date;
+use crate::db::Review;
+use crate::db::Timestamp;
 use crate::parser::Card;
 
 #[derive(Clone)]

@@ -33,6 +33,9 @@ use tokio::net::TcpListener;
 use tokio::net::TcpStream;
 use tokio::time::sleep;
 
+use crate::db::Database;
+use crate::db::Date;
+use crate::db::Timestamp;
 use crate::drill::state::MutableState;
 use crate::drill::state::ServerState;
 use crate::drill::view::get_handler;
@@ -41,9 +44,6 @@ use crate::error::ErrorReport;
 use crate::error::Fallible;
 use crate::error::fail;
 use crate::hash::Hash;
-use crate::new_db::Database;
-use crate::new_db::Date;
-use crate::new_db::Timestamp;
 use crate::parser::Card;
 use crate::parser::parse_deck;
 
