@@ -27,7 +27,7 @@ pub const W: [f64; 19] = [
     1.9395, 0.11, 0.29605, 2.2698, 0.2315, 2.9898, 0.51655, 0.6621,
 ];
 
-pub type R = f64;
+pub type Recall = f64;
 pub type Stability = f64;
 pub type Difficulty = f64;
 
@@ -93,11 +93,11 @@ pub type T = f64;
 const F: f64 = 19.0 / 81.0;
 const C: f64 = -0.5;
 
-pub fn retrievability(t: T, s: Stability) -> R {
+pub fn retrievability(t: T, s: Stability) -> Recall {
     (1.0 + F * (t / s)).powf(C)
 }
 
-pub fn interval(r_d: R, s: Stability) -> T {
+pub fn interval(r_d: Recall, s: Stability) -> T {
     (s / F) * (r_d.powf(1.0 / C) - 1.0)
 }
 
@@ -110,7 +110,7 @@ pub fn initial_stability(g: Grade) -> Stability {
     }
 }
 
-fn s_success(d: Difficulty, s: Stability, r: R, g: Grade) -> Stability {
+fn s_success(d: Difficulty, s: Stability, r: Recall, g: Grade) -> Stability {
     let t_d = 11.0 - d;
     let t_s = s.powf(-W[9]);
     let t_r = f64::exp(W[10] * (1.0 - r)) - 1.0;
@@ -121,7 +121,7 @@ fn s_success(d: Difficulty, s: Stability, r: R, g: Grade) -> Stability {
     s * alpha
 }
 
-fn s_fail(d: Difficulty, s: Stability, r: R) -> Stability {
+fn s_fail(d: Difficulty, s: Stability, r: Recall) -> Stability {
     let d_f = d.powf(-W[12]);
     let s_f = (s + 1.0).powf(W[13]) - 1.0;
     let r_f = f64::exp(W[14] * (1.0 - r));
@@ -130,7 +130,7 @@ fn s_fail(d: Difficulty, s: Stability, r: R) -> Stability {
     f64::min(s_f, s)
 }
 
-pub fn new_stability(d: Difficulty, s: Stability, r: R, g: Grade) -> Stability {
+pub fn new_stability(d: Difficulty, s: Stability, r: Recall, g: Grade) -> Stability {
     if g == Grade::Forgot {
         s_fail(d, s, r)
     } else {
@@ -230,7 +230,7 @@ mod tests {
         // n-th review
         for g in grades {
             t += i;
-            let r: R = retrievability(i, s);
+            let r: Recall = retrievability(i, s);
             s = new_stability(d, s, r, g);
             d = new_difficulty(d, g);
             i = f64::max(interval(r_d, s).round(), 1.0);
