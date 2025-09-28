@@ -256,11 +256,10 @@ async fn action_handler(state: ServerState, action: Action) -> Fallible<()> {
                 if mutable.cards.is_empty() {
                     log::debug!("Session completed");
                     let session_ended_at = Timestamp::now();
-                    mutable.db.save_session(
-                        state.session_started_at,
-                        session_ended_at,
-                        &mutable.reviews,
-                    )?;
+                    let reviews = mutable.reviews.clone();
+                    mutable
+                        .db
+                        .save_session(state.session_started_at, session_ended_at, reviews)?;
                 }
             }
         }

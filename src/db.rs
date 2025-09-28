@@ -13,9 +13,6 @@
 // limitations under the License.
 
 use std::collections::HashSet;
-use std::sync::Arc;
-use std::sync::Mutex;
-use std::sync::MutexGuard;
 
 use rusqlite::Connection;
 use rusqlite::Transaction;
@@ -30,9 +27,8 @@ use crate::types::hash::Hash;
 use crate::types::review::Review;
 use crate::types::timestamp::Timestamp;
 
-#[derive(Clone)]
 pub struct Database {
-    conn: Arc<Mutex<Connection>>,
+    conn: Connection,
 }
 
 impl Database {
@@ -46,15 +42,13 @@ impl Database {
                 tx.commit()?;
             }
         }
-        let conn = Arc::new(Mutex::new(conn));
         Ok(Self { conn })
     }
 
     /// Return the set of all card hashes in the database.
     pub fn card_hashes(&self) -> Fallible<HashSet<Hash>> {
         let mut hashes = HashSet::new();
-        let conn = self.acquire();
-        let mut stmt = conn.prepare("select card_hash from cards;")?;
+        let mut stmt = self.conn.prepare("select card_hash from cards;")?;
         let mut rows = stmt.query([])?;
         while let Some(row) = rows.next()? {
             let hash: Hash = row.get(0)?;
@@ -88,18 +82,14 @@ impl Database {
                 added_at: now,
             },
         };
-        let mut conn = self.acquire();
-        let tx = conn.transaction()?;
-        insert_card(&tx, &card_row)?;
-        tx.commit()?;
+        insert_card(&self.conn, &card_row)?;
         Ok(())
     }
 
     /// Find the set of cards due today.
     pub fn due_today(&self, today: Date) -> Fallible<HashSet<Hash>> {
         let mut due = HashSet::new();
-        let conn = self.acquire();
-        let mut stmt = conn.prepare("select c.card_hash, max(r.due_date) from cards c left outer join reviews r on r.card_hash = c.card_hash group by c.card_hash;")?;
+        let mut stmt = self.conn.prepare("select c.card_hash, max(r.due_date) from cards c left outer join reviews r on r.card_hash = c.card_hash group by c.card_hash;")?;
         let mut rows = stmt.query([])?;
         while let Some(row) = rows.next()? {
             let hash: Hash = row.get(0)?;
@@ -121,9 +111,8 @@ impl Database {
 
     /// Get the latest review for a given card.
     pub fn get_latest_review(&self, card_hash: Hash) -> Fallible<Option<Review>> {
-        let conn = self.acquire();
         let sql = "select reviewed_at, grade, stability, difficulty, due_date from reviews where card_hash = ? order by reviewed_at desc limit 1;";
-        let mut stmt = conn.prepare(sql)?;
+        let mut stmt = self.conn.prepare(sql)?;
         let mut rows = stmt.query([card_hash])?;
         if let Some(row) = rows.next()? {
             Ok(Some(Review {
@@ -141,36 +130,31 @@ impl Database {
 
     /// Save a study session and its reviews to the database.
     pub fn save_session(
-        &self,
+        &mut self,
         started_at: Timestamp,
         ended_at: Timestamp,
-        reviews: &[Review],
+        reviews: Vec<Review>,
     ) -> Fallible<()> {
-        let mut conn = self.acquire();
-        let tx = conn.transaction()?;
+        let tx = self.conn.transaction()?;
         let sql = "insert into sessions (started_at, ended_at) values (?, ?) returning session_id;";
         let session_id: i64 = tx.query_row(sql, (started_at, ended_at), |row| row.get(0))?;
-        for review in reviews {
+        for review in reviews.into_iter() {
             let sql = "insert into reviews (session_id, card_hash, reviewed_at, grade, stability, difficulty, due_date) values (?, ?, ?, ?, ?, ?, ?);";
             tx.execute(
                 sql,
                 (
                     session_id,
-                    &review.card_hash,
-                    &review.reviewed_at,
+                    review.card_hash,
+                    review.reviewed_at,
                     review.grade,
                     review.stability,
                     review.difficulty,
-                    &review.due_date,
+                    review.due_date,
                 ),
             )?;
         }
         tx.commit()?;
         Ok(())
-    }
-
-    fn acquire(&self) -> MutexGuard<'_, Connection> {
-        self.conn.lock().unwrap()
     }
 }
 
@@ -185,9 +169,9 @@ struct CardRow {
     added_at: Timestamp,
 }
 
-fn insert_card(tx: &Transaction, card: &CardRow) -> Fallible<()> {
+fn insert_card(conn: &Connection, card: &CardRow) -> Fallible<()> {
     let sql = "insert into cards (card_hash, card_type, deck_name, question, answer, cloze_start, cloze_end, added_at) values (?, ?, ?, ?, ?, ?, ?, ?);";
-    tx.execute(
+    conn.execute(
         sql,
         (
             card.card_hash,
