@@ -38,6 +38,8 @@ use crate::fsrs::D;
 use crate::fsrs::Grade;
 use crate::fsrs::S;
 use crate::hash::Hash;
+use crate::parser::Card;
+use crate::parser::CardContent;
 
 #[derive(Clone)]
 pub struct Database {
@@ -70,6 +72,35 @@ impl Database {
             hashes.insert(hash);
         }
         Ok(hashes)
+    }
+
+    /// Add a new card to the database.
+    pub fn add_card(&self, card: &Card) -> Fallible<()> {
+        let card_row = match card.content() {
+            CardContent::Basic { question, answer } => CardRow {
+                card_hash: card.hash(),
+                card_type: CardType::Basic,
+                deck_name: card.deck_name().to_string(),
+                question: question.to_string(),
+                answer: answer.to_string(),
+                cloze_start: 0,
+                cloze_end: 0,
+            },
+            CardContent::Cloze { text, start, end } => CardRow {
+                card_hash: card.hash(),
+                card_type: CardType::Cloze,
+                deck_name: card.deck_name().to_string(),
+                question: text.to_string(),
+                answer: "".to_string(),
+                cloze_start: *start,
+                cloze_end: *end,
+            },
+        };
+        let mut conn = self.acquire();
+        let tx = conn.transaction()?;
+        insert_card(&tx, &card_row)?;
+        tx.commit()?;
+        Ok(())
     }
 
     fn acquire(&self) -> MutexGuard<'_, Connection> {

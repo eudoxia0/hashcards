@@ -79,10 +79,12 @@ pub async fn start_server(directory: PathBuf, today: NaiveDate) -> Fallible<()> 
 
     let db_hashes: HashSet<Hash> = db.card_hashes()?;
     let dir_hashes: HashSet<Hash> = all_cards.iter().map(|card| card.hash()).collect();
+
     // If a card is in the directory, but not in the DB, it is new. Add it to the database.
-    let to_add: Vec<Hash> = dir_hashes.difference(&db_keys).cloned().collect();
-    for hash in to_add {
-        db.insert(hash, Performance::New);
+    for card in all_cards.iter() {
+        if !db_hashes.contains(&card.hash()) {
+            db.add_card(&card)?; // New cards start with "New" performance.
+        }
     }
 
     // Find cards due today.
