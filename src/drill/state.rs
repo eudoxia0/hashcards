@@ -34,6 +34,7 @@ pub struct MutableState {
     pub reveal: bool,
     pub db: Database,
     pub cards: Vec<Card>,
+    pub reviewed: Vec<Card>,
     pub reviews: Vec<Review>,
     pub finished: bool,
 }

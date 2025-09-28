@@ -208,7 +208,18 @@ async fn action_handler(state: ServerState, action: Action) -> Fallible<()> {
             }
         }
         Action::Undo => {
-            todo!()
+            if !mutable.reviewed.is_empty() {
+                let r = mutable.reviews.pop().unwrap();
+                let card = if r.grade == Grade::Forgot || r.grade == Grade::Hard {
+                    let _ = mutable.reviewed.pop().unwrap();
+                    mutable.cards.pop().unwrap()
+                } else {
+                    mutable.reviewed.pop().unwrap()
+                };
+                mutable.cards.insert(0, card);
+            } else {
+                log::error!("No reviewed cards to undo.");
+            }
         }
         Action::End => {
             log::debug!("Session completed");
@@ -270,8 +281,11 @@ async fn action_handler(state: ServerState, action: Action) -> Fallible<()> {
                 // Cards graded `Forgot` or `Hard` are put at the back of the
                 // queue.
                 if grade == Grade::Forgot || grade == Grade::Hard {
-                    mutable.cards.push(card);
+                    mutable.cards.push(card.clone());
                 }
+
+                mutable.reviewed.push(card);
+
                 mutable.reveal = false;
 
                 // Was this the last card?
