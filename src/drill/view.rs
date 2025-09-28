@@ -36,7 +36,7 @@ const CLOZE_TAG: &str = "CLOZE_DELETION";
 
 pub async fn get_handler(State(state): State<ServerState>) -> (StatusCode, Html<String>) {
     let mutable = state.mutable.lock().unwrap();
-    let body = if mutable.cards.is_empty() {
+    let body = if mutable.finished {
         html! {
             div.finished {
                 h1 {
@@ -211,7 +211,13 @@ async fn action_handler(state: ServerState, action: Action) -> Fallible<()> {
             todo!()
         }
         Action::End => {
-            todo!()
+            log::debug!("Session completed");
+            let session_ended_at = Timestamp::now();
+            let reviews = mutable.reviews.clone();
+            mutable
+                .db
+                .save_session(state.session_started_at, session_ended_at, reviews)?;
+            mutable.finished = true;
         }
         Action::Forgot | Action::Hard | Action::Good | Action::Easy => {
             if !mutable.reveal {
@@ -276,6 +282,7 @@ async fn action_handler(state: ServerState, action: Action) -> Fallible<()> {
                     mutable
                         .db
                         .save_session(state.session_started_at, session_ended_at, reviews)?;
+                    mutable.finished = true;
                 }
             }
         }

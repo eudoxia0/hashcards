@@ -109,6 +109,7 @@ pub async fn start_server(directory: PathBuf, session_started_at: Timestamp) -> 
             db,
             cards: due_today,
             reviews: Vec::new(),
+            finished: false,
         })),
     };
     let app = Router::new();
