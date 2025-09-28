@@ -31,6 +31,7 @@ use rusqlite::types::FromSqlResult;
 use rusqlite::types::ToSqlOutput;
 use rusqlite::types::ValueRef;
 
+use crate::db::Performance;
 use crate::error::ErrorReport;
 use crate::error::Fallible;
 use crate::error::fail;
@@ -128,9 +129,67 @@ impl Database {
         Ok(due)
     }
 
+    /// Get the most recent performance for a card. If the card has never been
+    /// reviewed, return None.
+    pub fn get_card_performance(&self, hash: Hash) -> Fallible<Option<Performance>> {
+        let conn = self.acquire();
+        let sql = "select reviewed_at, stability, difficulty, due_date from reviews where card_hash = ? order by reviewed_at desc limit 1;";
+        let mut stmt = conn.prepare(sql)?;
+        let mut rows = stmt.query([hash])?;
+        if let Some(row) = rows.next()? {
+            let reviewed_at: Timestamp = row.get(0)?;
+            let stability: S = row.get(1)?;
+            let difficulty: D = row.get(2)?;
+            let due_date: Date = row.get(3)?;
+            Ok(Some(Performance {
+                last_review: reviewed_at.to_date(),
+                stability,
+                difficulty,
+                due_date,
+            }))
+        } else {
+            Ok(None)
+        }
+    }
+
+    /// Save a study session and its reviews to the database.
+    pub fn save_session(
+        &self,
+        started_at: Timestamp,
+        ended_at: Timestamp,
+        reviews: &[Review],
+    ) -> Fallible<()> {
+        let mut conn = self.acquire();
+        let tx = conn.transaction()?;
+        let session_id = insert_session(&tx, started_at, ended_at)?;
+        for review in reviews {
+            let row = InsertReview {
+                session_id,
+                card_hash: review.card_hash,
+                reviewed_at: review.reviewed_at.clone(),
+                grade: review.grade,
+                stability: review.stability,
+                difficulty: review.difficulty,
+                due_date: review.due_date.clone(),
+            };
+            insert_review(&tx, &row)?;
+        }
+        tx.commit()?;
+        Ok(())
+    }
+
     fn acquire(&self) -> MutexGuard<'_, Connection> {
         self.conn.lock().unwrap()
     }
+}
+
+pub struct Review {
+    pub card_hash: Hash,
+    pub reviewed_at: Timestamp,
+    pub grade: Grade,
+    pub stability: S,
+    pub difficulty: D,
+    pub due_date: Date,
 }
 
 enum CardType {
@@ -199,11 +258,16 @@ fn insert_card(tx: &Transaction, card: &CardRow) -> Fallible<()> {
     Ok(())
 }
 
+#[derive(Clone)]
 pub struct Timestamp(DateTime<Utc>);
 
 impl Timestamp {
     pub fn now() -> Self {
         Self(Utc::now())
+    }
+
+    pub fn to_date(self) -> Date {
+        Date(self.0.naive_utc().date())
     }
 }
 
@@ -224,10 +288,14 @@ impl FromSql for Timestamp {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
 pub struct Date(NaiveDate);
 
 impl Date {
+    pub fn new(naive_date: NaiveDate) -> Self {
+        Self(naive_date)
+    }
+
     pub fn today() -> Self {
         Self(Local::now().naive_local().date())
     }

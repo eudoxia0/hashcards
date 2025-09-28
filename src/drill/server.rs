@@ -101,7 +101,6 @@ pub async fn start_server(directory: PathBuf, today: Date) -> Fallible<()> {
     let state = ServerState {
         today,
         directory,
-        db_path,
         macros,
         total_cards: due_today.len(),
         session_started_at: Timestamp::now(),
@@ -109,6 +108,7 @@ pub async fn start_server(directory: PathBuf, today: Date) -> Fallible<()> {
             reveal: false,
             db,
             cards: due_today,
+            reviews: Vec::new(),
         })),
     };
     let app = Router::new();
