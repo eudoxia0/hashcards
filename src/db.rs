@@ -33,16 +33,11 @@ use crate::error::fail;
 use crate::fsrs::Difficulty;
 use crate::fsrs::Grade;
 use crate::fsrs::Stability;
-use crate::fsrs::initial_difficulty;
-use crate::fsrs::initial_stability;
-use crate::fsrs::interval;
-use crate::fsrs::new_difficulty;
-use crate::fsrs::new_stability;
-use crate::fsrs::retrievability;
 use crate::hash::Hash;
 use crate::parser::Card;
 use crate::parser::CardContent;
 use crate::types::date::Date;
+use crate::types::perf::Performance;
 use crate::types::timestamp::Timestamp;
 
 #[derive(Clone)]
@@ -301,56 +296,6 @@ fn insert_review(tx: &Transaction, review: &InsertReview) -> Fallible<ReviewId> 
         |row| row.get(0),
     )?;
     Ok(review_id)
-}
-
-/// The desired recall probability.
-const TARGET_RECALL: f64 = 0.9;
-
-/// The minimum review interval in days.
-const MIN_INTERVAL: f64 = 1.0;
-
-/// The maximum review interval in days.
-const MAX_INTERVAL: f64 = 128.0;
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct Performance {
-    pub last_review: Date,
-    pub stability: Stability,
-    pub difficulty: Difficulty,
-    pub due_date: Date,
-}
-
-impl Performance {
-    pub fn update(p: Option<Performance>, grade: Grade, today: Date) -> Self {
-        let today = today.into_inner();
-        let (stability, difficulty) = match p {
-            Some(Performance {
-                last_review,
-                stability,
-                difficulty,
-                ..
-            }) => {
-                let last_review = last_review.into_inner();
-                let time = (today - last_review).num_days() as f64;
-                let retr = retrievability(time, stability);
-                let stability = new_stability(difficulty, stability, retr, grade);
-                let difficulty = new_difficulty(difficulty, grade);
-                (stability, difficulty)
-            }
-            None => (initial_stability(grade), initial_difficulty(grade)),
-        };
-        let interval = interval(TARGET_RECALL, stability)
-            .round()
-            .clamp(MIN_INTERVAL, MAX_INTERVAL);
-        let interval_duration = chrono::Duration::days(interval as i64);
-        let due_date = today + interval_duration;
-        Performance {
-            last_review: Date::new(today),
-            stability,
-            difficulty,
-            due_date: Date::new(due_date),
-        }
-    }
 }
 
 fn probe_schema_exists(tx: &Transaction) -> Fallible<bool> {

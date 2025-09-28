@@ -22,7 +22,6 @@ use maud::PreEscaped;
 use maud::html;
 use serde::Deserialize;
 
-use crate::db::Performance;
 use crate::db::Review;
 use crate::drill::state::ServerState;
 use crate::drill::template::page_template;
@@ -30,6 +29,7 @@ use crate::error::Fallible;
 use crate::fsrs::Grade;
 use crate::markdown::markdown_to_html;
 use crate::parser::CardContent;
+use crate::types::perf::Performance;
 use crate::types::timestamp::Timestamp;
 
 const CLOZE_TAG: &str = "CLOZE_DELETION";
