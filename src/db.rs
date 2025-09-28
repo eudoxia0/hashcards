@@ -147,7 +147,7 @@ impl Database {
             let difficulty: D = row.get(2)?;
             let due_date: Date = row.get(3)?;
             Ok(Some(Performance {
-                last_review: reviewed_at.to_date(),
+                last_review: reviewed_at.into_date(),
                 stability,
                 difficulty,
                 due_date,
@@ -271,7 +271,7 @@ impl Timestamp {
         Self(Utc::now())
     }
 
-    pub fn to_date(self) -> Date {
+    pub fn into_date(self) -> Date {
         Date(self.0.naive_utc().date())
     }
 }
