@@ -78,14 +78,14 @@ pub async fn start_server(directory: PathBuf, today: NaiveDate) -> Fallible<()> 
     log::debug!("Deck loaded in {duration}ms.");
 
     let db_hashes: HashSet<Hash> = db.card_hashes()?;
-    let dir_keys: HashSet<Hash> = all_cards.iter().map(|card| card.hash()).collect();
+    let dir_hashes: HashSet<Hash> = all_cards.iter().map(|card| card.hash()).collect();
     // If a card is in the DB, but not in the directory, it was deleted. Therefore, remove it from the database.
-    let to_remove: Vec<Hash> = db_keys.difference(&dir_keys).cloned().collect();
+    let to_remove: Vec<Hash> = db_keys.difference(&dir_hashes).cloned().collect();
     for hash in to_remove {
         db.remove(&hash);
     }
     // If a card is in the directory, but not in the DB, it is new. Add it to the database.
-    let to_add: Vec<Hash> = dir_keys.difference(&db_keys).cloned().collect();
+    let to_add: Vec<Hash> = dir_hashes.difference(&db_keys).cloned().collect();
     for hash in to_add {
         db.insert(hash, Performance::New);
     }
