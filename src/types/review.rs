@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use chrono::Duration;
+
 use crate::fsrs::Difficulty;
 use crate::fsrs::Grade;
 use crate::fsrs::Stability;
@@ -72,7 +74,7 @@ pub fn update_card(review: Option<Review>, grade: Grade, today: Date) -> Paramet
     let interval = interval(TARGET_RECALL, stability)
         .round()
         .clamp(MIN_INTERVAL, MAX_INTERVAL);
-    let interval_duration = chrono::Duration::days(interval as i64);
+    let interval_duration = Duration::days(interval as i64);
     let due_date = today + interval_duration;
     Parameters {
         stability,
