@@ -83,7 +83,7 @@ pub async fn start_server(directory: PathBuf, today: Date) -> Fallible<()> {
     // the database.
     for card in all_cards.iter() {
         if !db_hashes.contains(&card.hash()) {
-            db.add_card(&card)?;
+            db.add_card(card)?;
         }
     }
 

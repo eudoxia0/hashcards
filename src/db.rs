@@ -175,7 +175,7 @@ impl Database {
                 grade: review.grade,
                 stability: review.stability,
                 difficulty: review.difficulty,
-                due_date: review.due_date.clone(),
+                due_date: review.due_date,
             };
             insert_review(&tx, &row)?;
         }
