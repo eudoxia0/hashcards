@@ -17,6 +17,8 @@ use std::sync::Mutex;
 use std::sync::MutexGuard;
 
 use chrono::DateTime;
+use chrono::Local;
+use chrono::NaiveDate;
 use chrono::Utc;
 use rusqlite::Connection;
 use rusqlite::ToSql;
@@ -31,6 +33,9 @@ use rusqlite::types::ValueRef;
 use crate::error::ErrorReport;
 use crate::error::Fallible;
 use crate::error::fail;
+use crate::fsrs::D;
+use crate::fsrs::Grade;
+use crate::fsrs::S;
 use crate::hash::Hash;
 
 #[derive(Clone)]
@@ -142,12 +147,6 @@ impl Timestamp {
     }
 }
 
-impl From<DateTime<Utc>> for Timestamp {
-    fn from(dt: DateTime<Utc>) -> Self {
-        Timestamp(dt)
-    }
-}
-
 impl ToSql for Timestamp {
     fn to_sql(&self) -> rusqlite::Result<ToSqlOutput<'_>> {
         let str = self.0.to_rfc3339();
@@ -161,14 +160,75 @@ impl FromSql for Timestamp {
         let ts =
             DateTime::parse_from_rfc3339(&string).map_err(|e| FromSqlError::Other(Box::new(e)))?;
         let ts = ts.with_timezone(&Utc);
-        Ok(Timestamp::from(ts))
+        Ok(Timestamp(ts))
     }
 }
 
-fn insert_session(tx: &Transaction, started_at: Timestamp, ended_at: Timestamp) -> Fallible<()> {
-    let sql = "insert into sessions (started_at, ended_at) values (?, ?);";
-    tx.execute(sql, (started_at, ended_at))?;
-    Ok(())
+pub struct Date(NaiveDate);
+
+impl Date {
+    pub fn today() -> Self {
+        Self(Local::now().naive_local().date())
+    }
+}
+
+impl ToSql for Date {
+    fn to_sql(&self) -> rusqlite::Result<ToSqlOutput<'_>> {
+        let str = self.0.format("%Y-%m-%d").to_string();
+        Ok(ToSqlOutput::from(str))
+    }
+}
+
+impl FromSql for Date {
+    fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
+        let string: String = FromSql::column_result(value)?;
+        let date = NaiveDate::parse_from_str(&string, "%Y-%m-%d")
+            .map_err(|_| ErrorReport::new(format!("invalid date: {}", string)))
+            .map_err(|e| FromSqlError::Other(Box::new(e)))?;
+        Ok(Date(date))
+    }
+}
+
+type SessionId = i64;
+
+fn insert_session(
+    tx: &Transaction,
+    started_at: Timestamp,
+    ended_at: Timestamp,
+) -> Fallible<SessionId> {
+    let sql = "insert into sessions (started_at, ended_at) values (?, ?) returning session_id;";
+    let session_id: SessionId = tx.query_row(sql, (started_at, ended_at), |row| row.get(0))?;
+    Ok(session_id)
+}
+
+struct InsertReview {
+    session_id: SessionId,
+    card_hash: Hash,
+    reviewed_at: Timestamp,
+    grade: Grade,
+    stability: S,
+    difficulty: D,
+    due_date: Date,
+}
+
+type ReviewId = i64;
+
+fn insert_review(tx: &Transaction, review: &InsertReview) -> Fallible<ReviewId> {
+    let sql = "insert into reviews (session_id, card_hash, reviewed_at, grade, stability, difficulty, due_date) values (?, ?, ?, ?, ?, ?, ?) returning review_id;";
+    let review_id: ReviewId = tx.query_row(
+        sql,
+        (
+            review.session_id,
+            &review.card_hash,
+            &review.reviewed_at,
+            review.grade,
+            review.stability,
+            review.difficulty,
+            &review.due_date,
+        ),
+        |row| row.get(0),
+    )?;
+    Ok(review_id)
 }
 
 fn probe_schema_exists(tx: &Transaction) -> Fallible<bool> {
