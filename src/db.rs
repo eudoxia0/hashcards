@@ -23,6 +23,7 @@ use crate::fsrs::new_difficulty;
 use crate::fsrs::new_stability;
 use crate::fsrs::retrievability;
 use crate::fsrs::s_0;
+use crate::new_db::Date;
 
 const TARGET_RECALL: f64 = 0.9;
 
@@ -38,7 +39,8 @@ pub enum Performance {
 }
 
 impl Performance {
-    pub fn update(self, grade: Grade, today: NaiveDate) -> Self {
+    pub fn update(self, grade: Grade, today: Date) -> Self {
+        let today = today.into_inner();
         let (stability, difficulty) = match self {
             Performance::New => (s_0(grade), d_0(grade)),
             Performance::Reviewed {

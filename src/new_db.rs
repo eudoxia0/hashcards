@@ -231,6 +231,10 @@ impl Date {
     pub fn today() -> Self {
         Self(Local::now().naive_local().date())
     }
+
+    pub fn into_inner(self) -> NaiveDate {
+        self.0
+    }
 }
 
 impl ToSql for Date {
