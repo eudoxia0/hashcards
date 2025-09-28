@@ -369,7 +369,14 @@ fn insert_review(tx: &Transaction, review: &InsertReview) -> Fallible<ReviewId> 
     Ok(review_id)
 }
 
+/// The desired recall probability.
 const TARGET_RECALL: f64 = 0.9;
+
+/// The minimum review interval in days.
+const MIN_INTERVAL: f64 = 1.0;
+
+/// The maximum review interval in days.
+const MAX_INTERVAL: f64 = 128.0;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Performance {
@@ -398,7 +405,9 @@ impl Performance {
             }
             None => (initial_stability(grade), initial_difficulty(grade)),
         };
-        let interval = f64::max(interval(TARGET_RECALL, stability).round(), 1.0);
+        let interval = interval(TARGET_RECALL, stability)
+            .round()
+            .clamp(MIN_INTERVAL, MAX_INTERVAL);
         let interval_duration = chrono::Duration::days(interval as i64);
         let due_date = today + interval_duration;
         Performance {
