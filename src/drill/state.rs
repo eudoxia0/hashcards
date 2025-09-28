@@ -18,7 +18,7 @@ use std::sync::Mutex;
 
 use chrono::NaiveDate;
 
-use crate::db::Database;
+use crate::new_db::Database;
 use crate::parser::Card;
 
 #[derive(Clone)]

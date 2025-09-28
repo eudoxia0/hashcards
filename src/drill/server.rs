@@ -30,20 +30,20 @@ use axum::response::Html;
 use axum::routing::get;
 use axum::routing::post;
 use chrono::NaiveDate;
-use csv::Reader;
 use tokio::net::TcpListener;
 use tokio::net::TcpStream;
 use tokio::time::sleep;
 
-use crate::db::Database;
 use crate::db::Performance;
 use crate::drill::state::MutableState;
 use crate::drill::state::ServerState;
 use crate::drill::view::get_handler;
 use crate::drill::view::post_handler;
+use crate::error::ErrorReport;
 use crate::error::Fallible;
 use crate::error::fail;
 use crate::hash::Hash;
+use crate::new_db::Database;
 use crate::parser::Card;
 use crate::parser::parse_deck;
 
@@ -52,17 +52,12 @@ pub async fn start_server(directory: PathBuf, today: NaiveDate) -> Fallible<()> 
         return fail("directory does not exist.");
     }
 
-    let db_path = directory.join("performance.csv");
-    let mut db = if db_path.exists() {
-        log::debug!("Loading performance database...");
-        let mut reader = Reader::from_path(&db_path)?;
-        let db = Database::from_csv(&mut reader)?;
-        log::debug!("Database loaded.");
-        db
-    } else {
-        log::debug!("Using empty performance database.");
-        Database::empty()
-    };
+    let db_path = directory.join("db.sqlite3");
+    let db = Database::new(
+        db_path
+            .to_str()
+            .ok_or_else(|| ErrorReport::new("invalid path"))?,
+    )?;
 
     let mut macros = Vec::new();
     let macros_path = directory.join("macros.tex");
