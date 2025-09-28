@@ -28,8 +28,8 @@ use crate::error::Fallible;
 use crate::fsrs::Grade;
 use crate::markdown::markdown_to_html;
 use crate::types::card::CardContent;
-use crate::types::perf::Performance;
 use crate::types::review::Review;
+use crate::types::review::update_card;
 use crate::types::timestamp::Timestamp;
 
 const CLOZE_TAG: &str = "CLOZE_DELETION";
@@ -202,7 +202,7 @@ async fn action_handler(state: ServerState, action: Action) -> Fallible<()> {
             } else {
                 let card = mutable.cards.remove(0);
                 let hash = card.hash();
-                let performance = mutable.db.get_card_performance(hash)?;
+                let latest_review = mutable.db.get_latest_review(hash)?;
                 let grade: Grade = match action {
                     Action::Forgot => Grade::Forgot,
                     Action::Hard => Grade::Hard,
@@ -210,14 +210,14 @@ async fn action_handler(state: ServerState, action: Action) -> Fallible<()> {
                     Action::Easy => Grade::Easy,
                     _ => unreachable!(),
                 };
-                let performance = Performance::update(performance, grade, state.today);
+                let parameters = update_card(latest_review, grade, state.today);
                 let review = Review {
                     card_hash: hash,
                     reviewed_at: Timestamp::now(),
                     grade,
-                    stability: performance.stability,
-                    difficulty: performance.difficulty,
-                    due_date: performance.due_date,
+                    stability: parameters.stability,
+                    difficulty: parameters.difficulty,
+                    due_date: parameters.due_date,
                 };
                 mutable.reviews.push(review);
 

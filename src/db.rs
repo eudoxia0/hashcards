@@ -22,14 +22,11 @@ use rusqlite::Transaction;
 use rusqlite::config::DbConfig;
 
 use crate::error::Fallible;
-use crate::fsrs::Difficulty;
-use crate::fsrs::Stability;
 use crate::types::card::Card;
 use crate::types::card::CardContent;
 use crate::types::card_type::CardType;
 use crate::types::date::Date;
 use crate::types::hash::Hash;
-use crate::types::perf::Performance;
 use crate::types::review::Review;
 use crate::types::timestamp::Timestamp;
 
@@ -120,23 +117,20 @@ impl Database {
         Ok(due)
     }
 
-    /// Get the most recent performance for a card. If the card has never been
-    /// reviewed, return None.
-    pub fn get_card_performance(&self, hash: Hash) -> Fallible<Option<Performance>> {
+    /// Get the latest review for a given card.
+    pub fn get_latest_review(&self, card_hash: Hash) -> Fallible<Option<Review>> {
         let conn = self.acquire();
-        let sql = "select reviewed_at, stability, difficulty, due_date from reviews where card_hash = ? order by reviewed_at desc limit 1;";
+        let sql = "select reviewed_at, grade, stability, difficulty, due_date from reviews where card_hash = ? order by reviewed_at desc limit 1;";
         let mut stmt = conn.prepare(sql)?;
-        let mut rows = stmt.query([hash])?;
+        let mut rows = stmt.query([card_hash])?;
         if let Some(row) = rows.next()? {
-            let reviewed_at: Timestamp = row.get(0)?;
-            let stability: Stability = row.get(1)?;
-            let difficulty: Difficulty = row.get(2)?;
-            let due_date: Date = row.get(3)?;
-            Ok(Some(Performance {
-                last_review: reviewed_at.into_date(),
-                stability,
-                difficulty,
-                due_date,
+            Ok(Some(Review {
+                card_hash,
+                reviewed_at: row.get(0)?,
+                grade: row.get(1)?,
+                stability: row.get(2)?,
+                difficulty: row.get(3)?,
+                due_date: row.get(4)?,
             }))
         } else {
             Ok(None)
