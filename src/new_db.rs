@@ -63,16 +63,6 @@ impl Database {
     }
 }
 
-// create table cards (
-//     card_hash text primary key,
-//     card_type text not null,
-//     deck_name text not null,
-//     question text not null,
-//     answer text not null,
-//     cloze_start integer not null,
-//     cloze_end integer not null
-// ) strict;
-
 enum CardType {
     Basic,
     Cloze,
