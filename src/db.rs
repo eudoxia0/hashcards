@@ -18,24 +18,17 @@ use std::sync::Mutex;
 use std::sync::MutexGuard;
 
 use rusqlite::Connection;
-use rusqlite::ToSql;
 use rusqlite::Transaction;
 use rusqlite::config::DbConfig;
-use rusqlite::types::FromSql;
-use rusqlite::types::FromSqlError;
-use rusqlite::types::FromSqlResult;
-use rusqlite::types::ToSqlOutput;
-use rusqlite::types::ValueRef;
 
-use crate::error::ErrorReport;
 use crate::error::Fallible;
-use crate::error::fail;
 use crate::fsrs::Difficulty;
 use crate::fsrs::Grade;
 use crate::fsrs::Stability;
 use crate::hash::Hash;
 use crate::parser::Card;
 use crate::parser::CardContent;
+use crate::types::card_type::CardType;
 use crate::types::date::Date;
 use crate::types::perf::Performance;
 use crate::types::timestamp::Timestamp;
@@ -188,45 +181,6 @@ pub struct Review {
     pub stability: Stability,
     pub difficulty: Difficulty,
     pub due_date: Date,
-}
-
-enum CardType {
-    Basic,
-    Cloze,
-}
-
-impl CardType {
-    fn as_str(&self) -> &str {
-        match self {
-            CardType::Basic => "basic",
-            CardType::Cloze => "cloze",
-        }
-    }
-}
-
-impl TryFrom<String> for CardType {
-    type Error = ErrorReport;
-
-    fn try_from(value: String) -> Result<Self, Self::Error> {
-        match value.as_str() {
-            "basic" => Ok(CardType::Basic),
-            "cloze" => Ok(CardType::Cloze),
-            _ => fail(format!("Invalid card type: {}", value)),
-        }
-    }
-}
-
-impl ToSql for CardType {
-    fn to_sql(&self) -> rusqlite::Result<ToSqlOutput<'_>> {
-        Ok(ToSqlOutput::from(self.as_str()))
-    }
-}
-
-impl FromSql for CardType {
-    fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
-        let string: String = FromSql::column_result(value)?;
-        CardType::try_from(string).map_err(|e| FromSqlError::Other(Box::new(e)))
-    }
 }
 
 struct CardRow {
