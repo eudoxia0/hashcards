@@ -30,5 +30,5 @@ create table reviews (
     grade text not null,
     stability real not null,
     difficulty real not null,
-    next_due_date text not null
+    due_date text not null
 ) strict;
