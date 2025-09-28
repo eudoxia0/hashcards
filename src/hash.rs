@@ -13,6 +13,8 @@
 // limitations under the License.
 
 use std::cmp::Ordering;
+use std::fmt::Display;
+use std::fmt::Formatter;
 
 use rusqlite::ToSql;
 use rusqlite::types::FromSql;
@@ -72,6 +74,12 @@ impl FromSql for Hash {
     fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
         let string: String = FromSql::column_result(value)?;
         Hash::from_hex(&string).map_err(|e| FromSqlError::Other(Box::new(e)))
+    }
+}
+
+impl Display for Hash {
+    fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
+        write!(f, "{}", self.to_hex())
     }
 }
 

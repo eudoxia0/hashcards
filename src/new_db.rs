@@ -76,6 +76,7 @@ impl Database {
 
     /// Add a new card to the database.
     pub fn add_card(&self, card: &Card) -> Fallible<()> {
+        log::debug!("Adding new card: {}", card.hash());
         let card_row = match card.content() {
             CardContent::Basic { question, answer } => CardRow {
                 card_hash: card.hash(),
@@ -101,6 +102,30 @@ impl Database {
         insert_card(&tx, &card_row)?;
         tx.commit()?;
         Ok(())
+    }
+
+    /// Find the set of cards due today.
+    pub fn due_today(&self, today: Date) -> Fallible<HashSet<Hash>> {
+        let mut due = HashSet::new();
+        let conn = self.acquire();
+        let mut stmt = conn.prepare("select c.card_hash, max(r.due_date) from cards c left outer join reviews r on r.card_hash = c.card_hash group by c.card_hash;")?;
+        let mut rows = stmt.query([])?;
+        while let Some(row) = rows.next()? {
+            let hash: Hash = row.get(0)?;
+            let due_date: Option<Date> = row.get(1)?;
+            match due_date {
+                None => {
+                    // Never reviewed, so it's due.
+                    due.insert(hash);
+                }
+                Some(due_date) => {
+                    if due_date <= today {
+                        due.insert(hash);
+                    }
+                }
+            }
+        }
+        Ok(due)
     }
 
     fn acquire(&self) -> MutexGuard<'_, Connection> {
@@ -199,6 +224,7 @@ impl FromSql for Timestamp {
     }
 }
 
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Date(NaiveDate);
 
 impl Date {

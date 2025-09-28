@@ -22,6 +22,7 @@ use maud::PreEscaped;
 use maud::html;
 use serde::Deserialize;
 
+use crate::db::Performance;
 use crate::drill::state::ServerState;
 use crate::drill::template::page_template;
 use crate::fsrs::Grade;
@@ -189,7 +190,7 @@ pub async fn post_handler(
             } else {
                 let card = mutable.cards.remove(0);
                 let hash = card.hash();
-                let performance = mutable.db.get(hash).unwrap();
+                let performance: Performance = todo!(); //mutable.db.get(hash).unwrap();
                 let grade: Grade = match action {
                     Action::Forgot => Grade::Forgot,
                     Action::Hard => Grade::Hard,
@@ -198,7 +199,7 @@ pub async fn post_handler(
                     _ => unreachable!(),
                 };
                 let performance = performance.update(grade, state.today);
-                mutable.db.update(hash, performance);
+                // mutable.db.update(hash, performance);
                 // Was the card forgotten? Put it at the back.
                 if grade == Grade::Forgot {
                     mutable.cards.push(card);
@@ -209,7 +210,7 @@ pub async fn post_handler(
                 if mutable.cards.is_empty() {
                     let mut writer = csv::Writer::from_path(&state.db_path).unwrap();
                     log::debug!("Writing performance database");
-                    mutable.db.to_csv(&mut writer).unwrap();
+                    // mutable.db.to_csv(&mut writer).unwrap();
                 }
             }
         }

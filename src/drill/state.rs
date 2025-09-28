@@ -16,14 +16,13 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::Mutex;
 
-use chrono::NaiveDate;
-
 use crate::new_db::Database;
+use crate::new_db::Date;
 use crate::parser::Card;
 
 #[derive(Clone)]
 pub struct ServerState {
-    pub today: NaiveDate,
+    pub today: Date,
     pub directory: PathBuf,
     pub db_path: PathBuf,
     pub macros: Vec<(String, String)>,

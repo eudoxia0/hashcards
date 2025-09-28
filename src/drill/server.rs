@@ -29,12 +29,10 @@ use axum::http::header::CONTENT_TYPE;
 use axum::response::Html;
 use axum::routing::get;
 use axum::routing::post;
-use chrono::NaiveDate;
 use tokio::net::TcpListener;
 use tokio::net::TcpStream;
 use tokio::time::sleep;
 
-use crate::db::Performance;
 use crate::drill::state::MutableState;
 use crate::drill::state::ServerState;
 use crate::drill::view::get_handler;
@@ -44,10 +42,11 @@ use crate::error::Fallible;
 use crate::error::fail;
 use crate::hash::Hash;
 use crate::new_db::Database;
+use crate::new_db::Date;
 use crate::parser::Card;
 use crate::parser::parse_deck;
 
-pub async fn start_server(directory: PathBuf, today: NaiveDate) -> Fallible<()> {
+pub async fn start_server(directory: PathBuf, today: Date) -> Fallible<()> {
     if !directory.exists() {
         return fail("directory does not exist.");
     }
@@ -80,15 +79,16 @@ pub async fn start_server(directory: PathBuf, today: NaiveDate) -> Fallible<()> 
     let db_hashes: HashSet<Hash> = db.card_hashes()?;
     let dir_hashes: HashSet<Hash> = all_cards.iter().map(|card| card.hash()).collect();
 
-    // If a card is in the directory, but not in the DB, it is new. Add it to the database.
+    // If a card is in the directory, but not in the DB, it is new. Add it to
+    // the database.
     for card in all_cards.iter() {
         if !db_hashes.contains(&card.hash()) {
-            db.add_card(&card)?; // New cards start with "New" performance.
+            db.add_card(&card)?;
         }
     }
 
     // Find cards due today.
-    let due_today = db.due_today(today);
+    let due_today = db.due_today(today)?;
     let due_today: Vec<Card> = all_cards
         .into_iter()
         .filter(|card| due_today.contains(&card.hash()))
