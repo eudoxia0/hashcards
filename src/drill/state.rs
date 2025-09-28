@@ -18,9 +18,9 @@ use std::sync::Mutex;
 
 use crate::db::Database;
 use crate::db::Review;
-use crate::db::Timestamp;
 use crate::parser::Card;
 use crate::types::date::Date;
+use crate::types::timestamp::Timestamp;
 
 #[derive(Clone)]
 pub struct ServerState {
