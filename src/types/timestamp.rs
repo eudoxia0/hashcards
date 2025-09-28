@@ -13,6 +13,7 @@
 // limitations under the License.
 
 use chrono::DateTime;
+use chrono::Local;
 use chrono::Utc;
 use rusqlite::ToSql;
 use rusqlite::types::FromSql;
@@ -31,8 +32,9 @@ impl Timestamp {
         Self(Utc::now())
     }
 
-    pub fn into_date(self) -> Date {
-        Date::new(self.0.naive_utc().date())
+    pub fn local_date(self) -> Date {
+        let ts = self.0.with_timezone(&Local);
+        Date::new(ts.date_naive())
     }
 }
 

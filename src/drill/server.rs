@@ -47,7 +47,7 @@ use crate::types::hash::Hash;
 use crate::types::timestamp::Timestamp;
 
 pub async fn start_server(directory: PathBuf, session_started_at: Timestamp) -> Fallible<()> {
-    let today = session_started_at.into_date();
+    let today = session_started_at.local_date();
 
     if !directory.exists() {
         return fail("directory does not exist.");

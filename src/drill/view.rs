@@ -188,7 +188,7 @@ pub async fn post_handler(
 
 async fn action_handler(state: ServerState, action: Action) -> Fallible<()> {
     let mut mutable = state.mutable.lock().unwrap();
-    let today = state.session_started_at.into_date();
+    let today = state.session_started_at.local_date();
     match action {
         Action::Reveal => {
             if mutable.reveal {

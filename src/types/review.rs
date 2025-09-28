@@ -59,7 +59,7 @@ pub fn update_card(review: Option<Review>, grade: Grade, today: Date) -> Paramet
             difficulty,
             ..
         }) => {
-            let last_review = reviewed_at.into_date().into_inner();
+            let last_review = reviewed_at.local_date().into_inner();
             let time = (today - last_review).num_days() as f64;
             let retr = retrievability(time, stability);
             let stability = new_stability(difficulty, stability, retr, grade);
