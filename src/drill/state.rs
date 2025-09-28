@@ -17,9 +17,9 @@ use std::sync::Arc;
 use std::sync::Mutex;
 
 use crate::db::Database;
-use crate::db::Review;
 use crate::parser::Card;
 use crate::types::date::Date;
+use crate::types::review::Review;
 use crate::types::timestamp::Timestamp;
 
 #[derive(Clone)]

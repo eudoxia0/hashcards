@@ -31,6 +31,7 @@ use crate::parser::CardContent;
 use crate::types::card_type::CardType;
 use crate::types::date::Date;
 use crate::types::perf::Performance;
+use crate::types::review::Review;
 use crate::types::timestamp::Timestamp;
 
 #[derive(Clone)]
@@ -172,15 +173,6 @@ impl Database {
     fn acquire(&self) -> MutexGuard<'_, Connection> {
         self.conn.lock().unwrap()
     }
-}
-
-pub struct Review {
-    pub card_hash: Hash,
-    pub reviewed_at: Timestamp,
-    pub grade: Grade,
-    pub stability: Stability,
-    pub difficulty: Difficulty,
-    pub due_date: Date,
 }
 
 struct CardRow {

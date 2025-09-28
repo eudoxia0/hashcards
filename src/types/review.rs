@@ -12,8 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub mod card_type;
-pub mod date;
-pub mod perf;
-pub mod review;
-pub mod timestamp;
+use crate::fsrs::Difficulty;
+use crate::fsrs::Grade;
+use crate::fsrs::Stability;
+use crate::hash::Hash;
+use crate::types::date::Date;
+use crate::types::timestamp::Timestamp;
+
+pub struct Review {
+    pub card_hash: Hash,
+    pub reviewed_at: Timestamp,
+    pub grade: Grade,
+    pub stability: Stability,
+    pub difficulty: Difficulty,
+    pub due_date: Date,
+}
