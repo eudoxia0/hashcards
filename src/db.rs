@@ -64,7 +64,7 @@ impl Database {
     }
 
     /// Add a new card to the database.
-    pub fn add_card(&self, card: &Card) -> Fallible<()> {
+    pub fn add_card(&self, card: &Card, now: Timestamp) -> Fallible<()> {
         log::debug!("Adding new card: {}", card.hash());
         let card_row = match card.content() {
             CardContent::Basic { question, answer } => CardRow {
@@ -75,6 +75,7 @@ impl Database {
                 answer: answer.to_string(),
                 cloze_start: 0,
                 cloze_end: 0,
+                added_at: now,
             },
             CardContent::Cloze { text, start, end } => CardRow {
                 card_hash: card.hash(),
@@ -84,6 +85,7 @@ impl Database {
                 answer: "".to_string(),
                 cloze_start: *start,
                 cloze_end: *end,
+                added_at: now,
             },
         };
         let mut conn = self.acquire();
@@ -180,10 +182,11 @@ struct CardRow {
     answer: String,
     cloze_start: usize,
     cloze_end: usize,
+    added_at: Timestamp,
 }
 
 fn insert_card(tx: &Transaction, card: &CardRow) -> Fallible<()> {
-    let sql = "insert into cards (card_hash, card_type, deck_name, question, answer, cloze_start, cloze_end) values (?, ?, ?, ?, ?, ?, ?);";
+    let sql = "insert into cards (card_hash, card_type, deck_name, question, answer, cloze_start, cloze_end, added_at) values (?, ?, ?, ?, ?, ?, ?, ?);";
     tx.execute(
         sql,
         (
@@ -194,6 +197,7 @@ fn insert_card(tx: &Transaction, card: &CardRow) -> Fallible<()> {
             &card.answer,
             card.cloze_start,
             card.cloze_end,
+            &card.added_at,
         ),
     )?;
     Ok(())

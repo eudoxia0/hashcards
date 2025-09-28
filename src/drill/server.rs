@@ -48,6 +48,8 @@ use crate::types::hash::Hash;
 use crate::types::timestamp::Timestamp;
 
 pub async fn start_server(directory: PathBuf, today: Date) -> Fallible<()> {
+    let session_started_at = Timestamp::now();
+
     if !directory.exists() {
         return fail("directory does not exist.");
     }
@@ -83,7 +85,7 @@ pub async fn start_server(directory: PathBuf, today: Date) -> Fallible<()> {
     // the database.
     for card in all_cards.iter() {
         if !db_hashes.contains(&card.hash()) {
-            db.add_card(card)?;
+            db.add_card(card, session_started_at)?;
         }
     }
 
@@ -103,7 +105,7 @@ pub async fn start_server(directory: PathBuf, today: Date) -> Fallible<()> {
         directory,
         macros,
         total_cards: due_today.len(),
-        session_started_at: Timestamp::now(),
+        session_started_at,
         mutable: Arc::new(Mutex::new(MutableState {
             reveal: false,
             db,

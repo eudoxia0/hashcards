@@ -7,7 +7,8 @@ create table cards (
     question text not null,
     answer text not null,
     cloze_start integer not null,
-    cloze_end integer not null
+    cloze_end integer not null,
+    added_at text not null
 ) strict;
 
 create table sessions (

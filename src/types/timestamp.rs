@@ -23,7 +23,7 @@ use rusqlite::types::ValueRef;
 
 use crate::types::date::Date;
 
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub struct Timestamp(DateTime<Utc>);
 
 impl Timestamp {
