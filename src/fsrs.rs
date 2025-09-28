@@ -27,7 +27,7 @@ pub const W: [f64; 19] = [
     1.9395, 0.11, 0.29605, 2.2698, 0.2315, 2.9898, 0.51655, 0.6621,
 ];
 
-pub type Recall = f64;
+type Recall = f64;
 pub type Stability = f64;
 pub type Difficulty = f64;
 
