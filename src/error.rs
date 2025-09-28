@@ -45,14 +45,6 @@ impl From<walkdir::Error> for ErrorReport {
     }
 }
 
-impl From<csv::Error> for ErrorReport {
-    fn from(value: csv::Error) -> Self {
-        ErrorReport {
-            message: format!("CSV error: {value:#?}"),
-        }
-    }
-}
-
 impl From<rusqlite::Error> for ErrorReport {
     fn from(value: rusqlite::Error) -> Self {
         ErrorReport {
