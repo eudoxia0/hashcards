@@ -17,81 +17,8 @@ use std::path::PathBuf;
 use walkdir::WalkDir;
 
 use crate::error::Fallible;
-use crate::hash::Hash;
-use crate::hash::Hasher;
-
-#[derive(Clone)]
-pub struct Card {
-    /// The name of the deck this card belongs to.
-    deck_name: String,
-    /// The absolute path to the file this card was parsed from.
-    #[allow(dead_code)]
-    file_path: PathBuf,
-    /// The card's content.
-    content: CardContent,
-    /// The cached hash of the card's content.
-    hash: Hash,
-}
-
-#[derive(Clone)]
-pub enum CardContent {
-    Basic {
-        question: String,
-        answer: String,
-    },
-    Cloze {
-        /// The text of the card without brackets.
-        text: String,
-        /// The position of the first character of the deletion.
-        start: usize,
-        /// The position of the last character of the deletion.
-        end: usize,
-    },
-}
-
-impl Card {
-    fn new(deck_name: String, file_path: PathBuf, content: CardContent) -> Self {
-        let hash = content.hash();
-        Self {
-            deck_name,
-            file_path,
-            content,
-            hash,
-        }
-    }
-
-    pub fn deck_name(&self) -> &str {
-        &self.deck_name
-    }
-
-    pub fn content(&self) -> &CardContent {
-        &self.content
-    }
-
-    pub fn hash(&self) -> Hash {
-        self.hash
-    }
-}
-
-impl CardContent {
-    pub fn hash(&self) -> Hash {
-        let mut hasher = Hasher::new();
-        match &self {
-            CardContent::Basic { question, answer } => {
-                hasher.update(b"Basic");
-                hasher.update(question.as_bytes());
-                hasher.update(answer.as_bytes());
-            }
-            CardContent::Cloze { text, start, end } => {
-                hasher.update(b"Cloze");
-                hasher.update(text.as_bytes());
-                hasher.update(&start.to_le_bytes());
-                hasher.update(&end.to_le_bytes());
-            }
-        }
-        hasher.finalize()
-    }
-}
+use crate::types::card::Card;
+use crate::types::card::CardContent;
 
 pub fn parse_deck(directory: &PathBuf) -> Fallible<Vec<Card>> {
     let mut all_cards = Vec::new();
@@ -207,7 +134,7 @@ mod tests {
         let cards = parse(content);
 
         assert_eq!(cards.len(), 1);
-        match &cards[0].content {
+        match &cards[0].content() {
             CardContent::Basic { question, answer } => {
                 assert_eq!(question, "What is the capital of France?");
                 assert_eq!(answer, "Paris");
@@ -221,7 +148,7 @@ mod tests {
         let content = "[Berlin] is the capital of [Germany].";
         let cards = parse(content);
         assert_eq!(cards.len(), 2);
-        match &cards[0].content {
+        match &cards[0].content() {
             CardContent::Cloze { text, start, end } => {
                 assert_eq!(text, "Berlin is the capital of Germany.");
                 assert_eq!(*start, 0);
@@ -229,7 +156,7 @@ mod tests {
             }
             _ => panic!("Expected Cloze card"),
         }
-        match &cards[1].content {
+        match &cards[1].content() {
             CardContent::Cloze { text, start, end } => {
                 assert_eq!(text, "Berlin is the capital of Germany.");
                 assert_eq!(*start, 25);
@@ -246,9 +173,9 @@ mod tests {
         let cards = parse(content);
 
         assert_eq!(cards.len(), 3);
-        assert!(matches!(cards[0].content, CardContent::Basic { .. }));
-        assert!(matches!(cards[1].content, CardContent::Cloze { .. }));
-        assert!(matches!(cards[1].content, CardContent::Cloze { .. }));
+        assert!(matches!(cards[0].content(), CardContent::Basic { .. }));
+        assert!(matches!(cards[1].content(), CardContent::Cloze { .. }));
+        assert!(matches!(cards[1].content(), CardContent::Cloze { .. }));
     }
 
     #[test]
@@ -257,7 +184,7 @@ mod tests {
         let cards = parse(content);
 
         assert_eq!(cards.len(), 2);
-        match &cards[0].content {
+        match &cards[0].content() {
             CardContent::Basic { question, answer } => {
                 assert_eq!(question, "What is 2+2?");
                 assert_eq!(answer, "4");
@@ -292,7 +219,7 @@ mod tests {
         let content = "This is not a valid card\n\nWhat is valid? / Yes\n\nAlso not valid";
         let cards = parse(content);
         assert_eq!(cards.len(), 1);
-        match &cards[0].content {
+        match &cards[0].content() {
             CardContent::Basic { question, answer } => {
                 assert_eq!(question, "What is valid?");
                 assert_eq!(answer, "Yes");
@@ -307,7 +234,7 @@ mod tests {
         let cards = parse(content);
 
         assert_eq!(cards.len(), 1);
-        match &cards[0].content {
+        match &cards[0].content() {
             CardContent::Basic { question, answer } => {
                 assert_eq!(question, "What is\nthe capital of Russia?");
                 assert_eq!(answer, "Moscow");

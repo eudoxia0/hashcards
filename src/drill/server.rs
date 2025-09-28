@@ -42,8 +42,8 @@ use crate::error::ErrorReport;
 use crate::error::Fallible;
 use crate::error::fail;
 use crate::hash::Hash;
-use crate::parser::Card;
 use crate::parser::parse_deck;
+use crate::types::card::Card;
 use crate::types::date::Date;
 use crate::types::timestamp::Timestamp;
 

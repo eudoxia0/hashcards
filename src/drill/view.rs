@@ -27,7 +27,7 @@ use crate::drill::template::page_template;
 use crate::error::Fallible;
 use crate::fsrs::Grade;
 use crate::markdown::markdown_to_html;
-use crate::parser::CardContent;
+use crate::types::card::CardContent;
 use crate::types::perf::Performance;
 use crate::types::review::Review;
 use crate::types::timestamp::Timestamp;

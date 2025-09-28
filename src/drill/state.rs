@@ -17,7 +17,7 @@ use std::sync::Arc;
 use std::sync::Mutex;
 
 use crate::db::Database;
-use crate::parser::Card;
+use crate::types::card::Card;
 use crate::types::date::Date;
 use crate::types::review::Review;
 use crate::types::timestamp::Timestamp;
