@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::collections::HashSet;
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::MutexGuard;
@@ -58,7 +59,20 @@ impl Database {
         Ok(Self { conn })
     }
 
-    pub fn acquire(&self) -> MutexGuard<'_, Connection> {
+    /// Return the set of all card hashes in the database.
+    pub fn card_hashes(&self) -> Fallible<HashSet<Hash>> {
+        let mut hashes = HashSet::new();
+        let conn = self.acquire();
+        let mut stmt = conn.prepare("select card_hash from cards;")?;
+        let mut rows = stmt.query([])?;
+        while let Some(row) = rows.next()? {
+            let hash: Hash = row.get(0)?;
+            hashes.insert(hash);
+        }
+        Ok(hashes)
+    }
+
+    fn acquire(&self) -> MutexGuard<'_, Connection> {
         self.conn.lock().unwrap()
     }
 }

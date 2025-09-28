@@ -77,7 +77,7 @@ pub async fn start_server(directory: PathBuf, today: NaiveDate) -> Fallible<()> 
     let duration = end.duration_since(start).as_millis();
     log::debug!("Deck loaded in {duration}ms.");
 
-    let db_keys: HashSet<Hash> = db.keys();
+    let db_hashes: HashSet<Hash> = db.card_hashes()?;
     let dir_keys: HashSet<Hash> = all_cards.iter().map(|card| card.hash()).collect();
     // If a card is in the DB, but not in the directory, it was deleted. Therefore, remove it from the database.
     let to_remove: Vec<Hash> = db_keys.difference(&dir_keys).cloned().collect();
