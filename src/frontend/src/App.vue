@@ -4,6 +4,7 @@ import Button from '@/components/Button.vue'
 import Spacer from '@/components/Spacer.vue'
 import RichText from '@/components/RichText.vue'
 import { Grade, type CardData, type Review } from './types'
+import { CARDS } from './mock'
 
 /// The stack of cards to review.
 const cards: Ref<CardData[]> = ref([])
@@ -83,37 +84,7 @@ function undo() {
 }
 
 // Mimic API calls:
-cards.value = [
-  {
-    hash: 'a',
-    kind: 'Basic',
-    deckName: 'Geography',
-    question: '<p>What is the capital of Germany?</p>',
-    answer: '<p>Berlin</p>',
-  },
-  {
-    hash: 'b',
-    kind: 'Basic',
-    deckName: 'Geography',
-    question: '<p>Who wrote <i>The Tempest</i>?</p>',
-    answer: '<p>Shakespeare</p>',
-  },
-  {
-    hash: 'c',
-    kind: 'Cloze',
-    deckName: 'Chemistry',
-    prompt: '<p>The atomic number of lithium is <span class="cloze">.............</span>.</p>',
-    answer: '<p>The atomic number of lithium is <span class="cloze-reveal">3</span>.</p>',
-  },
-  {
-    hash: 'd',
-    kind: 'Basic',
-    deckName: 'Math',
-    question: '<p>What does $2+2$ equal?</p>',
-    answer: '<p>$4$</p>',
-  },
-]
-
+cards.value = CARDS
 totalCards.value = cards.value.length
 </script>
 
