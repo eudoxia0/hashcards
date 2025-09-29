@@ -36,6 +36,8 @@ const totalCards: Ref<number> = ref(0)
 const reveal: Ref<boolean> = ref(false)
 /// The index of the current card.
 const cardIndex: Ref<number> = ref(0)
+/// Are we done?
+const done: Ref<boolean> = ref(false)
 
 /// The card at the current index, or null if there are no cards.
 const currentCard: ComputedRef<CardData | null> = computed(() => {
@@ -56,12 +58,16 @@ function review(grade: Grade) {
   if (currentCard.value) {
     currentCard.value.grade = grade
   }
-  cardIndex.value += 1
+  if (cardIndex.value === cards.value.length - 1) {
+    done.value = true
+  } else {
+    cardIndex.value += 1
+  }
 }
 
 /// Finish the session early.
 function finish() {
-  console.log('Aborted review')
+  done.value = true
 }
 
 /// Undo the last grading action.
@@ -106,7 +112,7 @@ totalCards.value = cards.value.length
 </script>
 
 <template>
-  <div v-if="currentCard" class="root">
+  <div v-if="!done && currentCard" class="root">
     <div class="controls">
       <Button label="Undo" :disabled="cardIndex === 0" @click="undo()" />
       <Spacer />
