@@ -41,16 +41,12 @@ const totalCards = 7
 }
 
 .header,
-.question,
-.answer,
 .prompt,
 .controls {
   padding: 32px;
 }
 
 .header,
-.question,
-.answer,
 .prompt {
   width: 100%;
   border-bottom: 1px solid black;
