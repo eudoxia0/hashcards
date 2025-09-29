@@ -70,7 +70,8 @@ function nextCard() {
         </div>
       </template>
       <template v-else>
-        <div class="prompt rich-text" v-html="currentCard.prompt" />
+        <div v-if="reveal" class="prompt rich-text" v-html="currentCard.answer" />
+        <div v-else class="prompt rich-text" v-html="currentCard.prompt" />
       </template>
     </div>
     <div class="controls">
