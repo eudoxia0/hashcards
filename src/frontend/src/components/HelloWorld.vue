@@ -4,6 +4,7 @@ import Button from './Button.vue'
 import Spacer from './Spacer.vue'
 
 interface BasicCard {
+  hash: string
   kind: 'Basic'
   deckName: string
   question: string
@@ -11,6 +12,7 @@ interface BasicCard {
 }
 
 interface ClozeCard {
+  hash: string
   kind: 'Cloze'
   deckName: string
   prompt: string
@@ -24,16 +26,11 @@ enum Grade {
   REMEMBERED = 'remembered',
 }
 
-interface Action {
-  label: string
-}
-
 const cards: Ref<CardData[]> = ref([])
 const reveal: Ref<boolean> = ref(false)
 const cardsDone: Ref<number> = ref(0)
 const cardIndex: Ref<number> = ref(0)
 const totalCards: Ref<number> = ref(0)
-const actions: Ref<Action[]> = ref([])
 
 const currentCard: ComputedRef<CardData | null> = computed(() => {
   if (cards.value.length === 0) {
@@ -62,9 +59,8 @@ function nextCard() {
 
 function review(grade: Grade) {
   reveal.value = false
-  console.log(`Reviewed card as: ${grade}`)
-  cards.value.splice(cardIndex.value, 1)
   cardsDone.value += 1
+  cards.value.splice(cardIndex.value, 1)
 }
 
 function finish() {
@@ -75,18 +71,21 @@ function finish() {
 // Mimic API calls:
 cards.value = [
   {
+    hash: 'a',
     kind: 'Basic',
     deckName: 'Geography',
     question: '<p>What is the capital of Germany?</p>',
     answer: '<p>Berlin</p>',
   },
   {
+    hash: 'b',
     kind: 'Basic',
     deckName: 'Geography',
     question: '<p>What is the capital of Paris?</p>',
     answer: '<p>France</p>',
   },
   {
+    hash: 'c',
     kind: 'Cloze',
     deckName: 'Chemistry',
     prompt: '<p>The atomic number of lithium is <span class="cloze">.............</span>.</p>',
@@ -99,34 +98,35 @@ totalCards.value = cards.value.length
 
 <template>
   <div v-if="currentCard" class="root">
-    <div class="header">
-      <h1>{{ currentCard.deckName }}</h1>
-      <Spacer />
+    <div class="controls">
       <Button label="<" @click="prevCard" />
       <Button label=">" @click="nextCard" />
       <Spacer />
-      <div class="progress">{{ cardsDone }} / {{ totalCards }}</div>
-    </div>
-    <div class="content">
-      <template v-if="currentCard.kind === 'Basic'">
-        <div class="question" v-html="currentCard.question" />
-        <div class="answer">
-          <div v-if="reveal" v-html="currentCard.answer" />
-        </div>
-      </template>
-      <template v-else>
-        <div v-if="reveal" class="prompt" v-html="currentCard.answer" />
-        <div v-else class="prompt" v-html="currentCard.prompt" />
-      </template>
-    </div>
-    <div class="controls">
-      <Button label="Undo" :disabled="actions.length === 0" />
+      <Button label="Undo" />
       <Spacer />
       <Button v-if="!reveal" label="Reveal" @click="reveal = true" />
       <Button v-if="reveal" label="Forgot" @click="review(Grade.FORGOT)" />
       <Button v-if="reveal" label="Remembered" @click="review(Grade.REMEMBERED)" />
       <Spacer />
       <Button label="End" @click="finish()" />
+      <div class="progress">{{ cardsDone }} / {{ totalCards }}</div>
+    </div>
+    <div class="card">
+      <div class="header">
+        <h1>{{ currentCard.deckName }}</h1>
+      </div>
+      <div class="content">
+        <template v-if="currentCard.kind === 'Basic'">
+          <div class="question" v-html="currentCard.question" />
+          <div class="answer">
+            <div v-if="reveal" v-html="currentCard.answer" />
+          </div>
+        </template>
+        <template v-else>
+          <div v-if="reveal" class="prompt" v-html="currentCard.answer" />
+          <div v-else class="prompt" v-html="currentCard.prompt" />
+        </template>
+      </div>
     </div>
   </div>
   <div v-else class="root">Session Completed</div>
@@ -138,67 +138,29 @@ totalCards.value = cards.value.length
   height: 100vh;
   display: flex;
   flex-direction: column;
-}
 
-.content {
-  flex: 1;
-}
+  .controls {
+    display: flex;
+    flex-direction: row;
+    justify-content: start;
+    align-items: center;
 
-.header,
-.prompt,
-.question,
-.answer,
-.controls {
-  padding: 32px;
-}
-
-.header,
-.question,
-.answer,
-.prompt {
-  width: 100%;
-  border-bottom: 1px solid black;
-}
-
-.header {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: center;
-
-  h1 {
-    font-size: 36px;
-    font-weight: 300;
-    flex: 1;
+    .progress {
+      font-size: 32px;
+    }
   }
 
-  .progress {
-    font-size: 24px;
+  .card {
+    padding: 32px;
+    border: 1px solid black;
+
+    header {
+      h1 {
+      }
+    }
+
+    .content {
+    }
   }
-}
-
-.question,
-.answer,
-.prompt {
-  overflow-y: auto;
-  font-size: 28px;
-}
-
-.question {
-  height: 75%;
-}
-
-.answer {
-  height: 25%;
-}
-
-.prompt {
-  height: 100%;
-}
-
-.controls {
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
 }
 </style>
