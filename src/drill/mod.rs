@@ -79,7 +79,7 @@ mod tests {
 
         // Hit the not found endpoint.
         let response = reqwest::get("http://0.0.0.0:8000/herp-derp").await?;
-        assert!(response.status() == StatusCode::NOT_FOUND);
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
 
         // Hit the image endpoint.
         let response = reqwest::get("http://0.0.0.0:8000/image/thetempest.webp").await?;
@@ -87,6 +87,36 @@ mod tests {
         assert_eq!(
             response.headers().get("content-type").unwrap(),
             "application/octet-stream"
+        );
+
+        // Hit the image endpoint with a non-existent image.
+        let response = reqwest::get("http://0.0.0.0:8000/image/foo.png").await?;
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
+
+        // Hit the root endpoint.
+        let response = reqwest::get("http://0.0.0.0:8000/").await?;
+        assert!(response.status().is_success());
+        assert_eq!(
+            response.headers().get("content-type").unwrap(),
+            "text/html; charset=utf-8"
+        );
+        let html = response.text().await?;
+        assert!(html.contains("Berlin is the capital of"));
+
+        // Hit reveal.
+        let response = reqwest::Client::new()
+            .post("http://0.0.0.0:8000/")
+            .form(&[("action", "Reveal")])
+            .send()
+            .await?;
+        assert!(response.status().is_success());
+        assert_eq!(
+            response.headers().get("content-type").unwrap(),
+            "text/html; charset=utf-8"
+        );
+        let html = response.text().await?;
+        assert!(
+            html.contains("Berlin is the capital of <span class='cloze-reveal'>Germany</span>.")
         );
 
         Ok(())
