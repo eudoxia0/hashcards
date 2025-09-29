@@ -15,9 +15,10 @@ A plain text-based spaced repetition system. Features:
 The following Markdown file is a valid hashcards deck:
 
 ```
-What is the capital of France? / Paris
+Q: What is the capital of France?
+A: Paris
 
-[Paris] is the capital of [France].
+C: [Paris] is the capital of [France].
 ```
 
 ## Building
