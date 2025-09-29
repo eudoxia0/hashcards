@@ -2,7 +2,7 @@
 import { computed, ref, type ComputedRef, type Ref } from 'vue'
 import Button from './Button.vue'
 import Spacer from './Spacer.vue'
-import { useCardStore, type CardStore, type Card } from '@/stores/cards'
+import { useCardStore, type CardStore, type CardData } from '@/stores/cards'
 
 const cardStore: CardStore = useCardStore()
 
@@ -19,17 +19,19 @@ cardStore.setCards([
   },
   {
     kind: 'Cloze',
-    prompt: '<p>The atomic number of lithium is <span class="cloze">.......</span>.</p>',
+    prompt: '<p>The atomic number of lithium is <span class="cloze">.............</span>.</p>',
     answer: '<p>The atomic number of lithium is <span class="cloze-reveal">3</span>.</p>',
   },
 ])
 
 const deckName = 'Geography'
 
+const reveal: Ref<boolean> = ref(false)
+
 const cardsDone: number = 0
 const cardIndex: Ref<number> = ref(0)
 const totalCards: ComputedRef<number> = computed(() => cardStore.cards.length)
-const currentCard: ComputedRef<Card> = computed(() => cardStore.cards[cardIndex.value])
+const currentCard: ComputedRef<CardData> = computed(() => cardStore.cards[cardIndex.value])
 
 function prevCard() {
   if (cardIndex.value > 0) {
@@ -61,7 +63,9 @@ function nextCard() {
     <div class="content">
       <template v-if="currentCard.kind === 'Basic'">
         <div class="question rich-text" v-html="currentCard.question" />
-        <div class="answer rich-text" v-html="currentCard.answer" />
+        <div class="answer rich-text">
+          <div v-if="reveal" v-html="currentCard.answer" />
+        </div>
       </template>
       <template v-else>
         <div class="prompt rich-text" v-html="currentCard.prompt" />
@@ -70,7 +74,7 @@ function nextCard() {
     <div class="controls">
       <Button label="Undo" />
       <Spacer />
-      <Button label="Reveal" />
+      <Button v-if="!reveal" label="Reveal" @click="reveal = true" />
       <Spacer />
       <Button label="End" />
     </div>

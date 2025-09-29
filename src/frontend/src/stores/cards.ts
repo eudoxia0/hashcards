@@ -13,12 +13,12 @@ export interface ClozeCard {
   answer: string
 }
 
-export type Card = BasicCard | ClozeCard
+export type CardData = BasicCard | ClozeCard
 
 export const useCardStore = defineStore('cards', () => {
-  const cards: Ref<Card[]> = ref<Card[]>([])
+  const cards: Ref<CardData[]> = ref<CardData[]>([])
 
-  const setCards: (newCards: Card[]) => void = (newCards: Card[]) => {
+  const setCards: (newCards: CardData[]) => void = (newCards: CardData[]) => {
     cards.value = newCards
   }
 
