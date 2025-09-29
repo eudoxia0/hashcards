@@ -18,12 +18,14 @@ use maud::Markup;
 use maud::PreEscaped;
 use maud::html;
 
+use crate::error::Fallible;
 use crate::markdown::markdown_to_html;
 use crate::markdown::markdown_to_html_inline;
 use crate::types::card_type::CardType;
 use crate::types::hash::Hash;
 use crate::types::hash::Hasher;
 
+const CLOZE_TAG_BYTES: &[u8] = b"CLOZE_DELETION";
 const CLOZE_TAG: &str = "CLOZE_DELETION";
 
 #[derive(Clone)]
@@ -94,11 +96,11 @@ impl Card {
         }
     }
 
-    pub fn html_front(&self) -> Markup {
+    pub fn html_front(&self) -> Fallible<Markup> {
         self.content.html_front()
     }
 
-    pub fn html_back(&self) -> Markup {
+    pub fn html_back(&self) -> Fallible<Markup> {
         self.content.html_back()
     }
 }
@@ -129,46 +131,52 @@ impl CardContent {
         hasher.finalize()
     }
 
-    pub fn html_front(&self) -> Markup {
-        match self {
+    pub fn html_front(&self) -> Fallible<Markup> {
+        let html = match self {
             CardContent::Basic { question, .. } => {
                 html! {
                     (PreEscaped(markdown_to_html(question)))
                 }
             }
             CardContent::Cloze { text, start, end } => {
-                let mut prompt = text.clone();
-                prompt.replace_range(*start..*end + 1, CLOZE_TAG);
-                let prompt = markdown_to_html(&prompt);
-                let prompt = prompt.replace(CLOZE_TAG, "<span class='cloze'>.............</span>");
+                let mut text_bytes: Vec<u8> = text.as_bytes().to_owned();
+                text_bytes.splice(*start..*end + 1, CLOZE_TAG_BYTES.iter().copied());
+                let text: String = String::from_utf8(text_bytes)?;
+                let text: String = markdown_to_html(&text);
+                let text: String =
+                    text.replace(CLOZE_TAG, "<span class='cloze'>.............</span>");
                 html! {
-                    (PreEscaped(prompt))
+                    (PreEscaped(text))
                 }
             }
-        }
+        };
+        Ok(html)
     }
 
-    pub fn html_back(&self) -> Markup {
-        match self {
+    pub fn html_back(&self) -> Fallible<Markup> {
+        let html = match self {
             CardContent::Basic { answer, .. } => {
                 html! {
                     (PreEscaped(markdown_to_html(answer)))
                 }
             }
             CardContent::Cloze { text, start, end } => {
-                let cloze_text = &text[*start..*end + 1];
-                let mut answer = text.clone();
-                answer.replace_range(*start..*end + 1, CLOZE_TAG);
-                let answer = markdown_to_html(&answer);
-                let cloze_text = markdown_to_html_inline(cloze_text);
-                let answer = answer.replace(
+                let mut text_bytes: Vec<u8> = text.as_bytes().to_owned();
+                let deleted_text: Vec<u8> = text_bytes[*start..*end + 1].to_owned();
+                let deleted_text: String = String::from_utf8(deleted_text)?;
+                let deleted_text: String = markdown_to_html_inline(&deleted_text);
+                text_bytes.splice(*start..*end + 1, CLOZE_TAG_BYTES.iter().copied());
+                let text: String = String::from_utf8(text_bytes)?;
+                let text = markdown_to_html(&text);
+                let text = text.replace(
                     CLOZE_TAG,
-                    &format!("<span class='cloze-reveal'>{}</span>", cloze_text),
+                    &format!("<span class='cloze-reveal'>{}</span>", deleted_text),
                 );
                 html! {
-                    (PreEscaped(answer))
+                    (PreEscaped(text))
                 }
             }
-        }
+        };
+        Ok(html)
     }
 }

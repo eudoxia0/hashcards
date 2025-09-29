@@ -15,6 +15,7 @@
 use std::error::Error;
 use std::fmt::Display;
 use std::fmt::Formatter;
+use std::string::FromUtf8Error;
 
 #[derive(Debug)]
 pub struct ErrorReport {
@@ -58,6 +59,14 @@ impl From<reqwest::Error> for ErrorReport {
     fn from(value: reqwest::Error) -> Self {
         ErrorReport {
             message: format!("reqwest: {value:#?}"),
+        }
+    }
+}
+
+impl From<FromUtf8Error> for ErrorReport {
+    fn from(value: FromUtf8Error) -> Self {
+        ErrorReport {
+            message: format!("UTF-8 conversion error: {value:#?}"),
         }
     }
 }

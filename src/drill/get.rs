@@ -20,10 +20,24 @@ use maud::html;
 
 use crate::drill::state::ServerState;
 use crate::drill::template::page_template;
+use crate::error::Fallible;
 use crate::types::card::Card;
 use crate::types::card_type::CardType;
 
 pub async fn get_handler(State(state): State<ServerState>) -> (StatusCode, Html<String>) {
+    let html = match inner(state).await {
+        Ok(html) => html,
+        Err(e) => page_template(html! {
+            div.error {
+                h1 { "Error Rendering Card" }
+                p { (e) }
+            }
+        }),
+    };
+    (StatusCode::OK, Html(html.into_string()))
+}
+
+async fn inner(state: ServerState) -> Fallible<Markup> {
     let mutable = state.mutable.lock().unwrap();
     let undo_disabled = mutable.reviewed.is_empty();
     let body = if mutable.finished {
@@ -41,7 +55,7 @@ pub async fn get_handler(State(state): State<ServerState>) -> (StatusCode, Html<
             state.total_cards
         );
         let card = mutable.cards[0].clone();
-        let card_content = render_card(&card, mutable.reveal);
+        let card_content = render_card(&card, mutable.reveal)?;
         let card_controls = if mutable.reveal {
             html! {
                 form action="/" method="post" {
@@ -94,25 +108,25 @@ pub async fn get_handler(State(state): State<ServerState>) -> (StatusCode, Html<
         }
     };
     let html = page_template(body);
-    (StatusCode::OK, Html(html.into_string()))
+    Ok(html)
 }
 
-fn render_card(card: &Card, reveal: bool) -> Markup {
+fn render_card(card: &Card, reveal: bool) -> Fallible<Markup> {
     let html = match card.card_type() {
         CardType::Basic => {
             if reveal {
                 html! {
                     div .question .rich-text {
-                        (card.html_front())
+                        (card.html_front()?)
                     }
                     div .answer .rich-text {
-                        (card.html_back())
+                        (card.html_back()?)
                     }
                 }
             } else {
                 html! {
                     div .prompt .rich-text {
-                        (card.html_front())
+                        (card.html_front()?)
                     }
                 }
             }
@@ -121,21 +135,21 @@ fn render_card(card: &Card, reveal: bool) -> Markup {
             if reveal {
                 html! {
                     div .prompt .rich-text {
-                        (card.html_back())
+                        (card.html_back()?)
                     }
                 }
             } else {
                 html! {
                     div .prompt .rich-text {
-                        (card.html_front())
+                        (card.html_front()?)
                     }
                 }
             }
         }
     };
-    html! {
+    Ok(html! {
         div.content {
             (html)
         }
-    }
+    })
 }

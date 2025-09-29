@@ -320,10 +320,7 @@ impl Parser {
                     clean_text.push(c);
                 }
             }
-            match String::from_utf8(clean_text) {
-                Ok(s) => s,
-                Err(_) => fail("Invalid UTF-8.")?,
-            }
+            String::from_utf8(clean_text)?
         };
 
         let mut start = None;
