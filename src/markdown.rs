@@ -45,3 +45,18 @@ pub fn markdown_to_html(markdown: &str) -> String {
 fn modify_url(url: &str) -> String {
     format!("http://localhost:8000/image/{}", url)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_markdown_to_html() {
+        let markdown = "![alt](image.png)";
+        let html = markdown_to_html(markdown);
+        assert_eq!(
+            html,
+            "<p><img src=\"http://localhost:8000/image/image.png\" alt=\"alt\" /></p>\n"
+        );
+    }
+}
