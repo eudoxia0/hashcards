@@ -47,7 +47,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_start_server_on_non_empty_directory() -> Fallible<()> {
+    async fn test_start_server_on_empty_directory() -> Fallible<()> {
         let directory = temp_dir();
         let session_started_at = Timestamp::now();
         let result = start_server(directory, session_started_at).await;
