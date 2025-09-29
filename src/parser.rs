@@ -297,6 +297,10 @@ impl Parser {
         let clean_text: String = {
             let mut clean_text: Vec<u8> = Vec::new();
             let mut image_mode = false;
+            // We use `bytes` rather than `chars` because the cloze start/end
+            // positions are byte positions, not character positions. This
+            // keeps things tractable: bytes are well-understood, "characters"
+            // are a vague abstract concept.
             for c in text.bytes() {
                 if c == b'[' {
                     if image_mode {
