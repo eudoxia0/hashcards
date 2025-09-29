@@ -61,6 +61,7 @@ function nextCard() {
 }
 
 function review(grade: Grade) {
+  reveal.value = false
   console.log(`Reviewed card as: ${grade}`)
   cards.value.splice(cardIndex.value, 1)
   cardsDone.value += 1
