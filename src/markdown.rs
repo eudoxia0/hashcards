@@ -42,6 +42,16 @@ pub fn markdown_to_html(markdown: &str) -> String {
     html_output
 }
 
+pub fn markdown_to_html_inline(markdown: &str) -> String {
+    let text = markdown_to_html(markdown);
+    if text.starts_with("<p>") && text.ends_with("</p>\n") {
+        let len = text.len();
+        text[3..len - 5].to_string()
+    } else {
+        text
+    }
+}
+
 fn modify_url(url: &str) -> String {
     format!("http://localhost:8000/image/{}", url)
 }

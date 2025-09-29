@@ -22,6 +22,7 @@ use maud::html;
 use crate::drill::state::ServerState;
 use crate::drill::template::page_template;
 use crate::markdown::markdown_to_html;
+use crate::markdown::markdown_to_html_inline;
 use crate::types::card::CardContent;
 
 const CLOZE_TAG: &str = "CLOZE_DELETION";
@@ -82,6 +83,7 @@ pub async fn get_handler(State(state): State<ServerState>) -> (StatusCode, Html<
                     let mut answer = text.clone();
                     answer.replace_range(*start..*end + 1, CLOZE_TAG);
                     let answer = markdown_to_html(&answer);
+                    let cloze_text = markdown_to_html_inline(cloze_text);
                     let answer = answer.replace(
                         CLOZE_TAG,
                         &format!("<span class='cloze-reveal'>{}</span>", cloze_text),
