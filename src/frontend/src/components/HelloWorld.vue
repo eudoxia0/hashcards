@@ -8,7 +8,7 @@ const totalCards = 7
 </script>
 
 <template>
-  <div class="card">
+  <div class="root">
     <div class="header">
       <h1>{{ deckName }}</h1>
       <div class="progress">{{ cardsDone }} / {{ totalCards }}</div>
@@ -29,16 +29,9 @@ const totalCards = 7
 </template>
 
 <style scoped>
-.card {
+.root {
   width: 100vw;
   height: 100vh;
-}
-
-.root {
-  max-height: 100vh;
-}
-
-.card {
   display: flex;
   flex-direction: column;
 }
