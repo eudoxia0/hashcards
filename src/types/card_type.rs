@@ -13,11 +13,7 @@
 // limitations under the License.
 
 use rusqlite::ToSql;
-use rusqlite::types::FromSql;
-use rusqlite::types::FromSqlError;
-use rusqlite::types::FromSqlResult;
 use rusqlite::types::ToSqlOutput;
-use rusqlite::types::ValueRef;
 
 use crate::error::ErrorReport;
 use crate::error::fail;
@@ -52,13 +48,6 @@ impl TryFrom<String> for CardType {
 impl ToSql for CardType {
     fn to_sql(&self) -> rusqlite::Result<ToSqlOutput<'_>> {
         Ok(ToSqlOutput::from(self.as_str()))
-    }
-}
-
-impl FromSql for CardType {
-    fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
-        let string: String = FromSql::column_result(value)?;
-        CardType::try_from(string).map_err(|e| FromSqlError::Other(Box::new(e)))
     }
 }
 
