@@ -2,41 +2,55 @@
 import { computed, ref, type ComputedRef, type Ref } from 'vue'
 import Button from './Button.vue'
 import Spacer from './Spacer.vue'
-import { useCardStore, type CardStore, type CardData } from '@/stores/cards'
 
-const cardStore: CardStore = useCardStore()
+interface BasicCard {
+  kind: 'Basic'
+  deckName: string
+  question: string
+  answer: string
+}
+
+interface ClozeCard {
+  kind: 'Cloze'
+  deckName: string
+  prompt: string
+  answer: string
+}
+
+type CardData = BasicCard | ClozeCard
 
 enum Grade {
   FORGOT = 'forgot',
   REMEMBERED = 'remembered',
 }
 
-cardStore.setCards([
+const cards: Ref<CardData[]> = ref([
   {
     kind: 'Basic',
+    deckName: 'Geography',
     question: '<p>What is the capital of Germany?</p>',
     answer: '<p>Berlin</p>',
   },
   {
     kind: 'Basic',
+    deckName: 'Geography',
     question: '<p>What is the capital of Paris?</p>',
     answer: '<p>France</p>',
   },
   {
     kind: 'Cloze',
+    deckName: 'Chemistry',
     prompt: '<p>The atomic number of lithium is <span class="cloze">.............</span>.</p>',
     answer: '<p>The atomic number of lithium is <span class="cloze-reveal">3</span>.</p>',
   },
 ])
 
-const deckName = 'Geography'
-
 const reveal: Ref<boolean> = ref(false)
 
 const cardsDone: number = 0
 const cardIndex: Ref<number> = ref(0)
-const totalCards: ComputedRef<number> = computed(() => cardStore.cards.length)
-const currentCard: ComputedRef<CardData> = computed(() => cardStore.cards[cardIndex.value])
+const totalCards: ComputedRef<number> = computed(() => cards.value.length)
+const currentCard: ComputedRef<CardData> = computed(() => cards.value[cardIndex.value])
 
 const isFinished: Ref<boolean> = ref(false)
 
@@ -45,13 +59,13 @@ function prevCard() {
   if (cardIndex.value > 0) {
     cardIndex.value -= 1
   } else {
-    cardIndex.value = cardStore.cards.length - 1
+    cardIndex.value = cards.value.length - 1
   }
 }
 
 function nextCard() {
   reveal.value = false
-  if (cardIndex.value < cardStore.cards.length - 1) {
+  if (cardIndex.value < cards.value.length - 1) {
     cardIndex.value += 1
   } else {
     cardIndex.value = 0
@@ -73,7 +87,7 @@ function finish() {
   <div v-if="isFinished" class="root">Session Completed</div>
   <div v-else class="root">
     <div class="header">
-      <h1>{{ deckName }}</h1>
+      <h1>{{ currentCard.deckName }}</h1>
       <Spacer />
       <Button label="<" @click="prevCard" />
       <Button label=">" @click="nextCard" />
