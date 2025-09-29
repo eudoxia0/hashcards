@@ -29,7 +29,7 @@ pub async fn get_handler(State(state): State<ServerState>) -> (StatusCode, Html<
         Ok(html) => html,
         Err(e) => page_template(html! {
             div.error {
-                h1 { "Error Rendering Card" }
+                h1 { "Error" }
                 p { (e) }
             }
         }),
