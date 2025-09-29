@@ -3,12 +3,18 @@ import { computed, ref, type ComputedRef, type Ref } from 'vue'
 import Button from './Button.vue'
 import Spacer from './Spacer.vue'
 
+enum Grade {
+  FORGOT = 'forgot',
+  REMEMBERED = 'remembered',
+}
+
 interface BasicCard {
   hash: string
   kind: 'Basic'
   deckName: string
   question: string
   answer: string
+  grade: Grade | null
 }
 
 interface ClozeCard {
@@ -17,14 +23,10 @@ interface ClozeCard {
   deckName: string
   prompt: string
   answer: string
+  grade: Grade | null
 }
 
 type CardData = BasicCard | ClozeCard
-
-enum Grade {
-  FORGOT = 'forgot',
-  REMEMBERED = 'remembered',
-}
 
 const cards: Ref<CardData[]> = ref([])
 const reveal: Ref<boolean> = ref(false)
@@ -76,6 +78,7 @@ cards.value = [
     deckName: 'Geography',
     question: '<p>What is the capital of Germany?</p>',
     answer: '<p>Berlin</p>',
+    grade: null,
   },
   {
     hash: 'b',
@@ -83,6 +86,7 @@ cards.value = [
     deckName: 'Geography',
     question: '<p>What is the capital of Paris?</p>',
     answer: '<p>France</p>',
+    grade: null,
   },
   {
     hash: 'c',
@@ -90,6 +94,7 @@ cards.value = [
     deckName: 'Chemistry',
     prompt: '<p>The atomic number of lithium is <span class="cloze">.............</span>.</p>',
     answer: '<p>The atomic number of lithium is <span class="cloze-reveal">3</span>.</p>',
+    grade: null,
   },
 ]
 
