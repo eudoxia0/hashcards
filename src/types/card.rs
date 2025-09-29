@@ -14,8 +14,17 @@
 
 use std::path::PathBuf;
 
+use maud::Markup;
+use maud::PreEscaped;
+use maud::html;
+
+use crate::markdown::markdown_to_html;
+use crate::markdown::markdown_to_html_inline;
+use crate::types::card_type::CardType;
 use crate::types::hash::Hash;
 use crate::types::hash::Hasher;
+
+const CLOZE_TAG: &str = "CLOZE_DELETION";
 
 #[derive(Clone)]
 pub struct Card {
@@ -77,6 +86,21 @@ impl Card {
     pub fn hash(&self) -> Hash {
         self.hash
     }
+
+    pub fn card_type(&self) -> CardType {
+        match &self.content {
+            CardContent::Basic { .. } => CardType::Basic,
+            CardContent::Cloze { .. } => CardType::Cloze,
+        }
+    }
+
+    pub fn html_front(&self) -> Markup {
+        self.content.html_front()
+    }
+
+    pub fn html_back(&self) -> Markup {
+        self.content.html_back()
+    }
 }
 
 impl CardContent {
@@ -103,5 +127,48 @@ impl CardContent {
             }
         }
         hasher.finalize()
+    }
+
+    pub fn html_front(&self) -> Markup {
+        match self {
+            CardContent::Basic { question, .. } => {
+                html! {
+                    (PreEscaped(markdown_to_html(question)))
+                }
+            }
+            CardContent::Cloze { text, start, end } => {
+                let mut prompt = text.clone();
+                prompt.replace_range(*start..*end + 1, CLOZE_TAG);
+                let prompt = markdown_to_html(&prompt);
+                let prompt = prompt.replace(CLOZE_TAG, "<span class='cloze'>.............</span>");
+                html! {
+                    (PreEscaped(prompt))
+                }
+            }
+        }
+    }
+
+    pub fn html_back(&self) -> Markup {
+        match self {
+            CardContent::Basic { answer, .. } => {
+                html! {
+                    (PreEscaped(markdown_to_html(answer)))
+                }
+            }
+            CardContent::Cloze { text, start, end } => {
+                let cloze_text = &text[*start..*end + 1];
+                let mut answer = text.clone();
+                answer.replace_range(*start..*end + 1, CLOZE_TAG);
+                let answer = markdown_to_html(&answer);
+                let cloze_text = markdown_to_html_inline(cloze_text);
+                let answer = answer.replace(
+                    CLOZE_TAG,
+                    &format!("<span class='cloze-reveal'>{}</span>", cloze_text),
+                );
+                html! {
+                    (PreEscaped(answer))
+                }
+            }
+        }
     }
 }
