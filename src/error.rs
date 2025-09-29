@@ -53,6 +53,15 @@ impl From<rusqlite::Error> for ErrorReport {
     }
 }
 
+#[cfg(test)]
+impl From<reqwest::Error> for ErrorReport {
+    fn from(value: reqwest::Error) -> Self {
+        ErrorReport {
+            message: format!("reqwest: {value:#?}"),
+        }
+    }
+}
+
 impl Display for ErrorReport {
     fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
         write!(f, "error: {}", self.message)

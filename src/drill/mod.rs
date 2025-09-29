@@ -23,6 +23,8 @@ mod tests {
     use std::path::PathBuf;
     use std::time::Duration;
 
+    use reqwest::StatusCode;
+    use tokio::net::TcpStream;
     use tokio::spawn;
     use tokio::time::sleep;
 
@@ -35,7 +37,31 @@ mod tests {
         let directory = PathBuf::from("./example").canonicalize().unwrap();
         let session_started_at = Timestamp::now();
         spawn(async move { start_server(directory, session_started_at, false).await });
-        sleep(Duration::from_secs(1)).await;
+        loop {
+            if let Ok(stream) = TcpStream::connect("0.0.0.0:8000").await {
+                drop(stream);
+                break;
+            }
+            sleep(Duration::from_millis(1)).await;
+        }
+
+        // Hit the `style.css` endpoint.
+        let response = reqwest::get("http://0.0.0.0:8000/style.css").await?;
+        assert!(response.status().is_success());
+        assert_eq!(response.headers().get("content-type").unwrap(), "text/css");
+
+        // Hit the `script.js` endpoint.
+        let response = reqwest::get("http://0.0.0.0:8000/script.js").await?;
+        assert!(response.status().is_success());
+        assert_eq!(
+            response.headers().get("content-type").unwrap(),
+            "text/javascript"
+        );
+
+        // Hit the not found endpoint.
+        let response = reqwest::get("http://0.0.0.0:8000/herp-derp").await?;
+        assert!(response.status() == StatusCode::NOT_FOUND);
+
         Ok(())
     }
 }
