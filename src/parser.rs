@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::collections::HashSet;
 use std::path::PathBuf;
 
 use walkdir::WalkDir;
@@ -46,6 +47,9 @@ pub fn parse_deck(directory: &PathBuf) -> Fallible<Vec<Card>> {
     // randomization (mixing cards from different decks) without needing an
     // RNG.
     all_cards.sort_by_key(|c| c.hash());
+
+    // Remove duplicates.
+    all_cards.dedup_by_key(|c| c.hash());
 
     Ok(all_cards)
 }
@@ -130,7 +134,15 @@ impl Parser {
             state = self.parse_line(state, line, line_num, &mut cards)?;
         }
         self.finalize(state, last_line, &mut cards)?;
-        Ok(cards)
+
+        let mut seen = HashSet::new();
+        let mut unique_cards = Vec::new();
+        for card in cards {
+            if seen.insert(card.hash()) {
+                unique_cards.push(card);
+            }
+        }
+        Ok(unique_cards)
     }
 
     fn parse_line(
@@ -359,6 +371,9 @@ impl Parser {
 
 #[cfg(test)]
 mod tests {
+    use std::env::temp_dir;
+    use std::fs::create_dir_all;
+
     use super::*;
 
     #[test]
@@ -587,6 +602,38 @@ mod tests {
         assert!(deck.is_ok());
         let cards = deck?;
         assert_eq!(cards.len(), 7);
+        Ok(())
+    }
+
+    #[test]
+    fn test_identical_basic_cards() -> Fallible<()> {
+        let input = "Q: foo\nA: bar\n\nQ: foo\nA: bar\n\n";
+        let parser = make_test_parser();
+        let cards = parser.parse(input)?;
+        assert_eq!(cards.len(), 1);
+        Ok(())
+    }
+
+    #[test]
+    fn test_identical_cloze_cards() -> Fallible<()> {
+        let input = "C: foo [bar]\n\nC: foo [bar]";
+        let parser = make_test_parser();
+        let cards = parser.parse(input)?;
+        assert_eq!(cards.len(), 1);
+        Ok(())
+    }
+
+    #[test]
+    fn test_identical_cards_across_files() -> Fallible<()> {
+        let directory = temp_dir();
+        let directory = directory.join("identical_cards_test");
+        create_dir_all(&directory)?;
+        let file1 = directory.join("file1.md");
+        let file2 = directory.join("file2.md");
+        std::fs::write(&file1, "Q: foo\nA: bar")?;
+        std::fs::write(&file2, "Q: foo\nA: bar")?;
+        let deck = parse_deck(&directory)?;
+        assert_eq!(deck.len(), 1);
         Ok(())
     }
 
