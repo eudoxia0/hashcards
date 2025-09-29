@@ -1,0 +1,21 @@
+* {
+  margin: 0;
+  padding: 0;
+  font-weight: normal;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100vw;
+  height: 100vh;
+}
+
+body {
+  font-family: 'Times New Roman', 'Times', serif;
+}
