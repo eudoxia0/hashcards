@@ -298,4 +298,21 @@ mod tests {
         }
         Ok(())
     }
+
+    #[test]
+    fn test_multiline_qa() -> Fallible<()> {
+        let input = "Q: foo\nbaz\nbaz\nA: FOO\nBAR\nBAZ";
+        let parser = make_test_parser();
+        let cards = parser.parse(input)?;
+
+        assert_eq!(cards.len(), 1);
+        match &cards[0].content() {
+            CardContent::Basic { question, answer } => {
+                assert_eq!(question, "foo\nbaz\nbaz");
+                assert_eq!(answer, "FOO\nBAR\nBAZ");
+            }
+            _ => panic!("Expected basic card"),
+        }
+        Ok(())
+    }
 }
