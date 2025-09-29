@@ -82,14 +82,14 @@ function finish() {
     </div>
     <div class="content">
       <template v-if="currentCard.kind === 'Basic'">
-        <div class="question rich-text" v-html="currentCard.question" />
-        <div class="answer rich-text">
+        <div class="question" v-html="currentCard.question" />
+        <div class="answer">
           <div v-if="reveal" v-html="currentCard.answer" />
         </div>
       </template>
       <template v-else>
-        <div v-if="reveal" class="prompt rich-text" v-html="currentCard.answer" />
-        <div v-else class="prompt rich-text" v-html="currentCard.prompt" />
+        <div v-if="reveal" class="prompt" v-html="currentCard.answer" />
+        <div v-else class="prompt" v-html="currentCard.prompt" />
       </template>
     </div>
     <div class="controls">
@@ -165,16 +165,6 @@ function finish() {
 
 .prompt {
   height: 100%;
-}
-
-.rich-text {
-  font-size: 30px;
-
-  img {
-    max-width: 70%;
-    display: block;
-    margin: 8px auto;
-  }
 }
 
 .controls {
