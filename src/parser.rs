@@ -130,6 +130,7 @@ impl Parser {
             state = self.parse_line(state, line, line_num, &mut cards)?;
         }
         self.finalize(state, last_line, &mut cards)?;
+
         Ok(cards)
     }
 
@@ -359,6 +360,10 @@ impl Parser {
 
 #[cfg(test)]
 mod tests {
+    use std::env::temp_dir;
+
+    use serial_test::serial;
+
     use super::*;
 
     #[test]
@@ -587,6 +592,37 @@ mod tests {
         assert!(deck.is_ok());
         let cards = deck?;
         assert_eq!(cards.len(), 7);
+        Ok(())
+    }
+
+    #[test]
+    fn test_identical_basic_cards() -> Fallible<()> {
+        let input = "Q: foo\nA: bar\n\nQ: foo\nA: bar\n\n";
+        let parser = make_test_parser();
+        let cards = parser.parse(input)?;
+        assert_eq!(cards.len(), 1);
+        Ok(())
+    }
+
+    #[test]
+    fn test_identical_cloze_cards() -> Fallible<()> {
+        let input = "C: foo [bar]\n\nC: foo [bar]";
+        let parser = make_test_parser();
+        let cards = parser.parse(input)?;
+        assert_eq!(cards.len(), 1);
+        Ok(())
+    }
+
+    #[test]
+    #[serial]
+    fn test_identical_cards_across_files() -> Fallible<()> {
+        let directory = temp_dir();
+        let file1 = directory.join("file1.md");
+        let file2 = directory.join("file2.md");
+        std::fs::write(&file1, "Q: foo\nA: bar")?;
+        std::fs::write(&file2, "Q: foo\nA: bar")?;
+        let deck = parse_deck(&directory)?;
+        assert_eq!(deck.len(), 1);
         Ok(())
     }
 
