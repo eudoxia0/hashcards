@@ -167,6 +167,7 @@ function finish() {
 .answer,
 .prompt {
   overflow-y: auto;
+  font-size: 28px;
 }
 
 .question {
