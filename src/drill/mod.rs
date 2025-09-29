@@ -119,6 +119,19 @@ mod tests {
             html.contains("Berlin is the capital of <span class='cloze-reveal'>Germany</span>.")
         );
 
+        // Hit 'Good'.
+        let response = reqwest::Client::new()
+            .post("http://0.0.0.0:8000/")
+            .form(&[("action", "Good")])
+            .send()
+            .await?;
+        assert!(response.status().is_success());
+        assert_eq!(
+            response.headers().get("content-type").unwrap(),
+            "text/html; charset=utf-8"
+        );
+        let html = response.text().await?;
+        assert!(html.contains("is the capital of Germany."));
         Ok(())
     }
 }
