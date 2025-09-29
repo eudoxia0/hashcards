@@ -24,6 +24,9 @@ pub struct Card {
     /// The absolute path to the file this card was parsed from.
     #[allow(dead_code)]
     file_path: PathBuf,
+    /// The line number range that contains the card.
+    #[allow(dead_code)]
+    range: (usize, usize),
     /// The card's content.
     content: CardContent,
     /// The cached hash of the card's content.
@@ -47,12 +50,18 @@ pub enum CardContent {
 }
 
 impl Card {
-    pub fn new(deck_name: String, file_path: PathBuf, content: CardContent) -> Self {
+    pub fn new(
+        deck_name: String,
+        file_path: PathBuf,
+        range: (usize, usize),
+        content: CardContent,
+    ) -> Self {
         let hash = content.hash();
         Self {
             deck_name,
             file_path,
             content,
+            range,
             hash,
         }
     }

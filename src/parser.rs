@@ -59,11 +59,15 @@ enum State {
     /// Initial state.
     Initial,
     /// Reading a question (Q:)
-    ReadingQuestion { question: String },
+    ReadingQuestion { question: String, start_line: usize },
     /// Reading an answer (A:)
-    ReadingAnswer { question: String, answer: String },
+    ReadingAnswer {
+        question: String,
+        answer: String,
+        start_line: usize,
+    },
     /// Reading a cloze card (C:)
-    ReadingCloze { text: String },
+    ReadingCloze { text: String, start_line: usize },
 }
 
 enum Line {
@@ -120,47 +124,73 @@ impl Parser {
         let mut cards = Vec::new();
         let mut state = State::Initial;
         let lines: Vec<&str> = text.lines().collect();
-        for line in lines.iter() {
+        let last_line = if lines.is_empty() { 0 } else { lines.len() - 1 };
+        for (line_num, line) in lines.iter().enumerate() {
             let line = Line::read(line);
-            state = self.parse_line(state, line, &mut cards)?;
+            state = self.parse_line(state, line, line_num, &mut cards)?;
         }
-        self.finalize(state, &mut cards)?;
+        self.finalize(state, last_line, &mut cards)?;
         Ok(cards)
     }
 
-    fn parse_line(&self, state: State, line: Line, cards: &mut Vec<Card>) -> Fallible<State> {
+    fn parse_line(
+        &self,
+        state: State,
+        line: Line,
+        line_num: usize,
+        cards: &mut Vec<Card>,
+    ) -> Fallible<State> {
         match state {
             State::Initial => match line {
-                Line::StartQuestion(text) => Ok(State::ReadingQuestion { question: text }),
+                Line::StartQuestion(text) => Ok(State::ReadingQuestion {
+                    question: text,
+                    start_line: line_num,
+                }),
                 Line::StartAnswer(_) => fail("Answer without question."),
-                Line::StartCloze(text) => Ok(State::ReadingCloze { text }),
+                Line::StartCloze(text) => Ok(State::ReadingCloze {
+                    text,
+                    start_line: line_num,
+                }),
                 Line::Text(_) => Ok(State::Initial),
             },
-            State::ReadingQuestion { question } => match line {
+            State::ReadingQuestion {
+                question,
+                start_line,
+            } => match line {
                 Line::StartQuestion(_) => fail("New question without answer."),
                 Line::StartAnswer(text) => Ok(State::ReadingAnswer {
                     question,
                     answer: text,
+                    start_line,
                 }),
                 Line::StartCloze(_) => {
                     fail("Started a cloze card inside a question card question.")
                 }
                 Line::Text(text) => Ok(State::ReadingQuestion {
                     question: format!("{question}\n{text}"),
+                    start_line,
                 }),
             },
-            State::ReadingAnswer { question, answer } => {
+            State::ReadingAnswer {
+                question,
+                answer,
+                start_line,
+            } => {
                 match line {
                     Line::StartQuestion(text) => {
                         // Finalize the previous card.
                         let card = Card::new(
                             self.deck_name.clone(),
                             self.file_path.clone(),
+                            (start_line, line_num),
                             CardContent::Basic { question, answer },
                         );
                         cards.push(card);
                         // Start a new question.
-                        Ok(State::ReadingQuestion { question: text })
+                        Ok(State::ReadingQuestion {
+                            question: text,
+                            start_line: line_num,
+                        })
                     }
                     Line::StartAnswer(_) => fail("New answer without question."),
                     Line::StartCloze(text) => {
@@ -168,64 +198,86 @@ impl Parser {
                         let card = Card::new(
                             self.deck_name.clone(),
                             self.file_path.clone(),
+                            (start_line, line_num),
                             CardContent::Basic { question, answer },
                         );
                         cards.push(card);
                         // Start reading a new cloze card.
-                        Ok(State::ReadingCloze { text })
+                        Ok(State::ReadingCloze {
+                            text,
+                            start_line: line_num,
+                        })
                     }
                     Line::Text(text) => Ok(State::ReadingAnswer {
                         question,
                         answer: format!("{answer}\n{text}"),
+                        start_line,
                     }),
                 }
             }
-            State::ReadingCloze { text } => {
+            State::ReadingCloze { text, start_line } => {
                 match line {
                     Line::StartQuestion(new_text) => {
                         // Finalize the previous cloze card.
-                        cards.extend(self.parse_cloze_cards(text)?);
+                        cards.extend(self.parse_cloze_cards(text, start_line, line_num)?);
                         // Start a new question card
-                        Ok(State::ReadingQuestion { question: new_text })
+                        Ok(State::ReadingQuestion {
+                            question: new_text,
+                            start_line: line_num,
+                        })
                     }
                     Line::StartAnswer(_) => fail("Found answer tag while reading a cloze card."),
                     Line::StartCloze(new_text) => {
                         // Finalize the previous card.
-                        cards.extend(self.parse_cloze_cards(text)?);
+                        cards.extend(self.parse_cloze_cards(text, start_line, line_num)?);
                         // Start reading a new cloze card.
-                        Ok(State::ReadingCloze { text: new_text })
+                        Ok(State::ReadingCloze {
+                            text: new_text,
+                            start_line: line_num,
+                        })
                     }
                     Line::Text(new_text) => Ok(State::ReadingCloze {
                         text: format!("{text}\n{new_text}"),
+                        start_line,
                     }),
                 }
             }
         }
     }
 
-    fn finalize(&self, state: State, cards: &mut Vec<Card>) -> Fallible<()> {
+    fn finalize(&self, state: State, last_line: usize, cards: &mut Vec<Card>) -> Fallible<()> {
         match state {
             State::Initial => Ok(()),
             State::ReadingQuestion { .. } => fail("Unfinished question without answer at EOF."),
-            State::ReadingAnswer { question, answer } => {
+            State::ReadingAnswer {
+                question,
+                answer,
+                start_line,
+            } => {
                 // Finalize the last card.
                 let card = Card::new(
                     self.deck_name.clone(),
                     self.file_path.clone(),
+                    (start_line, last_line),
                     CardContent::Basic { question, answer },
                 );
                 cards.push(card);
                 Ok(())
             }
-            State::ReadingCloze { text } => {
+            State::ReadingCloze { text, start_line } => {
                 // Finalize the last cloze card.
-                cards.extend(self.parse_cloze_cards(text)?);
+                cards.extend(self.parse_cloze_cards(text, start_line, last_line)?);
                 Ok(())
             }
         }
     }
 
-    fn parse_cloze_cards(&self, text: String) -> Fallible<Vec<Card>> {
+    fn parse_cloze_cards(
+        &self,
+        text: String,
+        start_line: usize,
+        end_line: usize,
+    ) -> Fallible<Vec<Card>> {
         let mut cards = Vec::new();
 
         // The full text of the card, without cloze deletion brackets.
@@ -276,7 +328,12 @@ impl Parser {
                         start: s,
                         end: end - 1,
                     };
-                    let card = Card::new(self.deck_name.clone(), self.file_path.clone(), content);
+                    let card = Card::new(
+                        self.deck_name.clone(),
+                        self.file_path.clone(),
+                        (start_line, end_line),
+                        content,
+                    );
                     cards.push(card);
                     start = None;
                 }
