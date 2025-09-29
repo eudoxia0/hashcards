@@ -278,6 +278,7 @@ impl Parser {
         start_line: usize,
         end_line: usize,
     ) -> Fallible<Vec<Card>> {
+        let text = text.trim();
         let mut cards = Vec::new();
 
         // The full text of the card, without cloze deletion brackets.
@@ -555,6 +556,39 @@ mod tests {
         let parser = make_test_parser();
         let result = parser.parse(input);
         assert!(result.is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn test_cloze_with_initial_blank_line() -> Fallible<()> {
+        let input =
+            "C:\nBuild something people want in Lisp.\n\n— [Paul Graham], [_Hackers and Painters_]";
+        let parser = make_test_parser();
+        let cards = parser.parse(input)?;
+
+        assert_eq!(cards.len(), 2);
+        match &cards[0].content() {
+            CardContent::Cloze { text, start, end } => {
+                assert_eq!(
+                    text,
+                    "Build something people want in Lisp.\n\n— Paul Graham, _Hackers and Painters_"
+                );
+                assert_eq!(*start, 40);
+                assert_eq!(*end, 50);
+            }
+            _ => panic!("Expected cloze card"),
+        }
+        match &cards[1].content() {
+            CardContent::Cloze { text, start, end } => {
+                assert_eq!(
+                    text,
+                    "Build something people want in Lisp.\n\n— Paul Graham, _Hackers and Painters_"
+                );
+                assert_eq!(*start, 53);
+                assert_eq!(*end, 74);
+            }
+            _ => panic!("Expected cloze card"),
+        }
         Ok(())
     }
 }
