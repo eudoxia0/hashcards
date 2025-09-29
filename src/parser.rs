@@ -183,7 +183,7 @@ impl Parser {
                             self.deck_name.clone(),
                             self.file_path.clone(),
                             (start_line, line_num),
-                            CardContent::Basic { question, answer },
+                            CardContent::new_basic(question, answer),
                         );
                         cards.push(card);
                         // Start a new question.
@@ -199,7 +199,7 @@ impl Parser {
                             self.deck_name.clone(),
                             self.file_path.clone(),
                             (start_line, line_num),
-                            CardContent::Basic { question, answer },
+                            CardContent::new_basic(question, answer),
                         );
                         cards.push(card);
                         // Start reading a new cloze card.
@@ -259,7 +259,7 @@ impl Parser {
                     self.deck_name.clone(),
                     self.file_path.clone(),
                     (start_line, last_line),
-                    CardContent::Basic { question, answer },
+                    CardContent::new_basic(question, answer),
                 );
                 cards.push(card);
                 Ok(())
@@ -402,6 +402,29 @@ mod tests {
             CardContent::Basic { question, answer } => {
                 assert_eq!(question, "foo\nbaz\nbaz");
                 assert_eq!(answer, "FOO\nBAR\nBAZ");
+            }
+            _ => panic!("Expected basic card"),
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn test_two_questions() -> Fallible<()> {
+        let input = "Q: foo\nA: bar\n\nQ: baz\nA: quux\n\n";
+        let parser = make_test_parser();
+        let cards = parser.parse(input)?;
+        assert_eq!(cards.len(), 2);
+        match &cards[0].content() {
+            CardContent::Basic { question, answer } => {
+                assert_eq!(question, "foo");
+                assert_eq!(answer, "bar");
+            }
+            _ => panic!("Expected basic card"),
+        }
+        match &cards[1].content() {
+            CardContent::Basic { question, answer } => {
+                assert_eq!(question, "baz");
+                assert_eq!(answer, "quux");
             }
             _ => panic!("Expected basic card"),
         }

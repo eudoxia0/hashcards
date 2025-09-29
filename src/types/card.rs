@@ -80,6 +80,13 @@ impl Card {
 }
 
 impl CardContent {
+    pub fn new_basic(question: String, answer: String) -> Self {
+        Self::Basic {
+            question: question.trim().to_string(),
+            answer: answer.trim().to_string(),
+        }
+    }
+
     pub fn hash(&self) -> Hash {
         let mut hasher = Hasher::new();
         match &self {
