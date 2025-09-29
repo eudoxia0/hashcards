@@ -83,30 +83,6 @@ desire: this is also vanity and vexation of spirit.
 — [Ecclesiastes] [6]:[9]
 ```
 
-### Term-Definition Cards
-
-This is a special shorthand. This:
-
-```
-T: lithification
-D: The process of turning loose sediment into rock.
-```
-
-Is equivalent to writing this:
-
-```
-Q: Define: lithification
-A: The process of turning loose sediment into rock.
-
-Q: Term for:
-
-The process of turning loose sediment into rock.
-
-A: lithification
-```
-
-The constraint here is that the term must be a single line of text.
-
 ## Prior Art
 
 - [org-fc](https://github.com/l3kn/org-fc)
