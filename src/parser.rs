@@ -349,7 +349,11 @@ impl Parser {
             }
         }
 
-        Ok(cards)
+        if cards.is_empty() {
+            fail("Cloze card must have at least one deletion.")
+        } else {
+            Ok(cards)
+        }
     }
 }
 
@@ -536,6 +540,15 @@ mod tests {
     #[test]
     fn test_cloze_followed_by_answer() -> Fallible<()> {
         let input = "C: Cloze\nA: Answer";
+        let parser = make_test_parser();
+        let result = parser.parse(input);
+        assert!(result.is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn test_cloze_without_deletions() -> Fallible<()> {
+        let input = "C: Cloze";
         let parser = make_test_parser();
         let result = parser.parse(input);
         assert!(result.is_err());
