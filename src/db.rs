@@ -197,7 +197,10 @@ fn probe_schema_exists(tx: &Transaction) -> Fallible<bool> {
 mod tests {
     use std::path::PathBuf;
 
+    use chrono::Duration;
+
     use super::*;
+    use crate::fsrs::Grade;
 
     #[test]
     fn test_empty_db() -> Fallible<()> {
@@ -259,6 +262,47 @@ mod tests {
 
         let latest_review = db.get_latest_review(card.hash())?;
         assert!(latest_review.is_none());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_session() -> Fallible<()> {
+        let mut db = Database::new(":memory:")?;
+        let now = Timestamp::now();
+        let today = now.local_date();
+        let card = Card::new(
+            "My Deck".to_string(),
+            PathBuf::new(),
+            (0, 1),
+            CardContent::Cloze {
+                text: "Foo bar baz.".to_string(),
+                start: 0,
+                end: 3,
+            },
+        );
+        db.add_card(&card, now)?;
+
+        let review = Review {
+            card_hash: card.hash(),
+            reviewed_at: now,
+            grade: Grade::Easy,
+            stability: 2.5,
+            difficulty: 2.0,
+            due_date: Date::new(today.into_inner() + Duration::days(5)),
+        };
+
+        db.save_session(now, now, vec![review.clone()])?;
+
+        let latest_review = db.get_latest_review(card.hash())?;
+        assert!(latest_review.is_some());
+        let latest_review = latest_review.unwrap();
+        assert_eq!(latest_review.card_hash, review.card_hash);
+        assert_eq!(latest_review.reviewed_at, review.reviewed_at);
+        assert_eq!(latest_review.grade, review.grade);
+        assert_eq!(latest_review.stability, review.stability);
+        assert_eq!(latest_review.difficulty, review.difficulty);
+        assert_eq!(latest_review.due_date, review.due_date);
 
         Ok(())
     }
