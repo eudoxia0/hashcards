@@ -38,7 +38,7 @@ mod tests {
     async fn test_start_server_on_non_existent_directory() -> Fallible<()> {
         let directory = PathBuf::from("./derpherp");
         let session_started_at = Timestamp::now();
-        let result = start_server(directory, session_started_at, false).await;
+        let result = start_server(directory, session_started_at).await;
         assert!(result.is_err());
         Ok(())
     }
@@ -47,7 +47,7 @@ mod tests {
     async fn test_start_server_on_non_empty_directory() -> Fallible<()> {
         let directory = temp_dir();
         let session_started_at = Timestamp::now();
-        let result = start_server(directory, session_started_at, false).await;
+        let result = start_server(directory, session_started_at).await;
         assert!(result.is_err());
         Ok(())
     }
@@ -65,7 +65,7 @@ mod tests {
         }
 
         let session_started_at = Timestamp::now();
-        spawn(async move { start_server(directory, session_started_at, false).await });
+        spawn(async move { start_server(directory, session_started_at).await });
         loop {
             if let Ok(stream) = TcpStream::connect("0.0.0.0:8000").await {
                 drop(stream);

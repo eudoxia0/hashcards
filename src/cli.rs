@@ -13,8 +13,12 @@
 // limitations under the License.
 
 use std::path::PathBuf;
+use std::time::Duration;
 
 use clap::Parser;
+use tokio::net::TcpStream;
+use tokio::spawn;
+use tokio::time::sleep;
 
 use crate::drill::server::start_server;
 use crate::error::Fallible;
@@ -39,7 +43,20 @@ pub async fn entrypoint() -> Fallible<()> {
                 None => std::env::current_dir()?,
             }
             .canonicalize()?;
-            start_server(directory, Timestamp::now(), true).await
+
+            // Start a separate task to open the browser once the server is up.
+            spawn(async move {
+                loop {
+                    if let Ok(stream) = TcpStream::connect("0.0.0.0:8000").await {
+                        drop(stream);
+                        break;
+                    }
+                    sleep(Duration::from_millis(1)).await;
+                }
+                let _ = open::that("http://0.0.0.0:8000/");
+            });
+
+            start_server(directory, Timestamp::now()).await
         }
     }
 }
