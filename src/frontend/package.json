@@ -16,6 +16,8 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
+    "auto-render": "link:katex/contrib/auto-render",
+    "katex": "^0.16.22",
     "vue": "^3.5.18"
   },
   "devDependencies": {

@@ -2,6 +2,7 @@
 import { computed, ref, type ComputedRef, type Ref } from 'vue'
 import Button from '@/components/Button.vue'
 import Spacer from '@/components/Spacer.vue'
+import RichText from '@/components/RichText.vue'
 import { Grade, type CardData, type Review } from './types'
 
 /// The stack of cards to review.
@@ -104,6 +105,13 @@ cards.value = [
     prompt: '<p>The atomic number of lithium is <span class="cloze">.............</span>.</p>',
     answer: '<p>The atomic number of lithium is <span class="cloze-reveal">3</span>.</p>',
   },
+  {
+    hash: 'd',
+    kind: 'Basic',
+    deckName: 'Math',
+    question: '<p>What does 2+2 equal?</p>',
+    answer: '<p>$4$</p>',
+  },
 ]
 
 totalCards.value = cards.value.length
@@ -127,14 +135,12 @@ totalCards.value = cards.value.length
       </div>
       <div class="content">
         <template v-if="currentCard.kind === 'Basic'">
-          <div class="question" v-html="currentCard.question" />
-          <div class="answer">
-            <div v-if="reveal" v-html="currentCard.answer" />
-          </div>
+          <RichText :html="currentCard.question" />
+          <RichText v-if="reveal" :html="currentCard.answer" />
         </template>
         <template v-else>
-          <div v-if="reveal" class="prompt" v-html="currentCard.answer" />
-          <div v-else class="prompt" v-html="currentCard.prompt" />
+          <RichText v-if="reveal" :html="currentCard.answer" />
+          <RichText v-else :html="currentCard.prompt" />
         </template>
       </div>
     </div>
