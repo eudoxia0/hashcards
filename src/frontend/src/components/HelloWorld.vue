@@ -34,6 +34,7 @@ const totalCards: ComputedRef<number> = computed(() => cardStore.cards.length)
 const currentCard: ComputedRef<CardData> = computed(() => cardStore.cards[cardIndex.value])
 
 function prevCard() {
+  reveal.value = false
   if (cardIndex.value > 0) {
     cardIndex.value -= 1
   } else {
@@ -42,6 +43,7 @@ function prevCard() {
 }
 
 function nextCard() {
+  reveal.value = false
   if (cardIndex.value < cardStore.cards.length - 1) {
     cardIndex.value += 1
   } else {
