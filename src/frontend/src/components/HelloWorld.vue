@@ -1,36 +1,34 @@
 <script setup lang="ts">
+import Button from './Button.vue'
+import Spacer from './Spacer.vue'
+
 const deckName = 'Geography'
 const cardsDone = 0
 const totalCards = 7
 </script>
 
 <template>
-  <div class="root">
-    <div class="card">
-      <div class="header">
-        <h1>{{ deckName }}</h1>
-        <div class="progress">{{ cardsDone }} / {{ totalCards }}</div>
+  <div class="card">
+    <div class="header">
+      <h1>{{ deckName }}</h1>
+      <div class="progress">{{ cardsDone }} / {{ totalCards }}</div>
+    </div>
+    <div class="content">
+      <div class="prompt rich-text">
+        <p>Berlin is the capital of <span class="cloze">.............</span> .</p>
       </div>
-      <div class="content">
-        <div class="prompt rich-text">
-          <p>Berlin is the capital of <span class="cloze">.............</span>.</p>
-        </div>
-      </div>
-      <div class="controls">
-        <form action="/" method="post">
-          <input id="undo" type="submit" name="action" value="Undo" />
-          <div class="spacer"></div>
-          <input id="reveal" type="submit" name="action" value="Reveal" />
-          <div class="spacer"></div>
-          <input id="end" type="submit" name="action" value="End" />
-        </form>
-      </div>
+    </div>
+    <div class="controls">
+      <Button label="Undo" />
+      <Spacer />
+      <Button label="Reveal" />
+      <Spacer />
+      <Button label="End" />
     </div>
   </div>
 </template>
 
 <style scoped>
-.root,
 .card {
   width: 100vw;
   height: 100vh;
@@ -110,20 +108,10 @@ const totalCards = 7
   }
 }
 
-.controls form {
+.controls {
   display: flex;
   flex-direction: row;
   justify-content: center;
-}
-
-input {
-  border: 1px solid #bbb;
-  padding: 16px;
-  background: white;
-  font-size: 24px;
-  margin: 0 16px;
-  font-family: 'Times New Roman', 'Times', serif;
-  cursor: pointer;
 }
 
 .cloze {
@@ -136,22 +124,5 @@ input {
 
 .cloze-reveal {
   color: royalblue;
-}
-
-.finished {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-
-  h1 {
-    font-size: 48px;
-    font-weight: bold;
-  }
-}
-
-.spacer {
-  flex: 1;
 }
 </style>
