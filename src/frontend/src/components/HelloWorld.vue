@@ -28,12 +28,16 @@ interface ClozeCard {
 
 type CardData = BasicCard | ClozeCard
 
+/// The list of all cards.
 const cards: Ref<CardData[]> = ref([])
-const reveal: Ref<boolean> = ref(false)
-const cardsDone: Ref<number> = ref(0)
-const cardIndex: Ref<number> = ref(0)
+/// The total number of cards in the session.
 const totalCards: Ref<number> = ref(0)
+/// Whether or not to show the answer.
+const reveal: Ref<boolean> = ref(false)
+/// The index of the current card.
+const cardIndex: Ref<number> = ref(0)
 
+/// The card at the current index, or null if there are no cards.
 const currentCard: ComputedRef<CardData | null> = computed(() => {
   if (cards.value.length === 0) {
     return null
@@ -41,16 +45,23 @@ const currentCard: ComputedRef<CardData | null> = computed(() => {
   return cards.value[cardIndex.value]
 })
 
+/// The number of graded cards.
+const cardsDone: ComputedRef<number> = computed(() => {
+  return cards.value.filter((card) => card.grade !== null).length
+})
+
+/// Assign a grade to the current card, and move to the next one.
 function review(grade: Grade) {
-  console.log(`Reviewed card ${currentCard.value?.hash} with grade ${grade}`)
   reveal.value = false
-  cardsDone.value += 1
-  cards.value.splice(cardIndex.value, 1)
+  if (currentCard.value) {
+    currentCard.value.grade = grade
+  }
+  cardIndex.value += 1
 }
 
+/// Finish the session early.
 function finish() {
   console.log('Aborted review')
-  cards.value = []
 }
 
 // Mimic API calls:
