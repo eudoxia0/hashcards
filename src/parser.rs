@@ -357,10 +357,6 @@ impl Parser {
 mod tests {
     use super::*;
 
-    fn make_test_parser() -> Parser {
-        Parser::new("test_deck".to_string(), PathBuf::from("test.md"))
-    }
-
     #[test]
     fn test_empty_string() -> Fallible<()> {
         let input = "";
@@ -528,6 +524,10 @@ mod tests {
         let cards = deck?;
         assert_eq!(cards.len(), 7);
         Ok(())
+    }
+
+    fn make_test_parser() -> Parser {
+        Parser::new("test_deck".to_string(), PathBuf::from("test.md"))
     }
 
     fn assert_cloze(cards: &[Card], clean_text: &str, deletions: &[(usize, usize)]) {
