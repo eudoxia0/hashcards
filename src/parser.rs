@@ -256,6 +256,7 @@ impl Parser {
                 }
             } else if c == '!' {
                 image_mode = true;
+                index += 1;
             } else {
                 index += 1;
             }
