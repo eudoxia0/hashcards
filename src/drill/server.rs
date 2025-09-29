@@ -164,8 +164,7 @@ async fn style_handler() -> (StatusCode, [(HeaderName, &'static str); 2], &'stat
         StatusCode::OK,
         [
             (CONTENT_TYPE, "text/css"),
-            // (CACHE_CONTROL, "public, max-age=604800, immutable"),
-            (CACHE_CONTROL, "no-cache"),
+            (CACHE_CONTROL, "public, max-age=604800, immutable"),
         ],
         bytes,
     )
