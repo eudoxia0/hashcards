@@ -361,8 +361,7 @@ impl Parser {
 #[cfg(test)]
 mod tests {
     use std::env::temp_dir;
-
-    use serial_test::serial;
+    use std::fs::create_dir_all;
 
     use super::*;
 
@@ -614,9 +613,10 @@ mod tests {
     }
 
     #[test]
-    #[serial]
     fn test_identical_cards_across_files() -> Fallible<()> {
         let directory = temp_dir();
+        let directory = directory.join("identical_cards_test");
+        create_dir_all(&directory)?;
         let file1 = directory.join("file1.md");
         let file2 = directory.join("file2.md");
         std::fs::write(&file1, "Q: foo\nA: bar")?;
