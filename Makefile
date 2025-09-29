@@ -24,6 +24,10 @@ example:
 	rm -f example/db.sqlite3
 	RUST_LOG=debug cargo run -- drill example
 
+.PHONY: coverage
+coverage:
+	cargo llvm-cov --html --open
+
 .PHONY: clean
 clean:
 	rm -f hashcards
