@@ -35,7 +35,6 @@ const currentCard: ComputedRef<CardData | null> = computed(() => {
   }
   return cards.value[cardIndex.value]
 })
-const isFinished: Ref<boolean> = ref(false)
 
 function prevCard() {
   reveal.value = false
@@ -56,13 +55,14 @@ function nextCard() {
 }
 
 function review(grade: Grade) {
+  console.log(`Reviewed card as: ${grade}`)
   cards.value.splice(cardIndex.value, 1)
   cardsDone.value += 1
 }
 
 function finish() {
-  console.log('Finished reviewing')
-  isFinished.value = true
+  console.log('Aborted review')
+  cards.value = []
 }
 
 // Mimic API calls:
@@ -91,8 +91,7 @@ totalCards.value = cards.value.length
 </script>
 
 <template>
-  <div v-if="isFinished || !currentCard" class="root">Session Completed</div>
-  <div v-else class="root">
+  <div v-if="currentCard" class="root">
     <div class="header">
       <h1>{{ currentCard.deckName }}</h1>
       <Spacer />
@@ -123,6 +122,7 @@ totalCards.value = cards.value.length
       <Button label="End" @click="finish()" />
     </div>
   </div>
+  <div v-else class="root">Session Completed</div>
 </template>
 
 <style scoped>
