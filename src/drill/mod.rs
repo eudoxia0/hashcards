@@ -41,6 +41,8 @@ mod tests {
         let session_started_at = Timestamp::now();
         let result = start_server(directory, session_started_at).await;
         assert!(result.is_err());
+        let err = result.err().unwrap();
+        assert_eq!(err.to_string(), "error: directory does not exist.");
         Ok(())
     }
 
