@@ -31,6 +31,7 @@ use axum::routing::get;
 use axum::routing::post;
 use tokio::net::TcpListener;
 use tokio::net::TcpStream;
+use tokio::spawn;
 use tokio::time::sleep;
 
 use crate::db::Database;
@@ -130,7 +131,7 @@ pub async fn start_server(
     if open_browser {
         // Start a separate task to open the browser.
         let url = format!("http://{bind}/");
-        tokio::spawn(async move {
+        spawn(async move {
             loop {
                 if let Ok(stream) = TcpStream::connect(bind).await {
                     drop(stream);
