@@ -14,7 +14,6 @@ interface BasicCard {
   deckName: string
   question: string
   answer: string
-  grade: Grade | null
 }
 
 interface ClozeCard {
@@ -23,45 +22,66 @@ interface ClozeCard {
   deckName: string
   prompt: string
   answer: string
-  grade: Grade | null
 }
 
 type CardData = BasicCard | ClozeCard
 
-/// The list of all cards.
+interface Review {
+  card: CardData
+  grade: Grade
+}
+
+/// The stack of cards to review.
 const cards: Ref<CardData[]> = ref([])
 /// The total number of cards in the session.
 const totalCards: Ref<number> = ref(0)
 /// Whether or not to show the answer.
 const reveal: Ref<boolean> = ref(false)
-/// The index of the current card.
-const cardIndex: Ref<number> = ref(0)
+/// The list of card reviews made.
+const reviews: Ref<Review[]> = ref([])
 /// Are we done?
 const done: Ref<boolean> = ref(false)
 
-/// The card at the current index, or null if there are no cards.
+/// The current card, or null if there are no cards.
 const currentCard: ComputedRef<CardData | null> = computed(() => {
   if (cards.value.length === 0) {
     return null
   }
-  return cards.value[cardIndex.value]
+  return cards.value[0]
 })
 
 /// The number of graded cards.
 const cardsDone: ComputedRef<number> = computed(() => {
-  return cards.value.filter((card) => card.grade !== null).length
+  return totalCards.value - cards.value.length
+})
+
+/// Should the undo button be disabled?
+const undoDisabled: ComputedRef<boolean> = computed(() => {
+  return reviews.value.length === 0
 })
 
 /// Assign a grade to the current card, and move to the next one.
 function review(grade: Grade) {
-  reveal.value = false
   if (currentCard.value) {
-    currentCard.value.grade = grade
-  }
-  if (cardIndex.value === cards.value.length - 1) {
-    done.value = true
-  } else {
-    cardIndex.value += 1
+    reveal.value = false
+    console.log(`Card ${currentCard.value?.hash} graded as ${grade}`)
+    reviews.value.push({
+      card: currentCard.value,
+      grade,
+    })
+    if (grade === Grade.FORGOT) {
+      // Put the card at the back of the stack.
+      const card = cards.value.shift()
+      if (card) {
+        cards.value.push(card)
+      }
+    } else {
+      // Remove the card.
+      cards.value.shift()
+    }
+    if (cards.value.length === 0) {
+      done.value = true
+    }
   }
 }
 
@@ -70,13 +90,27 @@ function finish() {
   done.value = true
 }
 
-/// Undo the last grading action.
+/// Undo the last action.
 function undo() {
-  if (cardIndex.value > 0) {
-    cardIndex.value -= 1
-    if (currentCard.value) {
-      currentCard.value.grade = null
+  if (reviews.value.length === 0) {
+    //
+    return
+  }
+  const lastReview = reviews.value.pop()
+  if (lastReview) {
+    if (lastReview.grade === Grade.FORGOT) {
+      // Take the card from the back of the stack, and put it back at the
+      // front.
+      const card = cards.value.pop()
+      if (card) {
+        cards.value.unshift(card)
+      }
+    } else {
+      // Put the card back at the front of the stack.
+      cards.value.unshift(lastReview.card)
     }
+    done.value = false
+    reveal.value = false
   }
 }
 
@@ -88,7 +122,6 @@ cards.value = [
     deckName: 'Geography',
     question: '<p>What is the capital of Germany?</p>',
     answer: '<p>Berlin</p>',
-    grade: null,
   },
   {
     hash: 'b',
@@ -96,7 +129,6 @@ cards.value = [
     deckName: 'Geography',
     question: '<p>Who wrote <i>The Tempest</i>?</p>',
     answer: '<p>Shakespeare</p>',
-    grade: null,
   },
   {
     hash: 'c',
@@ -104,7 +136,6 @@ cards.value = [
     deckName: 'Chemistry',
     prompt: '<p>The atomic number of lithium is <span class="cloze">.............</span>.</p>',
     answer: '<p>The atomic number of lithium is <span class="cloze-reveal">3</span>.</p>',
-    grade: null,
   },
 ]
 
@@ -114,7 +145,7 @@ totalCards.value = cards.value.length
 <template>
   <div v-if="!done && currentCard" class="root">
     <div class="controls">
-      <Button label="Undo" :disabled="cardIndex === 0" @click="undo()" />
+      <Button label="Undo" :disabled="undoDisabled" @click="undo()" />
       <Spacer />
       <Button v-if="!reveal" label="Reveal" @click="reveal = true" />
       <Button v-if="reveal" label="Forgot" @click="review(Grade.FORGOT)" />
