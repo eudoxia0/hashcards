@@ -333,4 +333,30 @@ mod tests {
         }
         Ok(())
     }
+
+    #[test]
+    fn test_cloze_multiple() -> Fallible<()> {
+        let input = "C: Foo [bar] baz [quux].";
+        let parser = make_test_parser();
+        let cards = parser.parse(input)?;
+
+        assert_eq!(cards.len(), 2);
+        match &cards[0].content() {
+            CardContent::Cloze { text, start, end } => {
+                assert_eq!(text, "Foo bar baz quux.");
+                assert_eq!(*start, 4);
+                assert_eq!(*end, 6);
+            }
+            _ => panic!("Expected cloze card"),
+        }
+        match &cards[1].content() {
+            CardContent::Cloze { text, start, end } => {
+                assert_eq!(text, "Foo bar baz quux.");
+                assert_eq!(*start, 12);
+                assert_eq!(*end, 15);
+            }
+            _ => panic!("Expected cloze card"),
+        }
+        Ok(())
+    }
 }
