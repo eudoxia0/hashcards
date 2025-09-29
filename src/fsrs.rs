@@ -165,6 +165,7 @@ mod tests {
     use std::iter::zip;
 
     use super::*;
+    use crate::error::Fallible;
 
     /// Approximate equality.
     fn feq(a: f64, b: f64) -> bool {
@@ -379,5 +380,14 @@ mod tests {
         for (expected, actual) in zip(expected, actual) {
             assert_eq!(actual, expected);
         }
+    }
+
+    #[test]
+    fn test_grade_serialization_roundtrip() -> Fallible<()> {
+        let grades = [Grade::Forgot, Grade::Hard, Grade::Good, Grade::Easy];
+        for grade in grades {
+            assert_eq!(grade, Grade::try_from(grade.as_str().to_string())?);
+        }
+        Ok(())
     }
 }
