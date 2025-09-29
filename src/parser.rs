@@ -275,6 +275,15 @@ mod tests {
     }
 
     #[test]
+    fn test_empty_string() -> Fallible<()> {
+        let input = "";
+        let parser = make_test_parser();
+        let cards = parser.parse(input)?;
+        assert_eq!(cards.len(), 0);
+        Ok(())
+    }
+
+    #[test]
     fn test_basic_card() -> Fallible<()> {
         let input = "Q: What is Rust?\nA: A systems programming language.";
         let parser = make_test_parser();
