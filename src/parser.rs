@@ -20,6 +20,7 @@ use crate::error::Fallible;
 use crate::types::card::Card;
 use crate::types::card::CardContent;
 
+/// Parses all Markdown files in the given directory.
 pub fn parse_deck(directory: &PathBuf) -> Fallible<Vec<Card>> {
     let mut all_cards = Vec::new();
     for entry in WalkDir::new(directory) {
