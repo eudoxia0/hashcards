@@ -265,3 +265,28 @@ impl Parser {
         Ok(cards)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn make_test_parser() -> Parser {
+        Parser::new("test_deck".to_string(), PathBuf::from("test.md"))
+    }
+
+    #[test]
+    fn test_basic_card() -> Fallible<()> {
+        let input = "Q: What is Rust?\nA: A systems programming language.";
+        let parser = make_test_parser();
+        let cards = parser.parse(input)?;
+        assert_eq!(cards.len(), 1);
+        match &cards[0].content() {
+            CardContent::Basic { question, answer } => {
+                assert_eq!(question, "What is Rust?");
+                assert_eq!(answer, "A systems programming language.");
+            }
+            _ => panic!("Expected basic card"),
+        }
+        Ok(())
+    }
+}
