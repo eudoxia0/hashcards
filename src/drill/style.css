@@ -140,3 +140,7 @@ input {
 .spacer {
     flex: 1;
 }
+
+.katex {
+    font-size: 1.1em;
+}
