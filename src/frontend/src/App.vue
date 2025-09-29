@@ -33,7 +33,7 @@ const undoDisabled: ComputedRef<boolean> = computed(() => {
   return reviews.value.length === 0
 })
 
-/// Assign a grade to the current card, and move to the next one.
+/// Assign a grade to the current card.
 function review(grade: Grade) {
   if (currentCard.value) {
     reveal.value = false
@@ -72,16 +72,10 @@ function undo() {
   const lastReview = reviews.value.pop()
   if (lastReview) {
     if (lastReview.grade === Grade.FORGOT) {
-      // Take the card from the back of the stack, and put it back at the
-      // front.
-      const card = cards.value.pop()
-      if (card) {
-        cards.value.unshift(card)
-      }
-    } else {
-      // Put the card back at the front of the stack.
-      cards.value.unshift(lastReview.card)
+      // Take the card from the back of the stack
+      cards.value.pop()
     }
+    cards.value.unshift(lastReview.card)
     done.value = false
     reveal.value = false
   }
