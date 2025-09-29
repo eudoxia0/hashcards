@@ -195,6 +195,8 @@ fn probe_schema_exists(tx: &Transaction) -> Fallible<bool> {
 
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
+
     use super::*;
 
     #[test]
@@ -202,6 +204,32 @@ mod tests {
         let db = Database::new(":memory:")?;
         assert!(db.card_hashes()?.is_empty());
         assert!(db.due_today(Timestamp::now().local_date())?.is_empty());
+        Ok(())
+    }
+
+    #[test]
+    fn test_create_card() -> Fallible<()> {
+        let db = Database::new(":memory:")?;
+        let now = Timestamp::now();
+        let card = Card::new(
+            "My Deck".to_string(),
+            PathBuf::new(),
+            (0, 1),
+            CardContent::new_basic("Q", "A"),
+        );
+        db.add_card(&card, now)?;
+
+        let hashes = db.card_hashes()?;
+        assert_eq!(hashes.len(), 1);
+        assert!(hashes.contains(&card.hash()));
+
+        let due_today = db.due_today(now.local_date())?;
+        assert_eq!(due_today.len(), 1);
+        assert!(due_today.contains(&card.hash()));
+
+        let latest_review = db.get_latest_review(card.hash())?;
+        assert!(latest_review.is_none());
+
         Ok(())
     }
 }

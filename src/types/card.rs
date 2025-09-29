@@ -80,10 +80,10 @@ impl Card {
 }
 
 impl CardContent {
-    pub fn new_basic(question: String, answer: String) -> Self {
+    pub fn new_basic(question: impl Into<String>, answer: impl Into<String>) -> Self {
         Self::Basic {
-            question: question.trim().to_string(),
-            answer: answer.trim().to_string(),
+            question: question.into().trim().to_string(),
+            answer: answer.into().trim().to_string(),
         }
     }
 
