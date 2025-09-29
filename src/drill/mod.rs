@@ -53,7 +53,7 @@ mod tests {
         let dir = dir.join("empty_directory");
         create_dir_all(&dir)?;
         let session_started_at = Timestamp::now();
-        let _ = start_server(dir, session_started_at).await?;
+        start_server(dir, session_started_at).await?;
         Ok(())
     }
 
