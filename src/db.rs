@@ -208,7 +208,7 @@ mod tests {
     }
 
     #[test]
-    fn test_create_card() -> Fallible<()> {
+    fn test_add_basic_card() -> Fallible<()> {
         let db = Database::new(":memory:")?;
         let now = Timestamp::now();
         let card = Card::new(
@@ -216,6 +216,36 @@ mod tests {
             PathBuf::new(),
             (0, 1),
             CardContent::new_basic("Q", "A"),
+        );
+        db.add_card(&card, now)?;
+
+        let hashes = db.card_hashes()?;
+        assert_eq!(hashes.len(), 1);
+        assert!(hashes.contains(&card.hash()));
+
+        let due_today = db.due_today(now.local_date())?;
+        assert_eq!(due_today.len(), 1);
+        assert!(due_today.contains(&card.hash()));
+
+        let latest_review = db.get_latest_review(card.hash())?;
+        assert!(latest_review.is_none());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_add_cloze_card() -> Fallible<()> {
+        let db = Database::new(":memory:")?;
+        let now = Timestamp::now();
+        let card = Card::new(
+            "My Deck".to_string(),
+            PathBuf::new(),
+            (0, 1),
+            CardContent::Cloze {
+                text: "Foo bar baz.".to_string(),
+                start: 0,
+                end: 3,
+            },
         );
         db.add_card(&card, now)?;
 
