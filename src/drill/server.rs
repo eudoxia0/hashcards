@@ -34,10 +34,10 @@ use tokio::net::TcpStream;
 use tokio::time::sleep;
 
 use crate::db::Database;
+use crate::drill::get::get_handler;
+use crate::drill::post::post_handler;
 use crate::drill::state::MutableState;
 use crate::drill::state::ServerState;
-use crate::drill::view::get_handler;
-use crate::drill::view::post_handler;
 use crate::error::ErrorReport;
 use crate::error::Fallible;
 use crate::error::fail;
