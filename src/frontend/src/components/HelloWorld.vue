@@ -3,8 +3,18 @@ import Button from './Button.vue'
 import Spacer from './Spacer.vue'
 
 const deckName = 'Geography'
+
+const cards = [
+  {
+    kind: 'Basic',
+    question: '<p>What is the capital of Germany?</p>',
+    answer: '<p>Berlin</p>',
+  },
+]
+
 const cardsDone = 0
-const totalCards = 7
+const totalCards = cards.length
+const currentCard = cards[0]
 </script>
 
 <template>
@@ -14,9 +24,8 @@ const totalCards = 7
       <div class="progress">{{ cardsDone }} / {{ totalCards }}</div>
     </div>
     <div class="content">
-      <div class="prompt rich-text">
-        <p>Berlin is the capital of <span class="cloze">.............</span> .</p>
-      </div>
+      <div class="question rich-text" v-html="currentCard.question" />
+      <div class="answer rich-text" v-html="currentCard.answer" />
     </div>
     <div class="controls">
       <Button label="Undo" />
@@ -42,11 +51,15 @@ const totalCards = 7
 
 .header,
 .prompt,
+.question,
+.answer,
 .controls {
   padding: 32px;
 }
 
 .header,
+.question,
+.answer,
 .prompt {
   width: 100%;
   border-bottom: 1px solid black;
