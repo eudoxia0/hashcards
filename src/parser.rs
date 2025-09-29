@@ -493,6 +493,17 @@ mod tests {
     }
 
     #[test]
+    fn test_two_clozes() -> Fallible<()> {
+        let input = "C: [foo]\nC: [bar]";
+        let parser = make_test_parser();
+        let cards = parser.parse(input)?;
+        assert_eq!(cards.len(), 2);
+        assert_cloze(&cards[0..1], "foo", &[(0, 2)]);
+        assert_cloze(&cards[1..2], "bar", &[(0, 2)]);
+        Ok(())
+    }
+
+    #[test]
     fn test_question_without_answer() -> Fallible<()> {
         let input = "Q: Question without answer";
         let parser = make_test_parser();
