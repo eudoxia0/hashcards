@@ -24,34 +24,12 @@ enum Grade {
   REMEMBERED = 'remembered',
 }
 
-const cards: Ref<CardData[]> = ref([
-  {
-    kind: 'Basic',
-    deckName: 'Geography',
-    question: '<p>What is the capital of Germany?</p>',
-    answer: '<p>Berlin</p>',
-  },
-  {
-    kind: 'Basic',
-    deckName: 'Geography',
-    question: '<p>What is the capital of Paris?</p>',
-    answer: '<p>France</p>',
-  },
-  {
-    kind: 'Cloze',
-    deckName: 'Chemistry',
-    prompt: '<p>The atomic number of lithium is <span class="cloze">.............</span>.</p>',
-    answer: '<p>The atomic number of lithium is <span class="cloze-reveal">3</span>.</p>',
-  },
-])
-
+const cards: Ref<CardData[]> = ref([])
 const reveal: Ref<boolean> = ref(false)
-
-const cardsDone: number = 0
+const cardsDone: Ref<number> = ref(0)
 const cardIndex: Ref<number> = ref(0)
-const totalCards: ComputedRef<number> = computed(() => cards.value.length)
+const totalCards: Ref<number> = ref(0)
 const currentCard: ComputedRef<CardData> = computed(() => cards.value[cardIndex.value])
-
 const isFinished: Ref<boolean> = ref(false)
 
 function prevCard() {
@@ -73,14 +51,39 @@ function nextCard() {
 }
 
 function review(grade: Grade) {
-  console.log(`Reviewed card ${cardIndex.value} with grade ${grade}`)
-  nextCard()
+  const card = cards.value[cardIndex.value]
+  cards.value.splice(cardIndex.value, 1)
+  cardsDone.value += 1
 }
 
 function finish() {
   console.log('Finished reviewing')
   isFinished.value = true
 }
+
+// Mimic API calls:
+cards.value = [
+  {
+    kind: 'Basic',
+    deckName: 'Geography',
+    question: '<p>What is the capital of Germany?</p>',
+    answer: '<p>Berlin</p>',
+  },
+  {
+    kind: 'Basic',
+    deckName: 'Geography',
+    question: '<p>What is the capital of Paris?</p>',
+    answer: '<p>France</p>',
+  },
+  {
+    kind: 'Cloze',
+    deckName: 'Chemistry',
+    prompt: '<p>The atomic number of lithium is <span class="cloze">.............</span>.</p>',
+    answer: '<p>The atomic number of lithium is <span class="cloze-reveal">3</span>.</p>',
+  },
+]
+
+totalCards.value = cards.value.length
 </script>
 
 <template>
