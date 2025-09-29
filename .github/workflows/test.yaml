@@ -63,12 +63,13 @@ jobs:
         run: cargo test --no-run
 
       - name: run tests
-        run: cargo llvm-cov \
-          --all-features \
-          --workspace \
-          --lcov \
-          --ignore-filename-regex main.rs \
-          --output-path lcov.info
+        run: >
+          cargo llvm-cov
+            --all-features
+            --workspace
+            --lcov
+            --ignore-filename-regex main.rs
+            --output-path lcov.info
 
       - name: upload to codecov
         uses: codecov/codecov-action@v5
