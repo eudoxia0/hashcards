@@ -1,1 +1,2 @@
-What does $\euler$ evaluate to? / $$0$$
+Q: What does $\euler$ evaluate to?
+A: $0$

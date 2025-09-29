@@ -1,3 +1,4 @@
-What is the capital of France? / Paris
+Q: What is the capital of France?
+A: Paris
 
-[Berlin] is the capital of [Germany].
+C: [Berlin] is the capital of [Germany].
