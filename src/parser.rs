@@ -418,15 +418,7 @@ mod tests {
         let parser = make_test_parser();
         let cards = parser.parse(input)?;
 
-        assert_eq!(cards.len(), 1);
-        match &cards[0].content() {
-            CardContent::Cloze { text, start, end } => {
-                assert_eq!(text, "Foo bar baz.");
-                assert_eq!(*start, 4);
-                assert_eq!(*end, 6);
-            }
-            _ => panic!("Expected cloze card"),
-        }
+        assert_cloze(&cards, "Foo bar baz.", &[(4, 6)]);
         Ok(())
     }
 
@@ -436,23 +428,7 @@ mod tests {
         let parser = make_test_parser();
         let cards = parser.parse(input)?;
 
-        assert_eq!(cards.len(), 2);
-        match &cards[0].content() {
-            CardContent::Cloze { text, start, end } => {
-                assert_eq!(text, "Foo bar baz quux.");
-                assert_eq!(*start, 4);
-                assert_eq!(*end, 6);
-            }
-            _ => panic!("Expected cloze card"),
-        }
-        match &cards[1].content() {
-            CardContent::Cloze { text, start, end } => {
-                assert_eq!(text, "Foo bar baz quux.");
-                assert_eq!(*start, 12);
-                assert_eq!(*end, 15);
-            }
-            _ => panic!("Expected cloze card"),
-        }
+        assert_cloze(&cards, "Foo bar baz quux.", &[(4, 6), (12, 15)]);
         Ok(())
     }
 
@@ -462,23 +438,7 @@ mod tests {
         let parser = make_test_parser();
         let cards = parser.parse(input)?;
 
-        assert_eq!(cards.len(), 2);
-        match &cards[0].content() {
-            CardContent::Cloze { text, start, end } => {
-                assert_eq!(text, "Foo bar ![](image.jpg) quux.");
-                assert_eq!(*start, 4);
-                assert_eq!(*end, 6);
-            }
-            _ => panic!("Expected cloze card"),
-        }
-        match &cards[1].content() {
-            CardContent::Cloze { text, start, end } => {
-                assert_eq!(text, "Foo bar ![](image.jpg) quux.");
-                assert_eq!(*start, 23);
-                assert_eq!(*end, 26);
-            }
-            _ => panic!("Expected cloze card"),
-        }
+        assert_cloze(&cards, "Foo bar ![](image.jpg) quux.", &[(4, 6), (23, 26)]);
         Ok(())
     }
 
@@ -488,23 +448,7 @@ mod tests {
         let parser = make_test_parser();
         let cards = parser.parse(input)?;
 
-        assert_eq!(cards.len(), 2);
-        match &cards[0].content() {
-            CardContent::Cloze { text, start, end } => {
-                assert_eq!(text, "foo\nbar\nbaz.");
-                assert_eq!(*start, 0);
-                assert_eq!(*end, 2);
-            }
-            _ => panic!("Expected cloze card"),
-        }
-        match &cards[1].content() {
-            CardContent::Cloze { text, start, end } => {
-                assert_eq!(text, "foo\nbar\nbaz.");
-                assert_eq!(*start, 4);
-                assert_eq!(*end, 6);
-            }
-            _ => panic!("Expected cloze card"),
-        }
+        assert_cloze(&cards, "foo\nbar\nbaz.", &[(0, 2), (4, 6)]);
         Ok(())
     }
 
