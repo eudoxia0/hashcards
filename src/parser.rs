@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::collections::HashSet;
 use std::path::PathBuf;
 
 use walkdir::WalkDir;
@@ -134,7 +135,14 @@ impl Parser {
         }
         self.finalize(state, last_line, &mut cards)?;
 
-        Ok(cards)
+        let mut seen = HashSet::new();
+        let mut unique_cards = Vec::new();
+        for card in cards {
+            if seen.insert(card.hash()) {
+                unique_cards.push(card);
+            }
+        }
+        Ok(unique_cards)
     }
 
     fn parse_line(
