@@ -432,6 +432,23 @@ mod tests {
     }
 
     #[test]
+    fn test_cloze_followed_by_question() -> Fallible<()> {
+        let input = "C: [foo]\nQ: Question\nA: Answer";
+        let parser = make_test_parser();
+        let cards = parser.parse(input)?;
+        assert_eq!(cards.len(), 2);
+        assert_cloze(&cards[0..1], "foo", &[(0, 2)]);
+        match &cards[1].content() {
+            CardContent::Basic { question, answer } => {
+                assert_eq!(question, "Question");
+                assert_eq!(answer, "Answer");
+            }
+            _ => panic!("Expected basic card"),
+        }
+        Ok(())
+    }
+
+    #[test]
     fn test_cloze_single() -> Fallible<()> {
         let input = "C: Foo [bar] baz.";
         let parser = make_test_parser();
