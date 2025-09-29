@@ -21,6 +21,7 @@ mod template;
 #[cfg(test)]
 mod tests {
     use std::env::temp_dir;
+    use std::fs::create_dir_all;
     use std::path::PathBuf;
     use std::time::Duration;
 
@@ -47,11 +48,12 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_start_server_on_empty_directory() -> Fallible<()> {
-        let directory = temp_dir();
+    async fn test_start_server_with_no_cards_due() -> Fallible<()> {
+        let dir = temp_dir();
+        let dir = dir.join("empty_directory");
+        create_dir_all(&dir)?;
         let session_started_at = Timestamp::now();
-        let result = start_server(directory, session_started_at).await;
-        assert!(result.is_err());
+        let _ = start_server(dir, session_started_at).await?;
         Ok(())
     }
 
