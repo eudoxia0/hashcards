@@ -38,6 +38,8 @@ const cardIndex: Ref<number> = ref(0)
 const totalCards: ComputedRef<number> = computed(() => cardStore.cards.length)
 const currentCard: ComputedRef<CardData> = computed(() => cardStore.cards[cardIndex.value])
 
+const isFinished: Ref<boolean> = ref(false)
+
 function prevCard() {
   reveal.value = false
   if (cardIndex.value > 0) {
@@ -60,10 +62,16 @@ function review(grade: Grade) {
   console.log(`Reviewed card ${cardIndex.value} with grade ${grade}`)
   nextCard()
 }
+
+function finish() {
+  console.log('Finished reviewing')
+  isFinished.value = true
+}
 </script>
 
 <template>
-  <div class="root">
+  <div v-if="isFinished" class="root">Session Completed</div>
+  <div v-else class="root">
     <div class="header">
       <h1>{{ deckName }}</h1>
       <Spacer />
@@ -91,7 +99,7 @@ function review(grade: Grade) {
       <Button v-if="reveal" label="Forgot" @click="review(Grade.FORGOT)" />
       <Button v-if="reveal" label="Remembered" @click="review(Grade.REMEMBERED)" />
       <Spacer />
-      <Button label="End" />
+      <Button label="End" @click="finish()" />
     </div>
   </div>
 </template>
