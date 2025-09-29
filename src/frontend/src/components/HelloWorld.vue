@@ -41,25 +41,8 @@ const currentCard: ComputedRef<CardData | null> = computed(() => {
   return cards.value[cardIndex.value]
 })
 
-function prevCard() {
-  reveal.value = false
-  if (cardIndex.value > 0) {
-    cardIndex.value -= 1
-  } else {
-    cardIndex.value = cards.value.length - 1
-  }
-}
-
-function nextCard() {
-  reveal.value = false
-  if (cardIndex.value < cards.value.length - 1) {
-    cardIndex.value += 1
-  } else {
-    cardIndex.value = 0
-  }
-}
-
 function review(grade: Grade) {
+  console.log(`Reviewed card ${currentCard.value?.hash} with grade ${grade}`)
   reveal.value = false
   cardsDone.value += 1
   cards.value.splice(cardIndex.value, 1)
@@ -104,9 +87,6 @@ totalCards.value = cards.value.length
 <template>
   <div v-if="currentCard" class="root">
     <div class="controls">
-      <Button label="<" @click="prevCard" />
-      <Button label=">" @click="nextCard" />
-      <Spacer />
       <Button label="Undo" />
       <Spacer />
       <Button v-if="!reveal" label="Reveal" @click="reveal = true" />
@@ -161,10 +141,8 @@ totalCards.value = cards.value.length
 
     header {
       h1 {
+        font-size: 36px;
       }
-    }
-
-    .content {
     }
   }
 }
