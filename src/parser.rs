@@ -520,6 +520,16 @@ mod tests {
         Ok(())
     }
 
+    #[test]
+    fn test_parse_deck() -> Fallible<()> {
+        let directory = PathBuf::from("./example");
+        let deck = parse_deck(&directory);
+        assert!(deck.is_ok());
+        let cards = deck?;
+        assert_eq!(cards.len(), 7);
+        Ok(())
+    }
+
     fn assert_cloze(cards: &[Card], clean_text: &str, deletions: &[(usize, usize)]) {
         assert_eq!(cards.len(), deletions.len());
         for (i, (start, end)) in deletions.iter().enumerate() {
