@@ -6,6 +6,11 @@ import { useCardStore, type CardStore, type CardData } from '@/stores/cards'
 
 const cardStore: CardStore = useCardStore()
 
+enum Grade {
+  FORGOT = 'forgot',
+  REMEMBERED = 'remembered',
+}
+
 cardStore.setCards([
   {
     kind: 'Basic',
@@ -50,6 +55,11 @@ function nextCard() {
     cardIndex.value = 0
   }
 }
+
+function review(grade: Grade) {
+  console.log(`Reviewed card ${cardIndex.value} with grade ${grade}`)
+  nextCard()
+}
 </script>
 
 <template>
@@ -78,6 +88,8 @@ function nextCard() {
       <Button label="Undo" />
       <Spacer />
       <Button v-if="!reveal" label="Reveal" @click="reveal = true" />
+      <Button v-if="reveal" label="Forgot" @click="review(Grade.FORGOT)" />
+      <Button v-if="reveal" label="Remembered" @click="review(Grade.REMEMBERED)" />
       <Spacer />
       <Button label="End" />
     </div>
