@@ -28,6 +28,7 @@ const CLOZE_TAG: &str = "CLOZE_DELETION";
 
 pub async fn get_handler(State(state): State<ServerState>) -> (StatusCode, Html<String>) {
     let mutable = state.mutable.lock().unwrap();
+    let undo_disabled = mutable.reviewed.is_empty();
     let body = if mutable.finished {
         html! {
             div.finished {
@@ -115,7 +116,11 @@ pub async fn get_handler(State(state): State<ServerState>) -> (StatusCode, Html<
         let card_controls = if mutable.reveal {
             html! {
                 form action="/" method="post" {
-                    input id="undo" type="submit" name="action" value="Undo";
+                    @if undo_disabled {
+                        input id="undo" type="submit" name="action" value="Undo" disabled;
+                    } @else {
+                        input id="undo" type="submit" name="action" value="Undo";
+                    }
                     div.spacer {}
                     input id="forgot" type="submit" name="action" value="Forgot";
                     input id="hard" type="submit" name="action" value="Hard";
@@ -128,7 +133,11 @@ pub async fn get_handler(State(state): State<ServerState>) -> (StatusCode, Html<
         } else {
             html! {
                 form action="/" method="post" {
-                    input id="undo" type="submit" name="action" value="Undo";
+                    @if undo_disabled {
+                        input id="undo" type="submit" name="action" value="Undo" disabled;
+                    } @else {
+                        input id="undo" type="submit" name="action" value="Undo";
+                    }
                     div.spacer {}
                     input id="reveal" type="submit" name="action" value="Reveal";
                     div.spacer {}
