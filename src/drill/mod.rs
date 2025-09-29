@@ -25,6 +25,7 @@ mod tests {
     use std::time::Duration;
 
     use reqwest::StatusCode;
+    use serial_test::serial;
     use tokio::fs::remove_file;
     use tokio::net::TcpStream;
     use tokio::spawn;
@@ -53,15 +54,12 @@ mod tests {
     }
 
     #[tokio::test]
+    #[serial]
     async fn test_e2e() -> Fallible<()> {
         let directory = PathBuf::from("./test").canonicalize().unwrap();
-
-        // If the database already exists, delete it.
-        {
-            let db_path = directory.join("db.sqlite3");
-            if db_path.exists() {
-                remove_file(db_path).await?;
-            }
+        let db_path = directory.join("db.sqlite3");
+        if db_path.exists() {
+            remove_file(&db_path).await?;
         }
 
         let session_started_at = Timestamp::now();
@@ -159,6 +157,96 @@ mod tests {
         let response = reqwest::Client::new()
             .post("http://0.0.0.0:8000/")
             .form(&[("action", "Good")])
+            .send()
+            .await?;
+        assert!(response.status().is_success());
+        assert_eq!(
+            response.headers().get("content-type").unwrap(),
+            "text/html; charset=utf-8"
+        );
+        let html = response.text().await?;
+        assert!(html.contains("Session Completed"));
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    #[serial]
+    async fn test_undo() -> Fallible<()> {
+        let directory = PathBuf::from("./test").canonicalize().unwrap();
+        let db_path = directory.join("db.sqlite3");
+        if db_path.exists() {
+            remove_file(&db_path).await?;
+        }
+
+        // Start the server
+        let session_started_at = Timestamp::now();
+        spawn(async move { start_server(directory, session_started_at).await });
+        loop {
+            if let Ok(stream) = TcpStream::connect("0.0.0.0:8000").await {
+                drop(stream);
+                break;
+            }
+            sleep(Duration::from_millis(1)).await;
+        }
+
+        // Hit reveal.
+        let response = reqwest::Client::new()
+            .post("http://0.0.0.0:8000/")
+            .form(&[("action", "Reveal")])
+            .send()
+            .await?;
+        assert!(response.status().is_success());
+
+        // Hit 'Good'.
+        let response = reqwest::Client::new()
+            .post("http://0.0.0.0:8000/")
+            .form(&[("action", "Good")])
+            .send()
+            .await?;
+        assert!(response.status().is_success());
+
+        // Hit undo.
+        let response = reqwest::Client::new()
+            .post("http://0.0.0.0:8000/")
+            .form(&[("action", "Undo")])
+            .send()
+            .await?;
+        assert!(response.status().is_success());
+        assert_eq!(
+            response.headers().get("content-type").unwrap(),
+            "text/html; charset=utf-8"
+        );
+        let html = response.text().await?;
+        assert!(html.contains("baz <span class='cloze'>.............</span>"));
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    #[serial]
+    async fn test_end() -> Fallible<()> {
+        let directory = PathBuf::from("./test").canonicalize().unwrap();
+        let db_path = directory.join("db.sqlite3");
+        if db_path.exists() {
+            remove_file(&db_path).await?;
+        }
+
+        // Start the server
+        let session_started_at = Timestamp::now();
+        spawn(async move { start_server(directory, session_started_at).await });
+        loop {
+            if let Ok(stream) = TcpStream::connect("0.0.0.0:8000").await {
+                drop(stream);
+                break;
+            }
+            sleep(Duration::from_millis(1)).await;
+        }
+
+        // Hit end.
+        let response = reqwest::Client::new()
+            .post("http://0.0.0.0:8000/")
+            .form(&[("action", "End")])
             .send()
             .await?;
         assert!(response.status().is_success());

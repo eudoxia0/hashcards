@@ -21,3 +21,4 @@ walkdir = "2"
 
 [dev-dependencies]
 reqwest = "0.12.23"
+serial_test = "3.2.0"
