@@ -228,21 +228,47 @@ impl Parser {
     fn parse_cloze_cards(&self, text: String) -> Fallible<Vec<Card>> {
         let mut cards = Vec::new();
 
-        // The full text of the card, without square brackets.
-        let clean_text = text.replace(['[', ']'], "");
+        // The full text of the card, without cloze deletion brackets.
+        let clean_text = {
+            let mut clean_text = String::new();
+            let mut image_mode = false;
+            for c in text.chars() {
+                if c == '[' {
+                    if image_mode {
+                        clean_text.push(c);
+                    }
+                } else if c == ']' {
+                    if image_mode {
+                        // We are in image mode, so this closing bracket is
+                        // part of a Markdown image.
+                        image_mode = false;
+                        clean_text.push(c);
+                    }
+                } else if c == '!' {
+                    image_mode = true;
+                    clean_text.push(c);
+                } else {
+                    clean_text.push(c);
+                }
+            }
+            clean_text
+        };
 
         let mut start = None;
         let mut index = 0;
         let mut image_mode = false;
         for c in text.chars() {
             if c == '[' {
-                if !image_mode {
+                if image_mode {
+                    index += 1;
+                } else {
                     start = Some(index);
                 }
             } else if c == ']' {
                 if image_mode {
                     // We are in image mode, so this closing bracket is part of a markdown image.
                     image_mode = false;
+                    index += 1;
                 } else if let Some(s) = start {
                     let end = index;
                     let content = CardContent::Cloze {
@@ -354,6 +380,32 @@ mod tests {
                 assert_eq!(text, "Foo bar baz quux.");
                 assert_eq!(*start, 12);
                 assert_eq!(*end, 15);
+            }
+            _ => panic!("Expected cloze card"),
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn test_cloze_with_image() -> Fallible<()> {
+        let input = "C: Foo [bar] ![](image.jpg) [quux].";
+        let parser = make_test_parser();
+        let cards = parser.parse(input)?;
+
+        assert_eq!(cards.len(), 2);
+        match &cards[0].content() {
+            CardContent::Cloze { text, start, end } => {
+                assert_eq!(text, "Foo bar ![](image.jpg) quux.");
+                assert_eq!(*start, 4);
+                assert_eq!(*end, 6);
+            }
+            _ => panic!("Expected cloze card"),
+        }
+        match &cards[1].content() {
+            CardContent::Cloze { text, start, end } => {
+                assert_eq!(text, "Foo bar ![](image.jpg) quux.");
+                assert_eq!(*start, 23);
+                assert_eq!(*end, 26);
             }
             _ => panic!("Expected cloze card"),
         }
