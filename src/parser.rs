@@ -411,4 +411,40 @@ mod tests {
         }
         Ok(())
     }
+
+    #[test]
+    fn test_error_missing_answer() -> Fallible<()> {
+        let input = "Q: Question without answer";
+        let parser = make_test_parser();
+        let result = parser.parse(input);
+        assert!(result.is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn test_error_answer_without_question() -> Fallible<()> {
+        let input = "A: Answer without question";
+        let parser = make_test_parser();
+        let result = parser.parse(input);
+        assert!(result.is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn test_cloze_inside_question() -> Fallible<()> {
+        let input = "Q: Question\nC: Cloze";
+        let parser = make_test_parser();
+        let result = parser.parse(input);
+        assert!(result.is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn test_question_inside_question() -> Fallible<()> {
+        let input = "Q: Question\nQ: Another";
+        let parser = make_test_parser();
+        let result = parser.parse(input);
+        assert!(result.is_err());
+        Ok(())
+    }
 }
