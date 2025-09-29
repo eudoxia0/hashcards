@@ -24,5 +24,6 @@ button {
 
 button:disabled {
   cursor: not-allowed;
+  color: #bbb;
 }
 </style>
