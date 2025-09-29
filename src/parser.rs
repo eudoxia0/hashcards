@@ -479,6 +479,32 @@ mod tests {
     }
 
     #[test]
+    fn test_multi_line_cloze() -> Fallible<()> {
+        let input = "C: [foo]\n[bar]\nbaz.";
+        let parser = make_test_parser();
+        let cards = parser.parse(input)?;
+
+        assert_eq!(cards.len(), 2);
+        match &cards[0].content() {
+            CardContent::Cloze { text, start, end } => {
+                assert_eq!(text, "foo\nbar\nbaz.");
+                assert_eq!(*start, 0);
+                assert_eq!(*end, 2);
+            }
+            _ => panic!("Expected cloze card"),
+        }
+        match &cards[1].content() {
+            CardContent::Cloze { text, start, end } => {
+                assert_eq!(text, "foo\nbar\nbaz.");
+                assert_eq!(*start, 4);
+                assert_eq!(*end, 6);
+            }
+            _ => panic!("Expected cloze card"),
+        }
+        Ok(())
+    }
+
+    #[test]
     fn test_question_without_answer() -> Fallible<()> {
         let input = "Q: Question without answer";
         let parser = make_test_parser();
