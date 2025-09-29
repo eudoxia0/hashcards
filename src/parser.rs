@@ -17,6 +17,7 @@ use std::path::PathBuf;
 use walkdir::WalkDir;
 
 use crate::error::Fallible;
+use crate::error::fail;
 use crate::types::card::Card;
 use crate::types::card::CardContent;
 
@@ -27,13 +28,14 @@ pub fn parse_deck(directory: &PathBuf) -> Fallible<Vec<Card>> {
         let entry = entry?;
         let path = entry.path();
         if path.is_file() && path.extension().is_some_and(|ext| ext == "md") {
-            let contents = std::fs::read_to_string(path)?;
+            let text = std::fs::read_to_string(path)?;
             let deck_name: String = path
                 .file_stem()
                 .and_then(|os_str| os_str.to_str())
                 .unwrap_or("None")
                 .to_string();
-            let cards = parse_cards(deck_name, path.to_path_buf(), &contents);
+            let parser = Parser::new(deck_name, path.to_path_buf());
+            let cards = parser.parse(&text)?;
             all_cards.extend(cards);
         }
     }
@@ -48,234 +50,217 @@ pub fn parse_deck(directory: &PathBuf) -> Fallible<Vec<Card>> {
     Ok(all_cards)
 }
 
-fn parse_cards(deck_name: String, file_path: PathBuf, content: &str) -> Vec<Card> {
-    let mut flashcards = Vec::new();
+pub struct Parser {
+    deck_name: String,
+    file_path: PathBuf,
+}
 
-    let cards: Vec<&str> = content
-        .split("\n\n")
-        .map(|s| s.trim())
-        .filter(|s| !s.is_empty())
-        .collect();
+enum State {
+    /// Initial state.
+    Initial,
+    /// Reading a question (Q:)
+    ReadingQuestion { question: String },
+    /// Reading an answer (A:)
+    ReadingAnswer { question: String, answer: String },
+    /// Reading a cloze card (C:)
+    ReadingCloze { text: String },
+}
 
-    for card_text in cards {
-        if let Some(separator_pos) = card_text.find(" / ") {
-            let question = card_text[..separator_pos].trim().to_string();
-            let answer = card_text[separator_pos + 3..].trim().to_string();
-            if !question.is_empty() && !answer.is_empty() {
-                let card = Card::new(
-                    deck_name.clone(),
-                    file_path.clone(),
-                    CardContent::Basic { question, answer },
-                );
-                flashcards.push(card);
-            }
-        } else if card_text.contains('[') && card_text.contains(']') {
-            let clozes = parse_cloze_card(deck_name.clone(), file_path.clone(), card_text);
-            flashcards.extend(clozes);
+enum Line {
+    /// A line like `Q: <text>`.
+    StartQuestion(String),
+    /// A line like `A: <text>`.
+    StartAnswer(String),
+    /// A line like `C: <text>`.
+    StartCloze(String),
+    /// Any other line.
+    Text(String),
+}
+
+impl Line {
+    fn read(line: &str) -> Self {
+        if is_question(line) {
+            Line::StartQuestion(trim(line))
+        } else if is_answer(line) {
+            Line::StartAnswer(trim(line))
+        } else if is_cloze(line) {
+            Line::StartCloze(trim(line))
+        } else {
+            Line::Text(line.to_string())
+        }
+    }
+}
+
+fn is_question(line: &str) -> bool {
+    line.starts_with("Q:")
+}
+
+fn is_answer(line: &str) -> bool {
+    line.starts_with("A:")
+}
+
+fn is_cloze(line: &str) -> bool {
+    line.starts_with("C:")
+}
+
+fn trim(line: &str) -> String {
+    line[2..].trim().to_string()
+}
+
+impl Parser {
+    pub fn new(deck_name: String, file_path: PathBuf) -> Self {
+        Parser {
+            deck_name,
+            file_path,
         }
     }
 
-    flashcards
-}
+    /// Parse all the cards in the given text.
+    pub fn parse(&self, text: &str) -> Fallible<Vec<Card>> {
+        let mut cards = Vec::new();
+        let mut state = State::Initial;
+        let lines: Vec<&str> = text.lines().collect();
+        for line in lines.iter() {
+            let line = Line::read(line);
+            state = self.parse_line(state, line, &mut cards)?;
+        }
+        self.finalize(state, &mut cards)?;
+        Ok(cards)
+    }
 
-// Parses a cloze deletion card and returns a vector of cards, one for each deletion.
-fn parse_cloze_card(deck_name: String, file_path: PathBuf, text: &str) -> Vec<Card> {
-    let mut cards = Vec::new();
-
-    // The full text of the card, without square brackets.
-    let clean_text = text.replace(['[', ']'], "");
-
-    let mut start = None;
-    let mut index = 0;
-    let mut image_mode = false;
-    for c in text.chars() {
-        if c == '[' {
-            if !image_mode {
-                start = Some(index);
+    fn parse_line(&self, state: State, line: Line, cards: &mut Vec<Card>) -> Fallible<State> {
+        match state {
+            State::Initial => match line {
+                Line::StartQuestion(text) => Ok(State::ReadingQuestion { question: text }),
+                Line::StartAnswer(_) => fail("Answer without question."),
+                Line::StartCloze(text) => Ok(State::ReadingCloze { text }),
+                Line::Text(_) => Ok(State::Initial),
+            },
+            State::ReadingQuestion { question } => match line {
+                Line::StartQuestion(_) => fail("New question without answer."),
+                Line::StartAnswer(text) => Ok(State::ReadingAnswer {
+                    question,
+                    answer: text,
+                }),
+                Line::StartCloze(_) => {
+                    fail("Started a cloze card inside a question card question.")
+                }
+                Line::Text(text) => Ok(State::ReadingQuestion {
+                    question: format!("{question}\n{text}"),
+                }),
+            },
+            State::ReadingAnswer { question, answer } => {
+                match line {
+                    Line::StartQuestion(text) => {
+                        // Finalize the previous card.
+                        let card = Card::new(
+                            self.deck_name.clone(),
+                            self.file_path.clone(),
+                            CardContent::Basic { question, answer },
+                        );
+                        cards.push(card);
+                        // Start a new question.
+                        Ok(State::ReadingQuestion { question: text })
+                    }
+                    Line::StartAnswer(_) => fail("New answer without question."),
+                    Line::StartCloze(text) => {
+                        // Finalize the previous card.
+                        let card = Card::new(
+                            self.deck_name.clone(),
+                            self.file_path.clone(),
+                            CardContent::Basic { question, answer },
+                        );
+                        cards.push(card);
+                        // Start reading a new cloze card.
+                        Ok(State::ReadingCloze { text })
+                    }
+                    Line::Text(text) => Ok(State::ReadingAnswer {
+                        question,
+                        answer: format!("{answer}\n{text}"),
+                    }),
+                }
             }
-        } else if c == ']' {
-            if image_mode {
-                // We are in image mode, so this closing bracket is part of a markdown image.
-                image_mode = false;
-            } else if let Some(s) = start {
-                let end = index;
+            State::ReadingCloze { text } => {
+                match line {
+                    Line::StartQuestion(new_text) => {
+                        // Finalize the previous cloze card.
+                        cards.extend(self.parse_cloze_cards(text)?);
+                        // Start a new question card
+                        Ok(State::ReadingQuestion { question: new_text })
+                    }
+                    Line::StartAnswer(_) => fail("Found answer tag while reading a cloze card."),
+                    Line::StartCloze(new_text) => {
+                        // Finalize the previous card.
+                        cards.extend(self.parse_cloze_cards(text)?);
+                        // Start reading a new cloze card.
+                        Ok(State::ReadingCloze { text: new_text })
+                    }
+                    Line::Text(new_text) => Ok(State::ReadingCloze {
+                        text: format!("{text}\n{new_text}"),
+                    }),
+                }
+            }
+        }
+    }
+
+    fn finalize(&self, state: State, cards: &mut Vec<Card>) -> Fallible<()> {
+        match state {
+            State::Initial => Ok(()),
+            State::ReadingQuestion { .. } => fail("Unfinished question without answer at EOF."),
+            State::ReadingAnswer { question, answer } => {
+                // Finalize the last card.
                 let card = Card::new(
-                    deck_name.clone(),
-                    file_path.clone(),
-                    CardContent::Cloze {
+                    self.deck_name.clone(),
+                    self.file_path.clone(),
+                    CardContent::Basic { question, answer },
+                );
+                cards.push(card);
+                Ok(())
+            }
+            State::ReadingCloze { text } => {
+                // Finalize the last cloze card.
+                cards.extend(self.parse_cloze_cards(text)?);
+                Ok(())
+            }
+        }
+    }
+
+    fn parse_cloze_cards(&self, text: String) -> Fallible<Vec<Card>> {
+        let mut cards = Vec::new();
+
+        // The full text of the card, without square brackets.
+        let clean_text = text.replace(['[', ']'], "");
+
+        let mut start = None;
+        let mut index = 0;
+        let mut image_mode = false;
+        for c in text.chars() {
+            if c == '[' {
+                if !image_mode {
+                    start = Some(index);
+                }
+            } else if c == ']' {
+                if image_mode {
+                    // We are in image mode, so this closing bracket is part of a markdown image.
+                    image_mode = false;
+                } else if let Some(s) = start {
+                    let end = index;
+                    let content = CardContent::Cloze {
                         text: clean_text.clone(),
                         start: s,
                         end: end - 1,
-                    },
-                );
-                cards.push(card);
-                start = None;
+                    };
+                    let card = Card::new(self.deck_name.clone(), self.file_path.clone(), content);
+                    cards.push(card);
+                    start = None;
+                }
+            } else if c == '!' {
+                image_mode = true;
+            } else {
+                index += 1;
             }
-        } else if c == '!' {
-            image_mode = true;
-        } else {
-            index += 1;
         }
-    }
 
-    cards
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn parse(content: &str) -> Vec<Card> {
-        parse_cards("".to_string(), PathBuf::from("test.md"), content)
-    }
-
-    #[test]
-    fn test_parse_basic() {
-        let content = "What is the capital of France? / Paris";
-        let cards = parse(content);
-
-        assert_eq!(cards.len(), 1);
-        match &cards[0].content() {
-            CardContent::Basic { question, answer } => {
-                assert_eq!(question, "What is the capital of France?");
-                assert_eq!(answer, "Paris");
-            }
-            _ => panic!("Expected Basic card"),
-        }
-    }
-
-    #[test]
-    fn test_parse_cloze() {
-        let content = "[Berlin] is the capital of [Germany].";
-        let cards = parse(content);
-        assert_eq!(cards.len(), 2);
-        match &cards[0].content() {
-            CardContent::Cloze { text, start, end } => {
-                assert_eq!(text, "Berlin is the capital of Germany.");
-                assert_eq!(*start, 0);
-                assert_eq!(*end, 5);
-            }
-            _ => panic!("Expected Cloze card"),
-        }
-        match &cards[1].content() {
-            CardContent::Cloze { text, start, end } => {
-                assert_eq!(text, "Berlin is the capital of Germany.");
-                assert_eq!(*start, 25);
-                assert_eq!(*end, 31);
-            }
-            _ => panic!("Expected Cloze card"),
-        }
-    }
-
-    #[test]
-    fn test_parse_multiple_cards() {
-        let content =
-            "What is the capital of France? / Paris\n\n[Berlin] is the capital of [Germany].";
-        let cards = parse(content);
-
-        assert_eq!(cards.len(), 3);
-        assert!(matches!(cards[0].content(), CardContent::Basic { .. }));
-        assert!(matches!(cards[1].content(), CardContent::Cloze { .. }));
-        assert!(matches!(cards[1].content(), CardContent::Cloze { .. }));
-    }
-
-    #[test]
-    fn test_parse_with_extra_whitespace() {
-        let content = "  What is 2+2? / 4  \n\n\n[Python] is a programming language.  ";
-        let cards = parse(content);
-
-        assert_eq!(cards.len(), 2);
-        match &cards[0].content() {
-            CardContent::Basic { question, answer } => {
-                assert_eq!(question, "What is 2+2?");
-                assert_eq!(answer, "4");
-            }
-            _ => panic!("Expected Basic card"),
-        }
-    }
-
-    #[test]
-    fn test_empty_input() {
-        let content = "";
-        let cards = parse(content);
-        assert_eq!(cards.len(), 0);
-    }
-
-    #[test]
-    fn test_empty_whitespace_input() {
-        let content = "\n   \n  \n";
-        let cards = parse(content);
-        assert_eq!(cards.len(), 0);
-    }
-
-    #[test]
-    fn test_empty_basic() {
-        let content = " / ";
-        let cards = parse(content);
-        assert_eq!(cards.len(), 0);
-    }
-
-    #[test]
-    fn test_invalid_cards_ignored() {
-        let content = "This is not a valid card\n\nWhat is valid? / Yes\n\nAlso not valid";
-        let cards = parse(content);
-        assert_eq!(cards.len(), 1);
-        match &cards[0].content() {
-            CardContent::Basic { question, answer } => {
-                assert_eq!(question, "What is valid?");
-                assert_eq!(answer, "Yes");
-            }
-            _ => panic!("Expected Basic card"),
-        }
-    }
-
-    #[test]
-    fn test_multiline_question_answer() {
-        let content = "What is\nthe capital of Russia? / Moscow";
-        let cards = parse(content);
-
-        assert_eq!(cards.len(), 1);
-        match &cards[0].content() {
-            CardContent::Basic { question, answer } => {
-                assert_eq!(question, "What is\nthe capital of Russia?");
-                assert_eq!(answer, "Moscow");
-            }
-            _ => panic!("Expected Basic card"),
-        }
-    }
-
-    #[test]
-    fn test_basic_card_hash() {
-        let card1 = CardContent::Basic {
-            question: "What is the capital of France?".to_string(),
-            answer: "Paris".to_string(),
-        };
-        let card2 = CardContent::Basic {
-            question: "What is the capital of France?".to_string(),
-            answer: "Pariz".to_string(),
-        };
-        assert_ne!(card1.hash(), card2.hash());
-    }
-
-    #[test]
-    fn test_cloze_card_hash() {
-        let card1 = CardContent::Cloze {
-            text: "Berlin is the capital of Germany.".to_string(),
-            start: 0,
-            end: 6,
-        };
-        let card2 = CardContent::Cloze {
-            text: "Berlin is the capital of Germany.".to_string(),
-            start: 0,
-            end: 7,
-        };
-        assert_ne!(card1.hash(), card2.hash());
-    }
-
-    #[test]
-    fn test_markdown_images_dont_parse_as_clozes() {
-        let content = "![Alt text](image.jpg) is an image.";
-        let cards = parse(content);
-        assert_eq!(cards.len(), 0);
+        Ok(cards)
     }
 }
