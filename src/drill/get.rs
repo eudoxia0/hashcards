@@ -53,14 +53,10 @@ pub async fn get_handler(State(state): State<ServerState>) -> (StatusCode, Html<
                     html! {
                         div.content {
                             div .question .rich-text {
-                                p {
-                                    (PreEscaped(question))
-                                }
+                                (PreEscaped(question))
                             }
                             div .answer .rich-text {
-                                p {
-                                    (PreEscaped(answer))
-                                }
+                                (PreEscaped(answer))
                             }
                         }
                     }
@@ -68,9 +64,7 @@ pub async fn get_handler(State(state): State<ServerState>) -> (StatusCode, Html<
                     html! {
                         div.content {
                             div.question .rich-text {
-                                p {
-                                    (PreEscaped(question))
-                                }
+                                (PreEscaped(question))
                             }
                             div.answer .rich-text {}
                         }
