@@ -64,6 +64,16 @@ function finish() {
   console.log('Aborted review')
 }
 
+/// Undo the last grading action.
+function undo() {
+  if (cardIndex.value > 0) {
+    cardIndex.value -= 1
+    if (currentCard.value) {
+      currentCard.value.grade = null
+    }
+  }
+}
+
 // Mimic API calls:
 cards.value = [
   {
@@ -78,8 +88,8 @@ cards.value = [
     hash: 'b',
     kind: 'Basic',
     deckName: 'Geography',
-    question: '<p>What is the capital of Paris?</p>',
-    answer: '<p>France</p>',
+    question: '<p>Who wrote <i>The Tempest</i>?</p>',
+    answer: '<p>Shakespeare</p>',
     grade: null,
   },
   {
@@ -98,7 +108,7 @@ totalCards.value = cards.value.length
 <template>
   <div v-if="currentCard" class="root">
     <div class="controls">
-      <Button label="Undo" />
+      <Button label="Undo" :disabled="cardIndex === 0" @click="undo()" />
       <Spacer />
       <Button v-if="!reveal" label="Reveal" @click="reveal = true" />
       <Button v-if="reveal" label="Forgot" @click="review(Grade.FORGOT)" />
