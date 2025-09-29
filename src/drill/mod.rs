@@ -17,3 +17,22 @@ mod post;
 pub mod server;
 mod state;
 mod template;
+
+#[cfg(test)]
+mod tests {
+    use std::path::PathBuf;
+
+    use tokio::spawn;
+
+    use crate::drill::server::start_server;
+    use crate::error::Fallible;
+    use crate::types::timestamp::Timestamp;
+
+    #[tokio::test]
+    async fn test_e2e() -> Fallible<()> {
+        let directory = PathBuf::from("./example").canonicalize().unwrap();
+        let session_started_at = Timestamp::now();
+        spawn(async move { start_server(directory, session_started_at, false).await });
+        Ok(())
+    }
+}

@@ -46,7 +46,11 @@ use crate::types::card::Card;
 use crate::types::hash::Hash;
 use crate::types::timestamp::Timestamp;
 
-pub async fn start_server(directory: PathBuf, session_started_at: Timestamp) -> Fallible<()> {
+pub async fn start_server(
+    directory: PathBuf,
+    session_started_at: Timestamp,
+    open_browser: bool,
+) -> Fallible<()> {
     let today = session_started_at.local_date();
 
     if !directory.exists() {
@@ -123,18 +127,20 @@ pub async fn start_server(directory: PathBuf, session_started_at: Timestamp) -> 
     let app = app.with_state(state);
     let bind = "0.0.0.0:8000";
 
-    // Start a separate task to open the browser.
-    let url = format!("http://{bind}/");
-    tokio::spawn(async move {
-        loop {
-            if let Ok(stream) = TcpStream::connect(bind).await {
-                drop(stream);
-                break;
+    if open_browser {
+        // Start a separate task to open the browser.
+        let url = format!("http://{bind}/");
+        tokio::spawn(async move {
+            loop {
+                if let Ok(stream) = TcpStream::connect(bind).await {
+                    drop(stream);
+                    break;
+                }
+                sleep(Duration::from_millis(1)).await;
             }
-            sleep(Duration::from_millis(1)).await;
-        }
-        let _ = open::that(url);
-    });
+            let _ = open::that(url);
+        });
+    }
 
     // Start the server.
     log::debug!("Starting server on {bind}");

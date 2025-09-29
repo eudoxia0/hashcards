@@ -39,7 +39,7 @@ pub async fn entrypoint() -> Fallible<()> {
                 None => std::env::current_dir()?,
             }
             .canonicalize()?;
-            start_server(directory, Timestamp::now()).await
+            start_server(directory, Timestamp::now(), true).await
         }
     }
 }
