@@ -22,6 +22,7 @@ use rusqlite::types::ValueRef;
 use crate::error::ErrorReport;
 use crate::error::fail;
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum CardType {
     Basic,
     Cloze,
@@ -58,5 +59,20 @@ impl FromSql for CardType {
     fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
         let string: String = FromSql::column_result(value)?;
         CardType::try_from(string).map_err(|e| FromSqlError::Other(Box::new(e)))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::error::Fallible;
+
+    #[test]
+    fn test_card_type_serialization_roundtrip() -> Fallible<()> {
+        let card_types = [CardType::Basic, CardType::Cloze];
+        for ct in card_types {
+            assert_eq!(ct, CardType::try_from(ct.as_str().to_string())?);
+        }
+        Ok(())
     }
 }
