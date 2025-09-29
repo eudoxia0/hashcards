@@ -21,8 +21,10 @@ mod template;
 #[cfg(test)]
 mod tests {
     use std::path::PathBuf;
+    use std::time::Duration;
 
     use tokio::spawn;
+    use tokio::time::sleep;
 
     use crate::drill::server::start_server;
     use crate::error::Fallible;
@@ -33,6 +35,7 @@ mod tests {
         let directory = PathBuf::from("./example").canonicalize().unwrap();
         let session_started_at = Timestamp::now();
         spawn(async move { start_server(directory, session_started_at, false).await });
+        sleep(Duration::from_secs(1)).await;
         Ok(())
     }
 }
