@@ -62,6 +62,14 @@ mod tests {
         let response = reqwest::get("http://0.0.0.0:8000/herp-derp").await?;
         assert!(response.status() == StatusCode::NOT_FOUND);
 
+        // Hit the image endpoint.
+        let response = reqwest::get("http://0.0.0.0:8000/image/thetempest.webp").await?;
+        assert!(response.status().is_success());
+        assert_eq!(
+            response.headers().get("content-type").unwrap(),
+            "application/octet-stream"
+        );
+
         Ok(())
     }
 }
