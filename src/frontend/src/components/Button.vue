@@ -1,11 +1,14 @@
 <script setup lang="ts">
 const props = defineProps<{
   label: string
+  disabled?: boolean
 }>()
 </script>
 
 <template>
-  <button>{{ props.label }}</button>
+  <button :disabled="props.disabled">
+    {{ props.label }}
+  </button>
 </template>
 
 <style scoped>
@@ -17,5 +20,9 @@ button {
   margin: 0 16px;
   font-family: 'Times New Roman', 'Times', serif;
   cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
 }
 </style>

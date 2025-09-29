@@ -24,11 +24,17 @@ enum Grade {
   REMEMBERED = 'remembered',
 }
 
+interface Action {
+  label: string
+}
+
 const cards: Ref<CardData[]> = ref([])
 const reveal: Ref<boolean> = ref(false)
 const cardsDone: Ref<number> = ref(0)
 const cardIndex: Ref<number> = ref(0)
 const totalCards: Ref<number> = ref(0)
+const actions: Ref<Action[]> = ref([])
+
 const currentCard: ComputedRef<CardData | null> = computed(() => {
   if (cards.value.length === 0) {
     return null
@@ -113,7 +119,7 @@ totalCards.value = cards.value.length
       </template>
     </div>
     <div class="controls">
-      <Button label="Undo" />
+      <Button label="Undo" :disabled="actions.length === 0" />
       <Spacer />
       <Button v-if="!reveal" label="Reveal" @click="reveal = true" />
       <Button v-if="reveal" label="Forgot" @click="review(Grade.FORGOT)" />
