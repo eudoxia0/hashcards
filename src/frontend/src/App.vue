@@ -91,11 +91,11 @@ totalCards.value = cards.value.length
 <template>
   <div v-if="!done && currentCard" class="root">
     <div class="controls">
-      <Button label="Undo" :disabled="undoDisabled" @click="undo()" />
+      <Button label="Undo" :disabled="undoDisabled" @click="undo()" keybind="u" />
       <Spacer />
-      <Button v-if="!reveal" label="Reveal" @click="reveal = true" />
-      <Button v-if="reveal" label="Forgot" @click="review(Grade.FORGOT)" />
-      <Button v-if="reveal" label="Remembered" @click="review(Grade.REMEMBERED)" />
+      <Button v-if="!reveal" label="Reveal" @click="reveal = true" keybind=" " />
+      <Button v-if="reveal" label="Forgot" @click="review(Grade.FORGOT)" keybind="f" />
+      <Button v-if="reveal" label="Remembered" @click="review(Grade.REMEMBERED)" keybind="r" />
       <Spacer />
       <Button label="End" @click="finish()" />
       <div class="progress">{{ cardsDone }} / {{ totalCards }}</div>
