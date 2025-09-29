@@ -5,7 +5,7 @@ const props = defineProps<{
 </script>
 
 <template>
-  <button>{{ label }}</button>
+  <button>{{ props.label }}</button>
 </template>
 
 <style scoped>

@@ -19,3 +19,15 @@ body {
 body {
   font-family: 'Times New Roman', 'Times', serif;
 }
+
+.cloze {
+  width: 30px;
+  background: #a0a0a0;
+  text-decoration: none;
+  border-radius: 8px;
+  color: transparent;
+}
+
+.cloze-reveal {
+  color: royalblue;
+}
