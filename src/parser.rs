@@ -47,6 +47,9 @@ pub fn parse_deck(directory: &PathBuf) -> Fallible<Vec<Card>> {
     // RNG.
     all_cards.sort_by_key(|c| c.hash());
 
+    // Remove duplicates.
+    all_cards.dedup_by_key(|c| c.hash());
+
     Ok(all_cards)
 }
 
