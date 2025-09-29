@@ -561,8 +561,7 @@ mod tests {
 
     #[test]
     fn test_cloze_with_initial_blank_line() -> Fallible<()> {
-        let input =
-            "C:\nBuild something people want in Lisp.\n\n— [Paul Graham], [_Hackers and Painters_]";
+        let input = "C:\nBuild something people want in Lisp.\n\n— [Paul Graham], [_Hackers and Painters_]\n\n";
         let parser = make_test_parser();
         let cards = parser.parse(input)?;
 
