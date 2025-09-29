@@ -310,6 +310,15 @@ mod tests {
     }
 
     #[test]
+    fn test_whitespace_string() -> Fallible<()> {
+        let input = "\n\n\n";
+        let parser = make_test_parser();
+        let cards = parser.parse(input)?;
+        assert_eq!(cards.len(), 0);
+        Ok(())
+    }
+
+    #[test]
     fn test_basic_card() -> Fallible<()> {
         let input = "Q: What is Rust?\nA: A systems programming language.";
         let parser = make_test_parser();
@@ -442,6 +451,24 @@ mod tests {
     #[test]
     fn test_question_followed_by_question() -> Fallible<()> {
         let input = "Q: Question\nQ: Another";
+        let parser = make_test_parser();
+        let result = parser.parse(input);
+        assert!(result.is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn test_multiple_answers() -> Fallible<()> {
+        let input = "Q: Question\nA: Answer\nA: Another answer";
+        let parser = make_test_parser();
+        let result = parser.parse(input);
+        assert!(result.is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn test_cloze_followed_by_answer() -> Fallible<()> {
+        let input = "C: Cloze\nA: Answer";
         let parser = make_test_parser();
         let result = parser.parse(input);
         assert!(result.is_err());
