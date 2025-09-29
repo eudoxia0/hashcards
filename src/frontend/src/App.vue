@@ -2,34 +2,7 @@
 import { computed, ref, type ComputedRef, type Ref } from 'vue'
 import Button from '@/components/Button.vue'
 import Spacer from '@/components/Spacer.vue'
-
-enum Grade {
-  FORGOT = 'forgot',
-  REMEMBERED = 'remembered',
-}
-
-interface BasicCard {
-  hash: string
-  kind: 'Basic'
-  deckName: string
-  question: string
-  answer: string
-}
-
-interface ClozeCard {
-  hash: string
-  kind: 'Cloze'
-  deckName: string
-  prompt: string
-  answer: string
-}
-
-type CardData = BasicCard | ClozeCard
-
-interface Review {
-  card: CardData
-  grade: Grade
-}
+import { Grade, type CardData, type Review } from './types'
 
 /// The stack of cards to review.
 const cards: Ref<CardData[]> = ref([])
