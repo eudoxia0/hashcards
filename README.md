@@ -20,6 +20,23 @@ What is the capital of France? / Paris
 [Paris] is the capital of [France].
 ```
 
+## Building
+
+You need [cargo] installed. You can get it through [rustup]. Then:
+
+```
+$ git clone https://github.com/eudoxia0/hashcards.git
+$ cd hashcards
+$ make
+$ sudo make install
+```
+
+To drill flashcards in a directory, run:
+
+```
+$ hashcards drill $DIRNAME
+```
+
 ## Format
 
 A deck is a Markdown file. Blank lines separate flashcards. Question-answer cards use the slash character to separate the sides:
@@ -40,3 +57,6 @@ The [order] of a group is [the cardinality of its underlying set].
 - [org-drill](https://orgmode.org/worg/org-contrib/org-drill.html)
 - [hascard](https://hackage.haskell.org/package/hascard)
 - [carddown](https://github.com/martintrojer/carddown)
+
+[cargo]: https://doc.rust-lang.org/cargo/
+[rustup]: https://rustup.rs/
