@@ -26,7 +26,7 @@ example:
 
 .PHONY: coverage
 coverage:
-	cargo llvm-cov --html --open
+	cargo llvm-cov --html --open --ignore-filename-regex '(main|error|cli).rs'
 
 .PHONY: clean
 clean:

@@ -68,7 +68,7 @@ jobs:
             --all-features
             --workspace
             --lcov
-            --ignore-filename-regex main.rs
+            --ignore-filename-regex '(main|error|cli).rs'
             --output-path lcov.info
 
       - name: upload to codecov
