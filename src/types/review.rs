@@ -82,3 +82,24 @@ pub fn update_card(review: Option<Review>, grade: Grade, today: Date) -> Paramet
         due_date: Date::new(due_date),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn approx_eq(a: f64, b: f64) -> bool {
+        (a - b).abs() < 0.01
+    }
+
+    #[test]
+    fn test_initial_review() {
+        let today = Timestamp::now().local_date();
+        let params = update_card(None, Grade::Good, today);
+        assert!(approx_eq(params.stability, 3.17));
+        assert!(approx_eq(params.difficulty, 5.28));
+        assert_eq!(
+            params.due_date,
+            Date::new(today.into_inner() + Duration::days(3))
+        );
+    }
+}
