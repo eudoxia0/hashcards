@@ -29,7 +29,12 @@ const reveal: Ref<boolean> = ref(false)
 const cardsDone: Ref<number> = ref(0)
 const cardIndex: Ref<number> = ref(0)
 const totalCards: Ref<number> = ref(0)
-const currentCard: ComputedRef<CardData> = computed(() => cards.value[cardIndex.value])
+const currentCard: ComputedRef<CardData | null> = computed(() => {
+  if (cards.value.length === 0) {
+    return null
+  }
+  return cards.value[cardIndex.value]
+})
 const isFinished: Ref<boolean> = ref(false)
 
 function prevCard() {
@@ -51,7 +56,6 @@ function nextCard() {
 }
 
 function review(grade: Grade) {
-  const card = cards.value[cardIndex.value]
   cards.value.splice(cardIndex.value, 1)
   cardsDone.value += 1
 }
@@ -87,7 +91,7 @@ totalCards.value = cards.value.length
 </script>
 
 <template>
-  <div v-if="isFinished" class="root">Session Completed</div>
+  <div v-if="isFinished || !currentCard" class="root">Session Completed</div>
   <div v-else class="root">
     <div class="header">
       <h1>{{ currentCard.deckName }}</h1>
