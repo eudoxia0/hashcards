@@ -105,3 +105,27 @@ impl Hasher {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_display() {
+        let hash = Hash::hash_bytes(b"test");
+        assert_eq!(
+            hash.to_string(),
+            "4878ca0425c739fa427f7eda20fe845f6b2e46ba5fe2a14df5b1e32f50603215"
+        );
+    }
+
+    #[test]
+    fn test_ordering() -> Fallible<()> {
+        let a = Hash::from_hex("0000000000000000000000000000000000000000000000000000000000000000")?;
+        let b = Hash::from_hex("0000000000000000000000000000000000000000000000000000000000000001")?;
+        let c = Hash::from_hex("0000000000000000000000000000000000000000000000000000000000000002")?;
+        assert!(a < b);
+        assert!(b < c);
+        Ok(())
+    }
+}
