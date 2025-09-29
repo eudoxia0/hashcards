@@ -28,6 +28,11 @@ use crate::types::date::Date;
 pub struct Timestamp(DateTime<Utc>);
 
 impl Timestamp {
+    #[cfg(test)]
+    pub fn new(ts: DateTime<Utc>) -> Self {
+        Self(ts)
+    }
+
     pub fn now() -> Self {
         Self(Utc::now())
     }

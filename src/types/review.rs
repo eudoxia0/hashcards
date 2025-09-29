@@ -85,6 +85,8 @@ pub fn update_card(review: Option<Review>, grade: Grade, today: Date) -> Paramet
 
 #[cfg(test)]
 mod tests {
+    use chrono::Utc;
+
     use super::*;
 
     fn approx_eq(a: f64, b: f64) -> bool {
@@ -100,6 +102,28 @@ mod tests {
         assert_eq!(
             params.due_date,
             Date::new(today.into_inner() + Duration::days(3))
+        );
+    }
+
+    #[test]
+    fn test_subsequent_review() {
+        let reviewed_at = Timestamp::new(Utc::now() - Duration::days(3));
+        let now = Timestamp::now();
+        let today = now.local_date();
+        let review = Review {
+            card_hash: Hash::hash_bytes(b"testhash"),
+            reviewed_at,
+            grade: Grade::Good,
+            stability: 3.17,
+            difficulty: 5.28,
+            due_date: today,
+        };
+        let params = update_card(Some(review), Grade::Easy, today);
+        assert!(approx_eq(params.stability, 10.73));
+        assert!(approx_eq(params.difficulty, 5.27));
+        assert_eq!(
+            params.due_date,
+            Date::new(today.into_inner() + Duration::days(11))
         );
     }
 }
