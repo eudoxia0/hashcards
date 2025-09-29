@@ -25,6 +25,7 @@ mod tests {
     use std::time::Duration;
 
     use reqwest::StatusCode;
+    use tokio::fs::remove_file;
     use tokio::net::TcpStream;
     use tokio::spawn;
     use tokio::time::sleep;
@@ -53,7 +54,16 @@ mod tests {
 
     #[tokio::test]
     async fn test_e2e() -> Fallible<()> {
-        let directory = PathBuf::from("./example").canonicalize().unwrap();
+        let directory = PathBuf::from("./test").canonicalize().unwrap();
+
+        // If the database already exists, delete it.
+        {
+            let db_path = directory.join("db.sqlite3");
+            if db_path.exists() {
+                remove_file(db_path).await?;
+            }
+        }
+
         let session_started_at = Timestamp::now();
         spawn(async move { start_server(directory, session_started_at, false).await });
         loop {
@@ -82,7 +92,7 @@ mod tests {
         assert_eq!(response.status(), StatusCode::NOT_FOUND);
 
         // Hit the image endpoint.
-        let response = reqwest::get("http://0.0.0.0:8000/image/thetempest.webp").await?;
+        let response = reqwest::get("http://0.0.0.0:8000/image/foo.jpg").await?;
         assert!(response.status().is_success());
         assert_eq!(
             response.headers().get("content-type").unwrap(),
@@ -101,7 +111,7 @@ mod tests {
             "text/html; charset=utf-8"
         );
         let html = response.text().await?;
-        assert!(html.contains("Berlin is the capital of"));
+        assert!(html.contains("baz <span class='cloze'>.............</span>"));
 
         // Hit reveal.
         let response = reqwest::Client::new()
@@ -115,9 +125,7 @@ mod tests {
             "text/html; charset=utf-8"
         );
         let html = response.text().await?;
-        assert!(
-            html.contains("Berlin is the capital of <span class='cloze-reveal'>Germany</span>.")
-        );
+        assert!(html.contains("baz <span class='cloze-reveal'>quux</span>"));
 
         // Hit 'Good'.
         let response = reqwest::Client::new()
@@ -131,7 +139,36 @@ mod tests {
             "text/html; charset=utf-8"
         );
         let html = response.text().await?;
-        assert!(html.contains("is the capital of Germany."));
+        assert!(html.contains("FOO"));
+
+        // Hit reveal.
+        let response = reqwest::Client::new()
+            .post("http://0.0.0.0:8000/")
+            .form(&[("action", "Reveal")])
+            .send()
+            .await?;
+        assert!(response.status().is_success());
+        assert_eq!(
+            response.headers().get("content-type").unwrap(),
+            "text/html; charset=utf-8"
+        );
+        let html = response.text().await?;
+        assert!(html.contains("BAR"));
+
+        // Hit 'Good'.
+        let response = reqwest::Client::new()
+            .post("http://0.0.0.0:8000/")
+            .form(&[("action", "Good")])
+            .send()
+            .await?;
+        assert!(response.status().is_success());
+        assert_eq!(
+            response.headers().get("content-type").unwrap(),
+            "text/html; charset=utf-8"
+        );
+        let html = response.text().await?;
+        assert!(html.contains("Session Completed"));
+
         Ok(())
     }
 }
