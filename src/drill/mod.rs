@@ -20,6 +20,7 @@ mod template;
 
 #[cfg(test)]
 mod tests {
+    use std::env::temp_dir;
     use std::path::PathBuf;
     use std::time::Duration;
 
@@ -31,6 +32,24 @@ mod tests {
     use crate::drill::server::start_server;
     use crate::error::Fallible;
     use crate::types::timestamp::Timestamp;
+
+    #[tokio::test]
+    async fn test_start_server_on_non_existent_directory() -> Fallible<()> {
+        let directory = PathBuf::from("./derpherp");
+        let session_started_at = Timestamp::now();
+        let result = start_server(directory, session_started_at, false).await;
+        assert!(result.is_err());
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_start_server_on_non_empty_directory() -> Fallible<()> {
+        let directory = temp_dir();
+        let session_started_at = Timestamp::now();
+        let result = start_server(directory, session_started_at, false).await;
+        assert!(result.is_err());
+        Ok(())
+    }
 
     #[tokio::test]
     async fn test_e2e() -> Fallible<()> {
