@@ -192,3 +192,16 @@ fn probe_schema_exists(tx: &Transaction) -> Fallible<bool> {
     let count: i64 = tx.query_row(sql, ["cards"], |row| row.get(0))?;
     Ok(count > 0)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_empty_db() -> Fallible<()> {
+        let db = Database::new(":memory:")?;
+        assert!(db.card_hashes()?.is_empty());
+        assert!(db.due_today(Timestamp::now().local_date())?.is_empty());
+        Ok(())
+    }
+}
