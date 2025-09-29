@@ -109,7 +109,7 @@ cards.value = [
     hash: 'd',
     kind: 'Basic',
     deckName: 'Math',
-    question: '<p>What does 2+2 equal?</p>',
+    question: '<p>What does $2+2$ equal?</p>',
     answer: '<p>$4$</p>',
   },
 ]
