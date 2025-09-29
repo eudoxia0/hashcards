@@ -282,42 +282,45 @@ impl Parser {
         let mut cards = Vec::new();
 
         // The full text of the card, without cloze deletion brackets.
-        let clean_text = {
-            let mut clean_text = String::new();
+        let clean_text: String = {
+            let mut clean_text: Vec<u8> = Vec::new();
             let mut image_mode = false;
-            for c in text.chars() {
-                if c == '[' {
+            for c in text.bytes() {
+                if c == b'[' {
                     if image_mode {
                         clean_text.push(c);
                     }
-                } else if c == ']' {
+                } else if c == b']' {
                     if image_mode {
                         // We are in image mode, so this closing bracket is
                         // part of a Markdown image.
                         image_mode = false;
                         clean_text.push(c);
                     }
-                } else if c == '!' {
+                } else if c == b'!' {
                     image_mode = true;
                     clean_text.push(c);
                 } else {
                     clean_text.push(c);
                 }
             }
-            clean_text
+            match String::from_utf8(clean_text) {
+                Ok(s) => s,
+                Err(_) => fail("Invalid UTF-8.")?,
+            }
         };
 
         let mut start = None;
         let mut index = 0;
         let mut image_mode = false;
-        for c in text.chars() {
-            if c == '[' {
+        for c in text.bytes() {
+            if c == b'[' {
                 if image_mode {
                     index += 1;
                 } else {
                     start = Some(index);
                 }
-            } else if c == ']' {
+            } else if c == b']' {
                 if image_mode {
                     // We are in image mode, so this closing bracket is part of a markdown image.
                     image_mode = false;
@@ -338,7 +341,7 @@ impl Parser {
                     cards.push(card);
                     start = None;
                 }
-            } else if c == '!' {
+            } else if c == b'!' {
                 image_mode = true;
                 index += 1;
             } else {
@@ -565,29 +568,29 @@ mod tests {
         let parser = make_test_parser();
         let cards = parser.parse(input)?;
 
-        assert_eq!(cards.len(), 2);
-        match &cards[0].content() {
-            CardContent::Cloze { text, start, end } => {
-                assert_eq!(
-                    text,
-                    "Build something people want in Lisp.\n\n— Paul Graham, _Hackers and Painters_"
-                );
-                assert_eq!(*start, 40);
-                assert_eq!(*end, 50);
-            }
-            _ => panic!("Expected cloze card"),
-        }
-        match &cards[1].content() {
-            CardContent::Cloze { text, start, end } => {
-                assert_eq!(
-                    text,
-                    "Build something people want in Lisp.\n\n— Paul Graham, _Hackers and Painters_"
-                );
-                assert_eq!(*start, 53);
-                assert_eq!(*end, 74);
-            }
-            _ => panic!("Expected cloze card"),
-        }
+        assert_cloze(
+            &cards,
+            "Build something people want in Lisp.\n\n— Paul Graham, _Hackers and Painters_",
+            &[(42, 52), (55, 76)],
+        );
         Ok(())
+    }
+
+    fn assert_cloze(cards: &[Card], clean_text: &str, deletions: &[(usize, usize)]) {
+        assert_eq!(cards.len(), deletions.len());
+        for (i, (start, end)) in deletions.iter().enumerate() {
+            match &cards[i].content() {
+                CardContent::Cloze {
+                    text,
+                    start: s,
+                    end: e,
+                } => {
+                    assert_eq!(text, clean_text);
+                    assert_eq!(*s, *start);
+                    assert_eq!(*e, *end);
+                }
+                _ => panic!("Expected cloze card"),
+            }
+        }
     }
 }
