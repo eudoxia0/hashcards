@@ -67,9 +67,6 @@ jobs:
       - name: fetch deps
         run: cargo fetch
 
-      - name: build tests
-        run: cargo test --no-run
-
       - name: run tests
         run: >
           cargo llvm-cov
