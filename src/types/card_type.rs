@@ -40,7 +40,7 @@ impl TryFrom<String> for CardType {
         match value.as_str() {
             "basic" => Ok(CardType::Basic),
             "cloze" => Ok(CardType::Cloze),
-            _ => fail(format!("Invalid card type: {}", value)),
+            _ => fail(format!("Invalid card type: '{}'", value)),
         }
     }
 }
@@ -63,5 +63,14 @@ mod tests {
             assert_eq!(ct, CardType::try_from(ct.as_str().to_string())?);
         }
         Ok(())
+    }
+
+    #[test]
+    fn test_card_type_invalid() {
+        let invalid = "foo".to_string();
+        let res = CardType::try_from(invalid);
+        assert!(res.is_err());
+        let err = res.err().unwrap();
+        assert_eq!(err.to_string(), "error: Invalid card type: 'foo'");
     }
 }
