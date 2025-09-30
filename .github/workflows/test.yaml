@@ -50,6 +50,9 @@ jobs:
       - name: checkout
         uses: actions/checkout@v4
 
+      - name: use rust nightly
+        uses: dtolnay/rust-toolchain@nightly
+
       - name: cache rust deps
         uses: Swatinem/rust-cache@v2
 
