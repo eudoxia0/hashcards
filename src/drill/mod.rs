@@ -210,6 +210,37 @@ mod tests {
 
     #[tokio::test]
     #[serial]
+    async fn test_undo_initia() -> Fallible<()> {
+        let directory = PathBuf::from("./test").canonicalize().unwrap();
+        let db_path = directory.join("db.sqlite3");
+        if db_path.exists() {
+            remove_file(&db_path).await?;
+        }
+
+        // Start the server
+        let session_started_at = Timestamp::now();
+        spawn(async move { start_server(directory, session_started_at).await });
+        loop {
+            if let Ok(stream) = TcpStream::connect("0.0.0.0:8000").await {
+                drop(stream);
+                break;
+            }
+            sleep(Duration::from_millis(1)).await;
+        }
+
+        // Hit undo.
+        let response = reqwest::Client::new()
+            .post("http://0.0.0.0:8000/")
+            .form(&[("action", "Undo")])
+            .send()
+            .await?;
+        assert!(response.status().is_success());
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    #[serial]
     async fn test_undo_forgetting() -> Fallible<()> {
         let directory = PathBuf::from("./test").canonicalize().unwrap();
         let db_path = directory.join("db.sqlite3");
