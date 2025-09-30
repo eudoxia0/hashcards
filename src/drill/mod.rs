@@ -210,7 +210,7 @@ mod tests {
 
     #[tokio::test]
     #[serial]
-    async fn test_undo_initia() -> Fallible<()> {
+    async fn test_undo_initial() -> Fallible<()> {
         let directory = PathBuf::from("./test").canonicalize().unwrap();
         let db_path = directory.join("db.sqlite3");
         if db_path.exists() {
