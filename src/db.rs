@@ -24,7 +24,9 @@ use crate::types::card::CardContent;
 use crate::types::card_type::CardType;
 use crate::types::date::Date;
 use crate::types::hash::Hash;
+use crate::types::review::Parameters;
 use crate::types::review::Review;
+use crate::types::review::ReviewRow;
 use crate::types::timestamp::Timestamp;
 
 pub struct Database {
@@ -110,18 +112,19 @@ impl Database {
     }
 
     /// Get the latest review for a given card.
-    pub fn get_latest_review(&self, card_hash: Hash) -> Fallible<Option<Review>> {
+    pub fn get_latest_review(&self, card_hash: Hash) -> Fallible<Option<ReviewRow>> {
         let sql = "select reviewed_at, grade, stability, difficulty, due_date from reviews where card_hash = ? order by reviewed_at desc limit 1;";
         let mut stmt = self.conn.prepare(sql)?;
         let mut rows = stmt.query([card_hash])?;
         if let Some(row) = rows.next()? {
-            Ok(Some(Review {
-                card_hash,
+            Ok(Some(ReviewRow {
                 reviewed_at: row.get(0)?,
                 grade: row.get(1)?,
-                stability: row.get(2)?,
-                difficulty: row.get(3)?,
-                due_date: row.get(4)?,
+                params: Parameters {
+                    stability: row.get(2)?,
+                    difficulty: row.get(3)?,
+                    due_date: row.get(4)?,
+                },
             }))
         } else {
             Ok(None)
@@ -144,12 +147,12 @@ impl Database {
                 sql,
                 (
                     session_id,
-                    review.card_hash,
+                    review.card.hash(),
                     review.reviewed_at,
                     review.grade,
-                    review.stability,
-                    review.difficulty,
-                    review.due_date,
+                    review.params.stability,
+                    review.params.difficulty,
+                    review.params.due_date,
                 ),
             )?;
         }
@@ -203,6 +206,7 @@ mod tests {
 
     use super::*;
     use crate::fsrs::Grade;
+    use crate::types::review::Parameters;
 
     #[test]
     fn test_empty_db() -> Fallible<()> {
@@ -286,12 +290,14 @@ mod tests {
         db.add_card(&card, now)?;
 
         let review = Review {
-            card_hash: card.hash(),
             reviewed_at: now,
+            card: card.clone(),
             grade: Grade::Easy,
-            stability: 2.5,
-            difficulty: 2.0,
-            due_date: Date::new(today.into_inner() + Duration::days(5)),
+            params: Parameters {
+                stability: 2.5,
+                difficulty: 2.0,
+                due_date: Date::new(today.into_inner() + Duration::days(5)),
+            },
         };
 
         db.save_session(now, now, vec![review.clone()])?;
@@ -299,12 +305,11 @@ mod tests {
         let latest_review = db.get_latest_review(card.hash())?;
         assert!(latest_review.is_some());
         let latest_review = latest_review.unwrap();
-        assert_eq!(latest_review.card_hash, review.card_hash);
         assert_eq!(latest_review.reviewed_at, review.reviewed_at);
         assert_eq!(latest_review.grade, review.grade);
-        assert_eq!(latest_review.stability, review.stability);
-        assert_eq!(latest_review.difficulty, review.difficulty);
-        assert_eq!(latest_review.due_date, review.due_date);
+        assert_eq!(latest_review.params.stability, review.params.stability);
+        assert_eq!(latest_review.params.difficulty, review.params.difficulty);
+        assert_eq!(latest_review.params.due_date, review.params.due_date);
 
         Ok(())
     }

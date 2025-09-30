@@ -21,6 +21,7 @@ use crate::drill::state::ServerState;
 use crate::error::Fallible;
 use crate::fsrs::Grade;
 use crate::types::review::Review;
+use crate::types::review::ReviewRow;
 use crate::types::review::update_card;
 use crate::types::timestamp::Timestamp;
 
@@ -70,24 +71,20 @@ async fn action_handler(state: ServerState, action: Action) -> Fallible<()> {
     let today = state.session_started_at.local_date();
     match action {
         Action::Reveal => {
-            if mutable.reveal {
-                log::error!("Revealing a card that is already revealed.");
-            } else {
+            if !mutable.reveal {
                 mutable.reveal = true;
             }
         }
         Action::Undo => {
-            if !mutable.reviewed.is_empty() {
-                let r = mutable.reviews.pop().unwrap();
-                let card = if r.grade == Grade::Forgot || r.grade == Grade::Hard {
-                    let _ = mutable.reviewed.pop().unwrap();
-                    mutable.cards.pop().unwrap()
-                } else {
-                    mutable.reviewed.pop().unwrap()
-                };
-                mutable.cards.insert(0, card);
-            } else {
-                log::error!("No reviewed cards to undo.");
+            if !mutable.reviews.is_empty() {
+                let last_review: Review = mutable.reviews.pop().unwrap();
+                if last_review.grade == Grade::Forgot || last_review.grade == Grade::Hard {
+                    // Remove the card from the back of the queue.
+                    mutable.cards.pop();
+                }
+                mutable.cards.insert(0, last_review.card);
+                mutable.finished = false;
+                mutable.reveal = false;
             }
         }
         Action::End => {
@@ -100,36 +97,26 @@ async fn action_handler(state: ServerState, action: Action) -> Fallible<()> {
             mutable.finished = true;
         }
         Action::Forgot | Action::Hard | Action::Good | Action::Easy => {
-            if !mutable.reveal {
-                log::error!("Answering a card that is not revealed.");
-            } else {
+            if mutable.reveal {
                 let card = mutable.cards.remove(0);
                 let hash = card.hash();
-                let latest_review = match mutable.db.get_latest_review(hash)? {
+                let latest_review: Option<ReviewRow> = match mutable.db.get_latest_review(hash)? {
                     Some(r) => Some(r),
                     None => {
                         // Look through the in-memory review database.
                         let mut found: Option<Review> = None;
                         for r in mutable.reviews.iter().rev() {
-                            if r.card_hash == hash {
+                            if r.card.hash() == hash {
                                 found = Some(r.clone());
                                 break;
                             }
                         }
-                        found
+                        found.map(|r| r.into_row())
                     }
                 };
                 let grade = action.grade();
+
                 let parameters = update_card(latest_review, grade, today);
-                let review = Review {
-                    card_hash: hash,
-                    reviewed_at: Timestamp::now(),
-                    grade,
-                    stability: parameters.stability,
-                    difficulty: parameters.difficulty,
-                    due_date: parameters.due_date,
-                };
-                mutable.reviews.push(review);
 
                 let diff_percent = ((parameters.difficulty - 1.0) / (9.0)) * 100.0;
                 log::debug!(
@@ -141,13 +128,19 @@ async fn action_handler(state: ServerState, action: Action) -> Fallible<()> {
                     parameters.due_date.into_inner()
                 );
 
+                let review = Review {
+                    reviewed_at: Timestamp::now(),
+                    card: card.clone(),
+                    grade,
+                    params: parameters,
+                };
+                mutable.reviews.push(review);
+
                 // Cards graded `Forgot` or `Hard` are put at the back of the
                 // queue.
                 if grade == Grade::Forgot || grade == Grade::Hard {
                     mutable.cards.push(card.clone());
                 }
-
-                mutable.reviewed.push(card);
 
                 mutable.reveal = false;
 

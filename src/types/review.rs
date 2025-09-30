@@ -23,8 +23,8 @@ use crate::fsrs::interval;
 use crate::fsrs::new_difficulty;
 use crate::fsrs::new_stability;
 use crate::fsrs::retrievability;
+use crate::types::card::Card;
 use crate::types::date::Date;
-use crate::types::hash::Hash;
 use crate::types::timestamp::Timestamp;
 
 /// The desired recall probability.
@@ -38,30 +38,46 @@ const MAX_INTERVAL: f64 = 128.0;
 
 #[derive(Clone)]
 pub struct Review {
-    pub card_hash: Hash,
     pub reviewed_at: Timestamp,
+    pub card: Card,
     pub grade: Grade,
-    pub stability: Stability,
-    pub difficulty: Difficulty,
-    pub due_date: Date,
+    pub params: Parameters,
 }
 
+pub struct ReviewRow {
+    pub reviewed_at: Timestamp,
+    pub grade: Grade,
+    pub params: Parameters,
+}
+
+#[derive(Clone)]
 pub struct Parameters {
     pub stability: Stability,
     pub difficulty: Difficulty,
     pub due_date: Date,
 }
 
-pub fn update_card(review: Option<Review>, grade: Grade, today: Date) -> Parameters {
+impl Review {
+    pub fn into_row(self) -> ReviewRow {
+        ReviewRow {
+            reviewed_at: self.reviewed_at,
+            grade: self.grade,
+            params: self.params,
+        }
+    }
+}
+
+pub fn update_card(review: Option<ReviewRow>, grade: Grade, today: Date) -> Parameters {
     let today = today.into_inner();
     let (stability, difficulty) = match review {
-        Some(Review {
+        Some(ReviewRow {
             reviewed_at,
             grade,
-            stability,
-            difficulty,
+            params,
             ..
         }) => {
+            let stability = params.stability;
+            let difficulty = params.difficulty;
             let last_review = reviewed_at.local_date().into_inner();
             let time = (today - last_review).num_days() as f64;
             let retr = retrievability(time, stability);
@@ -110,13 +126,14 @@ mod tests {
         let reviewed_at = Timestamp::new(Utc::now() - Duration::days(3));
         let now = Timestamp::now();
         let today = now.local_date();
-        let review = Review {
-            card_hash: Hash::hash_bytes(b"testhash"),
+        let review = ReviewRow {
             reviewed_at,
             grade: Grade::Good,
-            stability: 3.17,
-            difficulty: 5.28,
-            due_date: today,
+            params: Parameters {
+                stability: 3.17,
+                difficulty: 5.28,
+                due_date: today,
+            },
         };
         let params = update_card(Some(review), Grade::Easy, today);
         assert!(approx_eq(params.stability, 10.73));

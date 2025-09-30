@@ -105,7 +105,6 @@ pub async fn start_server(directory: PathBuf, session_started_at: Timestamp) -> 
             reveal: false,
             db,
             cards: due_today,
-            reviewed: Vec::new(),
             reviews: Vec::new(),
             finished: false,
         })),

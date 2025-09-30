@@ -39,7 +39,7 @@ pub async fn get_handler(State(state): State<ServerState>) -> (StatusCode, Html<
 
 async fn inner(state: ServerState) -> Fallible<Markup> {
     let mutable = state.mutable.lock().unwrap();
-    let undo_disabled = mutable.reviewed.is_empty();
+    let undo_disabled = mutable.reviews.is_empty();
     let body = if mutable.finished {
         html! {
             div.finished {
