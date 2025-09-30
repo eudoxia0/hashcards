@@ -35,6 +35,18 @@ enum Action {
     Easy,
 }
 
+impl Action {
+    pub fn grade(&self) -> Grade {
+        match self {
+            Action::Forgot => Grade::Forgot,
+            Action::Hard => Grade::Hard,
+            Action::Good => Grade::Good,
+            Action::Easy => Grade::Easy,
+            _ => panic!("Action does not correspond to a grade"),
+        }
+    }
+}
+
 #[derive(Deserialize)]
 pub struct FormData {
     action: Action,
@@ -107,13 +119,7 @@ async fn action_handler(state: ServerState, action: Action) -> Fallible<()> {
                         found
                     }
                 };
-                let grade: Grade = match action {
-                    Action::Forgot => Grade::Forgot,
-                    Action::Hard => Grade::Hard,
-                    Action::Good => Grade::Good,
-                    Action::Easy => Grade::Easy,
-                    _ => unreachable!(),
-                };
+                let grade = action.grade();
                 let parameters = update_card(latest_review, grade, today);
                 let review = Review {
                     card_hash: hash,
@@ -159,4 +165,18 @@ async fn action_handler(state: ServerState, action: Action) -> Fallible<()> {
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+#[cfg_attr(coverage_nightly, coverage(off))]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_action_grade() {
+        assert_eq!(Action::Forgot.grade(), Grade::Forgot);
+        assert_eq!(Action::Hard.grade(), Grade::Hard);
+        assert_eq!(Action::Good.grade(), Grade::Good);
+        assert_eq!(Action::Easy.grade(), Grade::Easy);
+    }
 }
