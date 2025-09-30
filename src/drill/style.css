@@ -125,12 +125,14 @@ body {
                         height: auto;
                     }
 
-                    p:not(:last-child),
-                    img:not(:last-child),
-                    ol:not(:last-child),
-                    ul:not(:last-child),
-                    table:not(:last-child) {
-                        margin-bottom: 16px;
+                    p,
+                    img,
+                    ol,
+                    ul,
+                    table {
+                        &:not(:last-child) {
+                            margin-bottom: 16px;
+                        }
                     }
                 }
             }
