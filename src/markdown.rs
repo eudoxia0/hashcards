@@ -77,4 +77,11 @@ mod tests {
         let html = markdown_to_html_inline(markdown);
         assert_eq!(html, "This is <strong>bold</strong> text.");
     }
+
+    #[test]
+    fn test_markdown_to_html_inline_heading() {
+        let markdown = "# Foo";
+        let html = markdown_to_html_inline(markdown);
+        assert_eq!(html, "<h1>Foo</h1>\n");
+    }
 }
