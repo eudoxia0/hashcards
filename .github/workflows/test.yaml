@@ -19,6 +19,8 @@ jobs:
 
       - name: use rust nightly
         uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: clippy
 
       - name: cache rust deps
         uses: Swatinem/rust-cache@v2
