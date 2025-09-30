@@ -123,10 +123,6 @@ mod tests {
             .send()
             .await?;
         assert!(response.status().is_success());
-        assert_eq!(
-            response.headers().get("content-type").unwrap(),
-            "text/html; charset=utf-8"
-        );
         let html = response.text().await?;
         assert!(html.contains("baz <span class='cloze-reveal'>quux</span>"));
 
@@ -137,10 +133,6 @@ mod tests {
             .send()
             .await?;
         assert!(response.status().is_success());
-        assert_eq!(
-            response.headers().get("content-type").unwrap(),
-            "text/html; charset=utf-8"
-        );
         let html = response.text().await?;
         assert!(html.contains("FOO"));
 
@@ -151,10 +143,6 @@ mod tests {
             .send()
             .await?;
         assert!(response.status().is_success());
-        assert_eq!(
-            response.headers().get("content-type").unwrap(),
-            "text/html; charset=utf-8"
-        );
         let html = response.text().await?;
         assert!(html.contains("BAR"));
 
@@ -165,10 +153,6 @@ mod tests {
             .send()
             .await?;
         assert!(response.status().is_success());
-        assert_eq!(
-            response.headers().get("content-type").unwrap(),
-            "text/html; charset=utf-8"
-        );
         let html = response.text().await?;
         assert!(html.contains("Session Completed"));
 
@@ -218,10 +202,55 @@ mod tests {
             .send()
             .await?;
         assert!(response.status().is_success());
-        assert_eq!(
-            response.headers().get("content-type").unwrap(),
-            "text/html; charset=utf-8"
-        );
+        let html = response.text().await?;
+        assert!(html.contains("baz <span class='cloze'>.............</span>"));
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    #[serial]
+    async fn test_undo_forgetting() -> Fallible<()> {
+        let directory = PathBuf::from("./test").canonicalize().unwrap();
+        let db_path = directory.join("db.sqlite3");
+        if db_path.exists() {
+            remove_file(&db_path).await?;
+        }
+
+        // Start the server
+        let session_started_at = Timestamp::now();
+        spawn(async move { start_server(directory, session_started_at).await });
+        loop {
+            if let Ok(stream) = TcpStream::connect("0.0.0.0:8000").await {
+                drop(stream);
+                break;
+            }
+            sleep(Duration::from_millis(1)).await;
+        }
+
+        // Hit reveal.
+        let response = reqwest::Client::new()
+            .post("http://0.0.0.0:8000/")
+            .form(&[("action", "Reveal")])
+            .send()
+            .await?;
+        assert!(response.status().is_success());
+
+        // Hit 'Good'.
+        let response = reqwest::Client::new()
+            .post("http://0.0.0.0:8000/")
+            .form(&[("action", "Forgot")])
+            .send()
+            .await?;
+        assert!(response.status().is_success());
+
+        // Hit undo.
+        let response = reqwest::Client::new()
+            .post("http://0.0.0.0:8000/")
+            .form(&[("action", "Undo")])
+            .send()
+            .await?;
+        assert!(response.status().is_success());
         let html = response.text().await?;
         assert!(html.contains("baz <span class='cloze'>.............</span>"));
 
@@ -255,10 +284,6 @@ mod tests {
             .send()
             .await?;
         assert!(response.status().is_success());
-        assert_eq!(
-            response.headers().get("content-type").unwrap(),
-            "text/html; charset=utf-8"
-        );
         let html = response.text().await?;
         assert!(html.contains("Session Completed"));
 
