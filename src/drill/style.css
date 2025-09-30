@@ -152,6 +152,10 @@ body {
     }
 }
 
+.finished {
+    /* TODO: style for the "session complete" page */
+}
+
 .katex {
     font-size: 1em;
 }
