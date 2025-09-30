@@ -146,10 +146,10 @@ mod tests {
         let html = response.text().await?;
         assert!(html.contains("BAR"));
 
-        // Hit 'Hard'.
+        // Hit 'Good'.
         let response = reqwest::Client::new()
             .post("http://0.0.0.0:8000/")
-            .form(&[("action", "Hard")])
+            .form(&[("action", "Good")])
             .send()
             .await?;
         assert!(response.status().is_success());
