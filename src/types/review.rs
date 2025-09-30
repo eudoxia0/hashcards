@@ -84,7 +84,6 @@ pub fn update_card(review: Option<Review>, grade: Grade, today: Date) -> Paramet
 }
 
 #[cfg(test)]
-#[cfg_attr(coverage_nightly, coverage(off))]
 mod tests {
     use chrono::Utc;
 

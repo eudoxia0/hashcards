@@ -161,7 +161,6 @@ fn delta_d(g: Grade) -> f64 {
 }
 
 #[cfg(test)]
-#[cfg_attr(coverage_nightly, coverage(off))]
 mod tests {
     use std::iter::zip;
 

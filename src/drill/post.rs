@@ -168,7 +168,6 @@ async fn action_handler(state: ServerState, action: Action) -> Fallible<()> {
 }
 
 #[cfg(test)]
-#[cfg_attr(coverage_nightly, coverage(off))]
 mod tests {
     use super::*;
 

@@ -52,7 +52,6 @@ impl ToSql for CardType {
 }
 
 #[cfg(test)]
-#[cfg_attr(coverage_nightly, coverage(off))]
 mod tests {
     use super::*;
     use crate::error::Fallible;

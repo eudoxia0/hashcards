@@ -28,6 +28,3 @@ strip = "symbols"
 lto = true
 codegen-units = 1
 panic = "abort"
-
-[lints.rust]
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(coverage,coverage_nightly)'] }
