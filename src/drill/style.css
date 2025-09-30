@@ -119,9 +119,18 @@ body {
 
                     img {
                         display: block;
-                        margin: 12px auto;
-                        max-width: 600px;
+                        margin-left: auto;
+                        margin-right: auto;
+                        max-width: 100%;
                         height: auto;
+                    }
+
+                    p:not(:last-child),
+                    img:not(:last-child),
+                    ol:not(:last-child),
+                    ul:not(:last-child),
+                    table:not(:last-child) {
+                        margin-bottom: 16px;
                     }
                 }
             }
