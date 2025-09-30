@@ -195,6 +195,8 @@ fn probe_schema_exists(tx: &Transaction) -> Fallible<bool> {
 
 #[cfg(test)]
 mod tests {
+    use std::env::temp_dir;
+    use std::fs::create_dir_all;
     use std::path::PathBuf;
 
     use chrono::Duration;
@@ -304,6 +306,17 @@ mod tests {
         assert_eq!(latest_review.difficulty, review.difficulty);
         assert_eq!(latest_review.due_date, review.due_date);
 
+        Ok(())
+    }
+
+    #[test]
+    fn test_open_db_twice() -> Fallible<()> {
+        let dir = temp_dir();
+        let dir = dir.join("test_open_db_twice");
+        create_dir_all(&dir)?;
+        let db_path = dir.join("test.db");
+        let _a = Database::new(db_path.to_str().unwrap())?;
+        let _b = Database::new(db_path.to_str().unwrap())?;
         Ok(())
     }
 }
