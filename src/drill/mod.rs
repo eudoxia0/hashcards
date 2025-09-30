@@ -19,6 +19,7 @@ mod state;
 mod template;
 
 #[cfg(test)]
+#[cfg_attr(coverage_nightly, coverage(off))]
 mod tests {
     use std::env::temp_dir;
     use std::fs::create_dir_all;
