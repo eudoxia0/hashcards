@@ -70,4 +70,11 @@ mod tests {
             "<p><img src=\"http://localhost:8000/image/image.png\" alt=\"alt\" /></p>\n"
         );
     }
+
+    #[test]
+    fn test_markdown_to_html_inline() {
+        let markdown = "This is **bold** text.";
+        let html = markdown_to_html_inline(markdown);
+        assert_eq!(html, "This is <strong>bold</strong> text.");
+    }
 }
