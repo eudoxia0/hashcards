@@ -70,6 +70,8 @@ jobs:
           --lcov
           --ignore-filename-regex '(main|error|cli).rs'
           --output-path lcov.info
+        env:
+          RUST_LOG: debug
 
       - name: upload to codecov
         uses: codecov/codecov-action@v5
