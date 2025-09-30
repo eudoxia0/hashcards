@@ -90,19 +90,23 @@ async fn inner(state: ServerState) -> Fallible<Markup> {
         };
         html! {
             div.root {
-                div.card {
-                    div.header {
-                        h1 {
-                            (card.deck_name())
-                        }
-                        div.progress {
-                            (progress)
-                        }
+                div.header {
+                    div.progress {
+                        (progress)
                     }
-                    (card_content)
-                    div.controls {
-                        (card_controls)
+                }
+                div.card-container {
+                    div.card {
+                        div.card-header {
+                            h1 {
+                                (card.deck_name())
+                            }
+                        }
+                        (card_content)
                     }
+                }
+                div.controls {
+                    (card_controls)
                 }
             }
         }
@@ -125,9 +129,10 @@ fn render_card(card: &Card, reveal: bool) -> Fallible<Markup> {
                 }
             } else {
                 html! {
-                    div .prompt .rich-text {
+                    div .question .rich-text {
                         (card.html_front()?)
                     }
+                    div .answer .rich-text {}
                 }
             }
         }
@@ -148,7 +153,7 @@ fn render_card(card: &Card, reveal: bool) -> Fallible<Markup> {
         }
     };
     Ok(html! {
-        div.content {
+        div.card-content {
             (html)
         }
     })

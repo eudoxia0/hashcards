@@ -12,8 +12,7 @@
 
 html,
 body,
-.root,
-.card {
+.root {
     width: 100vw;
     height: 100vh;
 }
@@ -23,122 +22,134 @@ body {
 }
 
 .root {
-    max-height: 100vh;
-}
-
-.card {
     display: flex;
     flex-direction: column;
-}
 
-.content {
-    flex: 1;
-}
+    .header,
+    .controls {
+        background: #f8f8f8;
+    }
 
-.header,
-.question,
-.answer,
-.prompt,
-.controls {
-    padding: 32px;
-}
+    .header {
+        padding: 32px;
+        border-bottom: 1px solid black;
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
 
-.header,
-.question,
-.answer,
-.prompt {
-    width: 100%;
-    border-bottom: 1px solid black;
-}
+        .progress {
+            font-size: 24px;
+            font-family: "Helvetica Neue", sans-serif;
+        }
+    }
 
-.header {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-
-    h1 {
-        font-size: 36px;
-        font-weight: 300;
+    .card-container {
         flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        background: #fcfcfc;
+        overflow: hidden;
+
+        .card {
+            background: white;
+            border: 1px solid black;
+            width: 700px;
+            min-height: 400px;
+            max-height: 90%;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0px 0px 48px 16px #ddd;
+
+            .card-header {
+                border-bottom: 1px solid black;
+                padding: 24px;
+
+                h1 {
+                    font-size: 36px;
+                }
+            }
+
+            .card-content {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                overflow-x: hidden;
+                overflow-y: auto;
+
+                .question,
+                .answer,
+                .prompt {
+                    padding: 24px;
+                }
+
+                .question {
+                    border-bottom: 1px solid black;
+                }
+
+                .answer {
+                    min-height: 30px;
+                }
+
+                .rich-text {
+                    font-size: 30px;
+
+                    .cloze {
+                        width: 30px;
+                        background: #a0a0a0;
+                        text-decoration: none;
+                        border-radius: 8px;
+                        color: transparent;
+                    }
+
+                    .cloze-reveal {
+                        color: royalblue;
+                    }
+
+                    img {
+                        display: block;
+                        margin: 12px auto;
+                        max-width: 600px;
+                        height: auto;
+                    }
+                }
+            }
+        }
     }
 
-    .progress {
-        font-size: 24px;
+    .controls {
+        border-top: 1px solid black;
+        padding: 32px;
+
+        form {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+
+            input {
+                margin: 0 12px;
+                background: white;
+                border: 1px solid #999;
+                padding: 7px 12px;
+                font-size: 16px;
+                font-family:
+                    system-ui,
+                    -apple-system,
+                    "Helvetica Neue",
+                    sans-serif;
+                font-weight: 600;
+                border-radius: 6px;
+                cursor: pointer;
+                box-shadow: #ccc 0px 1px 3px 0px;
+
+                &:disabled {
+                    cursor: not-allowed;
+                }
+            }
+        }
     }
-}
-
-.question,
-.answer,
-.prompt {
-    overflow-y: auto;
-}
-
-.question {
-    height: 75%;
-}
-
-.answer {
-    height: 25%;
-}
-
-.prompt {
-    height: 100%;
-}
-
-.rich-text {
-    font-size: 30px;
-
-    img {
-        max-width: 70%;
-        display: block;
-        margin: 8px auto;
-    }
-}
-
-.controls form {
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-}
-
-input {
-    border: 1px solid #bbb;
-    padding: 16px;
-    background: white;
-    font-size: 24px;
-    margin: 0 16px;
-    font-family: "Times New Roman", "Times", serif;
-    cursor: pointer;
-}
-
-.cloze {
-    width: 30px;
-    background: #a0a0a0;
-    text-decoration: none;
-    border-radius: 8px;
-    color: transparent;
-}
-
-.cloze-reveal {
-    color: royalblue;
-}
-
-.finished {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-
-    h1 {
-        font-size: 48px;
-        font-weight: bold;
-    }
-}
-
-.spacer {
-    flex: 1;
 }
 
 .katex {
