@@ -49,11 +49,14 @@ async fn inner(state: ServerState) -> Fallible<Markup> {
             }
         }
     } else {
-        let progress = format!(
-            "{} / {}",
-            state.total_cards - mutable.cards.len(),
-            state.total_cards
-        );
+        let total_cards = state.total_cards;
+        let cards_done = state.total_cards - mutable.cards.len();
+        let percent_done = if total_cards == 0 {
+            100
+        } else {
+            (cards_done * 100) / total_cards
+        };
+        let progress_bar_style = format!("width: {}%;", percent_done);
         let card = mutable.cards[0].clone();
         let card_content = render_card(&card, mutable.reveal)?;
         let card_controls = if mutable.reveal {
@@ -91,8 +94,8 @@ async fn inner(state: ServerState) -> Fallible<Markup> {
         html! {
             div.root {
                 div.header {
-                    div.progress {
-                        (progress)
+                    div.progress-bar {
+                        div.progress-fill style=(progress_bar_style) {}
                     }
                 }
                 div.card-container {
