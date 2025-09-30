@@ -40,6 +40,10 @@ document.addEventListener("keydown", function (event) {
   };
 
   if (keybindings[event.key]) {
+    // Ignore modifiers.
+    if (event.shiftKey || event.ctrlKey || event.altKey || event.metaKey) {
+      return;
+    }
     event.preventDefault();
     const id = keybindings[event.key];
     const node = document.getElementById(id);
