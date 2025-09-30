@@ -319,4 +319,20 @@ mod tests {
         let _b = Database::new(db_path.to_str().unwrap())?;
         Ok(())
     }
+
+    #[test]
+    fn test_add_card_twice() -> Fallible<()> {
+        let db = Database::new(":memory:")?;
+        let now = Timestamp::now();
+        let card = Card::new(
+            "My Deck".to_string(),
+            PathBuf::new(),
+            (0, 1),
+            CardContent::new_basic("Q", "A"),
+        );
+        db.add_card(&card, now)?;
+        let result = db.add_card(&card, now);
+        assert!(result.is_err());
+        Ok(())
+    }
 }
