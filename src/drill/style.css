@@ -125,6 +125,15 @@ body {
                         height: auto;
                     }
 
+                    ul,
+                    ol {
+                        padding-left: 24px;
+
+                        li {
+                            margin-bottom: 6px;
+                        }
+                    }
+
                     p,
                     img,
                     ol,
