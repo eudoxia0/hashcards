@@ -105,6 +105,8 @@ body {
 
                 .rich-text {
                     font-size: 30px;
+                    text-align: justify;
+                    line-height: 1.4;
 
                     .cloze {
                         width: 30px;
@@ -129,10 +131,6 @@ body {
                     ul,
                     ol {
                         padding-left: 24px;
-
-                        li {
-                            margin-bottom: 6px;
-                        }
                     }
 
                     p,
