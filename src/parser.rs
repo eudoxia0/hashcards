@@ -17,8 +17,8 @@ use std::path::PathBuf;
 
 use walkdir::WalkDir;
 
-use crate::error::Fallible;
 use crate::error::fail;
+use crate::error::Fallible;
 use crate::types::card::Card;
 use crate::types::card::CardContent;
 
@@ -175,9 +175,7 @@ impl Parser {
                     answer: text,
                     start_line,
                 }),
-                Line::StartCloze(_) => {
-                    fail("Started a cloze card inside a question card question.")
-                }
+                Line::StartCloze(_) => fail("Started a cloze card inside a question card."),
                 Line::Text(text) => Ok(State::ReadingQuestion {
                     question: format!("{question}\n{text}"),
                     start_line,
