@@ -199,3 +199,47 @@ impl CardContent {
         Ok(html)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_basic_card_hash() {
+        let card1 = CardContent::new_basic("What is 2+2?", "4");
+        let card2 = CardContent::new_basic("What is 2+2?", "4");
+        let card3 = CardContent::new_basic("What is 3+3?", "6");
+        assert_eq!(card1.hash(), card2.hash());
+        assert_ne!(card1.hash(), card3.hash());
+    }
+
+    #[test]
+    fn test_cloze_card_hash() {
+        let a = CardContent::Cloze {
+            text: "The capital of France is Paris".to_string(),
+            start: 0,
+            end: 1,
+        };
+        let b = CardContent::Cloze {
+            text: "The capital of France is Paris".to_string(),
+            start: 0,
+            end: 1,
+        };
+        assert_eq!(a.family_hash(), b.family_hash());
+    }
+
+    #[test]
+    fn test_family_hash() {
+        let a = CardContent::Cloze {
+            text: "The capital of France is Paris".to_string(),
+            start: 0,
+            end: 1,
+        };
+        let b = CardContent::Cloze {
+            text: "The capital of France is Paris".to_string(),
+            start: 0,
+            end: 2,
+        };
+        assert_eq!(a.family_hash(), b.family_hash());
+    }
+}
