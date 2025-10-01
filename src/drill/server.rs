@@ -200,6 +200,9 @@ fn filter_deck(
     card_limit: Option<usize>,
     new_card_limit: Option<usize>,
 ) -> Fallible<Vec<Card>> {
+    // Bury sibling cards.
+    let deck = bury_siblings(deck);
+
     // Apply the card limit.
     let deck = match card_limit {
         Some(limit) => deck.into_iter().take(limit).collect(),
@@ -227,4 +230,19 @@ fn filter_deck(
     };
 
     Ok(deck)
+}
+
+fn bury_siblings(deck: Vec<Card>) -> Vec<Card> {
+    let mut seen_families = HashSet::new();
+    let mut result = Vec::new();
+    for card in deck.into_iter() {
+        if let Some(family) = card.family_hash() {
+            if seen_families.contains(&family) {
+                continue;
+            }
+            seen_families.insert(family);
+        }
+        result.push(card);
+    }
+    result
 }

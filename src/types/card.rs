@@ -89,6 +89,10 @@ impl Card {
         self.hash
     }
 
+    pub fn family_hash(&self) -> Option<Hash> {
+        self.content.family_hash()
+    }
+
     pub fn card_type(&self) -> CardType {
         match &self.content {
             CardContent::Basic { .. } => CardType::Basic,
@@ -129,6 +133,21 @@ impl CardContent {
             }
         }
         hasher.finalize()
+    }
+
+    /// All cloze cards derived from the same text have the same family hash.
+    ///
+    /// For basic cards, this is `None`.
+    pub fn family_hash(&self) -> Option<Hash> {
+        match &self {
+            CardContent::Basic { .. } => None,
+            CardContent::Cloze { text, .. } => {
+                let mut hasher = Hasher::new();
+                hasher.update(b"Cloze");
+                hasher.update(text.as_bytes());
+                Some(hasher.finalize())
+            }
+        }
     }
 
     pub fn html_front(&self) -> Fallible<Markup> {
