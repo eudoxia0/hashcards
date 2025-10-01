@@ -65,7 +65,8 @@ body {
         .card {
             background: white;
             border: 1px solid black;
-            width: 700px;
+            min-width: 700px;
+            max-width: 90%;
             min-height: 400px;
             max-height: 90%;
             display: flex;
