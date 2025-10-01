@@ -35,7 +35,6 @@ pub struct Hash {
 
 impl Hash {
     #[cfg(test)]
-    #[allow(dead_code)]
     pub fn hash_bytes(bytes: &[u8]) -> Self {
         Self {
             inner: blake3::hash(bytes),
