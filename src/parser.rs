@@ -598,11 +598,11 @@ mod tests {
 
     #[test]
     fn test_parse_deck() -> Fallible<()> {
-        let directory = PathBuf::from("./example");
+        let directory = PathBuf::from("./test");
         let deck = parse_deck(&directory);
         assert!(deck.is_ok());
         let cards = deck?;
-        assert_eq!(cards.len(), 7);
+        assert_eq!(cards.len(), 2);
         Ok(())
     }
 
