@@ -98,31 +98,7 @@ pub async fn start_server(
         .filter(|card| due_today.contains(&card.hash()))
         .collect::<Vec<_>>();
 
-    // Apply the card limit.
-    let due_today = match card_limit {
-        Some(limit) => due_today.into_iter().take(limit).collect(),
-        None => due_today,
-    };
-
-    // Apply the new card limit.
-    let due_today = match new_card_limit {
-        Some(limit) => {
-            let mut new_count = 0;
-            let mut result = Vec::new();
-            for card in due_today.into_iter() {
-                if db.get_card_stage(card.hash())? == Stage::New {
-                    if new_count < limit {
-                        result.push(card);
-                        new_count += 1;
-                    }
-                } else {
-                    result.push(card);
-                }
-            }
-            result
-        }
-        None => due_today,
-    };
+    let due_today = filter_deck(&db, due_today, card_limit, new_card_limit)?;
 
     if due_today.is_empty() {
         println!("No cards due today.");
@@ -216,4 +192,39 @@ async fn image_handler(
             b"Internal Server Error".to_vec(),
         ),
     }
+}
+
+fn filter_deck(
+    db: &Database,
+    deck: Vec<Card>,
+    card_limit: Option<usize>,
+    new_card_limit: Option<usize>,
+) -> Fallible<Vec<Card>> {
+    // Apply the card limit.
+    let deck = match card_limit {
+        Some(limit) => deck.into_iter().take(limit).collect(),
+        None => deck,
+    };
+
+    // Apply the new card limit.
+    let deck = match new_card_limit {
+        Some(limit) => {
+            let mut new_count = 0;
+            let mut result = Vec::new();
+            for card in deck.into_iter() {
+                if db.get_card_stage(card.hash())? == Stage::New {
+                    if new_count < limit {
+                        result.push(card);
+                        new_count += 1;
+                    }
+                } else {
+                    result.push(card);
+                }
+            }
+            result
+        }
+        None => deck,
+    };
+
+    Ok(deck)
 }
