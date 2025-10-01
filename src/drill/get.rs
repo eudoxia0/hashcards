@@ -64,32 +64,24 @@ fn render_session_page(state: &ServerState, mutable: &MutableState) -> Fallible<
     let card_controls = if mutable.reveal {
         html! {
             form action="/" method="post" {
-                @if undo_disabled {
-                    input id="undo" type="submit" name="action" value="Undo" disabled;
-                } @else {
-                    input id="undo" type="submit" name="action" value="Undo" title="Undo last action";
-                }
+                (undo_button(undo_disabled))
                 div.spacer {}
                 input id="forgot" type="submit" name="action" value="Forgot";
                 input id="hard" type="submit" name="action" value="Hard";
                 input id="good" type="submit" name="action" value="Good";
                 input id="easy" type="submit" name="action" value="Easy";
                 div.spacer {}
-                input id="end" type="submit" name="action" value="End" title="End the session (changes are saved)";
+                (end_button())
             }
         }
     } else {
         html! {
             form action="/" method="post" {
-                @if undo_disabled {
-                    input id="undo" type="submit" name="action" value="Undo" disabled;
-                } @else {
-                    input id="undo" type="submit" name="action" value="Undo"  title="Undo last action";
-                }
+                (undo_button(undo_disabled))
                 div.spacer {}
                 input id="reveal" type="submit" name="action" value="Reveal" title="Show the answer";
                 div.spacer {}
-                input id="end" type="submit" name="action" value="End" title="End the session (changes are saved)";
+                (end_button())
             }
         }
     };
@@ -226,4 +218,22 @@ fn render_completion_page(state: &ServerState, mutable: &MutableState) -> Fallib
         }
     };
     Ok(html)
+}
+
+fn undo_button(disabled: bool) -> Markup {
+    if disabled {
+        html! {
+            input id="undo" type="submit" name="action" value="Undo" disabled;
+        }
+    } else {
+        html! {
+            input id="undo" type="submit" name="action" value="Undo" title="Undo last action";
+        }
+    }
+}
+
+fn end_button() -> Markup {
+    html! {
+        input id="end" type="submit" name="action" value="End" title="End the session (changes are saved)";
+    }
 }
