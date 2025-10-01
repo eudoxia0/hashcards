@@ -154,7 +154,11 @@ body {
         form {
             display: flex;
             flex-direction: row;
-            justify-content: center;
+            justify-content: space-between;
+
+            .spacer {
+                flex: 1;
+            }
 
             input {
                 margin: 0 12px;
