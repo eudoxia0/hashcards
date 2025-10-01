@@ -29,15 +29,21 @@ use crate::types::timestamp::Timestamp;
 enum Command {
     /// Drill cards through a web interface.
     Drill {
-        /// Optional path to the deck directory.
+        /// Path to the deck directory. By default, the current working directory is used.
         directory: Option<String>,
+        /// Maximum number of cards to drill in a session. By default, all cards due today are drilled.
+        #[arg(long)]
+        card_limit: Option<usize>,
     },
 }
 
 pub async fn entrypoint() -> Fallible<()> {
     let cli: Command = Command::parse();
     match cli {
-        Command::Drill { directory } => {
+        Command::Drill {
+            directory,
+            card_limit,
+        } => {
             let directory: PathBuf = match directory {
                 Some(dir) => PathBuf::from(dir),
                 None => std::env::current_dir()?,
@@ -56,7 +62,7 @@ pub async fn entrypoint() -> Fallible<()> {
                 let _ = open::that("http://0.0.0.0:8000/");
             });
 
-            start_server(directory, Timestamp::now()).await
+            start_server(directory, Timestamp::now(), card_limit).await
         }
     }
 }

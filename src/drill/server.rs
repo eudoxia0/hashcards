@@ -43,7 +43,11 @@ use crate::types::card::Card;
 use crate::types::hash::Hash;
 use crate::types::timestamp::Timestamp;
 
-pub async fn start_server(directory: PathBuf, session_started_at: Timestamp) -> Fallible<()> {
+pub async fn start_server(
+    directory: PathBuf,
+    session_started_at: Timestamp,
+    card_limit: Option<usize>,
+) -> Fallible<()> {
     let today = session_started_at.local_date();
 
     if !directory.exists() {
@@ -91,10 +95,17 @@ pub async fn start_server(directory: PathBuf, session_started_at: Timestamp) -> 
         .into_iter()
         .filter(|card| due_today.contains(&card.hash()))
         .collect::<Vec<_>>();
+
     if due_today.is_empty() {
         println!("No cards due today.");
         return Ok(());
     }
+
+    // Apply the card limit.
+    let due_today = match card_limit {
+        Some(limit) => due_today.into_iter().take(limit).collect(),
+        None => due_today,
+    };
 
     let state = ServerState {
         directory,
