@@ -34,6 +34,9 @@ enum Command {
         /// Maximum number of cards to drill in a session. By default, all cards due today are drilled.
         #[arg(long)]
         card_limit: Option<usize>,
+        /// Maximum number of new cards to drill in a session.
+        #[arg(long)]
+        new_card_limit: Option<usize>,
     },
 }
 
@@ -43,6 +46,7 @@ pub async fn entrypoint() -> Fallible<()> {
         Command::Drill {
             directory,
             card_limit,
+            new_card_limit,
         } => {
             let directory: PathBuf = match directory {
                 Some(dir) => PathBuf::from(dir),
@@ -62,7 +66,7 @@ pub async fn entrypoint() -> Fallible<()> {
                 let _ = open::that("http://0.0.0.0:8000/");
             });
 
-            start_server(directory, Timestamp::now(), card_limit).await
+            start_server(directory, Timestamp::now(), card_limit, new_card_limit).await
         }
     }
 }

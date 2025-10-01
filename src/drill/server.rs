@@ -31,6 +31,7 @@ use axum::routing::post;
 use tokio::net::TcpListener;
 
 use crate::db::Database;
+use crate::db::Stage;
 use crate::drill::get::get_handler;
 use crate::drill::post::post_handler;
 use crate::drill::state::MutableState;
@@ -47,6 +48,7 @@ pub async fn start_server(
     directory: PathBuf,
     session_started_at: Timestamp,
     card_limit: Option<usize>,
+    new_card_limit: Option<usize>,
 ) -> Fallible<()> {
     let today = session_started_at.local_date();
 
@@ -96,16 +98,36 @@ pub async fn start_server(
         .filter(|card| due_today.contains(&card.hash()))
         .collect::<Vec<_>>();
 
-    if due_today.is_empty() {
-        println!("No cards due today.");
-        return Ok(());
-    }
-
     // Apply the card limit.
     let due_today = match card_limit {
         Some(limit) => due_today.into_iter().take(limit).collect(),
         None => due_today,
     };
+
+    // Apply the new card limit.
+    let due_today = match new_card_limit {
+        Some(limit) => {
+            let mut new_count = 0;
+            let mut result = Vec::new();
+            for card in due_today.into_iter() {
+                if db.get_card_stage(card.hash())? == Stage::New {
+                    if new_count < limit {
+                        result.push(card);
+                        new_count += 1;
+                    }
+                } else {
+                    result.push(card);
+                }
+            }
+            result
+        }
+        None => due_today,
+    };
+
+    if due_today.is_empty() {
+        println!("No cards due today.");
+        return Ok(());
+    }
 
     let state = ServerState {
         directory,

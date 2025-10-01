@@ -33,6 +33,12 @@ pub struct Database {
     conn: Connection,
 }
 
+#[derive(PartialEq, Eq)]
+pub enum Stage {
+    New,
+    Review,
+}
+
 impl Database {
     pub fn new(database_path: &str) -> Fallible<Self> {
         let mut conn = Connection::open(database_path)?;
@@ -158,6 +164,17 @@ impl Database {
         }
         tx.commit()?;
         Ok(())
+    }
+
+    /// Find the stage of the given card.
+    pub fn get_card_stage(&self, card_hash: Hash) -> Fallible<Stage> {
+        let sql = "select count(*) from reviews where card_hash = ?;";
+        let count: i64 = self.conn.query_row(sql, [card_hash], |row| row.get(0))?;
+        if count == 0 {
+            Ok(Stage::New)
+        } else {
+            Ok(Stage::Review)
+        }
     }
 }
 
