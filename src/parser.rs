@@ -340,11 +340,7 @@ impl Parser {
                     index += 1;
                 } else if let Some(s) = start {
                     let end = index;
-                    let content = CardContent::Cloze {
-                        text: clean_text.clone(),
-                        start: s,
-                        end: end - 1,
-                    };
+                    let content = CardContent::new_cloze(clean_text.clone(), s, end - 1);
                     let card = Card::new(
                         self.deck_name.clone(),
                         self.file_path.clone(),

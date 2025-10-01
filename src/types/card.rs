@@ -117,6 +117,14 @@ impl CardContent {
         }
     }
 
+    pub fn new_cloze(prompt: impl Into<String>, start: usize, end: usize) -> Self {
+        Self::Cloze {
+            text: prompt.into(),
+            start,
+            end,
+        }
+    }
+
     pub fn hash(&self) -> Hash {
         let mut hasher = Hasher::new();
         match &self {
@@ -215,31 +223,15 @@ mod tests {
 
     #[test]
     fn test_cloze_card_hash() {
-        let a = CardContent::Cloze {
-            text: "The capital of France is Paris".to_string(),
-            start: 0,
-            end: 1,
-        };
-        let b = CardContent::Cloze {
-            text: "The capital of France is Paris".to_string(),
-            start: 0,
-            end: 1,
-        };
+        let a = CardContent::new_cloze("The capital of France is Paris", 0, 1);
+        let b = CardContent::new_cloze("The capital of France is Paris", 0, 2);
         assert_eq!(a.family_hash(), b.family_hash());
     }
 
     #[test]
     fn test_family_hash() {
-        let a = CardContent::Cloze {
-            text: "The capital of France is Paris".to_string(),
-            start: 0,
-            end: 1,
-        };
-        let b = CardContent::Cloze {
-            text: "The capital of France is Paris".to_string(),
-            start: 0,
-            end: 2,
-        };
+        let a = CardContent::new_cloze("The capital of France is Paris", 0, 1);
+        let b = CardContent::new_cloze("The capital of France is Paris", 0, 2);
         assert_eq!(a.family_hash(), b.family_hash());
     }
 }
