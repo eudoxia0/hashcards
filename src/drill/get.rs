@@ -67,7 +67,7 @@ fn render_session_page(state: &ServerState, mutable: &MutableState) -> Fallible<
                 @if undo_disabled {
                     input id="undo" type="submit" name="action" value="Undo" disabled;
                 } @else {
-                    input id="undo" type="submit" name="action" value="Undo";
+                    input id="undo" type="submit" name="action" value="Undo" title="Undo last action";
                 }
                 div.spacer {}
                 input id="forgot" type="submit" name="action" value="Forgot";
@@ -75,7 +75,7 @@ fn render_session_page(state: &ServerState, mutable: &MutableState) -> Fallible<
                 input id="good" type="submit" name="action" value="Good";
                 input id="easy" type="submit" name="action" value="Easy";
                 div.spacer {}
-                input id="end" type="submit" name="action" value="End";
+                input id="end" type="submit" name="action" value="End" title="End the session (changes are saved)";
             }
         }
     } else {
@@ -84,12 +84,12 @@ fn render_session_page(state: &ServerState, mutable: &MutableState) -> Fallible<
                 @if undo_disabled {
                     input id="undo" type="submit" name="action" value="Undo" disabled;
                 } @else {
-                    input id="undo" type="submit" name="action" value="Undo";
+                    input id="undo" type="submit" name="action" value="Undo"  title="Undo last action";
                 }
                 div.spacer {}
-                input id="reveal" type="submit" name="action" value="Reveal";
+                input id="reveal" type="submit" name="action" value="Reveal" title="Show the answer";
                 div.spacer {}
-                input id="end" type="submit" name="action" value="End";
+                input id="end" type="submit" name="action" value="End" title="End the session (changes are saved)";
             }
         }
     };
