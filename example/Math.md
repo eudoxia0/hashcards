@@ -1,9 +1,9 @@
 Q: What does $\euler$ evaluate to?
 A: $0$
 
-Q: Rewrite $P \implies Q$ using primitive connectives.
+Q: State the first DeMorgan Law
 A:
 
 $$
-\neg P \lor Q
+\neg \left( P \land Q \right) \equiv \neg P \lor \neg Q
 $$
