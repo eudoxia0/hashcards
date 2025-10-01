@@ -173,7 +173,12 @@ body {
 }
 
 .finished {
-    /* TODO: style for the "session complete" page */
+    padding: 48px;
+
+    h1 {
+        font-size: 48px;
+        text-align: center;
+    }
 }
 
 .katex {

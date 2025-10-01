@@ -44,7 +44,7 @@ async fn inner(state: ServerState) -> Fallible<Markup> {
         html! {
             div.finished {
                 h1 {
-                    "Session Completed"
+                    "Session Completed 🎉"
                 }
             }
         }
