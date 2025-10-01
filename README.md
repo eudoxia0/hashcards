@@ -3,6 +3,8 @@
 [![Test](https://github.com/eudoxia0/hashcards/actions/workflows/test.yaml/badge.svg)](https://github.com/eudoxia0/hashcards/actions/workflows/test.yaml)
 [![codecov](https://codecov.io/gh/eudoxia0/hashcards/branch/master/graph/badge.svg?token=GDV3CYZMHQ)](https://codecov.io/gh/eudoxia0/hashcards)
 
+![Screenshot of the app, showing a front/back flashcard.](screenshot.webp)
+
 A plain text-based spaced repetition system. Features:
 
 - **Plain Text:** all your flashcards are stored as plain text files, so you can operate on them with standard tools, write with your editor of choice, and track changes in a VCS.
