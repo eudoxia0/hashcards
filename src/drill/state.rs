@@ -35,5 +35,5 @@ pub struct MutableState {
     pub db: Database,
     pub cards: Vec<Card>,
     pub reviews: Vec<Review>,
-    pub finished: bool,
+    pub finished_at: Option<Timestamp>,
 }

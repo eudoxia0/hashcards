@@ -33,6 +33,10 @@ impl Timestamp {
         Self(ts)
     }
 
+    pub fn into_inner(self) -> DateTime<Utc> {
+        self.0
+    }
+
     pub fn now() -> Self {
         Self(Utc::now())
     }

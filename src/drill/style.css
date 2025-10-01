@@ -178,6 +178,50 @@ body {
     h1 {
         font-size: 48px;
         text-align: center;
+        margin-bottom: 48px;
+    }
+
+    .summary {
+        font-size: 24px;
+        margin-bottom: 48px;
+    }
+
+    h2 {
+        font-size: 36px;
+        margin-bottom: 24px;
+        border-bottom: 1px solid #ccc;
+    }
+
+    .stats {
+        font-size: 22px;
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+
+            tr {
+                border-bottom: 1px solid #eee;
+
+                td {
+                    padding: 12px 0;
+
+                    &.key {
+                        font-family: "SF Pro", sans-serif;
+                        font-weight: 500;
+                        width: auto;
+                        white-space: nowrap;
+                    }
+
+                    &.val {
+                        font-family: "SF Pro", sans-serif;
+                        font-feature-settings: "tnum";
+                        font-variant-numeric: tabular-nums;
+                        width: 100%;
+                        padding-left: 48px;
+                    }
+                }
+            }
+        }
     }
 }
 

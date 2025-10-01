@@ -83,7 +83,7 @@ async fn action_handler(state: ServerState, action: Action) -> Fallible<()> {
                     mutable.cards.pop();
                 }
                 mutable.cards.insert(0, last_review.card);
-                mutable.finished = false;
+                mutable.finished_at = None;
                 mutable.reveal = false;
             }
         }
@@ -94,7 +94,7 @@ async fn action_handler(state: ServerState, action: Action) -> Fallible<()> {
             mutable
                 .db
                 .save_session(state.session_started_at, session_ended_at, reviews)?;
-            mutable.finished = true;
+            mutable.finished_at = Some(session_ended_at);
         }
         Action::Forgot | Action::Hard | Action::Good | Action::Easy => {
             if mutable.reveal {
@@ -152,7 +152,7 @@ async fn action_handler(state: ServerState, action: Action) -> Fallible<()> {
                     mutable
                         .db
                         .save_session(state.session_started_at, session_ended_at, reviews)?;
-                    mutable.finished = true;
+                    mutable.finished_at = Some(session_ended_at);
                 }
             }
         }
