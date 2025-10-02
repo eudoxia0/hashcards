@@ -38,10 +38,11 @@ mod tests {
 
     #[tokio::test]
     async fn test_start_server_on_non_existent_directory() -> Fallible<()> {
+        let port = 8000;
         let session_started_at = Timestamp::now();
         let result = start_server(
             Some("./derpherp".to_string()),
-            8000,
+            port,
             session_started_at,
             None,
             None,
@@ -67,6 +68,7 @@ mod tests {
     #[tokio::test]
     #[serial]
     async fn test_e2e() -> Fallible<()> {
+        let port = 8000;
         let directory = PathBuf::from("./test").canonicalize().unwrap();
         let db_path = directory.join("db.sqlite3");
         if db_path.exists() {
@@ -76,7 +78,7 @@ mod tests {
         let session_started_at = Timestamp::now();
         let directory = directory.display().to_string();
         spawn(
-            async move { start_server(Some(directory), 8000, session_started_at, None, None).await },
+            async move { start_server(Some(directory), port, session_started_at, None, None).await },
         );
         loop {
             if let Ok(stream) = TcpStream::connect("0.0.0.0:8000").await {
