@@ -291,6 +291,7 @@ mod tests {
     #[tokio::test]
     #[serial]
     async fn test_undo_forgetting() -> Fallible<()> {
+        let port = 8000;
         let directory = PathBuf::from("./test").canonicalize().unwrap();
         let db_path = directory.join("db.sqlite3");
         if db_path.exists() {
@@ -301,15 +302,9 @@ mod tests {
         let session_started_at = Timestamp::now();
         let directory = directory.display().to_string();
         spawn(
-            async move { start_server(Some(directory), 8000, session_started_at, None, None).await },
+            async move { start_server(Some(directory), port, session_started_at, None, None).await },
         );
-        loop {
-            if let Ok(stream) = TcpStream::connect("0.0.0.0:8000").await {
-                drop(stream);
-                break;
-            }
-            sleep(Duration::from_millis(1)).await;
-        }
+        wait_for_server(port).await?;
 
         // Hit reveal.
         let response = reqwest::Client::new()
@@ -350,18 +345,13 @@ mod tests {
         }
 
         // Start the server
+        let port = 8000;
         let session_started_at = Timestamp::now();
         let directory = directory.display().to_string();
         spawn(
-            async move { start_server(Some(directory), 8000, session_started_at, None, None).await },
+            async move { start_server(Some(directory), port, session_started_at, None, None).await },
         );
-        loop {
-            if let Ok(stream) = TcpStream::connect("0.0.0.0:8000").await {
-                drop(stream);
-                break;
-            }
-            sleep(Duration::from_millis(1)).await;
-        }
+        wait_for_server(port).await?;
 
         // Hit end.
         let response = reqwest::Client::new()
@@ -373,6 +363,17 @@ mod tests {
         let html = response.text().await?;
         assert!(html.contains("Session Completed"));
 
+        Ok(())
+    }
+
+    async fn wait_for_server(port: u16) -> Fallible<()> {
+        loop {
+            if let Ok(stream) = TcpStream::connect(format!("0.0.0.0:{port}")).await {
+                drop(stream);
+                break;
+            }
+            sleep(Duration::from_millis(1)).await;
+        }
         Ok(())
     }
 }
