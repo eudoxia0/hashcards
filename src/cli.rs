@@ -42,6 +42,9 @@ enum Command {
         /// Maximum number of new cards to drill in a session.
         #[arg(long)]
         new_card_limit: Option<usize>,
+        /// The port to use for the web server. Default is 8000.
+        #[arg(long, default_value_t = 8000)]
+        port: u16,
     },
     /// Check the integrity of a deck.
     Check {
@@ -84,8 +87,8 @@ pub async fn entrypoint() -> Fallible<()> {
             directory,
             card_limit,
             new_card_limit,
+            port,
         } => {
-            let port = 8000;
             // Start a separate task to open the browser once the server is up.
             spawn(async move {
                 loop {
