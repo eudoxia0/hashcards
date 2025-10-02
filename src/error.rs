@@ -17,6 +17,8 @@ use std::fmt::Display;
 use std::fmt::Formatter;
 use std::string::FromUtf8Error;
 
+use crate::parser::ParserError;
+
 #[derive(Debug)]
 pub struct ErrorReport {
     message: String,
@@ -75,6 +77,14 @@ impl From<serde_json::Error> for ErrorReport {
     fn from(value: serde_json::Error) -> Self {
         ErrorReport {
             message: format!("JSON error: {value:#?}"),
+        }
+    }
+}
+
+impl From<ParserError> for ErrorReport {
+    fn from(value: ParserError) -> Self {
+        ErrorReport {
+            message: format!("Parse error: {value}"),
         }
     }
 }

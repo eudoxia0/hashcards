@@ -27,10 +27,6 @@ Q: Term for: The process of turning loose sediment into rock.
 A: lithification
 ```
 
-# Strongy-Typed Parser Errors
-
-The parser state machine makes this easy.
-
 # Deck Datatype
 
 Instead of `Vec<Card>`, use a `Deck` object where appropriate.

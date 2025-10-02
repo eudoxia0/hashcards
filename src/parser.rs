@@ -13,12 +13,14 @@
 // limitations under the License.
 
 use std::collections::HashSet;
+use std::error::Error;
+use std::fmt::Display;
+use std::fmt::Formatter;
 use std::path::PathBuf;
 
 use walkdir::WalkDir;
 
 use crate::error::Fallible;
-use crate::error::fail;
 use crate::types::card::Card;
 use crate::types::card::CardContent;
 
@@ -58,6 +60,37 @@ pub struct Parser {
     deck_name: String,
     file_path: PathBuf,
 }
+
+#[derive(Debug)]
+pub struct ParserError {
+    pub message: String,
+    pub file_path: PathBuf,
+    pub line_num: usize,
+}
+
+impl ParserError {
+    fn new(message: impl Into<String>, file_path: PathBuf, line_num: usize) -> Self {
+        ParserError {
+            message: message.into(),
+            file_path,
+            line_num,
+        }
+    }
+}
+
+impl Display for ParserError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{} Location: {}:{}",
+            self.message,
+            self.file_path.display(),
+            self.line_num + 1
+        )
+    }
+}
+
+impl Error for ParserError {}
 
 enum State {
     /// Initial state.
@@ -124,7 +157,7 @@ impl Parser {
     }
 
     /// Parse all the cards in the given text.
-    pub fn parse(&self, text: &str) -> Fallible<Vec<Card>> {
+    pub fn parse(&self, text: &str) -> Result<Vec<Card>, ParserError> {
         let mut cards = Vec::new();
         let mut state = State::Initial;
         let lines: Vec<&str> = text.lines().collect();
@@ -151,14 +184,18 @@ impl Parser {
         line: Line,
         line_num: usize,
         cards: &mut Vec<Card>,
-    ) -> Fallible<State> {
+    ) -> Result<State, ParserError> {
         match state {
             State::Initial => match line {
                 Line::StartQuestion(text) => Ok(State::ReadingQuestion {
                     question: text,
                     start_line: line_num,
                 }),
-                Line::StartAnswer(_) => fail("Answer without question."),
+                Line::StartAnswer(_) => Err(ParserError::new(
+                    "Found answer tag without a question.",
+                    self.file_path.clone(),
+                    line_num,
+                )),
                 Line::StartCloze(text) => Ok(State::ReadingCloze {
                     text,
                     start_line: line_num,
@@ -169,13 +206,21 @@ impl Parser {
                 question,
                 start_line,
             } => match line {
-                Line::StartQuestion(_) => fail("New question without answer."),
+                Line::StartQuestion(_) => Err(ParserError::new(
+                    "New question without answer.",
+                    self.file_path.clone(),
+                    line_num,
+                )),
                 Line::StartAnswer(text) => Ok(State::ReadingAnswer {
                     question,
                     answer: text,
                     start_line,
                 }),
-                Line::StartCloze(_) => fail("Started a cloze card inside a question card."),
+                Line::StartCloze(_) => Err(ParserError::new(
+                    "Found cloze tag while reading a question.",
+                    self.file_path.clone(),
+                    line_num,
+                )),
                 Line::Text(text) => Ok(State::ReadingQuestion {
                     question: format!("{question}\n{text}"),
                     start_line,
@@ -202,7 +247,11 @@ impl Parser {
                             start_line: line_num,
                         })
                     }
-                    Line::StartAnswer(_) => fail("New answer without question."),
+                    Line::StartAnswer(_) => Err(ParserError::new(
+                        "Found answer tag while reading an answer.",
+                        self.file_path.clone(),
+                        line_num,
+                    )),
                     Line::StartCloze(text) => {
                         // Finalize the previous card.
                         let card = Card::new(
@@ -236,7 +285,11 @@ impl Parser {
                             start_line: line_num,
                         })
                     }
-                    Line::StartAnswer(_) => fail("Found answer tag while reading a cloze card."),
+                    Line::StartAnswer(_) => Err(ParserError::new(
+                        "Found answer tag while reading a cloze card.",
+                        self.file_path.clone(),
+                        line_num,
+                    )),
                     Line::StartCloze(new_text) => {
                         // Finalize the previous card.
                         cards.extend(self.parse_cloze_cards(text, start_line, line_num)?);
@@ -255,10 +308,19 @@ impl Parser {
         }
     }
 
-    fn finalize(&self, state: State, last_line: usize, cards: &mut Vec<Card>) -> Fallible<()> {
+    fn finalize(
+        &self,
+        state: State,
+        last_line: usize,
+        cards: &mut Vec<Card>,
+    ) -> Result<(), ParserError> {
         match state {
             State::Initial => Ok(()),
-            State::ReadingQuestion { .. } => fail("Unfinished question without answer at EOF."),
+            State::ReadingQuestion { .. } => Err(ParserError::new(
+                "File ended while reading a question without answer.",
+                self.file_path.clone(),
+                last_line,
+            )),
             State::ReadingAnswer {
                 question,
                 answer,
@@ -287,7 +349,7 @@ impl Parser {
         text: String,
         start_line: usize,
         end_line: usize,
-    ) -> Fallible<Vec<Card>> {
+    ) -> Result<Vec<Card>, ParserError> {
         let text = text.trim();
         let mut cards = Vec::new();
 
@@ -318,7 +380,16 @@ impl Parser {
                     clean_text.push(c);
                 }
             }
-            String::from_utf8(clean_text)?
+            match String::from_utf8(clean_text) {
+                Ok(s) => s,
+                Err(_) => {
+                    return Err(ParserError::new(
+                        "Cloze card contains invalid UTF-8.",
+                        self.file_path.clone(),
+                        start_line,
+                    ));
+                }
+            }
         };
 
         let mut start = None;
@@ -357,7 +428,11 @@ impl Parser {
         }
 
         if cards.is_empty() {
-            fail("Cloze card must have at least one deletion.")
+            Err(ParserError::new(
+                "Cloze card must contain at least one cloze deletion.",
+                self.file_path.clone(),
+                start_line,
+            ))
         } else {
             Ok(cards)
         }
@@ -372,7 +447,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_empty_string() -> Fallible<()> {
+    fn test_empty_string() -> Result<(), ParserError> {
         let input = "";
         let parser = make_test_parser();
         let cards = parser.parse(input)?;
@@ -381,7 +456,7 @@ mod tests {
     }
 
     #[test]
-    fn test_whitespace_string() -> Fallible<()> {
+    fn test_whitespace_string() -> Result<(), ParserError> {
         let input = "\n\n\n";
         let parser = make_test_parser();
         let cards = parser.parse(input)?;
@@ -390,7 +465,7 @@ mod tests {
     }
 
     #[test]
-    fn test_basic_card() -> Fallible<()> {
+    fn test_basic_card() -> Result<(), ParserError> {
         let input = "Q: What is Rust?\nA: A systems programming language.";
         let parser = make_test_parser();
         let cards = parser.parse(input)?;
@@ -406,7 +481,7 @@ mod tests {
     }
 
     #[test]
-    fn test_multiline_qa() -> Fallible<()> {
+    fn test_multiline_qa() -> Result<(), ParserError> {
         let input = "Q: foo\nbaz\nbaz\nA: FOO\nBAR\nBAZ";
         let parser = make_test_parser();
         let cards = parser.parse(input)?;
@@ -423,7 +498,7 @@ mod tests {
     }
 
     #[test]
-    fn test_two_questions() -> Fallible<()> {
+    fn test_two_questions() -> Result<(), ParserError> {
         let input = "Q: foo\nA: bar\n\nQ: baz\nA: quux\n\n";
         let parser = make_test_parser();
         let cards = parser.parse(input)?;
@@ -446,7 +521,7 @@ mod tests {
     }
 
     #[test]
-    fn test_cloze_followed_by_question() -> Fallible<()> {
+    fn test_cloze_followed_by_question() -> Result<(), ParserError> {
         let input = "C: [foo]\nQ: Question\nA: Answer";
         let parser = make_test_parser();
         let cards = parser.parse(input)?;
@@ -463,7 +538,7 @@ mod tests {
     }
 
     #[test]
-    fn test_cloze_single() -> Fallible<()> {
+    fn test_cloze_single() -> Result<(), ParserError> {
         let input = "C: Foo [bar] baz.";
         let parser = make_test_parser();
         let cards = parser.parse(input)?;
@@ -473,7 +548,7 @@ mod tests {
     }
 
     #[test]
-    fn test_cloze_multiple() -> Fallible<()> {
+    fn test_cloze_multiple() -> Result<(), ParserError> {
         let input = "C: Foo [bar] baz [quux].";
         let parser = make_test_parser();
         let cards = parser.parse(input)?;
@@ -483,7 +558,7 @@ mod tests {
     }
 
     #[test]
-    fn test_cloze_with_image() -> Fallible<()> {
+    fn test_cloze_with_image() -> Result<(), ParserError> {
         let input = "C: Foo [bar] ![](image.jpg) [quux].";
         let parser = make_test_parser();
         let cards = parser.parse(input)?;
@@ -493,7 +568,7 @@ mod tests {
     }
 
     #[test]
-    fn test_multi_line_cloze() -> Fallible<()> {
+    fn test_multi_line_cloze() -> Result<(), ParserError> {
         let input = "C: [foo]\n[bar]\nbaz.";
         let parser = make_test_parser();
         let cards = parser.parse(input)?;
@@ -503,7 +578,7 @@ mod tests {
     }
 
     #[test]
-    fn test_two_clozes() -> Fallible<()> {
+    fn test_two_clozes() -> Result<(), ParserError> {
         let input = "C: [foo]\nC: [bar]";
         let parser = make_test_parser();
         let cards = parser.parse(input)?;
@@ -514,7 +589,7 @@ mod tests {
     }
 
     #[test]
-    fn test_question_without_answer() -> Fallible<()> {
+    fn test_question_without_answer() -> Result<(), ParserError> {
         let input = "Q: Question without answer";
         let parser = make_test_parser();
         let result = parser.parse(input);
@@ -523,7 +598,7 @@ mod tests {
     }
 
     #[test]
-    fn test_answer_without_question() -> Fallible<()> {
+    fn test_answer_without_question() -> Result<(), ParserError> {
         let input = "A: Answer without question";
         let parser = make_test_parser();
         let result = parser.parse(input);
@@ -532,7 +607,7 @@ mod tests {
     }
 
     #[test]
-    fn test_question_followed_by_cloze() -> Fallible<()> {
+    fn test_question_followed_by_cloze() -> Result<(), ParserError> {
         let input = "Q: Question\nC: Cloze";
         let parser = make_test_parser();
         let result = parser.parse(input);
@@ -541,7 +616,7 @@ mod tests {
     }
 
     #[test]
-    fn test_question_followed_by_question() -> Fallible<()> {
+    fn test_question_followed_by_question() -> Result<(), ParserError> {
         let input = "Q: Question\nQ: Another";
         let parser = make_test_parser();
         let result = parser.parse(input);
@@ -550,7 +625,7 @@ mod tests {
     }
 
     #[test]
-    fn test_multiple_answers() -> Fallible<()> {
+    fn test_multiple_answers() -> Result<(), ParserError> {
         let input = "Q: Question\nA: Answer\nA: Another answer";
         let parser = make_test_parser();
         let result = parser.parse(input);
@@ -559,7 +634,7 @@ mod tests {
     }
 
     #[test]
-    fn test_cloze_followed_by_answer() -> Fallible<()> {
+    fn test_cloze_followed_by_answer() -> Result<(), ParserError> {
         let input = "C: Cloze\nA: Answer";
         let parser = make_test_parser();
         let result = parser.parse(input);
@@ -568,7 +643,7 @@ mod tests {
     }
 
     #[test]
-    fn test_cloze_without_deletions() -> Fallible<()> {
+    fn test_cloze_without_deletions() -> Result<(), ParserError> {
         let input = "C: Cloze";
         let parser = make_test_parser();
         let result = parser.parse(input);
@@ -577,7 +652,7 @@ mod tests {
     }
 
     #[test]
-    fn test_cloze_with_initial_blank_line() -> Fallible<()> {
+    fn test_cloze_with_initial_blank_line() -> Result<(), ParserError> {
         let input = "C:\nBuild something people want in Lisp.\n\n— [Paul Graham], [_Hackers and Painters_]\n\n";
         let parser = make_test_parser();
         let cards = parser.parse(input)?;
@@ -601,7 +676,7 @@ mod tests {
     }
 
     #[test]
-    fn test_identical_basic_cards() -> Fallible<()> {
+    fn test_identical_basic_cards() -> Result<(), ParserError> {
         let input = "Q: foo\nA: bar\n\nQ: foo\nA: bar\n\n";
         let parser = make_test_parser();
         let cards = parser.parse(input)?;
@@ -610,7 +685,7 @@ mod tests {
     }
 
     #[test]
-    fn test_identical_cloze_cards() -> Fallible<()> {
+    fn test_identical_cloze_cards() -> Result<(), ParserError> {
         let input = "C: foo [bar]\n\nC: foo [bar]";
         let parser = make_test_parser();
         let cards = parser.parse(input)?;
@@ -622,11 +697,11 @@ mod tests {
     fn test_identical_cards_across_files() -> Fallible<()> {
         let directory = temp_dir();
         let directory = directory.join("identical_cards_test");
-        create_dir_all(&directory)?;
+        create_dir_all(&directory).expect("Failed to create test directory");
         let file1 = directory.join("file1.md");
         let file2 = directory.join("file2.md");
-        std::fs::write(&file1, "Q: foo\nA: bar")?;
-        std::fs::write(&file2, "Q: foo\nA: bar")?;
+        std::fs::write(&file1, "Q: foo\nA: bar").expect("Failed to write test file");
+        std::fs::write(&file2, "Q: foo\nA: bar").expect("Failed to write test file");
         let deck = parse_deck(&directory)?;
         assert_eq!(deck.len(), 1);
         Ok(())
