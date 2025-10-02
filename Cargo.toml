@@ -21,6 +21,7 @@ tokio = { version = "1", features = ["rt-multi-thread", "fs"] }
 walkdir = "2"
 
 [dev-dependencies]
+portpicker = "0.1.1"
 reqwest = "0.12.23"
 serial_test = "3.2.0"
 

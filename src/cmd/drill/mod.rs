@@ -25,6 +25,7 @@ mod tests {
     use std::path::PathBuf;
     use std::time::Duration;
 
+    use portpicker::pick_unused_port;
     use reqwest::StatusCode;
     use serial_test::serial;
     use tokio::fs::remove_file;
@@ -38,7 +39,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_start_server_on_non_existent_directory() -> Fallible<()> {
-        let port = 8000;
+        let port = pick_unused_port().unwrap();
         let session_started_at = Timestamp::now();
         let result = start_server(
             Some("./derpherp".to_string()),
