@@ -32,7 +32,7 @@ mod tests {
     use tokio::spawn;
     use tokio::time::sleep;
 
-    use crate::drill::server::start_server;
+    use crate::cmd::drill::server::start_server;
     use crate::error::Fallible;
     use crate::types::timestamp::Timestamp;
 

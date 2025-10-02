@@ -23,10 +23,10 @@ use tokio::net::TcpStream;
 use tokio::spawn;
 use tokio::time::sleep;
 
-use crate::check::check_deck;
-use crate::drill::server::start_server;
+use crate::cmd::check::check_deck;
+use crate::cmd::drill::server::start_server;
+use crate::cmd::stats::print_deck_stats;
 use crate::error::Fallible;
-use crate::stats::print_deck_stats;
 use crate::types::timestamp::Timestamp;
 
 #[derive(Parser)]

@@ -12,27 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-mod cli;
-mod cmd;
-mod db;
-mod error;
-mod fsrs;
-mod markdown;
-mod parser;
-mod types;
-
-use std::process::ExitCode;
-
-use crate::cli::entrypoint;
-
-#[tokio::main]
-async fn main() -> ExitCode {
-    env_logger::init();
-    match entrypoint().await {
-        Ok(_) => ExitCode::SUCCESS,
-        Err(e) => {
-            eprintln!("hashcards: {e}");
-            ExitCode::FAILURE
-        }
-    }
-}
+pub mod check;
+pub mod drill;
+pub mod stats;

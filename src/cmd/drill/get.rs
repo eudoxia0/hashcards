@@ -18,9 +18,9 @@ use axum::response::Html;
 use maud::Markup;
 use maud::html;
 
-use crate::drill::state::MutableState;
-use crate::drill::state::ServerState;
-use crate::drill::template::page_template;
+use crate::cmd::drill::state::MutableState;
+use crate::cmd::drill::state::ServerState;
+use crate::cmd::drill::template::page_template;
 use crate::error::Fallible;
 use crate::types::card::Card;
 use crate::types::card_type::CardType;

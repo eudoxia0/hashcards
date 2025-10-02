@@ -31,7 +31,7 @@ pub fn check_deck(directory: &PathBuf) -> Fallible<()> {
 mod tests {
     use std::path::PathBuf;
 
-    use crate::check::check_deck;
+    use super::check_deck;
 
     #[test]
     fn test_non_existent_directory() {
