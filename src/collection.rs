@@ -24,14 +24,14 @@ use crate::error::fail;
 use crate::parser::parse_deck;
 use crate::types::card::Card;
 
-pub struct Deck {
+pub struct Collection {
     pub directory: PathBuf,
     pub db: Database,
     pub cards: Vec<Card>,
     pub macros: Vec<(String, String)>,
 }
 
-impl Deck {
+impl Collection {
     pub fn new(directory: Option<String>) -> Fallible<Self> {
         let directory: PathBuf = match directory {
             Some(dir) => PathBuf::from(dir),

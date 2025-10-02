@@ -18,7 +18,7 @@ use std::fmt::Formatter;
 use clap::ValueEnum;
 use serde::Serialize;
 
-use crate::deck::Deck;
+use crate::collection::Collection;
 use crate::error::Fallible;
 use crate::types::timestamp::Timestamp;
 
@@ -39,7 +39,7 @@ impl Display for StatsFormat {
     }
 }
 
-pub fn print_deck_stats(directory: Option<String>, format: StatsFormat) -> Fallible<()> {
+pub fn print_stats(directory: Option<String>, format: StatsFormat) -> Fallible<()> {
     let stats = get_stats(directory)?;
     // Print.
     match format {
@@ -64,13 +64,13 @@ pub struct Stats {
 }
 
 fn get_stats(directory: Option<String>) -> Fallible<Stats> {
-    let deck = Deck::new(directory)?;
+    let coll = Collection::new(directory)?;
     let now = Timestamp::now();
     let stats = Stats {
-        cards_in_deck_count: deck.cards.len(),
-        cards_in_db_count: deck.db.card_count()?,
-        tex_macro_count: deck.macros.len(),
-        today_review_count: deck.db.today_review_count(now)?,
+        cards_in_deck_count: coll.cards.len(),
+        cards_in_db_count: coll.db.card_count()?,
+        tex_macro_count: coll.macros.len(),
+        today_review_count: coll.db.today_review_count(now)?,
     };
     Ok(stats)
 }

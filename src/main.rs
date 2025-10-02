@@ -14,8 +14,8 @@
 
 mod cli;
 mod cmd;
+mod collection;
 mod db;
-mod deck;
 mod error;
 mod fsrs;
 #[cfg(test)]

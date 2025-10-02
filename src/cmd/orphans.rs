@@ -14,13 +14,13 @@
 
 use std::collections::HashSet;
 
-use crate::deck::Deck;
+use crate::collection::Collection;
 use crate::error::Fallible;
 use crate::types::card_hash::CardHash;
 
 pub fn list_orphans(directory: Option<String>) -> Fallible<()> {
-    let deck = Deck::new(directory)?;
-    let orphans: Vec<CardHash> = get_orphans(&deck)?;
+    let coll = Collection::new(directory)?;
+    let orphans: Vec<CardHash> = get_orphans(&coll)?;
     // Print.
     for hash in orphans {
         println!("{}", hash);
@@ -29,27 +29,27 @@ pub fn list_orphans(directory: Option<String>) -> Fallible<()> {
 }
 
 pub fn delete_orphans(directory: Option<String>) -> Fallible<()> {
-    let mut deck = Deck::new(directory)?;
-    let orphans: Vec<CardHash> = get_orphans(&deck)?;
+    let mut coll = Collection::new(directory)?;
+    let orphans: Vec<CardHash> = get_orphans(&coll)?;
     for hash in &orphans {
-        deck.db.delete_card(hash)?;
+        coll.db.delete_card(hash)?;
         println!("{}", hash);
     }
     Ok(())
 }
 
-fn get_orphans(deck: &Deck) -> Fallible<Vec<CardHash>> {
+fn get_orphans(coll: &Collection) -> Fallible<Vec<CardHash>> {
     // Collect hashes.
-    let db_hashes: HashSet<CardHash> = deck.db.card_hashes()?;
-    let deck_hashes: HashSet<CardHash> = {
+    let db_hashes: HashSet<CardHash> = coll.db.card_hashes()?;
+    let coll_hashes: HashSet<CardHash> = {
         let mut hashes = HashSet::new();
-        for card in deck.cards.iter() {
+        for card in coll.cards.iter() {
             hashes.insert(card.hash());
         }
         hashes
     };
     // If a card is in the database, but not in the deck, it is an orphan.
-    let mut orphans: Vec<CardHash> = db_hashes.difference(&deck_hashes).cloned().collect();
+    let mut orphans: Vec<CardHash> = db_hashes.difference(&coll_hashes).cloned().collect();
     // Sort the orphans for consistent output.
     orphans.sort();
     Ok(orphans)

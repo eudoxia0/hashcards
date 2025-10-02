@@ -18,12 +18,12 @@ use clap::Parser;
 use clap::Subcommand;
 use tokio::spawn;
 
-use crate::cmd::check::check_deck;
+use crate::cmd::check::check_collection;
 use crate::cmd::drill::server::start_server;
 use crate::cmd::orphans::delete_orphans;
 use crate::cmd::orphans::list_orphans;
 use crate::cmd::stats::StatsFormat;
-use crate::cmd::stats::print_deck_stats;
+use crate::cmd::stats::print_stats;
 use crate::error::Fallible;
 use crate::types::timestamp::Timestamp;
 use crate::utils::wait_for_server;
@@ -33,7 +33,7 @@ use crate::utils::wait_for_server;
 enum Command {
     /// Drill cards through a web interface.
     Drill {
-        /// Path to the deck directory. By default, the current working directory is used.
+        /// Path to the collection directory. By default, the current working directory is used.
         directory: Option<String>,
         /// Maximum number of cards to drill in a session. By default, all cards due today are drilled.
         #[arg(long)]
@@ -45,14 +45,14 @@ enum Command {
         #[arg(long, default_value_t = 8000)]
         port: u16,
     },
-    /// Check the integrity of a deck.
+    /// Check the integrity of a collection.
     Check {
-        /// Path to the deck directory. By default, the current working directory is used.
+        /// Path to the collection directory. By default, the current working directory is used.
         directory: Option<String>,
     },
-    /// Print deck statistics.
+    /// Print collection statistics.
     Stats {
-        /// Path to the deck directory. By default, the current working directory is used.
+        /// Path to the collection directory. By default, the current working directory is used.
         directory: Option<String>,
         /// Which output format to use.
         #[arg(long, default_value_t = StatsFormat::Html)]
@@ -67,14 +67,14 @@ enum Command {
 
 #[derive(Subcommand)]
 enum OrphanCommand {
-    /// List the hashes of all orphan cards in the deck.
+    /// List the hashes of all orphan cards in the collection.
     List {
-        /// Path to the deck directory. By default, the current working directory is used.
+        /// Path to the collection directory. By default, the current working directory is used.
         directory: Option<String>,
     },
     /// Remove all orphan cards from the database.
     Delete {
-        /// Path to the deck directory. By default, the current working directory is used.
+        /// Path to the collection directory. By default, the current working directory is used.
         directory: Option<String>,
     },
 }
@@ -109,8 +109,8 @@ pub async fn entrypoint() -> Fallible<()> {
             )
             .await
         }
-        Command::Check { directory } => check_deck(directory),
-        Command::Stats { directory, format } => print_deck_stats(directory, format),
+        Command::Check { directory } => check_collection(directory),
+        Command::Stats { directory, format } => print_stats(directory, format),
         Command::Orphans { command } => match command {
             OrphanCommand::List { directory } => list_orphans(directory),
             OrphanCommand::Delete { directory } => delete_orphans(directory),
