@@ -15,6 +15,7 @@
 use std::env::current_dir;
 use std::fs::read_to_string;
 use std::path::PathBuf;
+use std::time::Instant;
 
 use crate::db::Database;
 use crate::error::ErrorReport;
@@ -24,7 +25,6 @@ use crate::parser::parse_deck;
 use crate::types::card::Card;
 
 pub struct Deck {
-    #[allow(dead_code)]
     pub directory: PathBuf,
     pub db: Database,
     pub cards: Vec<Card>,
@@ -63,7 +63,15 @@ impl Deck {
             macros
         };
 
-        let cards = parse_deck(&directory)?;
+        let cards = {
+            log::debug!("Loading deck...");
+            let start = Instant::now();
+            let cards = parse_deck(&directory)?;
+            let end = Instant::now();
+            let duration = end.duration_since(start).as_millis();
+            log::debug!("Deck loaded in {duration}ms.");
+            cards
+        };
 
         Ok(Self {
             directory,

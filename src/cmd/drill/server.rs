@@ -16,7 +16,6 @@ use std::collections::HashSet;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::Mutex;
-use std::time::Instant;
 
 use axum::Router;
 use axum::extract::Path;
@@ -36,56 +35,32 @@ use crate::cmd::drill::state::MutableState;
 use crate::cmd::drill::state::ServerState;
 use crate::db::Database;
 use crate::db::Stage;
-use crate::error::ErrorReport;
+use crate::deck::Deck;
 use crate::error::Fallible;
-use crate::error::fail;
-use crate::parser::parse_deck;
 use crate::types::card::Card;
 use crate::types::card_hash::CardHash;
 use crate::types::timestamp::Timestamp;
 
 pub async fn start_server(
-    directory: PathBuf,
+    directory: Option<String>,
     session_started_at: Timestamp,
     card_limit: Option<usize>,
     new_card_limit: Option<usize>,
 ) -> Fallible<()> {
+    let Deck {
+        directory,
+        db,
+        cards,
+        macros,
+    } = Deck::new(directory)?;
+
     let today = session_started_at.local_date();
-
-    if !directory.exists() {
-        return fail("directory does not exist.");
-    }
-
-    let db_path = directory.join("db.sqlite3");
-    let db = Database::new(
-        db_path
-            .to_str()
-            .ok_or_else(|| ErrorReport::new("invalid path"))?,
-    )?;
-
-    let mut macros = Vec::new();
-    let macros_path = directory.join("macros.tex");
-    if macros_path.exists() {
-        let content = std::fs::read_to_string(macros_path)?;
-        for line in content.lines() {
-            if let Some((name, definition)) = line.split_once(' ') {
-                macros.push((name.to_string(), definition.to_string()));
-            }
-        }
-    }
-
-    log::debug!("Loading deck...");
-    let start = Instant::now();
-    let all_cards = parse_deck(&directory)?;
-    let end = Instant::now();
-    let duration = end.duration_since(start).as_millis();
-    log::debug!("Deck loaded in {duration}ms.");
 
     let db_hashes: HashSet<CardHash> = db.card_hashes()?;
 
     // If a card is in the directory, but not in the DB, it is new. Add it to
     // the database.
-    for card in all_cards.iter() {
+    for card in cards.iter() {
         if !db_hashes.contains(&card.hash()) {
             db.add_card(card, session_started_at)?;
         }
@@ -93,7 +68,7 @@ pub async fn start_server(
 
     // Find cards due today.
     let due_today = db.due_today(today)?;
-    let due_today: Vec<Card> = all_cards
+    let due_today: Vec<Card> = cards
         .into_iter()
         .filter(|card| due_today.contains(&card.hash()))
         .collect::<Vec<_>>();

@@ -38,9 +38,14 @@ mod tests {
 
     #[tokio::test]
     async fn test_start_server_on_non_existent_directory() -> Fallible<()> {
-        let directory = PathBuf::from("./derpherp");
         let session_started_at = Timestamp::now();
-        let result = start_server(directory, session_started_at, None, None).await;
+        let result = start_server(
+            Some("./derpherp".to_string()),
+            session_started_at,
+            None,
+            None,
+        )
+        .await;
         assert!(result.is_err());
         let err = result.err().unwrap();
         assert_eq!(err.to_string(), "error: directory does not exist.");
@@ -53,7 +58,8 @@ mod tests {
         let dir = dir.join("empty_directory");
         create_dir_all(&dir)?;
         let session_started_at = Timestamp::now();
-        start_server(dir, session_started_at, None, None).await?;
+        let dir = dir.canonicalize().unwrap().display().to_string();
+        start_server(Some(dir), session_started_at, None, None).await?;
         Ok(())
     }
 
@@ -67,7 +73,8 @@ mod tests {
         }
 
         let session_started_at = Timestamp::now();
-        spawn(async move { start_server(directory, session_started_at, None, None).await });
+        let directory = directory.display().to_string();
+        spawn(async move { start_server(Some(directory), session_started_at, None, None).await });
         loop {
             if let Ok(stream) = TcpStream::connect("0.0.0.0:8000").await {
                 drop(stream);
@@ -169,7 +176,8 @@ mod tests {
 
         // Start the server
         let session_started_at = Timestamp::now();
-        spawn(async move { start_server(directory, session_started_at, None, None).await });
+        let directory = directory.display().to_string();
+        spawn(async move { start_server(Some(directory), session_started_at, None, None).await });
         loop {
             if let Ok(stream) = TcpStream::connect("0.0.0.0:8000").await {
                 drop(stream);
@@ -218,7 +226,8 @@ mod tests {
 
         // Start the server
         let session_started_at = Timestamp::now();
-        spawn(async move { start_server(directory, session_started_at, None, None).await });
+        let directory = directory.display().to_string();
+        spawn(async move { start_server(Some(directory), session_started_at, None, None).await });
         loop {
             if let Ok(stream) = TcpStream::connect("0.0.0.0:8000").await {
                 drop(stream);
@@ -249,7 +258,8 @@ mod tests {
 
         // Start the server
         let session_started_at = Timestamp::now();
-        spawn(async move { start_server(directory, session_started_at, None, None).await });
+        let directory = directory.display().to_string();
+        spawn(async move { start_server(Some(directory), session_started_at, None, None).await });
         loop {
             if let Ok(stream) = TcpStream::connect("0.0.0.0:8000").await {
                 drop(stream);
@@ -280,7 +290,8 @@ mod tests {
 
         // Start the server
         let session_started_at = Timestamp::now();
-        spawn(async move { start_server(directory, session_started_at, None, None).await });
+        let directory = directory.display().to_string();
+        spawn(async move { start_server(Some(directory), session_started_at, None, None).await });
         loop {
             if let Ok(stream) = TcpStream::connect("0.0.0.0:8000").await {
                 drop(stream);
@@ -329,7 +340,8 @@ mod tests {
 
         // Start the server
         let session_started_at = Timestamp::now();
-        spawn(async move { start_server(directory, session_started_at, None, None).await });
+        let directory = directory.display().to_string();
+        spawn(async move { start_server(Some(directory), session_started_at, None, None).await });
         loop {
             if let Ok(stream) = TcpStream::connect("0.0.0.0:8000").await {
                 drop(stream);

@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::path::PathBuf;
 use std::time::Duration;
 
 use clap::Parser;
@@ -72,12 +71,6 @@ pub async fn entrypoint() -> Fallible<()> {
             card_limit,
             new_card_limit,
         } => {
-            let directory: PathBuf = match directory {
-                Some(dir) => PathBuf::from(dir),
-                None => std::env::current_dir()?,
-            }
-            .canonicalize()?;
-
             // Start a separate task to open the browser once the server is up.
             spawn(async move {
                 loop {
