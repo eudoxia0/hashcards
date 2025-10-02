@@ -12,17 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::path::PathBuf;
-
+use crate::deck::Deck;
 use crate::error::Fallible;
-use crate::error::fail;
-use crate::parser::parse_deck;
 
-pub fn check_deck(directory: &PathBuf) -> Fallible<()> {
-    if !directory.exists() {
-        return fail("directory does not exist.");
-    }
-    let _ = parse_deck(directory)?;
+pub fn check_deck(directory: Option<String>) -> Fallible<()> {
+    let _ = Deck::new(directory)?;
     println!("ok");
     Ok(())
 }
@@ -35,19 +29,27 @@ mod tests {
 
     #[test]
     fn test_non_existent_directory() {
-        let directory = PathBuf::from("./derpherp");
-        assert!(check_deck(&directory).is_err());
+        let directory = get_path_str("./derpherp");
+        assert!(check_deck(Some(directory)).is_err());
     }
 
     #[test]
     fn test_directory() {
-        let directory = PathBuf::from("./test");
-        assert!(check_deck(&directory).is_ok());
+        let directory = get_path_str("./test");
+        assert!(check_deck(Some(directory)).is_ok());
     }
 
     #[test]
     fn test_example_directory() {
-        let directory = PathBuf::from("./example");
-        assert!(check_deck(&directory).is_ok());
+        let directory = get_path_str("./example");
+        assert!(check_deck(Some(directory)).is_ok());
+    }
+
+    fn get_path_str(path: &str) -> String {
+        PathBuf::from(path)
+            .canonicalize()
+            .unwrap()
+            .display()
+            .to_string()
     }
 }

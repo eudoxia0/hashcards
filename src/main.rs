@@ -15,6 +15,7 @@
 mod cli;
 mod cmd;
 mod db;
+mod deck;
 mod error;
 mod fsrs;
 mod markdown;

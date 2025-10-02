@@ -92,39 +92,11 @@ pub async fn entrypoint() -> Fallible<()> {
 
             start_server(directory, Timestamp::now(), card_limit, new_card_limit).await
         }
-        Command::Check { directory } => {
-            let directory: PathBuf = match directory {
-                Some(dir) => PathBuf::from(dir),
-                None => std::env::current_dir()?,
-            }
-            .canonicalize()?;
-            check_deck(&directory)
-        }
-        Command::Stats { directory, format } => {
-            let directory: PathBuf = match directory {
-                Some(dir) => PathBuf::from(dir),
-                None => std::env::current_dir()?,
-            }
-            .canonicalize()?;
-            print_deck_stats(&directory, format)
-        }
+        Command::Check { directory } => check_deck(directory),
+        Command::Stats { directory, format } => print_deck_stats(directory, format),
         Command::Orphans { command } => match command {
-            OrphanCommand::List { directory } => {
-                let directory: PathBuf = match directory {
-                    Some(dir) => PathBuf::from(dir),
-                    None => std::env::current_dir()?,
-                }
-                .canonicalize()?;
-                list_orphans(&directory)
-            }
-            OrphanCommand::Delete { directory } => {
-                let directory: PathBuf = match directory {
-                    Some(dir) => PathBuf::from(dir),
-                    None => std::env::current_dir()?,
-                }
-                .canonicalize()?;
-                delete_orphans(&directory)
-            }
+            OrphanCommand::List { directory } => list_orphans(directory),
+            OrphanCommand::Delete { directory } => delete_orphans(directory),
         },
     }
 }

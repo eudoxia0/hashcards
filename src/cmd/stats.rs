@@ -14,16 +14,12 @@
 
 use std::fmt::Display;
 use std::fmt::Formatter;
-use std::path::PathBuf;
 
 use clap::ValueEnum;
 use serde::Serialize;
 
-use crate::db::Database;
-use crate::error::ErrorReport;
+use crate::deck::Deck;
 use crate::error::Fallible;
-use crate::error::fail;
-use crate::parser::parse_deck;
 
 #[derive(ValueEnum, Clone)]
 pub enum StatsFormat {
@@ -42,37 +38,15 @@ impl Display for StatsFormat {
     }
 }
 
-pub fn print_deck_stats(directory: &PathBuf, format: StatsFormat) -> Fallible<()> {
-    // Load everything.
-    if !directory.exists() {
-        return fail("directory does not exist.");
-    }
-    let deck = parse_deck(directory)?;
-
-    let db_path = directory.join("db.sqlite3");
-    let db = Database::new(
-        db_path
-            .to_str()
-            .ok_or_else(|| ErrorReport::new("invalid path"))?,
-    )?;
-
-    let mut macros = Vec::new();
-    let macros_path = directory.join("macros.tex");
-    if macros_path.exists() {
-        let content = std::fs::read_to_string(macros_path)?;
-        for line in content.lines() {
-            if let Some((name, definition)) = line.split_once(' ') {
-                macros.push((name.to_string(), definition.to_string()));
-            }
-        }
-    }
+pub fn print_deck_stats(directory: Option<String>, format: StatsFormat) -> Fallible<()> {
+    let deck = Deck::new(directory)?;
 
     // Construct stats.
     let stats = Stats {
-        cards_in_deck_count: deck.len(),
-        cards_in_db_count: db.card_count()?,
-        tex_macro_count: macros.len(),
-        today_review_count: db.today_review_count()?,
+        cards_in_deck_count: deck.cards.len(),
+        cards_in_db_count: deck.db.card_count()?,
+        tex_macro_count: deck.macros.len(),
+        today_review_count: deck.db.today_review_count()?,
     };
 
     // Print.

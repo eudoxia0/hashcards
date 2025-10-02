@@ -13,15 +13,11 @@
 // limitations under the License.
 
 use std::collections::HashSet;
-use std::path::PathBuf;
 
 use clap::Subcommand;
 
-use crate::db::Database;
-use crate::error::ErrorReport;
+use crate::deck::Deck;
 use crate::error::Fallible;
-use crate::error::fail;
-use crate::parser::parse_deck;
 use crate::types::card_hash::CardHash;
 
 #[derive(Subcommand)]
@@ -38,8 +34,9 @@ pub enum OrphanCommand {
     },
 }
 
-pub fn list_orphans(directory: &PathBuf) -> Fallible<()> {
-    let orphans: Vec<CardHash> = get_orphans(directory)?;
+pub fn list_orphans(directory: Option<String>) -> Fallible<()> {
+    let deck = Deck::new(directory)?;
+    let orphans: Vec<CardHash> = get_orphans(&deck)?;
     // Print.
     for hash in orphans {
         println!("{}", hash);
@@ -47,41 +44,22 @@ pub fn list_orphans(directory: &PathBuf) -> Fallible<()> {
     Ok(())
 }
 
-pub fn delete_orphans(directory: &PathBuf) -> Fallible<()> {
-    let orphans: Vec<CardHash> = get_orphans(directory)?;
-    if orphans.is_empty() {
-        println!("No orphan cards found.");
-        return Ok(());
-    }
-    let db_path = directory.join("db.sqlite3");
-    let mut db = Database::new(
-        db_path
-            .to_str()
-            .ok_or_else(|| ErrorReport::new("invalid path"))?,
-    )?;
+pub fn delete_orphans(directory: Option<String>) -> Fallible<()> {
+    let mut deck = Deck::new(directory)?;
+    let orphans: Vec<CardHash> = get_orphans(&deck)?;
     for hash in &orphans {
-        db.delete_card(hash)?;
+        deck.db.delete_card(hash)?;
         println!("{}", hash);
     }
     Ok(())
 }
 
-fn get_orphans(directory: &PathBuf) -> Fallible<Vec<CardHash>> {
-    if !directory.exists() {
-        return fail("directory does not exist.");
-    }
-    let db_path = directory.join("db.sqlite3");
-    let db = Database::new(
-        db_path
-            .to_str()
-            .ok_or_else(|| ErrorReport::new("invalid path"))?,
-    )?;
-    let deck = parse_deck(directory)?;
+fn get_orphans(deck: &Deck) -> Fallible<Vec<CardHash>> {
     // Collect hashes.
-    let db_hashes: HashSet<CardHash> = db.card_hashes()?;
+    let db_hashes: HashSet<CardHash> = deck.db.card_hashes()?;
     let deck_hashes: HashSet<CardHash> = {
         let mut hashes = HashSet::new();
-        for card in deck {
+        for card in deck.cards.iter() {
             hashes.insert(card.hash());
         }
         hashes

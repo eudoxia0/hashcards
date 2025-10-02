@@ -26,7 +26,3 @@ A: The process of turning loose sediment into rock.
 Q: Term for: The process of turning loose sediment into rock.
 A: lithification
 ```
-
-# Deck Datatype
-
-Instead of `Vec<Card>`, use a `Deck` object where appropriate.
