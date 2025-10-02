@@ -12,10 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub mod augmented_card;
-pub mod card;
-pub mod card_hash;
-pub mod card_type;
-pub mod date;
-pub mod review;
-pub mod timestamp;
+use crate::fsrs::Difficulty;
+use crate::fsrs::Stability;
+use crate::types::card::Card;
+use crate::types::date::Date;
+
+pub struct AugmentedCard {
+    /// The card's text data from the filesystem.
+    pub card: Card,
+    /// The card's performance data from the database.
+    pub perf: CardPerformance,
+}
+
+#[derive(Clone)]
+pub struct CardPerformance {
+    pub stability: Stability,
+    pub difficulty: Difficulty,
+    pub due_date: Date,
+    pub review_count: usize,
+}

@@ -12,13 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::collections::HashMap;
 use std::collections::HashSet;
 
 use rusqlite::Connection;
 use rusqlite::Transaction;
 use rusqlite::config::DbConfig;
 
+use crate::error::ErrorReport;
 use crate::error::Fallible;
+use crate::error::fail;
+use crate::types::augmented_card::AugmentedCard;
+use crate::types::augmented_card::CardPerformance;
+use crate::types::card::Card;
 use crate::types::card_hash::CardHash;
 use crate::types::date::Date;
 use crate::types::review::Parameters;
@@ -158,6 +164,45 @@ impl Database {
         }
         tx.commit()?;
         Ok(())
+    }
+
+    /// Given a vector of cards, augment the cards using the database.
+    pub async fn augment_cards(&self, cards: Vec<Card>) -> Fallible<Vec<AugmentedCard>> {
+        let performances = self.get_card_performances().await?;
+        let mut augmented = Vec::new();
+        for card in cards.into_iter() {
+            let perf = performances.get(&card.hash()).ok_or_else(|| {
+                ErrorReport::new(format!(
+                    "No card performance data found for card with hash '{}'.",
+                    card.hash()
+                ))
+            })?;
+            let aug = AugmentedCard {
+                card,
+                perf: perf.clone(),
+            };
+            augmented.push(aug);
+        }
+        Ok(augmented)
+    }
+
+    /// Retrieve the performance data for all cards in the database.
+    async fn get_card_performances(&self) -> Fallible<HashMap<CardHash, CardPerformance>> {
+        let mut map = HashMap::new();
+        let sql = "select card_hash, stability, difficulty, due_date, review_count from cards;";
+        let mut stmt = self.conn.prepare(sql)?;
+        let mut rows = stmt.query([])?;
+        while let Some(row) = rows.next()? {
+            let card_hash: CardHash = row.get(0)?;
+            let performance = CardPerformance {
+                stability: row.get(1)?,
+                difficulty: row.get(2)?,
+                due_date: row.get(3)?,
+                review_count: row.get(4)?,
+            };
+            map.insert(card_hash, performance);
+        }
+        Ok(map)
     }
 
     /// Find the stage of the given card.
