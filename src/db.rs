@@ -177,6 +177,15 @@ impl Database {
         }
     }
 
+    /// Delete the card with the given hash, and all its reviews.
+    pub fn delete_card(&mut self, card_hash: &CardHash) -> Fallible<()> {
+        let tx = self.conn.transaction()?;
+        tx.execute("delete from reviews where card_hash = ?;", [card_hash])?;
+        tx.execute("delete from cards where card_hash = ?;", [card_hash])?;
+        tx.commit()?;
+        Ok(())
+    }
+
     /// Return the total number of cards in the database.
     pub fn card_count(&self) -> Fallible<usize> {
         let sql = "select count(*) from cards;";

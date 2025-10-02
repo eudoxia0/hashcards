@@ -15,6 +15,8 @@
 use std::collections::HashSet;
 use std::path::PathBuf;
 
+use clap::Subcommand;
+
 use crate::db::Database;
 use crate::error::ErrorReport;
 use crate::error::Fallible;
@@ -22,7 +24,49 @@ use crate::error::fail;
 use crate::parser::parse_deck;
 use crate::types::card_hash::CardHash;
 
+#[derive(Subcommand)]
+pub enum OrphanCommand {
+    /// List the hashes of all orphan cards in the deck.
+    List {
+        /// Path to the deck directory. By default, the current working directory is used.
+        directory: Option<String>,
+    },
+    /// Remove all orphan cards from the database.
+    Delete {
+        /// Path to the deck directory. By default, the current working directory is used.
+        directory: Option<String>,
+    },
+}
+
 pub fn list_orphans(directory: &PathBuf) -> Fallible<()> {
+    let orphans: Vec<CardHash> = get_orphans(directory)?;
+    // Print.
+    for hash in orphans {
+        println!("{}", hash);
+    }
+    Ok(())
+}
+
+pub fn delete_orphans(directory: &PathBuf) -> Fallible<()> {
+    let orphans: Vec<CardHash> = get_orphans(directory)?;
+    if orphans.is_empty() {
+        println!("No orphan cards found.");
+        return Ok(());
+    }
+    let db_path = directory.join("db.sqlite3");
+    let mut db = Database::new(
+        db_path
+            .to_str()
+            .ok_or_else(|| ErrorReport::new("invalid path"))?,
+    )?;
+    for hash in &orphans {
+        db.delete_card(hash)?;
+        println!("{}", hash);
+    }
+    Ok(())
+}
+
+fn get_orphans(directory: &PathBuf) -> Fallible<Vec<CardHash>> {
     if !directory.exists() {
         return fail("directory does not exist.");
     }
@@ -46,9 +90,5 @@ pub fn list_orphans(directory: &PathBuf) -> Fallible<()> {
     let mut orphans: Vec<CardHash> = db_hashes.difference(&deck_hashes).cloned().collect();
     // Sort the orphans for consistent output.
     orphans.sort();
-    // Print.
-    for hash in orphans {
-        println!("{}", hash);
-    }
-    Ok(())
+    Ok(orphans)
 }
