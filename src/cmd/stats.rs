@@ -77,21 +77,13 @@ fn get_stats(directory: Option<String>) -> Fallible<Stats> {
 
 #[cfg(test)]
 mod tests {
-    use std::fs::remove_file;
-    use std::path::PathBuf;
-
-    use serial_test::serial;
-
     use super::*;
+    use crate::helper::create_tmp_copy_of_test_directory;
 
     #[test]
-    #[serial]
-    fn test_get_stats() {
-        let db_path = PathBuf::from("./test/db.sqlite3").canonicalize().unwrap();
-        if db_path.exists() {
-            remove_file(&db_path).unwrap();
-        }
-        let stats = get_stats(Some("./test".to_string())).unwrap();
+    fn test_get_stats() -> Fallible<()> {
+        let directory = create_tmp_copy_of_test_directory()?;
+        let stats = get_stats(Some(directory)).unwrap();
         let Stats {
             cards_in_deck_count,
             cards_in_db_count,
@@ -102,5 +94,6 @@ mod tests {
         assert_eq!(cards_in_db_count, 0);
         assert_eq!(tex_macro_count, 1);
         assert_eq!(today_review_count, 0);
+        Ok(())
     }
 }

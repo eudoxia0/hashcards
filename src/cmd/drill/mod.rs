@@ -26,7 +26,6 @@ mod tests {
 
     use portpicker::pick_unused_port;
     use reqwest::StatusCode;
-    use serial_test::serial;
     use tokio::net::TcpStream;
     use tokio::spawn;
     use tokio::time::sleep;
@@ -67,7 +66,6 @@ mod tests {
     }
 
     #[tokio::test]
-    #[serial]
     async fn test_e2e() -> Fallible<()> {
         let port = pick_unused_port().unwrap();
         let directory = create_tmp_copy_of_test_directory()?;
@@ -160,7 +158,6 @@ mod tests {
     }
 
     #[tokio::test]
-    #[serial]
     async fn test_undo() -> Fallible<()> {
         let port = pick_unused_port().unwrap();
         let directory = create_tmp_copy_of_test_directory()?;
@@ -200,7 +197,6 @@ mod tests {
     }
 
     #[tokio::test]
-    #[serial]
     async fn test_undo_initial() -> Fallible<()> {
         let port = pick_unused_port().unwrap();
         let directory = create_tmp_copy_of_test_directory()?;
@@ -222,7 +218,6 @@ mod tests {
     }
 
     #[tokio::test]
-    #[serial]
     async fn test_answer_without_reveal() -> Fallible<()> {
         let port = pick_unused_port().unwrap();
         let directory = create_tmp_copy_of_test_directory()?;
@@ -244,7 +239,6 @@ mod tests {
     }
 
     #[tokio::test]
-    #[serial]
     async fn test_undo_forgetting() -> Fallible<()> {
         let port = pick_unused_port().unwrap();
         let directory = create_tmp_copy_of_test_directory()?;
@@ -284,7 +278,6 @@ mod tests {
     }
 
     #[tokio::test]
-    #[serial]
     async fn test_end() -> Fallible<()> {
         let port = pick_unused_port().unwrap();
         let directory = create_tmp_copy_of_test_directory()?;
