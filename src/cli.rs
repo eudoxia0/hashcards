@@ -12,19 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::fmt::Display;
-use std::fmt::Formatter;
 use std::path::PathBuf;
 use std::time::Duration;
 
 use clap::Parser;
-use clap::ValueEnum;
 use tokio::net::TcpStream;
 use tokio::spawn;
 use tokio::time::sleep;
 
 use crate::cmd::check::check_deck;
 use crate::cmd::drill::server::start_server;
+use crate::cmd::stats::StatsFormat;
 use crate::cmd::stats::print_deck_stats;
 use crate::error::Fallible;
 use crate::types::timestamp::Timestamp;
@@ -56,23 +54,6 @@ enum Command {
         #[arg(long, default_value_t = StatsFormat::Html)]
         format: StatsFormat,
     },
-}
-
-#[derive(ValueEnum, Clone)]
-pub enum StatsFormat {
-    /// HTML output.
-    Html,
-    /// JSON output.
-    Json,
-}
-
-impl Display for StatsFormat {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            StatsFormat::Html => write!(f, "html"),
-            StatsFormat::Json => write!(f, "json"),
-        }
-    }
 }
 
 pub async fn entrypoint() -> Fallible<()> {

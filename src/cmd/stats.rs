@@ -12,16 +12,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::fmt::Display;
+use std::fmt::Formatter;
 use std::path::PathBuf;
 
+use clap::ValueEnum;
 use serde::Serialize;
 
-use crate::cli::StatsFormat;
 use crate::db::Database;
 use crate::error::ErrorReport;
 use crate::error::Fallible;
 use crate::error::fail;
 use crate::parser::parse_deck;
+
+#[derive(ValueEnum, Clone)]
+pub enum StatsFormat {
+    /// HTML output.
+    Html,
+    /// JSON output.
+    Json,
+}
+
+impl Display for StatsFormat {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            StatsFormat::Html => write!(f, "html"),
+            StatsFormat::Json => write!(f, "json"),
+        }
+    }
+}
 
 pub fn print_deck_stats(directory: &PathBuf, format: StatsFormat) -> Fallible<()> {
     // Load everything.
