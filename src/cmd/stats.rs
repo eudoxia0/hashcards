@@ -40,17 +40,7 @@ impl Display for StatsFormat {
 }
 
 pub fn print_deck_stats(directory: Option<String>, format: StatsFormat) -> Fallible<()> {
-    let deck = Deck::new(directory)?;
-    let now = Timestamp::now();
-
-    // Construct stats.
-    let stats = Stats {
-        cards_in_deck_count: deck.cards.len(),
-        cards_in_db_count: deck.db.card_count()?,
-        tex_macro_count: deck.macros.len(),
-        today_review_count: deck.db.today_review_count(now)?,
-    };
-
+    let stats = get_stats(directory)?;
     // Print.
     match format {
         StatsFormat::Html => {
@@ -71,4 +61,36 @@ pub struct Stats {
     cards_in_db_count: usize,
     tex_macro_count: usize,
     today_review_count: usize,
+}
+
+fn get_stats(directory: Option<String>) -> Fallible<Stats> {
+    let deck = Deck::new(directory)?;
+    let now = Timestamp::now();
+    let stats = Stats {
+        cards_in_deck_count: deck.cards.len(),
+        cards_in_db_count: deck.db.card_count()?,
+        tex_macro_count: deck.macros.len(),
+        today_review_count: deck.db.today_review_count(now)?,
+    };
+    Ok(stats)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_get_stats() {
+        let stats = get_stats(Some("./test".to_string())).unwrap();
+        let Stats {
+            cards_in_deck_count,
+            cards_in_db_count,
+            tex_macro_count,
+            today_review_count,
+        } = stats;
+        assert_eq!(cards_in_deck_count, 2);
+        assert_eq!(cards_in_db_count, 2);
+        assert_eq!(tex_macro_count, 1);
+        assert_eq!(today_review_count, 0);
+    }
 }
