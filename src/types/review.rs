@@ -87,10 +87,10 @@ pub fn update_card(review: Option<ReviewRow>, grade: Grade, today: Date) -> Para
         }
         None => (initial_stability(grade), initial_difficulty(grade)),
     };
-    let interval = interval(TARGET_RECALL, stability)
-        .round()
-        .clamp(MIN_INTERVAL, MAX_INTERVAL);
-    let interval_duration = Duration::days(interval as i64);
+    let raw_interval = interval(TARGET_RECALL, stability);
+    let rounded_interval = raw_interval.round();
+    let clamped_interval = rounded_interval.clamp(MIN_INTERVAL, MAX_INTERVAL);
+    let interval_duration = Duration::days(clamped_interval as i64);
     let due_date = today + interval_duration;
     Parameters {
         stability,
