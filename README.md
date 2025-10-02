@@ -87,7 +87,7 @@ desire: this is also vanity and vexation of spirit.
 
 ## Database
 
-hashcards stores card performance data and the review history in an SQLite3 database. The file is called `db.sqlite3` and is found in the root of the card directory (i.e., the path you pass to the `drill` command).
+hashcards stores card performance data and the review history in an SQLite3 database. The file is called `hashcards.db` and is found in the root of the card directory (i.e., the path you pass to the `drill` command).
 
 The `cards` table has the following schema:
 

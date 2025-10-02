@@ -43,7 +43,7 @@ impl Deck {
             return fail("directory does not exist.");
         };
 
-        let db_path: PathBuf = directory.join("db.sqlite3");
+        let db_path: PathBuf = directory.join("hashcards.db");
         let db_path: &str = db_path
             .to_str()
             .ok_or_else(|| ErrorReport::new("invalid path"))?;

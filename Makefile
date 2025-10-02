@@ -21,7 +21,7 @@ uninstall:
 
 .PHONY: example
 example:
-	rm -f example/db.sqlite3
+	rm -f example/hashcards.db
 	RUST_LOG=debug cargo run -- drill example
 
 .PHONY: coverage

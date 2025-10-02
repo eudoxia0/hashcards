@@ -29,7 +29,7 @@ pub fn create_tmp_copy_of_test_directory() -> Fallible<String> {
         let path = entry.path();
         if path.is_file()
             && let Some(file_name) = path.file_name()
-            && file_name != "db.sqlite3"
+            && file_name != "hashcards.db"
         {
             let target_path = target.join(file_name);
             copy(&path, &target_path)?;
