@@ -171,6 +171,7 @@ mod tests {
     #[tokio::test]
     #[serial]
     async fn test_undo() -> Fallible<()> {
+        let port = 8000;
         let directory = PathBuf::from("./test").canonicalize().unwrap();
         let db_path = directory.join("db.sqlite3");
         if db_path.exists() {
@@ -181,7 +182,7 @@ mod tests {
         let session_started_at = Timestamp::now();
         let directory = directory.display().to_string();
         spawn(
-            async move { start_server(Some(directory), 8000, session_started_at, None, None).await },
+            async move { start_server(Some(directory), port, session_started_at, None, None).await },
         );
         loop {
             if let Ok(stream) = TcpStream::connect("0.0.0.0:8000").await {
@@ -223,6 +224,7 @@ mod tests {
     #[tokio::test]
     #[serial]
     async fn test_undo_initial() -> Fallible<()> {
+        let port = 8000;
         let directory = PathBuf::from("./test").canonicalize().unwrap();
         let db_path = directory.join("db.sqlite3");
         if db_path.exists() {
@@ -233,7 +235,7 @@ mod tests {
         let session_started_at = Timestamp::now();
         let directory = directory.display().to_string();
         spawn(
-            async move { start_server(Some(directory), 8000, session_started_at, None, None).await },
+            async move { start_server(Some(directory), port, session_started_at, None, None).await },
         );
         loop {
             if let Ok(stream) = TcpStream::connect("0.0.0.0:8000").await {
@@ -257,6 +259,7 @@ mod tests {
     #[tokio::test]
     #[serial]
     async fn test_answer_without_reveal() -> Fallible<()> {
+        let port = 8000;
         let directory = PathBuf::from("./test").canonicalize().unwrap();
         let db_path = directory.join("db.sqlite3");
         if db_path.exists() {
@@ -267,7 +270,7 @@ mod tests {
         let session_started_at = Timestamp::now();
         let directory = directory.display().to_string();
         spawn(
-            async move { start_server(Some(directory), 8000, session_started_at, None, None).await },
+            async move { start_server(Some(directory), port, session_started_at, None, None).await },
         );
         loop {
             if let Ok(stream) = TcpStream::connect("0.0.0.0:8000").await {
