@@ -47,6 +47,7 @@ pub async fn start_server(
     card_limit: Option<usize>,
     new_card_limit: Option<usize>,
 ) -> Fallible<()> {
+    let port = 8000;
     let Deck {
         directory,
         db,
@@ -81,7 +82,7 @@ pub async fn start_server(
     }
 
     let state = ServerState {
-        port: 8000,
+        port,
         directory,
         macros,
         total_cards: due_today.len(),
@@ -102,7 +103,7 @@ pub async fn start_server(
     let app = app.route("/image/{*path}", get(image_handler));
     let app = app.fallback(not_found_handler);
     let app = app.with_state(state);
-    let bind = "0.0.0.0:8000";
+    let bind = format!("0.0.0.0:{port}");
 
     // Start the server.
     log::debug!("Starting server on {bind}");
