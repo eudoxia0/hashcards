@@ -77,7 +77,7 @@ pub fn print_deck_stats(directory: &PathBuf, format: StatsFormat) -> Fallible<()
 
     match format {
         StatsFormat::Html => {
-            todo!()
+            eprintln!("HTML output is not implemented yet.");
         }
         StatsFormat::Json => {
             let stats_json = serde_json::to_string_pretty(&stats)?;
