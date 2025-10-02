@@ -21,7 +21,6 @@ use rusqlite::config::DbConfig;
 
 use crate::error::ErrorReport;
 use crate::error::Fallible;
-use crate::error::fail;
 use crate::types::augmented_card::AugmentedCard;
 use crate::types::augmented_card::CardPerformance;
 use crate::types::card::Card;
