@@ -12,31 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-mod cli;
-mod cmd;
-mod db;
-mod deck;
-mod error;
-mod fsrs;
-#[cfg(test)]
-mod helper;
-mod markdown;
-mod parser;
-mod types;
-mod utils;
+use std::time::Duration;
 
-use std::process::ExitCode;
+use tokio::net::TcpStream;
+use tokio::time::sleep;
 
-use crate::cli::entrypoint;
+use crate::error::Fallible;
 
-#[tokio::main]
-async fn main() -> ExitCode {
-    env_logger::init();
-    match entrypoint().await {
-        Ok(_) => ExitCode::SUCCESS,
-        Err(e) => {
-            eprintln!("hashcards: {e}");
-            ExitCode::FAILURE
+pub async fn wait_for_server(port: u16) -> Fallible<()> {
+    loop {
+        if let Ok(stream) = TcpStream::connect(format!("0.0.0.0:{port}")).await {
+            drop(stream);
+            break;
         }
+        sleep(Duration::from_millis(1)).await;
     }
+    Ok(())
 }

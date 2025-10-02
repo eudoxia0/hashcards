@@ -22,18 +22,16 @@ mod template;
 mod tests {
     use std::env::temp_dir;
     use std::fs::create_dir_all;
-    use std::time::Duration;
 
     use portpicker::pick_unused_port;
     use reqwest::StatusCode;
-    use tokio::net::TcpStream;
     use tokio::spawn;
-    use tokio::time::sleep;
 
     use crate::cmd::drill::server::start_server;
     use crate::error::Fallible;
     use crate::helper::create_tmp_copy_of_test_directory;
     use crate::types::timestamp::Timestamp;
+    use crate::utils::wait_for_server;
 
     #[tokio::test]
     async fn test_start_server_on_non_existent_directory() -> Fallible<()> {
@@ -297,17 +295,6 @@ mod tests {
         let html = response.text().await?;
         assert!(html.contains("Session Completed"));
 
-        Ok(())
-    }
-
-    async fn wait_for_server(port: u16) -> Fallible<()> {
-        loop {
-            if let Ok(stream) = TcpStream::connect(format!("0.0.0.0:{port}")).await {
-                drop(stream);
-                break;
-            }
-            sleep(Duration::from_millis(1)).await;
-        }
         Ok(())
     }
 }

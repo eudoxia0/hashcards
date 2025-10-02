@@ -12,13 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::time::Duration;
+use std::process::exit;
 
 use clap::Parser;
 use clap::Subcommand;
-use tokio::net::TcpStream;
 use tokio::spawn;
-use tokio::time::sleep;
 
 use crate::cmd::check::check_deck;
 use crate::cmd::drill::server::start_server;
@@ -28,6 +26,7 @@ use crate::cmd::stats::StatsFormat;
 use crate::cmd::stats::print_deck_stats;
 use crate::error::Fallible;
 use crate::types::timestamp::Timestamp;
+use crate::utils::wait_for_server;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -91,14 +90,15 @@ pub async fn entrypoint() -> Fallible<()> {
         } => {
             // Start a separate task to open the browser once the server is up.
             spawn(async move {
-                loop {
-                    if let Ok(stream) = TcpStream::connect(format!("0.0.0.0:{port}")).await {
-                        drop(stream);
-                        break;
+                match wait_for_server(port).await {
+                    Ok(_) => {
+                        let _ = open::that(format!("http://0.0.0.0:{port}/"));
                     }
-                    sleep(Duration::from_millis(1)).await;
+                    Err(e) => {
+                        eprintln!("Failed to connect to server: {e}");
+                        exit(-1)
+                    }
                 }
-                let _ = open::that(format!("http://0.0.0.0:{port}/"));
             });
             start_server(
                 directory,
