@@ -22,6 +22,7 @@ use tokio::time::sleep;
 
 use crate::cmd::check::check_deck;
 use crate::cmd::drill::server::start_server;
+use crate::cmd::orphans::list_orphans;
 use crate::cmd::stats::StatsFormat;
 use crate::cmd::stats::print_deck_stats;
 use crate::error::Fallible;
@@ -53,6 +54,11 @@ enum Command {
         /// Which output format to use.
         #[arg(long, default_value_t = StatsFormat::Html)]
         format: StatsFormat,
+    },
+    /// List the hashes of all orphan cards in the deck.
+    Orphans {
+        /// Path to the deck directory. By default, the current working directory is used.
+        directory: Option<String>,
     },
 }
 
@@ -99,6 +105,14 @@ pub async fn entrypoint() -> Fallible<()> {
             }
             .canonicalize()?;
             print_deck_stats(&directory, format)
+        }
+        Command::Orphans { directory } => {
+            let directory: PathBuf = match directory {
+                Some(dir) => PathBuf::from(dir),
+                None => std::env::current_dir()?,
+            }
+            .canonicalize()?;
+            list_orphans(&directory)
         }
     }
 }
