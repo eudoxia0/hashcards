@@ -18,6 +18,8 @@ mod db;
 mod deck;
 mod error;
 mod fsrs;
+#[cfg(test)]
+mod helper;
 mod markdown;
 mod parser;
 mod types;
