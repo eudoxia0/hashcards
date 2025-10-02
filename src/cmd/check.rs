@@ -24,6 +24,8 @@ pub fn check_deck(directory: Option<String>) -> Fallible<()> {
 #[cfg(test)]
 mod tests {
 
+    use serial_test::serial;
+
     use super::check_deck;
 
     #[test]
@@ -32,11 +34,13 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_directory() {
         assert!(check_deck(Some("./test".to_string())).is_ok());
     }
 
     #[test]
+    #[serial]
     fn test_example_directory() {
         assert!(check_deck(Some("./test".to_string())).is_ok());
     }

@@ -36,12 +36,12 @@ impl Deck {
         let directory: PathBuf = match directory {
             Some(dir) => PathBuf::from(dir),
             None => current_dir()?,
-        }
-        .canonicalize()?;
-
-        if !directory.exists() {
+        };
+        let directory = if directory.exists() {
+            directory.canonicalize()?
+        } else {
             return fail("directory does not exist.");
-        }
+        };
 
         let db_path: PathBuf = directory.join("db.sqlite3");
         let db_path: &str = db_path
