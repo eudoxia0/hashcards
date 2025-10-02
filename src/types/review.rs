@@ -34,7 +34,7 @@ const TARGET_RECALL: f64 = 0.9;
 const MIN_INTERVAL: f64 = 1.0;
 
 /// The maximum review interval in days.
-const MAX_INTERVAL: f64 = 128.0;
+const MAX_INTERVAL: f64 = 256.0;
 
 #[derive(Clone)]
 pub struct Review {
