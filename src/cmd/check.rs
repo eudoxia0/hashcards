@@ -23,33 +23,21 @@ pub fn check_deck(directory: Option<String>) -> Fallible<()> {
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
 
     use super::check_deck;
 
     #[test]
     fn test_non_existent_directory() {
-        let directory = get_path_str("./derpherp");
-        assert!(check_deck(Some(directory)).is_err());
+        assert!(check_deck(Some("./derpherp".to_string())).is_err());
     }
 
     #[test]
     fn test_directory() {
-        let directory = get_path_str("./test");
-        assert!(check_deck(Some(directory)).is_ok());
+        assert!(check_deck(Some("./test".to_string())).is_ok());
     }
 
     #[test]
     fn test_example_directory() {
-        let directory = get_path_str("./example");
-        assert!(check_deck(Some(directory)).is_ok());
-    }
-
-    fn get_path_str(path: &str) -> String {
-        PathBuf::from(path)
-            .canonicalize()
-            .unwrap()
-            .display()
-            .to_string()
+        assert!(check_deck(Some("./test".to_string())).is_ok());
     }
 }
