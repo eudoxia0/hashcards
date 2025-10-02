@@ -57,7 +57,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_start_server_with_no_cards_due() -> Fallible<()> {
-        let port = 8000;
+        let port = pick_unused_port().unwrap();
         let dir = temp_dir();
         let dir = dir.join("empty_directory");
         create_dir_all(&dir)?;
@@ -70,7 +70,7 @@ mod tests {
     #[tokio::test]
     #[serial]
     async fn test_e2e() -> Fallible<()> {
-        let port = 8000;
+        let port = pick_unused_port().unwrap();
         let directory = PathBuf::from("./test").canonicalize().unwrap();
         let db_path = directory.join("db.sqlite3");
         if db_path.exists() {
@@ -169,7 +169,7 @@ mod tests {
     #[tokio::test]
     #[serial]
     async fn test_undo() -> Fallible<()> {
-        let port = 8000;
+        let port = pick_unused_port().unwrap();
         let directory = PathBuf::from("./test").canonicalize().unwrap();
         let db_path = directory.join("db.sqlite3");
         if db_path.exists() {
@@ -216,7 +216,7 @@ mod tests {
     #[tokio::test]
     #[serial]
     async fn test_undo_initial() -> Fallible<()> {
-        let port = 8000;
+        let port = pick_unused_port().unwrap();
         let directory = PathBuf::from("./test").canonicalize().unwrap();
         let db_path = directory.join("db.sqlite3");
         if db_path.exists() {
@@ -245,7 +245,7 @@ mod tests {
     #[tokio::test]
     #[serial]
     async fn test_answer_without_reveal() -> Fallible<()> {
-        let port = 8000;
+        let port = pick_unused_port().unwrap();
         let directory = PathBuf::from("./test").canonicalize().unwrap();
         let db_path = directory.join("db.sqlite3");
         if db_path.exists() {
@@ -274,7 +274,7 @@ mod tests {
     #[tokio::test]
     #[serial]
     async fn test_undo_forgetting() -> Fallible<()> {
-        let port = 8000;
+        let port = pick_unused_port().unwrap();
         let directory = PathBuf::from("./test").canonicalize().unwrap();
         let db_path = directory.join("db.sqlite3");
         if db_path.exists() {
@@ -321,6 +321,7 @@ mod tests {
     #[tokio::test]
     #[serial]
     async fn test_end() -> Fallible<()> {
+        let port = pick_unused_port().unwrap();
         let directory = PathBuf::from("./test").canonicalize().unwrap();
         let db_path = directory.join("db.sqlite3");
         if db_path.exists() {
@@ -328,7 +329,6 @@ mod tests {
         }
 
         // Start the server
-        let port = 8000;
         let session_started_at = Timestamp::now();
         let directory = directory.display().to_string();
         spawn(
