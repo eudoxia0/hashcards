@@ -17,8 +17,8 @@ use std::path::PathBuf;
 
 use walkdir::WalkDir;
 
-use crate::error::fail;
 use crate::error::Fallible;
+use crate::error::fail;
 use crate::types::card::Card;
 use crate::types::card::CardContent;
 
