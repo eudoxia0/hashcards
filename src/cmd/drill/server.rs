@@ -41,7 +41,7 @@ use crate::error::Fallible;
 use crate::error::fail;
 use crate::parser::parse_deck;
 use crate::types::card::Card;
-use crate::types::hash::Hash;
+use crate::types::card_hash::CardHash;
 use crate::types::timestamp::Timestamp;
 
 pub async fn start_server(
@@ -81,7 +81,7 @@ pub async fn start_server(
     let duration = end.duration_since(start).as_millis();
     log::debug!("Deck loaded in {duration}ms.");
 
-    let db_hashes: HashSet<Hash> = db.card_hashes()?;
+    let db_hashes: HashSet<CardHash> = db.card_hashes()?;
 
     // If a card is in the directory, but not in the DB, it is new. Add it to
     // the database.

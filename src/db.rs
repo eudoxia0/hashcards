@@ -21,9 +21,9 @@ use rusqlite::config::DbConfig;
 use crate::error::Fallible;
 use crate::types::card::Card;
 use crate::types::card::CardContent;
+use crate::types::card_hash::CardHash;
 use crate::types::card_type::CardType;
 use crate::types::date::Date;
-use crate::types::hash::Hash;
 use crate::types::review::Parameters;
 use crate::types::review::Review;
 use crate::types::review::ReviewRow;
@@ -54,12 +54,12 @@ impl Database {
     }
 
     /// Return the set of all card hashes in the database.
-    pub fn card_hashes(&self) -> Fallible<HashSet<Hash>> {
+    pub fn card_hashes(&self) -> Fallible<HashSet<CardHash>> {
         let mut hashes = HashSet::new();
         let mut stmt = self.conn.prepare("select card_hash from cards;")?;
         let mut rows = stmt.query([])?;
         while let Some(row) = rows.next()? {
-            let hash: Hash = row.get(0)?;
+            let hash: CardHash = row.get(0)?;
             hashes.insert(hash);
         }
         Ok(hashes)
@@ -95,12 +95,12 @@ impl Database {
     }
 
     /// Find the set of cards due today.
-    pub fn due_today(&self, today: Date) -> Fallible<HashSet<Hash>> {
+    pub fn due_today(&self, today: Date) -> Fallible<HashSet<CardHash>> {
         let mut due = HashSet::new();
         let mut stmt = self.conn.prepare("select c.card_hash, max(r.due_date) from cards c left outer join reviews r on r.card_hash = c.card_hash group by c.card_hash;")?;
         let mut rows = stmt.query([])?;
         while let Some(row) = rows.next()? {
-            let hash: Hash = row.get(0)?;
+            let hash: CardHash = row.get(0)?;
             let due_date: Option<Date> = row.get(1)?;
             match due_date {
                 None => {
@@ -118,7 +118,7 @@ impl Database {
     }
 
     /// Get the latest review for a given card.
-    pub fn get_latest_review(&self, card_hash: Hash) -> Fallible<Option<ReviewRow>> {
+    pub fn get_latest_review(&self, card_hash: CardHash) -> Fallible<Option<ReviewRow>> {
         let sql = "select reviewed_at, grade, stability, difficulty, due_date from reviews where card_hash = ? order by reviewed_at desc limit 1;";
         let mut stmt = self.conn.prepare(sql)?;
         let mut rows = stmt.query([card_hash])?;
@@ -167,7 +167,7 @@ impl Database {
     }
 
     /// Find the stage of the given card.
-    pub fn get_card_stage(&self, card_hash: Hash) -> Fallible<Stage> {
+    pub fn get_card_stage(&self, card_hash: CardHash) -> Fallible<Stage> {
         let sql = "select count(*) from reviews where card_hash = ?;";
         let count: i64 = self.conn.query_row(sql, [card_hash], |row| row.get(0))?;
         if count == 0 {
@@ -196,7 +196,7 @@ impl Database {
 }
 
 struct CardRow {
-    card_hash: Hash,
+    card_hash: CardHash,
     card_type: CardType,
     deck_name: String,
     question: String,

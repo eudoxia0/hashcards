@@ -21,9 +21,9 @@ use maud::html;
 use crate::error::Fallible;
 use crate::markdown::markdown_to_html;
 use crate::markdown::markdown_to_html_inline;
+use crate::types::card_hash::CardHash;
+use crate::types::card_hash::Hasher;
 use crate::types::card_type::CardType;
-use crate::types::hash::Hash;
-use crate::types::hash::Hasher;
 
 const CLOZE_TAG_BYTES: &[u8] = b"CLOZE_DELETION";
 const CLOZE_TAG: &str = "CLOZE_DELETION";
@@ -41,7 +41,7 @@ pub struct Card {
     /// The card's content.
     content: CardContent,
     /// The cached hash of the card's content.
-    hash: Hash,
+    hash: CardHash,
 }
 
 #[derive(Clone)]
@@ -85,11 +85,11 @@ impl Card {
         &self.content
     }
 
-    pub fn hash(&self) -> Hash {
+    pub fn hash(&self) -> CardHash {
         self.hash
     }
 
-    pub fn family_hash(&self) -> Option<Hash> {
+    pub fn family_hash(&self) -> Option<CardHash> {
         self.content.family_hash()
     }
 
@@ -125,7 +125,7 @@ impl CardContent {
         }
     }
 
-    pub fn hash(&self) -> Hash {
+    pub fn hash(&self) -> CardHash {
         let mut hasher = Hasher::new();
         match &self {
             CardContent::Basic { question, answer } => {
@@ -146,7 +146,7 @@ impl CardContent {
     /// All cloze cards derived from the same text have the same family hash.
     ///
     /// For basic cards, this is `None`.
-    pub fn family_hash(&self) -> Option<Hash> {
+    pub fn family_hash(&self) -> Option<CardHash> {
         match &self {
             CardContent::Basic { .. } => None,
             CardContent::Cloze { text, .. } => {

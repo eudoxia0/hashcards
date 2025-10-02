@@ -13,8 +13,8 @@
 // limitations under the License.
 
 pub mod card;
+pub mod card_hash;
 pub mod card_type;
 pub mod date;
-pub mod hash;
 pub mod review;
 pub mod timestamp;

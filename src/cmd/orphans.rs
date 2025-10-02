@@ -20,7 +20,7 @@ use crate::error::ErrorReport;
 use crate::error::Fallible;
 use crate::error::fail;
 use crate::parser::parse_deck;
-use crate::types::hash::Hash;
+use crate::types::card_hash::CardHash;
 
 pub fn list_orphans(directory: &PathBuf) -> Fallible<()> {
     if !directory.exists() {
@@ -34,8 +34,8 @@ pub fn list_orphans(directory: &PathBuf) -> Fallible<()> {
     )?;
     let deck = parse_deck(directory)?;
     // Collect hashes.
-    let db_hashes: HashSet<Hash> = db.card_hashes()?;
-    let deck_hashes: HashSet<Hash> = {
+    let db_hashes: HashSet<CardHash> = db.card_hashes()?;
+    let deck_hashes: HashSet<CardHash> = {
         let mut hashes = HashSet::new();
         for card in deck {
             hashes.insert(card.hash());
@@ -43,7 +43,7 @@ pub fn list_orphans(directory: &PathBuf) -> Fallible<()> {
         hashes
     };
     // If a card is in the database, but not in the deck, it is an orphan.
-    let orphans: Vec<Hash> = db_hashes.difference(&deck_hashes).cloned().collect();
+    let orphans: Vec<CardHash> = db_hashes.difference(&deck_hashes).cloned().collect();
     // Sort the orphans for consistent output.
     // Print.
     for hash in orphans {

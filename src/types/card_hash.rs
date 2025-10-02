@@ -29,11 +29,11 @@ use crate::error::Fallible;
 /// Wrapper around the underlying hash function. Needed because blake3 does
 /// not implement Ord and PartialOrd.
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
-pub struct Hash {
+pub struct CardHash {
     inner: blake3::Hash,
 }
 
-impl Hash {
+impl CardHash {
     #[cfg(test)]
     pub fn hash_bytes(bytes: &[u8]) -> Self {
         Self {
@@ -52,32 +52,32 @@ impl Hash {
     }
 }
 
-impl PartialOrd for Hash {
+impl PartialOrd for CardHash {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }
 }
 
-impl Ord for Hash {
+impl Ord for CardHash {
     fn cmp(&self, other: &Self) -> Ordering {
         self.inner.as_bytes().cmp(other.inner.as_bytes())
     }
 }
 
-impl ToSql for Hash {
+impl ToSql for CardHash {
     fn to_sql(&self) -> rusqlite::Result<ToSqlOutput<'_>> {
         Ok(ToSqlOutput::from(self.to_hex()))
     }
 }
 
-impl FromSql for Hash {
+impl FromSql for CardHash {
     fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
         let string: String = FromSql::column_result(value)?;
-        Hash::from_hex(&string).map_err(|e| FromSqlError::Other(Box::new(e)))
+        CardHash::from_hex(&string).map_err(|e| FromSqlError::Other(Box::new(e)))
     }
 }
 
-impl Display for Hash {
+impl Display for CardHash {
     fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
         write!(f, "{}", self.to_hex())
     }
@@ -98,8 +98,8 @@ impl Hasher {
         self.inner.update(data);
     }
 
-    pub fn finalize(self) -> Hash {
-        Hash {
+    pub fn finalize(self) -> CardHash {
+        CardHash {
             inner: self.inner.finalize(),
         }
     }
@@ -111,7 +111,7 @@ mod tests {
 
     #[test]
     fn test_display() {
-        let hash = Hash::hash_bytes(b"test");
+        let hash = CardHash::hash_bytes(b"test");
         assert_eq!(
             hash.to_string(),
             "4878ca0425c739fa427f7eda20fe845f6b2e46ba5fe2a14df5b1e32f50603215"
@@ -120,9 +120,12 @@ mod tests {
 
     #[test]
     fn test_ordering() -> Fallible<()> {
-        let a = Hash::from_hex("0000000000000000000000000000000000000000000000000000000000000000")?;
-        let b = Hash::from_hex("0000000000000000000000000000000000000000000000000000000000000001")?;
-        let c = Hash::from_hex("0000000000000000000000000000000000000000000000000000000000000002")?;
+        let a =
+            CardHash::from_hex("0000000000000000000000000000000000000000000000000000000000000000")?;
+        let b =
+            CardHash::from_hex("0000000000000000000000000000000000000000000000000000000000000001")?;
+        let c =
+            CardHash::from_hex("0000000000000000000000000000000000000000000000000000000000000002")?;
         assert!(a < b);
         assert!(b < c);
         Ok(())
