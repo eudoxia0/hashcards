@@ -108,7 +108,7 @@ pub async fn entrypoint() -> Fallible<()> {
             .canonicalize()?;
             print_deck_stats(&directory, format)
         }
-        Command::Orphan { command } => match command {
+        Command::Orphans { command } => match command {
             OrphanCommand::List { directory } => {
                 let directory: PathBuf = match directory {
                     Some(dir) => PathBuf::from(dir),
