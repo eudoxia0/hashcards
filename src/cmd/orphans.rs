@@ -14,25 +14,9 @@
 
 use std::collections::HashSet;
 
-use clap::Subcommand;
-
 use crate::deck::Deck;
 use crate::error::Fallible;
 use crate::types::card_hash::CardHash;
-
-#[derive(Subcommand)]
-pub enum OrphanCommand {
-    /// List the hashes of all orphan cards in the deck.
-    List {
-        /// Path to the deck directory. By default, the current working directory is used.
-        directory: Option<String>,
-    },
-    /// Remove all orphan cards from the database.
-    Delete {
-        /// Path to the deck directory. By default, the current working directory is used.
-        directory: Option<String>,
-    },
-}
 
 pub fn list_orphans(directory: Option<String>) -> Fallible<()> {
     let deck = Deck::new(directory)?;

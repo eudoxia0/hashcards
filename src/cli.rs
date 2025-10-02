@@ -15,13 +15,13 @@
 use std::time::Duration;
 
 use clap::Parser;
+use clap::Subcommand;
 use tokio::net::TcpStream;
 use tokio::spawn;
 use tokio::time::sleep;
 
 use crate::cmd::check::check_deck;
 use crate::cmd::drill::server::start_server;
-use crate::cmd::orphans::OrphanCommand;
 use crate::cmd::orphans::delete_orphans;
 use crate::cmd::orphans::list_orphans;
 use crate::cmd::stats::StatsFormat;
@@ -31,7 +31,7 @@ use crate::types::timestamp::Timestamp;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
-pub enum Command {
+enum Command {
     /// Drill cards through a web interface.
     Drill {
         /// Path to the deck directory. By default, the current working directory is used.
@@ -60,6 +60,20 @@ pub enum Command {
     Orphans {
         #[command(subcommand)]
         command: OrphanCommand,
+    },
+}
+
+#[derive(Subcommand)]
+enum OrphanCommand {
+    /// List the hashes of all orphan cards in the deck.
+    List {
+        /// Path to the deck directory. By default, the current working directory is used.
+        directory: Option<String>,
+    },
+    /// Remove all orphan cards from the database.
+    Delete {
+        /// Path to the deck directory. By default, the current working directory is used.
+        directory: Option<String>,
     },
 }
 
