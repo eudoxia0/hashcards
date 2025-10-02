@@ -58,7 +58,7 @@ pub enum Command {
         format: StatsFormat,
     },
     /// Commands relating to orphan cards.
-    Orphan {
+    Orphans {
         #[command(subcommand)]
         command: OrphanCommand,
     },
