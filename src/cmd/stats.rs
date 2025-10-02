@@ -72,6 +72,7 @@ pub fn print_deck_stats(directory: &PathBuf, format: StatsFormat) -> Fallible<()
         cards_in_deck_count: deck.len(),
         cards_in_db_count: db.card_count()?,
         tex_macro_count: macros.len(),
+        today_review_count: db.today_review_count()?,
     };
 
     match format {
@@ -92,4 +93,5 @@ pub struct Stats {
     cards_in_deck_count: usize,
     cards_in_db_count: usize,
     tex_macro_count: usize,
+    today_review_count: usize,
 }

@@ -13,7 +13,10 @@
 // limitations under the License.
 
 use chrono::DateTime;
+use chrono::Datelike;
+use chrono::Duration;
 use chrono::Local;
+use chrono::TimeZone;
 use chrono::Utc;
 use rusqlite::ToSql;
 use rusqlite::types::FromSql;
@@ -44,6 +47,27 @@ impl Timestamp {
     pub fn local_date(self) -> Date {
         let ts = self.0.with_timezone(&Local);
         Date::new(ts.date_naive())
+    }
+
+    /// Returns the range of timestamps that comprise today, i.e., the
+    /// timestamp of yesterday-today midnight and today-tomorrow midnight.
+    /// These are today's day bounds in UTC.
+    pub fn today_range() -> (Self, Self) {
+        let now: DateTime<Local> = Local::now();
+
+        // Local midnight today.
+        let start_local: DateTime<Local> = Local
+            .with_ymd_and_hms(now.year(), now.month(), now.day(), 0, 0, 0)
+            .unwrap();
+
+        // Local midnight tomorrow (end of today).
+        let end_local: DateTime<Local> = start_local + Duration::days(1);
+
+        // Convert to UTC.
+        let start_utc: DateTime<Utc> = start_local.with_timezone(&Utc);
+        let end_utc: DateTime<Utc> = end_local.with_timezone(&Utc);
+
+        (Self(start_utc), Self(end_utc))
     }
 }
 

@@ -183,6 +183,16 @@ impl Database {
         let count: i64 = self.conn.query_row(sql, [], |row| row.get(0))?;
         Ok(count as usize)
     }
+
+    /// Return the number of reviews today.
+    pub fn today_review_count(&self) -> Fallible<usize> {
+        let (start_ts, end_ts) = Timestamp::today_range();
+        let sql = "select count(*) from reviews where reviewed_at >= ? and reviewed_at < ?;";
+        let count: i64 = self
+            .conn
+            .query_row(sql, (start_ts, end_ts), |row| row.get(0))?;
+        Ok(count as usize)
+    }
 }
 
 struct CardRow {
