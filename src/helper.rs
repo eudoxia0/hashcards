@@ -20,7 +20,7 @@ use tempfile::tempdir;
 
 use crate::error::Fallible;
 
-pub fn create_tmp_copy_of_test_directory() -> Fallible<Option<String>> {
+pub fn create_tmp_copy_of_test_directory() -> Fallible<String> {
     let source: PathBuf = PathBuf::from("./test").canonicalize()?;
     let target: PathBuf = tempdir()?.path().to_path_buf().canonicalize()?;
     create_dir_all(&target)?;
@@ -36,7 +36,7 @@ pub fn create_tmp_copy_of_test_directory() -> Fallible<Option<String>> {
             }
         }
     }
-    Ok(Some(target.display().to_string()))
+    Ok(target.display().to_string())
 }
 
 #[cfg(test)]
@@ -47,8 +47,6 @@ mod tests {
     fn test_create_tmp_copy_of_test_directory() -> Fallible<()> {
         let result = create_tmp_copy_of_test_directory();
         assert!(result.is_ok());
-        let path_option = result.unwrap();
-        assert!(path_option.is_some());
         Ok(())
     }
 }
