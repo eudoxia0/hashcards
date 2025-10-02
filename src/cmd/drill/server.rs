@@ -43,11 +43,11 @@ use crate::types::timestamp::Timestamp;
 
 pub async fn start_server(
     directory: Option<String>,
+    port: u16,
     session_started_at: Timestamp,
     card_limit: Option<usize>,
     new_card_limit: Option<usize>,
 ) -> Fallible<()> {
-    let port = 8000;
     let Deck {
         directory,
         db,

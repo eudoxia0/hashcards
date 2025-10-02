@@ -41,6 +41,7 @@ mod tests {
         let session_started_at = Timestamp::now();
         let result = start_server(
             Some("./derpherp".to_string()),
+            8000,
             session_started_at,
             None,
             None,
@@ -59,7 +60,7 @@ mod tests {
         create_dir_all(&dir)?;
         let session_started_at = Timestamp::now();
         let dir = dir.canonicalize().unwrap().display().to_string();
-        start_server(Some(dir), session_started_at, None, None).await?;
+        start_server(Some(dir), 8000, session_started_at, None, None).await?;
         Ok(())
     }
 
@@ -74,7 +75,9 @@ mod tests {
 
         let session_started_at = Timestamp::now();
         let directory = directory.display().to_string();
-        spawn(async move { start_server(Some(directory), session_started_at, None, None).await });
+        spawn(
+            async move { start_server(Some(directory), 8000, session_started_at, None, None).await },
+        );
         loop {
             if let Ok(stream) = TcpStream::connect("0.0.0.0:8000").await {
                 drop(stream);
@@ -177,7 +180,9 @@ mod tests {
         // Start the server
         let session_started_at = Timestamp::now();
         let directory = directory.display().to_string();
-        spawn(async move { start_server(Some(directory), session_started_at, None, None).await });
+        spawn(
+            async move { start_server(Some(directory), 8000, session_started_at, None, None).await },
+        );
         loop {
             if let Ok(stream) = TcpStream::connect("0.0.0.0:8000").await {
                 drop(stream);
@@ -227,7 +232,9 @@ mod tests {
         // Start the server
         let session_started_at = Timestamp::now();
         let directory = directory.display().to_string();
-        spawn(async move { start_server(Some(directory), session_started_at, None, None).await });
+        spawn(
+            async move { start_server(Some(directory), 8000, session_started_at, None, None).await },
+        );
         loop {
             if let Ok(stream) = TcpStream::connect("0.0.0.0:8000").await {
                 drop(stream);
@@ -259,7 +266,9 @@ mod tests {
         // Start the server
         let session_started_at = Timestamp::now();
         let directory = directory.display().to_string();
-        spawn(async move { start_server(Some(directory), session_started_at, None, None).await });
+        spawn(
+            async move { start_server(Some(directory), 8000, session_started_at, None, None).await },
+        );
         loop {
             if let Ok(stream) = TcpStream::connect("0.0.0.0:8000").await {
                 drop(stream);
@@ -291,7 +300,9 @@ mod tests {
         // Start the server
         let session_started_at = Timestamp::now();
         let directory = directory.display().to_string();
-        spawn(async move { start_server(Some(directory), session_started_at, None, None).await });
+        spawn(
+            async move { start_server(Some(directory), 8000, session_started_at, None, None).await },
+        );
         loop {
             if let Ok(stream) = TcpStream::connect("0.0.0.0:8000").await {
                 drop(stream);
@@ -341,7 +352,9 @@ mod tests {
         // Start the server
         let session_started_at = Timestamp::now();
         let directory = directory.display().to_string();
-        spawn(async move { start_server(Some(directory), session_started_at, None, None).await });
+        spawn(
+            async move { start_server(Some(directory), 8000, session_started_at, None, None).await },
+        );
         loop {
             if let Ok(stream) = TcpStream::connect("0.0.0.0:8000").await {
                 drop(stream);

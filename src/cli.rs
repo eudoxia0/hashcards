@@ -71,18 +71,26 @@ pub async fn entrypoint() -> Fallible<()> {
             card_limit,
             new_card_limit,
         } => {
+            let port = 8000;
             // Start a separate task to open the browser once the server is up.
             spawn(async move {
                 loop {
-                    if let Ok(stream) = TcpStream::connect("0.0.0.0:8000").await {
+                    if let Ok(stream) = TcpStream::connect(format!("0.0.0.0:{port}")).await {
                         drop(stream);
                         break;
                     }
                     sleep(Duration::from_millis(1)).await;
                 }
-                let _ = open::that("http://0.0.0.0:8000/");
+                let _ = open::that(format!("http://0.0.0.0:{port}/"));
             });
-            start_server(directory, Timestamp::now(), card_limit, new_card_limit).await
+            start_server(
+                directory,
+                port,
+                Timestamp::now(),
+                card_limit,
+                new_card_limit,
+            )
+            .await
         }
         Command::Check { directory } => check_deck(directory),
         Command::Stats { directory, format } => print_deck_stats(directory, format),
