@@ -49,18 +49,17 @@ impl Timestamp {
         Date::new(ts.date_naive())
     }
 
-    /// Returns the range of timestamps that comprise today, i.e., the
-    /// timestamp of yesterday-today midnight and today-tomorrow midnight.
-    /// These are today's day bounds in UTC.
-    pub fn today_range() -> (Self, Self) {
-        let now: DateTime<Local> = Local::now();
+    /// Returns the range of timestamps that comprise the (local) day around
+    /// the given timestamp.
+    pub fn day_range(self) -> (Self, Self) {
+        let Self(ts) = self;
 
-        // Local midnight today.
+        // Start of day.
         let start_local: DateTime<Local> = Local
-            .with_ymd_and_hms(now.year(), now.month(), now.day(), 0, 0, 0)
+            .with_ymd_and_hms(ts.year(), ts.month(), ts.day(), 0, 0, 0)
             .unwrap();
 
-        // Local midnight tomorrow (end of today).
+        // End of day.
         let end_local: DateTime<Local> = start_local + Duration::days(1);
 
         // Convert to UTC.

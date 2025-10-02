@@ -194,8 +194,8 @@ impl Database {
     }
 
     /// Return the number of reviews today.
-    pub fn today_review_count(&self) -> Fallible<usize> {
-        let (start_ts, end_ts) = Timestamp::today_range();
+    pub fn today_review_count(&self, today: Timestamp) -> Fallible<usize> {
+        let (start_ts, end_ts) = today.day_range();
         let sql = "select count(*) from reviews where reviewed_at >= ? and reviewed_at < ?;";
         let count: i64 = self
             .conn

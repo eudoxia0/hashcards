@@ -20,6 +20,7 @@ use serde::Serialize;
 
 use crate::deck::Deck;
 use crate::error::Fallible;
+use crate::types::timestamp::Timestamp;
 
 #[derive(ValueEnum, Clone)]
 pub enum StatsFormat {
@@ -40,13 +41,14 @@ impl Display for StatsFormat {
 
 pub fn print_deck_stats(directory: Option<String>, format: StatsFormat) -> Fallible<()> {
     let deck = Deck::new(directory)?;
+    let now = Timestamp::now();
 
     // Construct stats.
     let stats = Stats {
         cards_in_deck_count: deck.cards.len(),
         cards_in_db_count: deck.db.card_count()?,
         tex_macro_count: deck.macros.len(),
-        today_review_count: deck.db.today_review_count()?,
+        today_review_count: deck.db.today_review_count(now)?,
     };
 
     // Print.
