@@ -20,6 +20,7 @@ use tokio::net::TcpStream;
 use tokio::spawn;
 use tokio::time::sleep;
 
+use crate::check::check_deck;
 use crate::drill::server::start_server;
 use crate::error::Fallible;
 use crate::types::timestamp::Timestamp;
@@ -37,6 +38,11 @@ enum Command {
         /// Maximum number of new cards to drill in a session.
         #[arg(long)]
         new_card_limit: Option<usize>,
+    },
+    /// Check the integrity of a deck.
+    Check {
+        /// Path to the deck directory. By default, the current working directory is used.
+        directory: Option<String>,
     },
 }
 
@@ -67,6 +73,14 @@ pub async fn entrypoint() -> Fallible<()> {
             });
 
             start_server(directory, Timestamp::now(), card_limit, new_card_limit).await
+        }
+        Command::Check { directory } => {
+            let directory: PathBuf = match directory {
+                Some(dir) => PathBuf::from(dir),
+                None => std::env::current_dir()?,
+            }
+            .canonicalize()?;
+            check_deck(&directory)
         }
     }
 }
