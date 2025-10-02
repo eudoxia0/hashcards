@@ -176,6 +176,13 @@ impl Database {
             Ok(Stage::Review)
         }
     }
+
+    /// Return the total number of cards in the database.
+    pub fn card_count(&self) -> Fallible<usize> {
+        let sql = "select count(*) from cards;";
+        let count: i64 = self.conn.query_row(sql, [], |row| row.get(0))?;
+        Ok(count as usize)
+    }
 }
 
 struct CardRow {

@@ -20,6 +20,7 @@ mod error;
 mod fsrs;
 mod markdown;
 mod parser;
+mod stats;
 mod types;
 
 use std::process::ExitCode;

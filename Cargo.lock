@@ -590,6 +590,7 @@ dependencies = [
  "reqwest",
  "rusqlite",
  "serde",
+ "serde_json",
  "serial_test",
  "tokio",
  "walkdir",

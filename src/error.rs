@@ -71,6 +71,14 @@ impl From<FromUtf8Error> for ErrorReport {
     }
 }
 
+impl From<serde_json::Error> for ErrorReport {
+    fn from(value: serde_json::Error) -> Self {
+        ErrorReport {
+            message: format!("JSON error: {value:#?}"),
+        }
+    }
+}
+
 impl Display for ErrorReport {
     fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
         write!(f, "error: {}", self.message)
