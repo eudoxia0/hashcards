@@ -80,13 +80,7 @@ mod tests {
         spawn(
             async move { start_server(Some(directory), port, session_started_at, None, None).await },
         );
-        loop {
-            if let Ok(stream) = TcpStream::connect("0.0.0.0:8000").await {
-                drop(stream);
-                break;
-            }
-            sleep(Duration::from_millis(1)).await;
-        }
+        wait_for_server(port).await?;
 
         // Hit the `style.css` endpoint.
         let response = reqwest::get("http://0.0.0.0:8000/style.css").await?;
@@ -186,13 +180,7 @@ mod tests {
         spawn(
             async move { start_server(Some(directory), port, session_started_at, None, None).await },
         );
-        loop {
-            if let Ok(stream) = TcpStream::connect("0.0.0.0:8000").await {
-                drop(stream);
-                break;
-            }
-            sleep(Duration::from_millis(1)).await;
-        }
+        wait_for_server(port).await?;
 
         // Hit reveal.
         let response = reqwest::Client::new()
@@ -239,13 +227,7 @@ mod tests {
         spawn(
             async move { start_server(Some(directory), port, session_started_at, None, None).await },
         );
-        loop {
-            if let Ok(stream) = TcpStream::connect("0.0.0.0:8000").await {
-                drop(stream);
-                break;
-            }
-            sleep(Duration::from_millis(1)).await;
-        }
+        wait_for_server(port).await?;
 
         // Hit undo.
         let response = reqwest::Client::new()
@@ -274,13 +256,7 @@ mod tests {
         spawn(
             async move { start_server(Some(directory), port, session_started_at, None, None).await },
         );
-        loop {
-            if let Ok(stream) = TcpStream::connect("0.0.0.0:8000").await {
-                drop(stream);
-                break;
-            }
-            sleep(Duration::from_millis(1)).await;
-        }
+        wait_for_server(port).await?;
 
         // Hit 'Hard'.
         let response = reqwest::Client::new()
