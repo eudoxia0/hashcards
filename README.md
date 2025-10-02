@@ -94,12 +94,6 @@ The `cards` table has the following schema:
 | Column        | Type               | Description                                                                                                         |
 |---------------|--------------------|---------------------------------------------------------------------------------------------------------------------|
 | `card_hash`   | `text primary key` | The hash of the card.                                                                                               |
-| `card_type`   | `text not null`    | One of `basic` or `cloze`.                                                                                          |
-| `deck_name`   | `text not null`    | The name of the file where the card was read.                                                                       |
-| `question`    | `text not null`    | For a `basic` card, the question text. For a `cloze` card, the prompt text.                                         |
-| `answer`      | `text not null`    | For a `basic` card, the answer text. For a `cloze` card, the empty string.                                          |
-| `cloze_start` | `integer not null` | For a `cloze` card, the byte position where the cloze deletion starts. For a `basic` card, the number 0.           |
-| `cloze_end`   | `integer not null` | For a `cloze` card, the byte position where the cloze deletion ends (inclusive). For a `basic` card, the number 0. |
 | `added_at`    | `text not null`    | The timestamp when the card was first added to the database, in [RFC 3339] format.                                 |
 
 The `sessions` table has the following schema:

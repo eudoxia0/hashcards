@@ -19,10 +19,7 @@ use rusqlite::Transaction;
 use rusqlite::config::DbConfig;
 
 use crate::error::Fallible;
-use crate::types::card::Card;
-use crate::types::card::CardContent;
 use crate::types::card_hash::CardHash;
-use crate::types::card_type::CardType;
 use crate::types::date::Date;
 use crate::types::review::Parameters;
 use crate::types::review::Review;
@@ -66,31 +63,9 @@ impl Database {
     }
 
     /// Add a new card to the database.
-    pub fn add_card(&self, card: &Card, now: Timestamp) -> Fallible<()> {
-        log::debug!("Adding new card: {}", card.hash());
-        let card_row = match card.content() {
-            CardContent::Basic { question, answer } => CardRow {
-                card_hash: card.hash(),
-                card_type: CardType::Basic,
-                deck_name: card.deck_name().to_string(),
-                question: question.to_string(),
-                answer: answer.to_string(),
-                cloze_start: 0,
-                cloze_end: 0,
-                added_at: now,
-            },
-            CardContent::Cloze { text, start, end } => CardRow {
-                card_hash: card.hash(),
-                card_type: CardType::Cloze,
-                deck_name: card.deck_name().to_string(),
-                question: text.to_string(),
-                answer: "".to_string(),
-                cloze_start: *start,
-                cloze_end: *end,
-                added_at: now,
-            },
-        };
-        insert_card(&self.conn, &card_row)?;
+    pub fn add_card(&self, card_hash: CardHash, now: Timestamp) -> Fallible<()> {
+        let sql = "insert into cards (card_hash, added_at) values (?, ?);";
+        self.conn.execute(sql, (card_hash, now))?;
         Ok(())
     }
 
@@ -204,35 +179,6 @@ impl Database {
     }
 }
 
-struct CardRow {
-    card_hash: CardHash,
-    card_type: CardType,
-    deck_name: String,
-    question: String,
-    answer: String,
-    cloze_start: usize,
-    cloze_end: usize,
-    added_at: Timestamp,
-}
-
-fn insert_card(conn: &Connection, card: &CardRow) -> Fallible<()> {
-    let sql = "insert into cards (card_hash, card_type, deck_name, question, answer, cloze_start, cloze_end, added_at) values (?, ?, ?, ?, ?, ?, ?, ?);";
-    conn.execute(
-        sql,
-        (
-            card.card_hash,
-            &card.card_type,
-            &card.deck_name,
-            &card.question,
-            &card.answer,
-            card.cloze_start,
-            card.cloze_end,
-            &card.added_at,
-        ),
-    )?;
-    Ok(())
-}
-
 fn probe_schema_exists(tx: &Transaction) -> Fallible<bool> {
     let sql = "select count(*) from sqlite_master where type='table' AND name=?;";
     let count: i64 = tx.query_row(sql, ["cards"], |row| row.get(0))?;
@@ -249,6 +195,8 @@ mod tests {
 
     use super::*;
     use crate::fsrs::Grade;
+    use crate::types::card::Card;
+    use crate::types::card::CardContent;
     use crate::types::review::Parameters;
 
     #[test]
@@ -263,23 +211,18 @@ mod tests {
     fn test_add_basic_card() -> Fallible<()> {
         let db = Database::new(":memory:")?;
         let now = Timestamp::now();
-        let card = Card::new(
-            "My Deck".to_string(),
-            PathBuf::new(),
-            (0, 1),
-            CardContent::new_basic("Q", "A"),
-        );
-        db.add_card(&card, now)?;
+        let hash = CardHash::hash_bytes(b"a");
+        db.add_card(hash, now)?;
 
         let hashes = db.card_hashes()?;
         assert_eq!(hashes.len(), 1);
-        assert!(hashes.contains(&card.hash()));
+        assert!(hashes.contains(&hash));
 
         let due_today = db.due_today(now.local_date())?;
         assert_eq!(due_today.len(), 1);
-        assert!(due_today.contains(&card.hash()));
+        assert!(due_today.contains(&hash));
 
-        let latest_review = db.get_latest_review(card.hash())?;
+        let latest_review = db.get_latest_review(hash)?;
         assert!(latest_review.is_none());
 
         Ok(())
@@ -289,27 +232,18 @@ mod tests {
     fn test_add_cloze_card() -> Fallible<()> {
         let db = Database::new(":memory:")?;
         let now = Timestamp::now();
-        let card = Card::new(
-            "My Deck".to_string(),
-            PathBuf::new(),
-            (0, 1),
-            CardContent::Cloze {
-                text: "Foo bar baz.".to_string(),
-                start: 0,
-                end: 3,
-            },
-        );
-        db.add_card(&card, now)?;
+        let hash = CardHash::hash_bytes(b"a");
+        db.add_card(hash, now)?;
 
         let hashes = db.card_hashes()?;
         assert_eq!(hashes.len(), 1);
-        assert!(hashes.contains(&card.hash()));
+        assert!(hashes.contains(&hash));
 
         let due_today = db.due_today(now.local_date())?;
         assert_eq!(due_today.len(), 1);
-        assert!(due_today.contains(&card.hash()));
+        assert!(due_today.contains(&hash));
 
-        let latest_review = db.get_latest_review(card.hash())?;
+        let latest_review = db.get_latest_review(hash)?;
         assert!(latest_review.is_none());
 
         Ok(())
@@ -330,7 +264,7 @@ mod tests {
                 end: 3,
             },
         );
-        db.add_card(&card, now)?;
+        db.add_card(card.hash(), now)?;
 
         let review = Review {
             reviewed_at: now,
@@ -378,8 +312,8 @@ mod tests {
             (0, 1),
             CardContent::new_basic("Q", "A"),
         );
-        db.add_card(&card, now)?;
-        let result = db.add_card(&card, now);
+        db.add_card(card.hash(), now)?;
+        let result = db.add_card(card.hash(), now);
         assert!(result.is_err());
         Ok(())
     }

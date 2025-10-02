@@ -63,7 +63,7 @@ pub async fn start_server(
     // the database.
     for card in cards.iter() {
         if !db_hashes.contains(&card.hash()) {
-            db.add_card(card, session_started_at)?;
+            db.add_card(card.hash(), session_started_at)?;
         }
     }
 
