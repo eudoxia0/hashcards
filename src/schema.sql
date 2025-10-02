@@ -2,7 +2,11 @@ pragma foreign_keys = on;
 
 create table cards (
     card_hash text primary key,
-    added_at text not null
+    added_at text not null,
+    stability real,
+    difficulty real,
+    due_date text,
+    review_count integer not null
 ) strict;
 
 create table sessions (

@@ -64,8 +64,8 @@ impl Database {
 
     /// Add a new card to the database.
     pub fn add_card(&self, card_hash: CardHash, now: Timestamp) -> Fallible<()> {
-        let sql = "insert into cards (card_hash, added_at) values (?, ?);";
-        self.conn.execute(sql, (card_hash, now))?;
+        let sql = "insert into cards (card_hash, added_at, review_count) values (?, ?, ?);";
+        self.conn.execute(sql, (card_hash, now, 0))?;
         Ok(())
     }
 
@@ -134,6 +134,25 @@ impl Database {
                     review.params.stability,
                     review.params.difficulty,
                     review.params.due_date,
+                ),
+            )?;
+            let sql = "
+                update cards
+                set
+                    stability = ?,
+                    difficulty = ?,
+                    due_date = ?,
+                    review_count = review_count + 1
+                where
+                    card_hash = ?;
+            ";
+            tx.execute(
+                sql,
+                (
+                    review.params.stability,
+                    review.params.difficulty,
+                    review.params.due_date,
+                    review.card.hash(),
                 ),
             )?;
         }
