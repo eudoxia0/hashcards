@@ -100,12 +100,12 @@ impl Card {
         }
     }
 
-    pub fn html_front(&self) -> Fallible<Markup> {
-        self.content.html_front()
+    pub fn html_front(&self, port: u16) -> Fallible<Markup> {
+        self.content.html_front(port)
     }
 
-    pub fn html_back(&self) -> Fallible<Markup> {
-        self.content.html_back()
+    pub fn html_back(&self, port: u16) -> Fallible<Markup> {
+        self.content.html_back(port)
     }
 }
 
@@ -158,18 +158,18 @@ impl CardContent {
         }
     }
 
-    pub fn html_front(&self) -> Fallible<Markup> {
+    pub fn html_front(&self, port: u16) -> Fallible<Markup> {
         let html = match self {
             CardContent::Basic { question, .. } => {
                 html! {
-                    (PreEscaped(markdown_to_html(question)))
+                    (PreEscaped(markdown_to_html(question, port)))
                 }
             }
             CardContent::Cloze { text, start, end } => {
                 let mut text_bytes: Vec<u8> = text.as_bytes().to_owned();
                 text_bytes.splice(*start..*end + 1, CLOZE_TAG_BYTES.iter().copied());
                 let text: String = String::from_utf8(text_bytes)?;
-                let text: String = markdown_to_html(&text);
+                let text: String = markdown_to_html(&text, port);
                 let text: String =
                     text.replace(CLOZE_TAG, "<span class='cloze'>.............</span>");
                 html! {
@@ -180,21 +180,21 @@ impl CardContent {
         Ok(html)
     }
 
-    pub fn html_back(&self) -> Fallible<Markup> {
+    pub fn html_back(&self, port: u16) -> Fallible<Markup> {
         let html = match self {
             CardContent::Basic { answer, .. } => {
                 html! {
-                    (PreEscaped(markdown_to_html(answer)))
+                    (PreEscaped(markdown_to_html(answer, port)))
                 }
             }
             CardContent::Cloze { text, start, end } => {
                 let mut text_bytes: Vec<u8> = text.as_bytes().to_owned();
                 let deleted_text: Vec<u8> = text_bytes[*start..*end + 1].to_owned();
                 let deleted_text: String = String::from_utf8(deleted_text)?;
-                let deleted_text: String = markdown_to_html_inline(&deleted_text);
+                let deleted_text: String = markdown_to_html_inline(&deleted_text, port);
                 text_bytes.splice(*start..*end + 1, CLOZE_TAG_BYTES.iter().copied());
                 let text: String = String::from_utf8(text_bytes)?;
-                let text = markdown_to_html(&text);
+                let text = markdown_to_html(&text, port);
                 let text = text.replace(
                     CLOZE_TAG,
                     &format!("<span class='cloze-reveal'>{}</span>", deleted_text),

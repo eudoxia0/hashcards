@@ -60,7 +60,7 @@ fn render_session_page(state: &ServerState, mutable: &MutableState) -> Fallible<
     };
     let progress_bar_style = format!("width: {}%;", percent_done);
     let card = mutable.cards[0].clone();
-    let card_content = render_card(&card, mutable.reveal)?;
+    let card_content = render_card(&card, mutable.reveal, state.port)?;
     let card_controls = if mutable.reveal {
         html! {
             form action="/" method="post" {
@@ -110,22 +110,22 @@ fn render_session_page(state: &ServerState, mutable: &MutableState) -> Fallible<
     Ok(html)
 }
 
-fn render_card(card: &Card, reveal: bool) -> Fallible<Markup> {
+fn render_card(card: &Card, reveal: bool, port: u16) -> Fallible<Markup> {
     let html = match card.card_type() {
         CardType::Basic => {
             if reveal {
                 html! {
                     div .question .rich-text {
-                        (card.html_front()?)
+                        (card.html_front(port)?)
                     }
                     div .answer .rich-text {
-                        (card.html_back()?)
+                        (card.html_back(port)?)
                     }
                 }
             } else {
                 html! {
                     div .question .rich-text {
-                        (card.html_front()?)
+                        (card.html_front(port)?)
                     }
                     div .answer .rich-text {}
                 }
@@ -135,13 +135,13 @@ fn render_card(card: &Card, reveal: bool) -> Fallible<Markup> {
             if reveal {
                 html! {
                     div .prompt .rich-text {
-                        (card.html_back()?)
+                        (card.html_back(port)?)
                     }
                 }
             } else {
                 html! {
                     div .prompt .rich-text {
-                        (card.html_front()?)
+                        (card.html_front(port)?)
                     }
                 }
             }

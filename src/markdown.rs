@@ -18,7 +18,7 @@ use pulldown_cmark::Parser;
 use pulldown_cmark::Tag;
 use pulldown_cmark::html::push_html;
 
-pub fn markdown_to_html(markdown: &str) -> String {
+pub fn markdown_to_html(markdown: &str, port: u16) -> String {
     let parser = Parser::new(markdown);
     let parser = parser.map(|event| match event {
         Event::Start(Tag::Image {
@@ -27,7 +27,7 @@ pub fn markdown_to_html(markdown: &str) -> String {
             dest_url,
             id,
         }) => {
-            let new_url = modify_url(&dest_url);
+            let new_url = modify_url(&dest_url, port);
             Event::Start(Tag::Image {
                 link_type,
                 title,
@@ -42,8 +42,8 @@ pub fn markdown_to_html(markdown: &str) -> String {
     html_output
 }
 
-pub fn markdown_to_html_inline(markdown: &str) -> String {
-    let text = markdown_to_html(markdown);
+pub fn markdown_to_html_inline(markdown: &str, port: u16) -> String {
+    let text = markdown_to_html(markdown, port);
     if text.starts_with("<p>") && text.ends_with("</p>\n") {
         let len = text.len();
         text[3..len - 5].to_string()
@@ -52,8 +52,8 @@ pub fn markdown_to_html_inline(markdown: &str) -> String {
     }
 }
 
-fn modify_url(url: &str) -> String {
-    format!("http://localhost:8000/image/{}", url)
+fn modify_url(url: &str, port: u16) -> String {
+    format!("http://localhost:{port}/image/{url}")
 }
 
 #[cfg(test)]
@@ -63,7 +63,7 @@ mod tests {
     #[test]
     fn test_markdown_to_html() {
         let markdown = "![alt](image.png)";
-        let html = markdown_to_html(markdown);
+        let html = markdown_to_html(markdown, 8000);
         assert_eq!(
             html,
             "<p><img src=\"http://localhost:8000/image/image.png\" alt=\"alt\" /></p>\n"
@@ -73,14 +73,14 @@ mod tests {
     #[test]
     fn test_markdown_to_html_inline() {
         let markdown = "This is **bold** text.";
-        let html = markdown_to_html_inline(markdown);
+        let html = markdown_to_html_inline(markdown, 8000);
         assert_eq!(html, "This is <strong>bold</strong> text.");
     }
 
     #[test]
     fn test_markdown_to_html_inline_heading() {
         let markdown = "# Foo";
-        let html = markdown_to_html_inline(markdown);
+        let html = markdown_to_html_inline(markdown, 8000);
         assert_eq!(html, "<h1>Foo</h1>\n");
     }
 }

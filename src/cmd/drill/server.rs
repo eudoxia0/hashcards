@@ -81,6 +81,7 @@ pub async fn start_server(
     }
 
     let state = ServerState {
+        port: 8000,
         directory,
         macros,
         total_cards: due_today.len(),
