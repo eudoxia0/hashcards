@@ -56,12 +56,13 @@ mod tests {
 
     #[tokio::test]
     async fn test_start_server_with_no_cards_due() -> Fallible<()> {
+        let port = 8000;
         let dir = temp_dir();
         let dir = dir.join("empty_directory");
         create_dir_all(&dir)?;
         let session_started_at = Timestamp::now();
         let dir = dir.canonicalize().unwrap().display().to_string();
-        start_server(Some(dir), 8000, session_started_at, None, None).await?;
+        start_server(Some(dir), port, session_started_at, None, None).await?;
         Ok(())
     }
 
