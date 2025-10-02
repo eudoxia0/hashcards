@@ -82,7 +82,6 @@ pub async fn entrypoint() -> Fallible<()> {
                 }
                 let _ = open::that("http://0.0.0.0:8000/");
             });
-
             start_server(directory, Timestamp::now(), card_limit, new_card_limit).await
         }
         Command::Check { directory } => check_deck(directory),
