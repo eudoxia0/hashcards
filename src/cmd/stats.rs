@@ -75,6 +75,7 @@ pub fn print_deck_stats(directory: &PathBuf, format: StatsFormat) -> Fallible<()
         today_review_count: db.today_review_count()?,
     };
 
+    // Print.
     match format {
         StatsFormat::Html => {
             eprintln!("HTML output is not implemented yet.");
