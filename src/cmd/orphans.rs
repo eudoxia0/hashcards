@@ -43,8 +43,9 @@ pub fn list_orphans(directory: &PathBuf) -> Fallible<()> {
         hashes
     };
     // If a card is in the database, but not in the deck, it is an orphan.
-    let orphans: Vec<CardHash> = db_hashes.difference(&deck_hashes).cloned().collect();
+    let mut orphans: Vec<CardHash> = db_hashes.difference(&deck_hashes).cloned().collect();
     // Sort the orphans for consistent output.
+    orphans.sort();
     // Print.
     for hash in orphans {
         println!("{}", hash);
