@@ -63,24 +63,24 @@ mod tests {
     #[test]
     fn test_markdown_to_html() {
         let markdown = "![alt](image.png)";
-        let html = markdown_to_html(markdown, 8000);
+        let html = markdown_to_html(markdown, 1234);
         assert_eq!(
             html,
-            "<p><img src=\"http://localhost:8000/image/image.png\" alt=\"alt\" /></p>\n"
+            "<p><img src=\"http://localhost:1234/image/image.png\" alt=\"alt\" /></p>\n"
         );
     }
 
     #[test]
     fn test_markdown_to_html_inline() {
         let markdown = "This is **bold** text.";
-        let html = markdown_to_html_inline(markdown, 8000);
+        let html = markdown_to_html_inline(markdown, 0);
         assert_eq!(html, "This is <strong>bold</strong> text.");
     }
 
     #[test]
     fn test_markdown_to_html_inline_heading() {
         let markdown = "# Foo";
-        let html = markdown_to_html_inline(markdown, 8000);
+        let html = markdown_to_html_inline(markdown, 0);
         assert_eq!(html, "<h1>Foo</h1>\n");
     }
 }
