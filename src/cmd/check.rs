@@ -23,10 +23,9 @@ pub fn check_deck(directory: Option<String>) -> Fallible<()> {
 
 #[cfg(test)]
 mod tests {
-
-    use serial_test::serial;
-
     use super::check_deck;
+    use crate::error::Fallible;
+    use crate::helper::create_tmp_copy_of_test_directory;
 
     #[test]
     fn test_non_existent_directory() {
@@ -34,14 +33,9 @@ mod tests {
     }
 
     #[test]
-    #[serial]
-    fn test_directory() {
-        assert!(check_deck(Some("./test".to_string())).is_ok());
-    }
-
-    #[test]
-    #[serial]
-    fn test_example_directory() {
-        assert!(check_deck(Some("./test".to_string())).is_ok());
+    fn test_directory() -> Fallible<()> {
+        let directory = create_tmp_copy_of_test_directory()?;
+        assert!(check_deck(Some(directory)).is_ok());
+        Ok(())
     }
 }

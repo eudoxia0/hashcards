@@ -22,19 +22,17 @@ mod template;
 mod tests {
     use std::env::temp_dir;
     use std::fs::create_dir_all;
-    use std::path::PathBuf;
     use std::time::Duration;
 
     use portpicker::pick_unused_port;
     use reqwest::StatusCode;
-    use serial_test::serial;
-    use tokio::fs::remove_file;
     use tokio::net::TcpStream;
     use tokio::spawn;
     use tokio::time::sleep;
 
     use crate::cmd::drill::server::start_server;
     use crate::error::Fallible;
+    use crate::helper::create_tmp_copy_of_test_directory;
     use crate::types::timestamp::Timestamp;
 
     #[tokio::test]
@@ -68,17 +66,10 @@ mod tests {
     }
 
     #[tokio::test]
-    #[serial]
     async fn test_e2e() -> Fallible<()> {
         let port = pick_unused_port().unwrap();
-        let directory = PathBuf::from("./test").canonicalize().unwrap();
-        let db_path = directory.join("db.sqlite3");
-        if db_path.exists() {
-            remove_file(&db_path).await?;
-        }
-
+        let directory = create_tmp_copy_of_test_directory()?;
         let session_started_at = Timestamp::now();
-        let directory = directory.display().to_string();
         spawn(
             async move { start_server(Some(directory), port, session_started_at, None, None).await },
         );
@@ -167,18 +158,10 @@ mod tests {
     }
 
     #[tokio::test]
-    #[serial]
     async fn test_undo() -> Fallible<()> {
         let port = pick_unused_port().unwrap();
-        let directory = PathBuf::from("./test").canonicalize().unwrap();
-        let db_path = directory.join("db.sqlite3");
-        if db_path.exists() {
-            remove_file(&db_path).await?;
-        }
-
-        // Start the server
+        let directory = create_tmp_copy_of_test_directory()?;
         let session_started_at = Timestamp::now();
-        let directory = directory.display().to_string();
         spawn(
             async move { start_server(Some(directory), port, session_started_at, None, None).await },
         );
@@ -214,18 +197,10 @@ mod tests {
     }
 
     #[tokio::test]
-    #[serial]
     async fn test_undo_initial() -> Fallible<()> {
         let port = pick_unused_port().unwrap();
-        let directory = PathBuf::from("./test").canonicalize().unwrap();
-        let db_path = directory.join("db.sqlite3");
-        if db_path.exists() {
-            remove_file(&db_path).await?;
-        }
-
-        // Start the server
+        let directory = create_tmp_copy_of_test_directory()?;
         let session_started_at = Timestamp::now();
-        let directory = directory.display().to_string();
         spawn(
             async move { start_server(Some(directory), port, session_started_at, None, None).await },
         );
@@ -243,18 +218,10 @@ mod tests {
     }
 
     #[tokio::test]
-    #[serial]
     async fn test_answer_without_reveal() -> Fallible<()> {
         let port = pick_unused_port().unwrap();
-        let directory = PathBuf::from("./test").canonicalize().unwrap();
-        let db_path = directory.join("db.sqlite3");
-        if db_path.exists() {
-            remove_file(&db_path).await?;
-        }
-
-        // Start the server
+        let directory = create_tmp_copy_of_test_directory()?;
         let session_started_at = Timestamp::now();
-        let directory = directory.display().to_string();
         spawn(
             async move { start_server(Some(directory), port, session_started_at, None, None).await },
         );
@@ -272,18 +239,10 @@ mod tests {
     }
 
     #[tokio::test]
-    #[serial]
     async fn test_undo_forgetting() -> Fallible<()> {
         let port = pick_unused_port().unwrap();
-        let directory = PathBuf::from("./test").canonicalize().unwrap();
-        let db_path = directory.join("db.sqlite3");
-        if db_path.exists() {
-            remove_file(&db_path).await?;
-        }
-
-        // Start the server
+        let directory = create_tmp_copy_of_test_directory()?;
         let session_started_at = Timestamp::now();
-        let directory = directory.display().to_string();
         spawn(
             async move { start_server(Some(directory), port, session_started_at, None, None).await },
         );
@@ -319,18 +278,10 @@ mod tests {
     }
 
     #[tokio::test]
-    #[serial]
     async fn test_end() -> Fallible<()> {
         let port = pick_unused_port().unwrap();
-        let directory = PathBuf::from("./test").canonicalize().unwrap();
-        let db_path = directory.join("db.sqlite3");
-        if db_path.exists() {
-            remove_file(&db_path).await?;
-        }
-
-        // Start the server
+        let directory = create_tmp_copy_of_test_directory()?;
         let session_started_at = Timestamp::now();
-        let directory = directory.display().to_string();
         spawn(
             async move { start_server(Some(directory), port, session_started_at, None, None).await },
         );
