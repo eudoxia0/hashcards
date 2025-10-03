@@ -47,6 +47,12 @@ pub enum Performance {
     Reviewed(ReviewedPerformance),
 }
 
+impl Performance {
+    pub fn is_new(&self) -> bool {
+        matches!(self, Performance::New)
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct ReviewedPerformance {
     /// The timestamp when the card was last reviewed.
@@ -61,7 +67,11 @@ pub struct ReviewedPerformance {
     pub review_count: usize,
 }
 
-pub fn update_performance(perf: Performance, grade: Grade, reviewed_at: Timestamp) -> Performance {
+pub fn update_performance(
+    perf: Performance,
+    grade: Grade,
+    reviewed_at: Timestamp,
+) -> ReviewedPerformance {
     let today: NaiveDate = reviewed_at.local_date().into_inner();
     let (stability, difficulty, review_count): (Stability, Difficulty, usize) = match perf {
         Performance::New => (initial_stability(grade), initial_difficulty(grade), 0),
@@ -85,11 +95,11 @@ pub fn update_performance(perf: Performance, grade: Grade, reviewed_at: Timestam
     let clamped_interval: T = rounded_interval.clamp(MIN_INTERVAL, MAX_INTERVAL);
     let interval_duration: Duration = Duration::days(clamped_interval as i64);
     let due_date: Date = Date::new(today + interval_duration);
-    Performance::Reviewed(ReviewedPerformance {
+    ReviewedPerformance {
         last_reviewed_at: reviewed_at,
         stability,
         difficulty,
         due_date,
         review_count: review_count + 1,
-    })
+    }
 }

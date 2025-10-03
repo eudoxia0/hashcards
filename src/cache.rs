@@ -55,9 +55,9 @@ impl Cache {
 
     /// Retrieve a card's performance information. If the hash is not in the
     /// cache, returns an error.
-    pub fn get(&self, card_hash: CardHash) -> Fallible<&Performance> {
+    pub fn get(&self, card_hash: CardHash) -> Fallible<Performance> {
         match self.changes.get(&card_hash) {
-            Some(performance) => Ok(performance),
+            Some(performance) => Ok(*performance),
             None => fail(format!("Card with hash {card_hash} not found in cache")),
         }
     }
