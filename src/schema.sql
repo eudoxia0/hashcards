@@ -7,6 +7,7 @@ create table cards (
     stability real,
     difficulty real,
     interval_raw real,
+    interval_days integer,
     due_date text,
     review_count integer not null
 ) strict;
@@ -32,5 +33,6 @@ create table reviews (
     stability real not null,
     difficulty real not null,
     interval_raw real not null,
+    interval_days integer not null,
     due_date text not null
 ) strict;

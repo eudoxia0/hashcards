@@ -71,6 +71,7 @@ impl Cache {
         stability: Stability,
         difficulty: Difficulty,
         interval_raw: f64,
+        interval_days: usize,
         due_date: Date,
     ) -> Fallible<()> {
         match self.changes.get_mut(&card_hash) {
@@ -81,6 +82,7 @@ impl Cache {
                         stability,
                         difficulty,
                         interval_raw,
+                        interval_days,
                         due_date,
                         review_count: 1,
                     });
@@ -91,6 +93,7 @@ impl Cache {
                     rp.stability = stability;
                     rp.difficulty = difficulty;
                     rp.interval_raw = interval_raw;
+                    rp.interval_days = interval_days;
                     rp.due_date = due_date;
                     rp.review_count += 1;
                     Ok(())
@@ -133,6 +136,7 @@ mod tests {
         let stability = 1.0;
         let difficulty = 2.0;
         let interval_raw = 0.4;
+        let interval_days = 1;
         let due_date = Timestamp::now().local_date();
         cache.update(
             card_hash,
@@ -140,6 +144,7 @@ mod tests {
             stability,
             difficulty,
             interval_raw,
+            interval_days,
             due_date,
         )?;
         let retrieved = cache.get(card_hash)?;
@@ -149,6 +154,7 @@ mod tests {
                 assert_eq!(rp.stability, stability);
                 assert_eq!(rp.difficulty, difficulty);
                 assert_eq!(rp.interval_raw, 0.4);
+                assert_eq!(rp.interval_days, interval_days);
                 assert_eq!(rp.due_date, due_date);
                 Ok(())
             }
@@ -182,6 +188,7 @@ mod tests {
         let stability = 1.0;
         let difficulty = 2.0;
         let interval_raw = 0.4;
+        let interval_days = 1;
         let due_date = Timestamp::now().local_date();
         assert!(
             cache
@@ -191,6 +198,7 @@ mod tests {
                     stability,
                     difficulty,
                     interval_raw,
+                    interval_days,
                     due_date
                 )
                 .is_err()

@@ -64,6 +64,8 @@ pub struct ReviewedPerformance {
     /// The FSRS-calculated interval in hours until the next review. This is
     /// the raw interval, before any rounding and clamping.
     pub interval_raw: T,
+    /// The FSRS interval as an integer number of days.
+    pub interval_days: usize,
     /// The card's next due date.
     pub due_date: Date,
     /// The number of times the card has been reviewed.
@@ -96,6 +98,7 @@ pub fn update_performance(
     let interval_raw: T = interval(TARGET_RECALL, stability);
     let interval_rounded: T = interval_raw.round();
     let interval_clamped: T = interval_rounded.clamp(MIN_INTERVAL, MAX_INTERVAL);
+    let interval_days: usize = interval_clamped as usize;
     let interval_duration: Duration = Duration::days(interval_clamped as i64);
     let due_date: Date = Date::new(today + interval_duration);
     ReviewedPerformance {
@@ -103,6 +106,7 @@ pub fn update_performance(
         stability,
         difficulty,
         interval_raw,
+        interval_days,
         due_date,
         review_count: review_count + 1,
     }

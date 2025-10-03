@@ -53,6 +53,7 @@ pub struct Review {
     pub stability: Stability,
     pub difficulty: Difficulty,
     pub interval_raw: f64,
+    pub interval_days: usize,
     pub due_date: Date,
 }
 
@@ -65,6 +66,7 @@ impl Review {
             stability: self.stability,
             difficulty: self.difficulty,
             interval_raw: self.interval_raw,
+            interval_days: self.interval_days,
             due_date: self.due_date,
         }
     }
