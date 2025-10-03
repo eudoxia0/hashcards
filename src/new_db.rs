@@ -74,8 +74,13 @@ impl Database {
         todo!()
     }
 
+    /// Retrieve a card's performance data.
+    pub fn get_card_performance(&self, card_hash: CardHash) -> Fallible<Option<CardPerformance>> {
+        todo!()
+    }
+
     /// Delete the card with the given hash, and all its reviews.
-    pub fn delete_card(&mut self, card_hash: &CardHash) -> Fallible<()> {
+    pub fn delete_card(&mut self, card_hash: CardHash) -> Fallible<()> {
         todo!()
     }
 
@@ -99,5 +104,34 @@ impl Database {
         reviews: Vec<ReviewRecord>,
     ) -> Fallible<()> {
         todo!()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_empty_database() -> Fallible<()> {
+        let db = Database::new(":memory:")?;
+        assert_eq!(db.card_hashes()?, HashSet::new());
+        assert_eq!(db.due_today(Timestamp::now().local_date())?, HashSet::new());
+        let hash = CardHash::hash_bytes(b"a");
+        assert!(db.get_card_performance(hash)?.is_none());
+        Ok(())
+    }
+
+    #[test]
+    fn test_add_card() -> Fallible<()> {
+        let db = Database::new(":memory:")?;
+        let hash = CardHash::hash_bytes(b"a");
+        let now = Timestamp::now();
+        db.add_card(hash, now)?;
+        let hashes = db.card_hashes()?;
+        assert_eq!(hashes.len(), 1);
+        assert!(hashes.contains(&hash));
+        let perf = db.get_card_performance(hash)?;
+        assert!(perf.is_none());
+        Ok(())
     }
 }
