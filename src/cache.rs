@@ -67,38 +67,13 @@ impl Cache {
     pub fn update(
         &mut self,
         card_hash: CardHash,
-        last_reviewed_at: Timestamp,
-        stability: Stability,
-        difficulty: Difficulty,
-        interval_raw: f64,
-        interval_days: usize,
-        due_date: Date,
+        performance: ReviewedPerformance,
     ) -> Fallible<()> {
         match self.changes.get_mut(&card_hash) {
-            Some(performance) => match performance {
-                Performance::New => {
-                    *performance = Performance::Reviewed(ReviewedPerformance {
-                        last_reviewed_at,
-                        stability,
-                        difficulty,
-                        interval_raw,
-                        interval_days,
-                        due_date,
-                        review_count: 1,
-                    });
-                    Ok(())
-                }
-                Performance::Reviewed(rp) => {
-                    rp.last_reviewed_at = last_reviewed_at;
-                    rp.stability = stability;
-                    rp.difficulty = difficulty;
-                    rp.interval_raw = interval_raw;
-                    rp.interval_days = interval_days;
-                    rp.due_date = due_date;
-                    rp.review_count += 1;
-                    Ok(())
-                }
-            },
+            Some(p) => {
+                *p = Performance::Reviewed(performance);
+                Ok(())
+            }
             None => fail(format!("Card with hash {card_hash} not found in cache")),
         }
     }
@@ -138,14 +113,18 @@ mod tests {
         let interval_raw = 0.4;
         let interval_days = 1;
         let due_date = Timestamp::now().local_date();
+        let review_count = 3;
         cache.update(
             card_hash,
-            last_reviewed_at,
-            stability,
-            difficulty,
-            interval_raw,
-            interval_days,
-            due_date,
+            ReviewedPerformance {
+                last_reviewed_at,
+                stability,
+                difficulty,
+                interval_raw,
+                interval_days,
+                due_date,
+                review_count,
+            },
         )?;
         let retrieved = cache.get(card_hash)?;
         match retrieved {
@@ -156,6 +135,7 @@ mod tests {
                 assert_eq!(rp.interval_raw, 0.4);
                 assert_eq!(rp.interval_days, interval_days);
                 assert_eq!(rp.due_date, due_date);
+                assert_eq!(rp.review_count, review_count);
                 Ok(())
             }
             _ => fail("Expected Performance::Reviewed"),
@@ -190,19 +170,18 @@ mod tests {
         let interval_raw = 0.4;
         let interval_days = 1;
         let due_date = Timestamp::now().local_date();
-        assert!(
-            cache
-                .update(
-                    card_hash,
-                    last_reviewed_at,
-                    stability,
-                    difficulty,
-                    interval_raw,
-                    interval_days,
-                    due_date
-                )
-                .is_err()
-        );
+        let review_count = 3;
+        let rp = ReviewedPerformance {
+            last_reviewed_at,
+            stability,
+            difficulty,
+            interval_raw,
+            interval_days,
+            due_date,
+            review_count,
+        };
+        let res = cache.update(card_hash, rp);
+        assert!(res.is_err());
         Ok(())
     }
 
