@@ -90,10 +90,10 @@ pub fn update_performance(
             (stability, difficulty, review_count)
         }
     };
-    let raw_interval: T = interval(TARGET_RECALL, stability);
-    let rounded_interval: T = raw_interval.round();
-    let clamped_interval: T = rounded_interval.clamp(MIN_INTERVAL, MAX_INTERVAL);
-    let interval_duration: Duration = Duration::days(clamped_interval as i64);
+    let interval_raw: T = interval(TARGET_RECALL, stability);
+    let interval_rounded: T = interval_raw.round();
+    let interval_clamped: T = interval_rounded.clamp(MIN_INTERVAL, MAX_INTERVAL);
+    let interval_duration: Duration = Duration::days(interval_clamped as i64);
     let due_date: Date = Date::new(today + interval_duration);
     ReviewedPerformance {
         last_reviewed_at: reviewed_at,
