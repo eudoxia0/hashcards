@@ -16,13 +16,9 @@ use std::collections::HashMap;
 
 use crate::error::Fallible;
 use crate::error::fail;
-use crate::fsrs::Difficulty;
-use crate::fsrs::Stability;
 use crate::types::card_hash::CardHash;
-use crate::types::date::Date;
 use crate::types::performance::Performance;
 use crate::types::performance::ReviewedPerformance;
-use crate::types::timestamp::Timestamp;
 
 /// An in-memory cache of card performance changes made during the current
 /// session. We use this so that updates are only persisted to the database
