@@ -15,6 +15,7 @@
 use std::collections::HashMap;
 
 use crate::error::Fallible;
+use crate::error::fail;
 use crate::fsrs::Difficulty;
 use crate::fsrs::Stability;
 use crate::types::card_hash::CardHash;
@@ -31,7 +32,7 @@ pub struct Cache {
 }
 
 /// Represents performance information for a card.
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub enum Performance {
     /// The card is new, and has never been reviewed.
     New,
@@ -39,7 +40,7 @@ pub enum Performance {
     Reviewed(ReviewedPerformance),
 }
 
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub struct ReviewedPerformance {
     /// The timestamp when the card was last reviewed.
     pub last_reviewed_at: Timestamp,
@@ -63,27 +64,58 @@ impl Cache {
 
     /// Insert's a card performance information. If the hash is already in
     /// the cache, returns an error.
-    pub fn insert(&self, card_hash: CardHash, performance: Performance) -> Fallible<()> {
-        todo!()
+    pub fn insert(&mut self, card_hash: CardHash, performance: Performance) -> Fallible<()> {
+        match self.changes.get(&card_hash) {
+            Some(_) => fail(format!("Card with hash {card_hash} already in cache")),
+            None => {
+                self.changes.insert(card_hash, performance);
+                Ok(())
+            }
+        }
     }
 
     /// Retrieve a card's performance information. If the hash is not in the
     /// cache, returns an error.
     pub fn get(&self, card_hash: CardHash) -> Fallible<&Performance> {
-        todo!()
+        match self.changes.get(&card_hash) {
+            Some(performance) => Ok(performance),
+            None => fail(format!("Card with hash {card_hash} not found in cache")),
+        }
     }
 
     /// Update's a card's performance information. If the hash is not in the
     /// cache, returns an error.
     pub fn update(
-        &self,
+        &mut self,
         card_hash: CardHash,
         last_reviewed_at: Timestamp,
         stability: Stability,
         difficulty: Difficulty,
         due_date: Date,
     ) -> Fallible<()> {
-        todo!()
+        match self.changes.get_mut(&card_hash) {
+            Some(performance) => match performance {
+                Performance::New => {
+                    *performance = Performance::Reviewed(ReviewedPerformance {
+                        last_reviewed_at,
+                        stability,
+                        difficulty,
+                        due_date,
+                        review_count: 1,
+                    });
+                    Ok(())
+                }
+                Performance::Reviewed(rp) => {
+                    rp.last_reviewed_at = last_reviewed_at;
+                    rp.stability = stability;
+                    rp.difficulty = difficulty;
+                    rp.due_date = due_date;
+                    rp.review_count += 1;
+                    Ok(())
+                }
+            },
+            None => fail(format!("Card with hash {card_hash} not found in cache")),
+        }
     }
 
     /// Consumes the cache, returning the underlying hash map.
@@ -95,4 +127,88 @@ impl Cache {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::error::fail;
+
+    #[test]
+    fn test_cache_insert_and_get() -> Fallible<()> {
+        let mut cache = Cache::new();
+        let card_hash = CardHash::hash_bytes(b"a");
+        let performance = Performance::New;
+        cache.insert(card_hash, performance)?;
+        let retrieved = cache.get(card_hash)?;
+        match retrieved {
+            Performance::New => Ok(()),
+            _ => fail("Expected Performance::New"),
+        }
+    }
+
+    #[test]
+    fn test_cache_update() -> Fallible<()> {
+        let mut cache = Cache::new();
+        let card_hash = CardHash::hash_bytes(b"a");
+        let performance = Performance::New;
+        cache.insert(card_hash, performance)?;
+        let last_reviewed_at = Timestamp::now();
+        let stability = 1.0;
+        let difficulty = 2.0;
+        let due_date = Timestamp::now().local_date();
+        cache.update(card_hash, last_reviewed_at, stability, difficulty, due_date)?;
+        let retrieved = cache.get(card_hash)?;
+        match retrieved {
+            Performance::Reviewed(rp) => {
+                assert_eq!(rp.last_reviewed_at, last_reviewed_at);
+                assert_eq!(rp.stability, stability);
+                assert_eq!(rp.difficulty, difficulty);
+                assert_eq!(rp.due_date, due_date);
+                Ok(())
+            }
+            _ => fail("Expected Performance::Reviewed"),
+        }
+    }
+
+    #[test]
+    fn test_cache_insert_duplicate() -> Fallible<()> {
+        let mut cache = Cache::new();
+        let card_hash = CardHash::hash_bytes(b"a");
+        let performance = Performance::New;
+        cache.insert(card_hash, performance)?;
+        assert!(cache.insert(card_hash, performance).is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn test_cache_get_nonexistent() -> Fallible<()> {
+        let cache = Cache::new();
+        let card_hash = CardHash::hash_bytes(b"a");
+        assert!(cache.get(card_hash).is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn test_cache_update_nonexistent() -> Fallible<()> {
+        let mut cache = Cache::new();
+        let card_hash = CardHash::hash_bytes(b"a");
+        let last_reviewed_at = Timestamp::now();
+        let stability = 1.0;
+        let difficulty = 2.0;
+        let due_date = Timestamp::now().local_date();
+        assert!(
+            cache
+                .update(card_hash, last_reviewed_at, stability, difficulty, due_date)
+                .is_err()
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_cache_into_inner() -> Fallible<()> {
+        let mut cache = Cache::new();
+        let card_hash = CardHash::hash_bytes(b"a");
+        let performance = Performance::New;
+        cache.insert(card_hash, performance)?;
+        let inner = cache.into_inner();
+        assert_eq!(inner.len(), 1);
+        assert!(inner.contains_key(&card_hash));
+        Ok(())
+    }
 }
