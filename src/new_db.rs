@@ -159,4 +159,36 @@ mod tests {
         assert!(db.get_card_performance(hash)?.is_none());
         Ok(())
     }
+
+    #[test]
+    fn test_due_today() -> Fallible<()> {
+        let mut db = Database::new(":memory:")?;
+        let hash = CardHash::hash_bytes(b"a");
+        let now = Timestamp::now();
+        db.add_card(hash, now)?;
+        let today = now.local_date();
+        db.update_card(hash, now, 1.0, 1.0, today)?;
+        let due_today = db.due_today(today)?;
+        assert_eq!(due_today.len(), 1);
+        assert!(due_today.contains(&hash));
+        Ok(())
+    }
+
+    #[test]
+    fn test_save_session() -> Fallible<()> {
+        let mut db = Database::new(":memory:")?;
+        let hash = CardHash::hash_bytes(b"a");
+        let now = Timestamp::now();
+        db.add_card(hash, now)?;
+        let reviews = vec![ReviewRecord {
+            card_hash: hash,
+            reviewed_at: now,
+            grade: Grade::Good,
+            stability: 1.0,
+            difficulty: 1.0,
+            due_date: now.local_date(),
+        }];
+        db.save_session(now, now, reviews)?;
+        Ok(())
+    }
 }
