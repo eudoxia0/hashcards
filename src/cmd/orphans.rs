@@ -29,10 +29,10 @@ pub fn list_orphans(directory: Option<String>) -> Fallible<()> {
 }
 
 pub fn delete_orphans(directory: Option<String>) -> Fallible<()> {
-    let mut coll = Collection::new(directory)?;
+    let coll = Collection::new(directory)?;
     let orphans: Vec<CardHash> = get_orphans(&coll)?;
     for hash in &orphans {
-        coll.db.delete_card(hash)?;
+        coll.db.delete_card(*hash)?;
         println!("{}", hash);
     }
     Ok(())

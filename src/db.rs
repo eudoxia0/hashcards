@@ -237,6 +237,20 @@ impl Database {
         Ok(())
     }
 
+    /// Delete a card and its reviews.
+    ///
+    /// If no card with the given hash exists, returns an error.
+    pub fn delete_card(&self, card_hash: CardHash) -> Fallible<()> {
+        if !self.card_exists(card_hash)? {
+            return fail("Card not found");
+        }
+        let sql = "delete from reviews where card_hash = ?;";
+        self.conn.execute(sql, params![card_hash])?;
+        let sql = "delete from cards where card_hash = ?;";
+        self.conn.execute(sql, params![card_hash])?;
+        Ok(())
+    }
+
     fn card_exists(&self, card_hash: CardHash) -> Fallible<bool> {
         let sql = "select count(*) from cards where card_hash = ?;";
         let count: i64 = self.conn.query_row(sql, [card_hash], |row| row.get(0))?;
@@ -360,6 +374,33 @@ mod tests {
             due_date: now.local_date(),
         };
         db.save_session(now, now, vec![review])?;
+        Ok(())
+    }
+
+    /// Trying to delete a non-existent card returns an error.
+    #[test]
+    fn test_delete_nonexistent_card() -> Fallible<()> {
+        let db = Database::new(":memory:")?;
+        let card_hash = CardHash::hash_bytes(b"a");
+        let result = db.delete_card(card_hash);
+        assert!(result.is_err());
+        let err = result.err().unwrap();
+        assert_eq!(err.to_string(), "error: Card not found");
+        Ok(())
+    }
+
+    /// Delete a card and see that it is gone.
+    #[test]
+    fn test_delete_card() -> Fallible<()> {
+        let db = Database::new(":memory:")?;
+        let card_hash = CardHash::hash_bytes(b"a");
+        let now = Timestamp::now();
+        db.insert_card(card_hash, now)?;
+        db.delete_card(card_hash)?;
+        let result = db.get_card_performance(card_hash);
+        assert!(result.is_err());
+        let err = result.err().unwrap();
+        assert_eq!(err.to_string(), "error: Card not found");
         Ok(())
     }
 }
