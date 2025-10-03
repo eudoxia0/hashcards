@@ -81,6 +81,13 @@ pub async fn start_server(
         return Ok(());
     }
 
+    // For all cards due today, fetch their performance from the database and store it in the cache.
+    let mut cache = Cache::new();
+    for card in due_today.iter() {
+        let performance = db.get_card_performance(card.hash())?;
+        cache.insert(card.hash(), performance)?;
+    }
+
     let state = ServerState {
         port,
         directory,
@@ -90,7 +97,7 @@ pub async fn start_server(
         mutable: Arc::new(Mutex::new(MutableState {
             reveal: false,
             db,
-            cache: Cache::new(),
+            cache,
             cards: due_today,
             reviews: Vec::new(),
             finished_at: None,
