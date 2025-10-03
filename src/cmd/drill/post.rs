@@ -17,6 +17,7 @@ use axum::extract::State;
 use axum::response::Redirect;
 use serde::Deserialize;
 
+use crate::cmd::drill::state::MutableState;
 use crate::cmd::drill::state::Review;
 use crate::cmd::drill::state::ServerState;
 use crate::db::ReviewRecord;
@@ -72,7 +73,6 @@ pub async fn post_handler(
 
 async fn action_handler(state: ServerState, action: Action) -> Fallible<()> {
     let mut mutable = state.mutable.lock().unwrap();
-    let today = state.session_started_at.local_date();
     match action {
         Action::Reveal => {
             if !mutable.reveal {
@@ -92,14 +92,7 @@ async fn action_handler(state: ServerState, action: Action) -> Fallible<()> {
             }
         }
         Action::End => {
-            log::debug!("Session completed");
-            let session_ended_at = Timestamp::now();
-            let reviews: Vec<Review> = mutable.reviews.clone();
-            let reviews: Vec<ReviewRecord> = reviews.into_iter().map(Review::into_record).collect();
-            mutable
-                .db
-                .save_session(state.session_started_at, session_ended_at, reviews)?;
-            mutable.finished_at = Some(session_ended_at);
+            finish_session(&mut mutable, &state)?;
         }
         Action::Forgot | Action::Hard | Action::Good | Action::Easy => {
             if mutable.reveal {
@@ -130,15 +123,7 @@ async fn action_handler(state: ServerState, action: Action) -> Fallible<()> {
 
                 // Was this the last card?
                 if mutable.cards.is_empty() {
-                    log::debug!("Session completed");
-                    let session_ended_at = Timestamp::now();
-                    let reviews: Vec<Review> = mutable.reviews.clone();
-                    let reviews: Vec<ReviewRecord> =
-                        reviews.into_iter().map(Review::into_record).collect();
-                    mutable
-                        .db
-                        .save_session(state.session_started_at, session_ended_at, reviews)?;
-                    mutable.finished_at = Some(session_ended_at);
+                    finish_session(&mut mutable, &state)?;
                 }
             }
         }
@@ -157,4 +142,16 @@ mod tests {
         assert_eq!(Action::Good.grade(), Grade::Good);
         assert_eq!(Action::Easy.grade(), Grade::Easy);
     }
+}
+
+fn finish_session(mutable: &mut MutableState, state: &ServerState) -> Fallible<()> {
+    log::debug!("Session completed");
+    let session_ended_at = Timestamp::now();
+    let reviews: Vec<Review> = mutable.reviews.clone();
+    let reviews: Vec<ReviewRecord> = reviews.into_iter().map(Review::into_record).collect();
+    mutable
+        .db
+        .save_session(state.session_started_at, session_ended_at, reviews)?;
+    mutable.finished_at = Some(session_ended_at);
+    Ok(())
 }
