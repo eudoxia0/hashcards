@@ -89,10 +89,12 @@ mod tests {
             cards_in_deck_count,
             cards_in_db_count,
             tex_macro_count,
+            cards_reviewed_today_count,
         } = stats;
         assert_eq!(cards_in_deck_count, 2);
         assert_eq!(cards_in_db_count, 0);
         assert_eq!(tex_macro_count, 1);
+        assert_eq!(cards_reviewed_today_count, 0);
         Ok(())
     }
 }
