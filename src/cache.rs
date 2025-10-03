@@ -20,6 +20,8 @@ use crate::fsrs::Difficulty;
 use crate::fsrs::Stability;
 use crate::types::card_hash::CardHash;
 use crate::types::date::Date;
+use crate::types::performance::Performance;
+use crate::types::performance::ReviewedPerformance;
 use crate::types::timestamp::Timestamp;
 
 /// An in-memory cache of card performance changes made during the current
@@ -29,29 +31,6 @@ use crate::types::timestamp::Timestamp;
 pub struct Cache {
     /// A map of card IDs to their performance changes.
     changes: HashMap<CardHash, Performance>,
-}
-
-/// Represents performance information for a card.
-#[derive(Clone, Copy)]
-pub enum Performance {
-    /// The card is new, and has never been reviewed.
-    New,
-    /// The card has been reviewed at least once.
-    Reviewed(ReviewedPerformance),
-}
-
-#[derive(Clone, Copy)]
-pub struct ReviewedPerformance {
-    /// The timestamp when the card was last reviewed.
-    pub last_reviewed_at: Timestamp,
-    /// The card's stability (an FSRS parameter).
-    pub stability: Stability,
-    /// The card's difficulty (an FSRS parameter).
-    pub difficulty: Difficulty,
-    /// The card's next due date.
-    pub due_date: Date,
-    /// The number of times the card has been reviewed.
-    pub review_count: usize,
 }
 
 impl Cache {
