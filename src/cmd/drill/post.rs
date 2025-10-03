@@ -138,19 +138,6 @@ async fn action_handler(state: ServerState, action: Action) -> Fallible<()> {
     Ok(())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_action_grade() {
-        assert_eq!(Action::Forgot.grade(), Grade::Forgot);
-        assert_eq!(Action::Hard.grade(), Grade::Hard);
-        assert_eq!(Action::Good.grade(), Grade::Good);
-        assert_eq!(Action::Easy.grade(), Grade::Easy);
-    }
-}
-
 fn finish_session(mutable: &mut MutableState, state: &ServerState) -> Fallible<()> {
     log::debug!("Session completed");
     let session_ended_at = Timestamp::now();
@@ -166,4 +153,17 @@ fn finish_session(mutable: &mut MutableState, state: &ServerState) -> Fallible<(
             .update_card_performance(*card_hash, *performance)?;
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_action_grade() {
+        assert_eq!(Action::Forgot.grade(), Grade::Forgot);
+        assert_eq!(Action::Hard.grade(), Grade::Hard);
+        assert_eq!(Action::Good.grade(), Grade::Good);
+        assert_eq!(Action::Easy.grade(), Grade::Easy);
+    }
 }
