@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub mod augmented_card;
 pub mod card;
 pub mod card_hash;
 pub mod card_type;
