@@ -70,6 +70,7 @@ impl Cache {
         last_reviewed_at: Timestamp,
         stability: Stability,
         difficulty: Difficulty,
+        interval_raw: f64,
         due_date: Date,
     ) -> Fallible<()> {
         match self.changes.get_mut(&card_hash) {
@@ -79,6 +80,7 @@ impl Cache {
                         last_reviewed_at,
                         stability,
                         difficulty,
+                        interval_raw,
                         due_date,
                         review_count: 1,
                     });
@@ -88,6 +90,7 @@ impl Cache {
                     rp.last_reviewed_at = last_reviewed_at;
                     rp.stability = stability;
                     rp.difficulty = difficulty;
+                    rp.interval_raw = interval_raw;
                     rp.due_date = due_date;
                     rp.review_count += 1;
                     Ok(())
@@ -129,14 +132,23 @@ mod tests {
         let last_reviewed_at = Timestamp::now();
         let stability = 1.0;
         let difficulty = 2.0;
+        let interval_raw = 0.4;
         let due_date = Timestamp::now().local_date();
-        cache.update(card_hash, last_reviewed_at, stability, difficulty, due_date)?;
+        cache.update(
+            card_hash,
+            last_reviewed_at,
+            stability,
+            difficulty,
+            interval_raw,
+            due_date,
+        )?;
         let retrieved = cache.get(card_hash)?;
         match retrieved {
             Performance::Reviewed(rp) => {
                 assert_eq!(rp.last_reviewed_at, last_reviewed_at);
                 assert_eq!(rp.stability, stability);
                 assert_eq!(rp.difficulty, difficulty);
+                assert_eq!(rp.interval_raw, 0.4);
                 assert_eq!(rp.due_date, due_date);
                 Ok(())
             }
@@ -169,10 +181,18 @@ mod tests {
         let last_reviewed_at = Timestamp::now();
         let stability = 1.0;
         let difficulty = 2.0;
+        let interval_raw = 0.4;
         let due_date = Timestamp::now().local_date();
         assert!(
             cache
-                .update(card_hash, last_reviewed_at, stability, difficulty, due_date)
+                .update(
+                    card_hash,
+                    last_reviewed_at,
+                    stability,
+                    difficulty,
+                    interval_raw,
+                    due_date
+                )
                 .is_err()
         );
         Ok(())

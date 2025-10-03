@@ -61,6 +61,9 @@ pub struct ReviewedPerformance {
     pub stability: Stability,
     /// The card's difficulty (an FSRS parameter).
     pub difficulty: Difficulty,
+    /// The FSRS-calculated interval in hours until the next review. This is
+    /// the raw interval, before any rounding and clamping.
+    pub interval_raw: T,
     /// The card's next due date.
     pub due_date: Date,
     /// The number of times the card has been reviewed.
@@ -99,6 +102,7 @@ pub fn update_performance(
         last_reviewed_at: reviewed_at,
         stability,
         difficulty,
+        interval_raw,
         due_date,
         review_count: review_count + 1,
     }

@@ -19,7 +19,9 @@ use std::sync::Mutex;
 use crate::cache::Cache;
 use crate::db::Database;
 use crate::db::ReviewRecord;
+use crate::fsrs::Difficulty;
 use crate::fsrs::Grade;
+use crate::fsrs::Stability;
 use crate::types::card::Card;
 use crate::types::date::Date;
 use crate::types::timestamp::Timestamp;
@@ -48,8 +50,9 @@ pub struct Review {
     pub card: Card,
     pub reviewed_at: Timestamp,
     pub grade: Grade,
-    pub stability: f64,
-    pub difficulty: f64,
+    pub stability: Stability,
+    pub difficulty: Difficulty,
+    pub interval_raw: f64,
     pub due_date: Date,
 }
 
@@ -61,6 +64,7 @@ impl Review {
             grade: self.grade,
             stability: self.stability,
             difficulty: self.difficulty,
+            interval_raw: self.interval_raw,
             due_date: self.due_date,
         }
     }

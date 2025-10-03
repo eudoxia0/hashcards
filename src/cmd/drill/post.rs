@@ -109,6 +109,7 @@ async fn action_handler(state: ServerState, action: Action) -> Fallible<()> {
                     grade,
                     stability: performance.stability,
                     difficulty: performance.difficulty,
+                    interval_raw: performance.interval_raw,
                     due_date: performance.due_date,
                 };
                 mutable.reviews.push(review);
@@ -117,6 +118,7 @@ async fn action_handler(state: ServerState, action: Action) -> Fallible<()> {
                     reviewed_at,
                     performance.stability,
                     performance.difficulty,
+                    performance.interval_raw,
                     performance.due_date,
                 )?;
 
