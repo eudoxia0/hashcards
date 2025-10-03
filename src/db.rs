@@ -40,6 +40,8 @@ pub struct ReviewRecord {
     pub grade: Grade,
     pub stability: f64,
     pub difficulty: f64,
+    pub interval_raw: f64,
+    pub interval_days: usize,
     pub due_date: Date,
 }
 
@@ -115,20 +117,36 @@ impl Database {
         if !self.card_exists(card_hash)? {
             return fail("Card not found");
         }
-        let sql = "select last_reviewed_at, stability, difficulty, due_date, review_count from cards where card_hash = ?;";
+        let sql = "select last_reviewed_at, stability, difficulty, interval_raw, interval_days, due_date, review_count from cards where card_hash = ?;";
         let row = self.conn.query_one(sql, params![card_hash], |row| {
             let last_reviewed_at: Option<Timestamp> = row.get(0)?;
             let stability: Option<Stability> = row.get(1)?;
             let difficulty: Option<Difficulty> = row.get(2)?;
-            let due_date: Option<Date> = row.get(3)?;
-            let review_count: i32 = row.get(4)?;
-            if let (Some(last_reviewed_at), Some(stability), Some(difficulty), Some(due_date)) =
-                (last_reviewed_at, stability, difficulty, due_date)
-            {
+            let interval_raw: Option<f64> = row.get(3)?;
+            let interval_days: Option<usize> = row.get(4)?;
+            let due_date: Option<Date> = row.get(5)?;
+            let review_count: i32 = row.get(6)?;
+            if let (
+                Some(last_reviewed_at),
+                Some(stability),
+                Some(difficulty),
+                Some(interval_raw),
+                Some(interval_days),
+                Some(due_date),
+            ) = (
+                last_reviewed_at,
+                stability,
+                difficulty,
+                interval_raw,
+                interval_days,
+                due_date,
+            ) {
                 Ok(Performance::Reviewed(ReviewedPerformance {
                     last_reviewed_at,
                     stability,
                     difficulty,
+                    interval_raw,
+                    interval_days,
                     due_date,
                     review_count: review_count as usize,
                 }))
@@ -150,23 +168,35 @@ impl Database {
         if !self.card_exists(card_hash)? {
             return fail("Card not found");
         }
-        let (last_reviewed_at, stability, difficulty, due_date, review_count) = match performance {
-            Performance::New => (None, None, None, None, 0),
+        let (
+            last_reviewed_at,
+            stability,
+            difficulty,
+            interval_raw,
+            interval_days,
+            due_date,
+            review_count,
+        ) = match performance {
+            Performance::New => (None, None, None, None, None, None, 0),
             Performance::Reviewed(rp) => (
                 Some(rp.last_reviewed_at),
                 Some(rp.stability),
                 Some(rp.difficulty),
+                Some(rp.interval_raw),
+                Some(rp.interval_days as i32),
                 Some(rp.due_date),
                 rp.review_count as i32,
             ),
         };
-        let sql = "update cards set last_reviewed_at = ?, stability = ?, difficulty = ?, due_date = ?, review_count = ? where card_hash = ?;";
+        let sql = "update cards set last_reviewed_at = ?, stability = ?, difficulty = ?, interval_raw = ?, interval_days = ?, due_date = ?, review_count = ? where card_hash = ?;";
         self.conn.execute(
             sql,
             params![
                 last_reviewed_at,
                 stability,
                 difficulty,
+                interval_raw,
+                interval_days,
                 due_date,
                 review_count,
                 card_hash
@@ -186,7 +216,7 @@ impl Database {
         let sql = "insert into sessions (started_at, ended_at) values (?, ?) returning session_id;";
         let session_id: i64 = tx.query_row(sql, params![started_at, ended_at], |row| row.get(0))?;
         for review in reviews {
-            let sql = "insert into reviews (session_id, card_hash, reviewed_at, grade, stability, difficulty, due_date) values (?, ?, ?, ?, ?, ?, ?);";
+            let sql = "insert into reviews (session_id, card_hash, reviewed_at, grade, stability, difficulty, interval_raw, interval_days, due_date) values (?, ?, ?, ?, ?, ?, ?, ?, ?);";
             tx.execute(
                 sql,
                 params![
@@ -196,6 +226,8 @@ impl Database {
                     review.grade,
                     review.stability,
                     review.difficulty,
+                    review.interval_raw,
+                    review.interval_days as i32,
                     review.due_date
                 ],
             )?;
@@ -298,6 +330,8 @@ mod tests {
             last_reviewed_at: now,
             stability: 2.0,
             difficulty: 2.0,
+            interval_raw: 1.0,
+            interval_days: 1,
             due_date: now.local_date(),
             review_count: 1,
         });
@@ -347,6 +381,8 @@ mod tests {
             grade: Grade::Good,
             stability: 2.0,
             difficulty: 2.0,
+            interval_raw: 1.0,
+            interval_days: 1,
             due_date: now.local_date(),
         };
         db.save_session(now, now, vec![review])?;

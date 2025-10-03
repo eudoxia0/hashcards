@@ -16,13 +16,9 @@ use std::collections::HashMap;
 
 use crate::error::Fallible;
 use crate::error::fail;
-use crate::fsrs::Difficulty;
-use crate::fsrs::Stability;
 use crate::types::card_hash::CardHash;
-use crate::types::date::Date;
 use crate::types::performance::Performance;
 use crate::types::performance::ReviewedPerformance;
-use crate::types::timestamp::Timestamp;
 
 /// An in-memory cache of card performance changes made during the current
 /// session. We use this so that updates are only persisted to the database
@@ -67,32 +63,13 @@ impl Cache {
     pub fn update(
         &mut self,
         card_hash: CardHash,
-        last_reviewed_at: Timestamp,
-        stability: Stability,
-        difficulty: Difficulty,
-        due_date: Date,
+        performance: ReviewedPerformance,
     ) -> Fallible<()> {
         match self.changes.get_mut(&card_hash) {
-            Some(performance) => match performance {
-                Performance::New => {
-                    *performance = Performance::Reviewed(ReviewedPerformance {
-                        last_reviewed_at,
-                        stability,
-                        difficulty,
-                        due_date,
-                        review_count: 1,
-                    });
-                    Ok(())
-                }
-                Performance::Reviewed(rp) => {
-                    rp.last_reviewed_at = last_reviewed_at;
-                    rp.stability = stability;
-                    rp.difficulty = difficulty;
-                    rp.due_date = due_date;
-                    rp.review_count += 1;
-                    Ok(())
-                }
-            },
+            Some(p) => {
+                *p = Performance::Reviewed(performance);
+                Ok(())
+            }
             None => fail(format!("Card with hash {card_hash} not found in cache")),
         }
     }
@@ -106,6 +83,7 @@ impl Cache {
 mod tests {
     use super::*;
     use crate::error::fail;
+    use crate::types::timestamp::Timestamp;
 
     #[test]
     fn test_cache_insert_and_get() -> Fallible<()> {
@@ -129,15 +107,32 @@ mod tests {
         let last_reviewed_at = Timestamp::now();
         let stability = 1.0;
         let difficulty = 2.0;
+        let interval_raw = 0.4;
+        let interval_days = 1;
         let due_date = Timestamp::now().local_date();
-        cache.update(card_hash, last_reviewed_at, stability, difficulty, due_date)?;
+        let review_count = 3;
+        cache.update(
+            card_hash,
+            ReviewedPerformance {
+                last_reviewed_at,
+                stability,
+                difficulty,
+                interval_raw,
+                interval_days,
+                due_date,
+                review_count,
+            },
+        )?;
         let retrieved = cache.get(card_hash)?;
         match retrieved {
             Performance::Reviewed(rp) => {
                 assert_eq!(rp.last_reviewed_at, last_reviewed_at);
                 assert_eq!(rp.stability, stability);
                 assert_eq!(rp.difficulty, difficulty);
+                assert_eq!(rp.interval_raw, 0.4);
+                assert_eq!(rp.interval_days, interval_days);
                 assert_eq!(rp.due_date, due_date);
+                assert_eq!(rp.review_count, review_count);
                 Ok(())
             }
             _ => fail("Expected Performance::Reviewed"),
@@ -169,12 +164,21 @@ mod tests {
         let last_reviewed_at = Timestamp::now();
         let stability = 1.0;
         let difficulty = 2.0;
+        let interval_raw = 0.4;
+        let interval_days = 1;
         let due_date = Timestamp::now().local_date();
-        assert!(
-            cache
-                .update(card_hash, last_reviewed_at, stability, difficulty, due_date)
-                .is_err()
-        );
+        let review_count = 3;
+        let rp = ReviewedPerformance {
+            last_reviewed_at,
+            stability,
+            difficulty,
+            interval_raw,
+            interval_days,
+            due_date,
+            review_count,
+        };
+        let res = cache.update(card_hash, rp);
+        assert!(res.is_err());
         Ok(())
     }
 

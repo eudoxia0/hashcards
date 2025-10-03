@@ -109,16 +109,12 @@ async fn action_handler(state: ServerState, action: Action) -> Fallible<()> {
                     grade,
                     stability: performance.stability,
                     difficulty: performance.difficulty,
+                    interval_raw: performance.interval_raw,
+                    interval_days: performance.interval_days,
                     due_date: performance.due_date,
                 };
                 mutable.reviews.push(review);
-                mutable.cache.update(
-                    hash,
-                    reviewed_at,
-                    performance.stability,
-                    performance.difficulty,
-                    performance.due_date,
-                )?;
+                mutable.cache.update(hash, performance)?;
 
                 // Cards graded `Forgot` or `Hard` are put at the back of the
                 // queue.
