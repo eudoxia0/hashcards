@@ -3,6 +3,7 @@ pragma foreign_keys = on;
 create table cards (
     card_hash text primary key,
     added_at text not null,
+    last_reviewed_at text,
     stability real,
     difficulty real,
     due_date text,

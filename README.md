@@ -91,14 +91,15 @@ hashcards stores card performance data and the review history in an SQLite3 data
 
 The `cards` table has the following schema:
 
-| Column         | Type               | Description                                                                            |
-|----------------|--------------------|----------------------------------------------------------------------------------------|
-| `card_hash`    | `text primary key` | The hash of the card.                                                                  |
-| `added_at`     | `text not null`    | The timestamp when the card was first added to the database, in [RFC 3339] format.     |
-| `stability`    | `real`             | The card's stability. `null` if the card is new.                                       |
-| `difficulty`   | `real`             | The card's difficulty. `null` if the card is new.                                      |
-| `due_date`     | `text`             | The date when the card is next due, in `YYYY-MM-DD` format. `null` if the card is new. |
-| `review_count` | `integer not null` | The number of times the card has been reviewed.                                        |
+| Column             | Type               | Description                                                                            |
+|--------------------|--------------------|----------------------------------------------------------------------------------------|
+| `card_hash`        | `text primary key` | The hash of the card.                                                                  |
+| `added_at`         | `text not null`    | The timestamp when the card was first added to the database, in [RFC 3339] format.     |
+| `last_reviewed_at` | `text`             | The timestamp when the card was most recently reviewed. `null` if the card is new.     |
+| `stability`        | `real`             | The card's stability. `null` if the card is new.                                       |
+| `difficulty`       | `real`             | The card's difficulty. `null` if the card is new.                                      |
+| `due_date`         | `text`             | The date when the card is next due, in `YYYY-MM-DD` format. `null` if the card is new. |
+| `review_count`     | `integer not null` | The number of times the card has been reviewed.                                        |
 
 The `sessions` table has the following schema:
 
