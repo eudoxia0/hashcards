@@ -91,15 +91,16 @@ hashcards stores card performance data and the review history in an SQLite3 data
 
 The `cards` table has the following schema:
 
-| Column             | Type               | Description                                                                            |
-|--------------------|--------------------|----------------------------------------------------------------------------------------|
-| `card_hash`        | `text primary key` | The hash of the card.                                                                  |
-| `added_at`         | `text not null`    | The timestamp when the card was first added to the database, in [RFC 3339] format.     |
-| `last_reviewed_at` | `text`             | The timestamp when the card was most recently reviewed. `null` if the card is new.     |
-| `stability`        | `real`             | The card's stability. `null` if the card is new.                                       |
-| `difficulty`       | `real`             | The card's difficulty. `null` if the card is new.                                      |
-| `due_date`         | `text`             | The date when the card is next due, in `YYYY-MM-DD` format. `null` if the card is new. |
-| `review_count`     | `integer not null` | The number of times the card has been reviewed.                                        |
+| Column             | Type               | Description                                                                                                                        |
+|--------------------|--------------------|------------------------------------------------------------------------------------------------------------------------------------|
+| `card_hash`        | `text primary key` | The hash of the card.                                                                                                              |
+| `added_at`         | `text not null`    | The timestamp when the card was first added to the database, in [RFC 3339] format.                                                 |
+| `last_reviewed_at` | `text`             | The timestamp when the card was most recently reviewed. `null` if the card is new.                                                 |
+| `stability`        | `real`             | The card's stability. `null` if the card is new.                                                                                   |
+| `difficulty`       | `real`             | The card's difficulty. `null` if the card is new.                                                                                  |
+| `interval`         | `real`             | The FSRS-calculated interval, before rounding and clamping. A real number of days until the next review `null` if the card is new. |
+| `due_date`         | `text`             | The date when the card is next due, in `YYYY-MM-DD` format. `null` if the card is new.                                             |
+| `review_count`     | `integer not null` | The number of times the card has been reviewed.                                                                                    |
 
 The `sessions` table has the following schema:
 
@@ -111,16 +112,17 @@ The `sessions` table has the following schema:
 
 The `reviews` table has the following schema:
 
-| Column        | Type                  | Description                                                                            |
-|---------------|-----------------------|----------------------------------------------------------------------------------------|
-| `review_id`   | `integer primary key` | The review ID.                                                                         |
-| `session_id`  | `integer not null`    | The ID of the session this review was performed in, a foreign key.                     |
-| `card_hash`   | `text not null`       | The hash of the card that was reviewed, a foreign key.                                 |
-| `reviewed_at` | `text not null`       | The timestamp when the review was performed (i.e., when the user submitted a grade).   |
-| `grade`       | `text not null`       | One of `forgot`, `hard`, `good`, or `easy`.                                            |
-| `stability`   | `real not null`       | The card's stability after this review.                                                |
-| `difficulty`  | `real not null`       | The card's difficulty after this review.                                               |
-| `due_date`    | `text not null`       | The date, in the user's local time, when the card is next due, in `YYYY-MM-DD` format. |
+| Column        | Type                  | Description                                                                                                                        |
+|---------------|-----------------------|------------------------------------------------------------------------------------------------------------------------------------|
+| `review_id`   | `integer primary key` | The review ID.                                                                                                                     |
+| `session_id`  | `integer not null`    | The ID of the session this review was performed in, a foreign key.                                                                 |
+| `card_hash`   | `text not null`       | The hash of the card that was reviewed, a foreign key.                                                                             |
+| `reviewed_at` | `text not null`       | The timestamp when the review was performed (i.e., when the user submitted a grade).                                               |
+| `grade`       | `text not null`       | One of `forgot`, `hard`, `good`, or `easy`.                                                                                        |
+| `stability`   | `real not null`       | The card's stability after this review.                                                                                            |
+| `difficulty`  | `real not null`       | The card's difficulty after this review.                                                                                           |
+| `interval`    | `real`                | The FSRS-calculated interval, before rounding and clamping. A real number of days until the next review `null` if the card is new. |
+| `due_date`    | `text not null`       | The date, in the user's local time, when the card is next due, in `YYYY-MM-DD` format.                                             |
 
 [RFC 3339]: https://datatracker.ietf.org/doc/html/rfc3339
 
