@@ -112,6 +112,13 @@ async fn action_handler(state: ServerState, action: Action) -> Fallible<()> {
                     due_date: performance.due_date,
                 };
                 mutable.reviews.push(review);
+                mutable.cache.update(
+                    hash,
+                    reviewed_at,
+                    performance.stability,
+                    performance.difficulty,
+                    performance.due_date,
+                )?;
 
                 // Cards graded `Forgot` or `Hard` are put at the back of the
                 // queue.
@@ -153,5 +160,10 @@ fn finish_session(mutable: &mut MutableState, state: &ServerState) -> Fallible<(
         .db
         .save_session(state.session_started_at, session_ended_at, reviews)?;
     mutable.finished_at = Some(session_ended_at);
+    for (card_hash, performance) in mutable.cache.iter() {
+        mutable
+            .db
+            .update_card_performance(*card_hash, *performance)?;
+    }
     Ok(())
 }

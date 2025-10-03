@@ -32,6 +32,7 @@ pub struct Timestamp(DateTime<Utc>);
 
 impl Timestamp {
     #[cfg(test)]
+    #[allow(dead_code)]
     pub fn new(ts: DateTime<Utc>) -> Self {
         Self(ts)
     }

@@ -97,9 +97,8 @@ impl Cache {
         }
     }
 
-    /// Consumes the cache, returning the underlying hash map.
-    pub fn into_inner(self) -> HashMap<CardHash, Performance> {
-        self.changes
+    pub fn iter(&self) -> impl Iterator<Item = (&CardHash, &Performance)> {
+        self.changes.iter()
     }
 }
 
@@ -180,14 +179,16 @@ mod tests {
     }
 
     #[test]
-    fn test_cache_into_inner() -> Fallible<()> {
+    fn test_cache_iter() -> Fallible<()> {
         let mut cache = Cache::new();
         let card_hash = CardHash::hash_bytes(b"a");
         let performance = Performance::New;
         cache.insert(card_hash, performance)?;
-        let inner = cache.into_inner();
-        assert_eq!(inner.len(), 1);
-        assert!(inner.contains_key(&card_hash));
+        let mut iter = cache.iter();
+        let (key, value) = iter.next().unwrap();
+        assert_eq!(*key, card_hash);
+        assert!(value.is_new());
+        assert!(iter.next().is_none());
         Ok(())
     }
 }
