@@ -48,6 +48,7 @@ pub async fn start_server(
     session_started_at: Timestamp,
     card_limit: Option<usize>,
     new_card_limit: Option<usize>,
+    deck_filter: Option<String>,
 ) -> Fallible<()> {
     let Collection {
         directory,
@@ -74,7 +75,7 @@ pub async fn start_server(
         .filter(|card| due_today.contains(&card.hash()))
         .collect::<Vec<_>>();
 
-    let due_today = filter_deck(&db, due_today, card_limit, new_card_limit)?;
+    let due_today = filter_deck(&db, due_today, card_limit, new_card_limit, deck_filter)?;
 
     if due_today.is_empty() {
         println!("No cards due today.");
@@ -184,7 +185,17 @@ fn filter_deck(
     deck: Vec<Card>,
     card_limit: Option<usize>,
     new_card_limit: Option<usize>,
+    deck_filter: Option<String>,
 ) -> Fallible<Vec<Card>> {
+    // Apply the deck filter.
+    let deck = match deck_filter {
+        Some(filter) => deck
+            .into_iter()
+            .filter(|card| card.deck_name() == filter)
+            .collect(),
+        None => deck,
+    };
+
     // Bury sibling cards.
     let deck = bury_siblings(deck);
 

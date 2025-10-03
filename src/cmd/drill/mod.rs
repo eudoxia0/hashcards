@@ -43,6 +43,7 @@ mod tests {
             session_started_at,
             None,
             None,
+            None,
         )
         .await;
         assert!(result.is_err());
@@ -58,7 +59,7 @@ mod tests {
         create_dir_all(&dir)?;
         let session_started_at = Timestamp::now();
         let dir = dir.canonicalize().unwrap().display().to_string();
-        start_server(Some(dir), port, session_started_at, None, None).await?;
+        start_server(Some(dir), port, session_started_at, None, None, None).await?;
         Ok(())
     }
 
@@ -67,9 +68,9 @@ mod tests {
         let port = pick_unused_port().unwrap();
         let directory = create_tmp_copy_of_test_directory()?;
         let session_started_at = Timestamp::now();
-        spawn(
-            async move { start_server(Some(directory), port, session_started_at, None, None).await },
-        );
+        spawn(async move {
+            start_server(Some(directory), port, session_started_at, None, None, None).await
+        });
         wait_for_server(port).await?;
 
         // Hit the `style.css` endpoint.
@@ -159,9 +160,9 @@ mod tests {
         let port = pick_unused_port().unwrap();
         let directory = create_tmp_copy_of_test_directory()?;
         let session_started_at = Timestamp::now();
-        spawn(
-            async move { start_server(Some(directory), port, session_started_at, None, None).await },
-        );
+        spawn(async move {
+            start_server(Some(directory), port, session_started_at, None, None, None).await
+        });
         wait_for_server(port).await?;
 
         // Hit reveal.
@@ -198,9 +199,9 @@ mod tests {
         let port = pick_unused_port().unwrap();
         let directory = create_tmp_copy_of_test_directory()?;
         let session_started_at = Timestamp::now();
-        spawn(
-            async move { start_server(Some(directory), port, session_started_at, None, None).await },
-        );
+        spawn(async move {
+            start_server(Some(directory), port, session_started_at, None, None, None).await
+        });
         wait_for_server(port).await?;
 
         // Hit undo.
@@ -219,9 +220,9 @@ mod tests {
         let port = pick_unused_port().unwrap();
         let directory = create_tmp_copy_of_test_directory()?;
         let session_started_at = Timestamp::now();
-        spawn(
-            async move { start_server(Some(directory), port, session_started_at, None, None).await },
-        );
+        spawn(async move {
+            start_server(Some(directory), port, session_started_at, None, None, None).await
+        });
         wait_for_server(port).await?;
 
         // Hit 'Hard'.
@@ -240,9 +241,9 @@ mod tests {
         let port = pick_unused_port().unwrap();
         let directory = create_tmp_copy_of_test_directory()?;
         let session_started_at = Timestamp::now();
-        spawn(
-            async move { start_server(Some(directory), port, session_started_at, None, None).await },
-        );
+        spawn(async move {
+            start_server(Some(directory), port, session_started_at, None, None, None).await
+        });
         wait_for_server(port).await?;
 
         // Hit reveal.
@@ -279,9 +280,9 @@ mod tests {
         let port = pick_unused_port().unwrap();
         let directory = create_tmp_copy_of_test_directory()?;
         let session_started_at = Timestamp::now();
-        spawn(
-            async move { start_server(Some(directory), port, session_started_at, None, None).await },
-        );
+        spawn(async move {
+            start_server(Some(directory), port, session_started_at, None, None, None).await
+        });
         wait_for_server(port).await?;
 
         // Hit end.

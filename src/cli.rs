@@ -44,6 +44,9 @@ enum Command {
         /// The port to use for the web server. Default is 8000.
         #[arg(long, default_value_t = 8000)]
         port: u16,
+        /// Only drill cards from this deck.
+        #[arg(long)]
+        from_deck: Option<String>,
     },
     /// Check the integrity of a collection.
     Check {
@@ -87,6 +90,7 @@ pub async fn entrypoint() -> Fallible<()> {
             card_limit,
             new_card_limit,
             port,
+            from_deck,
         } => {
             // Start a separate task to open the browser once the server is up.
             spawn(async move {
@@ -106,6 +110,7 @@ pub async fn entrypoint() -> Fallible<()> {
                 Timestamp::now(),
                 card_limit,
                 new_card_limit,
+                from_deck,
             )
             .await
         }
