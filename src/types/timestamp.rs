@@ -52,7 +52,6 @@ impl Timestamp {
 
     /// Returns the range of timestamps that comprise the (local) day around
     /// the given timestamp.
-    #[allow(dead_code)]
     pub fn day_range(self) -> (Self, Self) {
         let Self(ts) = self;
 

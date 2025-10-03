@@ -20,6 +20,7 @@ use serde::Serialize;
 
 use crate::collection::Collection;
 use crate::error::Fallible;
+use crate::types::timestamp::Timestamp;
 
 #[derive(ValueEnum, Clone)]
 pub enum StatsFormat {
@@ -59,15 +60,18 @@ pub struct Stats {
     cards_in_deck_count: usize,
     cards_in_db_count: usize,
     tex_macro_count: usize,
+    cards_reviewed_today_count: usize,
 }
 
 fn get_stats(directory: Option<String>) -> Fallible<Stats> {
     let coll = Collection::new(directory)?;
     let cards_in_db_count = coll.db.card_hashes()?.len();
+    let now = Timestamp::now();
     let stats = Stats {
         cards_in_deck_count: coll.cards.len(),
         cards_in_db_count,
         tex_macro_count: coll.macros.len(),
+        cards_reviewed_today_count: coll.db.count_reviews_in_day(now)?,
     };
     Ok(stats)
 }

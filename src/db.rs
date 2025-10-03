@@ -223,6 +223,15 @@ impl Database {
         let count: i64 = self.conn.query_row(sql, [card_hash], |row| row.get(0))?;
         Ok(count > 0)
     }
+
+    pub fn count_reviews_in_day(&self, day: Timestamp) -> Fallible<usize> {
+        let (start, end) = day.day_range();
+        let sql = "select count(*) from reviews where reviewed_at >= ? and reviewed_at < ?;";
+        let count: i64 = self
+            .conn
+            .query_row(sql, params![start, end], |row| row.get(0))?;
+        Ok(count as usize)
+    }
 }
 
 fn probe_schema_exists(tx: &Transaction) -> Fallible<bool> {
