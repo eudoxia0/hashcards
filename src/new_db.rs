@@ -12,43 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Schema:
-//
-// pragma foreign_keys = on;
-//
-// create table cards (
-//     card_hash text primary key,
-//     added_at text not null,
-//     last_reviewed_at text,
-//     stability real,
-//     difficulty real,
-//     due_date text,
-//     review_count integer not null
-// ) strict;
-//
-// create table sessions (
-//     session_id integer primary key,
-//     started_at text not null,
-//     ended_at text not null
-// ) strict;
-//
-// create table reviews (
-//     review_id integer primary key,
-//     session_id integer not null
-//         references sessions (session_id)
-//         on update cascade
-//         on delete cascade,
-//     card_hash text not null
-//         references cards (card_hash)
-//         on update cascade
-//         on delete cascade,
-//     reviewed_at text not null,
-//     grade text not null,
-//     stability real not null,
-//     difficulty real not null,
-//     due_date text not null
-// ) strict;
-
 use std::collections::HashSet;
 
 use rusqlite::Connection;
@@ -63,6 +26,15 @@ use crate::types::timestamp::Timestamp;
 
 pub struct Database {
     conn: Connection,
+}
+
+pub struct ReviewRecord {
+    pub card_hash: CardHash,
+    pub reviewed_at: Timestamp,
+    pub grade: String,
+    pub stability: f64,
+    pub difficulty: f64,
+    pub due_date: Date,
 }
 
 impl Database {
@@ -110,6 +82,16 @@ impl Database {
         &self,
         card_hash: CardHash,
         performance: Performance,
+    ) -> Fallible<()> {
+        todo!()
+    }
+
+    /// Save a session.
+    pub fn save_session(
+        &mut self,
+        started_at: Timestamp,
+        ended_at: Timestamp,
+        reviews: Vec<ReviewRecord>,
     ) -> Fallible<()> {
         todo!()
     }
