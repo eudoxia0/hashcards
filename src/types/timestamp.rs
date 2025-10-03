@@ -32,6 +32,7 @@ pub struct Timestamp(DateTime<Utc>);
 
 impl Timestamp {
     #[cfg(test)]
+    #[allow(dead_code)]
     pub fn new(ts: DateTime<Utc>) -> Self {
         Self(ts)
     }
@@ -51,6 +52,7 @@ impl Timestamp {
 
     /// Returns the range of timestamps that comprise the (local) day around
     /// the given timestamp.
+    #[allow(dead_code)]
     pub fn day_range(self) -> (Self, Self) {
         let Self(ts) = self;
 

@@ -16,9 +16,12 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::Mutex;
 
+use crate::cache::Cache;
 use crate::db::Database;
+use crate::db::ReviewRecord;
+use crate::fsrs::Grade;
 use crate::types::card::Card;
-use crate::types::review::Review;
+use crate::types::date::Date;
 use crate::types::timestamp::Timestamp;
 
 #[derive(Clone)]
@@ -34,7 +37,31 @@ pub struct ServerState {
 pub struct MutableState {
     pub reveal: bool,
     pub db: Database,
+    pub cache: Cache,
     pub cards: Vec<Card>,
     pub reviews: Vec<Review>,
     pub finished_at: Option<Timestamp>,
+}
+
+#[derive(Clone)]
+pub struct Review {
+    pub card: Card,
+    pub reviewed_at: Timestamp,
+    pub grade: Grade,
+    pub stability: f64,
+    pub difficulty: f64,
+    pub due_date: Date,
+}
+
+impl Review {
+    pub fn into_record(self) -> ReviewRecord {
+        ReviewRecord {
+            card_hash: self.card.hash(),
+            reviewed_at: self.reviewed_at,
+            grade: self.grade,
+            stability: self.stability,
+            difficulty: self.difficulty,
+            due_date: self.due_date,
+        }
+    }
 }

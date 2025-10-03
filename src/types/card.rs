@@ -81,6 +81,7 @@ impl Card {
         &self.deck_name
     }
 
+    #[cfg(test)]
     pub fn content(&self) -> &CardContent {
         &self.content
     }

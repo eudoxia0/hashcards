@@ -17,12 +17,17 @@ use axum::extract::State;
 use axum::response::Redirect;
 use serde::Deserialize;
 
+use crate::cmd::drill::state::MutableState;
+use crate::cmd::drill::state::Review;
 use crate::cmd::drill::state::ServerState;
+use crate::db::ReviewRecord;
 use crate::error::Fallible;
 use crate::fsrs::Grade;
-use crate::types::review::Review;
-use crate::types::review::ReviewRow;
-use crate::types::review::update_card;
+use crate::types::card::Card;
+use crate::types::card_hash::CardHash;
+use crate::types::performance::Performance;
+use crate::types::performance::ReviewedPerformance;
+use crate::types::performance::update_performance;
 use crate::types::timestamp::Timestamp;
 
 #[derive(Debug, Deserialize)]
@@ -68,7 +73,6 @@ pub async fn post_handler(
 
 async fn action_handler(state: ServerState, action: Action) -> Fallible<()> {
     let mut mutable = state.mutable.lock().unwrap();
-    let today = state.session_started_at.local_date();
     match action {
         Action::Reveal => {
             if !mutable.reveal {
@@ -88,53 +92,33 @@ async fn action_handler(state: ServerState, action: Action) -> Fallible<()> {
             }
         }
         Action::End => {
-            log::debug!("Session completed");
-            let session_ended_at = Timestamp::now();
-            let reviews = mutable.reviews.clone();
-            mutable
-                .db
-                .save_session(state.session_started_at, session_ended_at, reviews)?;
-            mutable.finished_at = Some(session_ended_at);
+            finish_session(&mut mutable, &state)?;
         }
         Action::Forgot | Action::Hard | Action::Good | Action::Easy => {
             if mutable.reveal {
-                let card = mutable.cards.remove(0);
-                let hash = card.hash();
-                let latest_review: Option<ReviewRow> = match mutable.db.get_latest_review(hash)? {
-                    Some(r) => Some(r),
-                    None => {
-                        // Look through the in-memory review database.
-                        let mut found: Option<Review> = None;
-                        for r in mutable.reviews.iter().rev() {
-                            if r.card.hash() == hash {
-                                found = Some(r.clone());
-                                break;
-                            }
-                        }
-                        found.map(|r| r.into_row())
-                    }
-                };
-                let grade = action.grade();
-
-                let parameters = update_card(latest_review, grade, today);
-
-                let diff_percent = ((parameters.difficulty - 1.0) / (9.0)) * 100.0;
-                log::debug!(
-                    "{} {} S={:.2}d D={:.2}% due={}",
-                    &hash.to_hex()[..8],
-                    grade.as_str(),
-                    parameters.stability,
-                    diff_percent,
-                    parameters.due_date.into_inner()
-                );
-
+                let reviewed_at: Timestamp = Timestamp::now();
+                let card: Card = mutable.cards.remove(0);
+                let hash: CardHash = card.hash();
+                let grade: Grade = action.grade();
+                let performance: Performance = mutable.cache.get(hash)?;
+                let performance: ReviewedPerformance =
+                    update_performance(performance, grade, reviewed_at);
                 let review = Review {
-                    reviewed_at: Timestamp::now(),
                     card: card.clone(),
+                    reviewed_at,
                     grade,
-                    params: parameters,
+                    stability: performance.stability,
+                    difficulty: performance.difficulty,
+                    due_date: performance.due_date,
                 };
                 mutable.reviews.push(review);
+                mutable.cache.update(
+                    hash,
+                    reviewed_at,
+                    performance.stability,
+                    performance.difficulty,
+                    performance.due_date,
+                )?;
 
                 // Cards graded `Forgot` or `Hard` are put at the back of the
                 // queue.
@@ -146,16 +130,27 @@ async fn action_handler(state: ServerState, action: Action) -> Fallible<()> {
 
                 // Was this the last card?
                 if mutable.cards.is_empty() {
-                    log::debug!("Session completed");
-                    let session_ended_at = Timestamp::now();
-                    let reviews = mutable.reviews.clone();
-                    mutable
-                        .db
-                        .save_session(state.session_started_at, session_ended_at, reviews)?;
-                    mutable.finished_at = Some(session_ended_at);
+                    finish_session(&mut mutable, &state)?;
                 }
             }
         }
+    }
+    Ok(())
+}
+
+fn finish_session(mutable: &mut MutableState, state: &ServerState) -> Fallible<()> {
+    log::debug!("Session completed");
+    let session_ended_at = Timestamp::now();
+    let reviews: Vec<Review> = mutable.reviews.clone();
+    let reviews: Vec<ReviewRecord> = reviews.into_iter().map(Review::into_record).collect();
+    mutable
+        .db
+        .save_session(state.session_started_at, session_ended_at, reviews)?;
+    mutable.finished_at = Some(session_ended_at);
+    for (card_hash, performance) in mutable.cache.iter() {
+        mutable
+            .db
+            .update_card_performance(*card_hash, *performance)?;
     }
     Ok(())
 }

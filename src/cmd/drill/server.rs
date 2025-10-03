@@ -29,16 +29,17 @@ use axum::routing::get;
 use axum::routing::post;
 use tokio::net::TcpListener;
 
+use crate::cache::Cache;
 use crate::cmd::drill::get::get_handler;
 use crate::cmd::drill::post::post_handler;
 use crate::cmd::drill::state::MutableState;
 use crate::cmd::drill::state::ServerState;
 use crate::collection::Collection;
 use crate::db::Database;
-use crate::db::Stage;
 use crate::error::Fallible;
 use crate::types::card::Card;
 use crate::types::card_hash::CardHash;
+use crate::types::date::Date;
 use crate::types::timestamp::Timestamp;
 
 pub async fn start_server(
@@ -55,15 +56,14 @@ pub async fn start_server(
         macros,
     } = Collection::new(directory)?;
 
-    let today = session_started_at.local_date();
+    let today: Date = session_started_at.local_date();
 
     let db_hashes: HashSet<CardHash> = db.card_hashes()?;
-
     // If a card is in the directory, but not in the DB, it is new. Add it to
     // the database.
     for card in cards.iter() {
         if !db_hashes.contains(&card.hash()) {
-            db.add_card(card, session_started_at)?;
+            db.insert_card(card.hash(), session_started_at)?;
         }
     }
 
@@ -81,6 +81,13 @@ pub async fn start_server(
         return Ok(());
     }
 
+    // For all cards due today, fetch their performance from the database and store it in the cache.
+    let mut cache = Cache::new();
+    for card in due_today.iter() {
+        let performance = db.get_card_performance(card.hash())?;
+        cache.insert(card.hash(), performance)?;
+    }
+
     let state = ServerState {
         port,
         directory,
@@ -90,6 +97,7 @@ pub async fn start_server(
         mutable: Arc::new(Mutex::new(MutableState {
             reveal: false,
             db,
+            cache,
             cards: due_today,
             reviews: Vec::new(),
             finished_at: None,
@@ -192,7 +200,7 @@ fn filter_deck(
             let mut new_count = 0;
             let mut result = Vec::new();
             for card in deck.into_iter() {
-                if db.get_card_stage(card.hash())? == Stage::New {
+                if db.get_card_performance(card.hash())?.is_new() {
                     if new_count < limit {
                         result.push(card);
                         new_count += 1;

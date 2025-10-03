@@ -20,11 +20,11 @@ mod template;
 
 #[cfg(test)]
 mod tests {
-    use std::env::temp_dir;
     use std::fs::create_dir_all;
 
     use portpicker::pick_unused_port;
     use reqwest::StatusCode;
+    use tempfile::tempdir;
     use tokio::spawn;
 
     use crate::cmd::drill::server::start_server;
@@ -54,8 +54,7 @@ mod tests {
     #[tokio::test]
     async fn test_start_server_with_no_cards_due() -> Fallible<()> {
         let port = pick_unused_port().unwrap();
-        let dir = temp_dir();
-        let dir = dir.join("empty_directory");
+        let dir = tempdir()?.path().to_path_buf().canonicalize()?;
         create_dir_all(&dir)?;
         let session_started_at = Timestamp::now();
         let dir = dir.canonicalize().unwrap().display().to_string();

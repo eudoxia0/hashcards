@@ -17,26 +17,30 @@ use std::collections::HashSet;
 use rusqlite::Connection;
 use rusqlite::Transaction;
 use rusqlite::config::DbConfig;
+use rusqlite::params;
 
 use crate::error::Fallible;
-use crate::types::card::Card;
-use crate::types::card::CardContent;
+use crate::error::fail;
+use crate::fsrs::Difficulty;
+use crate::fsrs::Grade;
+use crate::fsrs::Stability;
 use crate::types::card_hash::CardHash;
-use crate::types::card_type::CardType;
 use crate::types::date::Date;
-use crate::types::review::Parameters;
-use crate::types::review::Review;
-use crate::types::review::ReviewRow;
+use crate::types::performance::Performance;
+use crate::types::performance::ReviewedPerformance;
 use crate::types::timestamp::Timestamp;
 
 pub struct Database {
     conn: Connection,
 }
 
-#[derive(PartialEq, Eq)]
-pub enum Stage {
-    New,
-    Review,
+pub struct ReviewRecord {
+    pub card_hash: CardHash,
+    pub reviewed_at: Timestamp,
+    pub grade: Grade,
+    pub stability: f64,
+    pub difficulty: f64,
+    pub due_date: Date,
 }
 
 impl Database {
@@ -53,52 +57,39 @@ impl Database {
         Ok(Self { conn })
     }
 
-    /// Return the set of all card hashes in the database.
-    pub fn card_hashes(&self) -> Fallible<HashSet<CardHash>> {
-        let mut hashes = HashSet::new();
-        let mut stmt = self.conn.prepare("select card_hash from cards;")?;
-        let mut rows = stmt.query([])?;
-        while let Some(row) = rows.next()? {
-            let hash: CardHash = row.get(0)?;
-            hashes.insert(hash);
+    /// Insert a new card in the database.
+    ///
+    /// If a card with the given hash exists, returns an error.
+    pub fn insert_card(&self, card_hash: CardHash, added_at: Timestamp) -> Fallible<()> {
+        if self.card_exists(card_hash)? {
+            return fail("Card already exists");
         }
-        Ok(hashes)
-    }
-
-    /// Add a new card to the database.
-    pub fn add_card(&self, card: &Card, now: Timestamp) -> Fallible<()> {
-        log::debug!("Adding new card: {}", card.hash());
-        let card_row = match card.content() {
-            CardContent::Basic { question, answer } => CardRow {
-                card_hash: card.hash(),
-                card_type: CardType::Basic,
-                deck_name: card.deck_name().to_string(),
-                question: question.to_string(),
-                answer: answer.to_string(),
-                cloze_start: 0,
-                cloze_end: 0,
-                added_at: now,
-            },
-            CardContent::Cloze { text, start, end } => CardRow {
-                card_hash: card.hash(),
-                card_type: CardType::Cloze,
-                deck_name: card.deck_name().to_string(),
-                question: text.to_string(),
-                answer: "".to_string(),
-                cloze_start: *start,
-                cloze_end: *end,
-                added_at: now,
-            },
-        };
-        insert_card(&self.conn, &card_row)?;
+        let sql = "insert into cards (card_hash, added_at, review_count) values (?, ?, 0);";
+        self.conn.execute(sql, params![card_hash, added_at])?;
         Ok(())
     }
 
-    /// Find the set of cards due today.
+    /// Return the set of all card hashes in the database.
+    pub fn card_hashes(&self) -> Fallible<HashSet<CardHash>> {
+        let sql = "select card_hash from cards;";
+        let mut stmt = self.conn.prepare(sql)?;
+        let card_iter = stmt.query_map([], |row| {
+            let card_hash: CardHash = row.get(0)?;
+            Ok(card_hash)
+        })?;
+        let mut card_hashes = HashSet::new();
+        for card in card_iter {
+            card_hashes.insert(card?);
+        }
+        Ok(card_hashes)
+    }
+
+    /// Find the hashes of the cards due today.
     pub fn due_today(&self, today: Date) -> Fallible<HashSet<CardHash>> {
         let mut due = HashSet::new();
-        let mut stmt = self.conn.prepare("select c.card_hash, max(r.due_date) from cards c left outer join reviews r on r.card_hash = c.card_hash group by c.card_hash;")?;
-        let mut rows = stmt.query([])?;
+        let sql = "select card_hash, due_date from cards;";
+        let mut stmt = self.conn.prepare(sql)?;
+        let mut rows = stmt.query(params![])?;
         while let Some(row) = rows.next()? {
             let hash: CardHash = row.get(0)?;
             let due_date: Option<Date> = row.get(1)?;
@@ -117,120 +108,121 @@ impl Database {
         Ok(due)
     }
 
-    /// Get the latest review for a given card.
-    pub fn get_latest_review(&self, card_hash: CardHash) -> Fallible<Option<ReviewRow>> {
-        let sql = "select reviewed_at, grade, stability, difficulty, due_date from reviews where card_hash = ? order by reviewed_at desc limit 1;";
-        let mut stmt = self.conn.prepare(sql)?;
-        let mut rows = stmt.query([card_hash])?;
-        if let Some(row) = rows.next()? {
-            Ok(Some(ReviewRow {
-                reviewed_at: row.get(0)?,
-                grade: row.get(1)?,
-                params: Parameters {
-                    stability: row.get(2)?,
-                    difficulty: row.get(3)?,
-                    due_date: row.get(4)?,
-                },
-            }))
-        } else {
-            Ok(None)
+    /// Get a card's performance information.
+    ///
+    /// If no card with the given hash exists, returns an error.
+    pub fn get_card_performance(&self, card_hash: CardHash) -> Fallible<Performance> {
+        if !self.card_exists(card_hash)? {
+            return fail("Card not found");
         }
+        let sql = "select last_reviewed_at, stability, difficulty, due_date, review_count from cards where card_hash = ?;";
+        let row = self.conn.query_one(sql, params![card_hash], |row| {
+            let last_reviewed_at: Option<Timestamp> = row.get(0)?;
+            let stability: Option<Stability> = row.get(1)?;
+            let difficulty: Option<Difficulty> = row.get(2)?;
+            let due_date: Option<Date> = row.get(3)?;
+            let review_count: i32 = row.get(4)?;
+            if let (Some(last_reviewed_at), Some(stability), Some(difficulty), Some(due_date)) =
+                (last_reviewed_at, stability, difficulty, due_date)
+            {
+                Ok(Performance::Reviewed(ReviewedPerformance {
+                    last_reviewed_at,
+                    stability,
+                    difficulty,
+                    due_date,
+                    review_count: review_count as usize,
+                }))
+            } else {
+                Ok(Performance::New)
+            }
+        })?;
+        Ok(row)
     }
 
-    /// Save a study session and its reviews to the database.
+    /// Update a card's performance information.
+    ///
+    /// If no card with the given hash exists, returns an error.
+    pub fn update_card_performance(
+        &self,
+        card_hash: CardHash,
+        performance: Performance,
+    ) -> Fallible<()> {
+        if !self.card_exists(card_hash)? {
+            return fail("Card not found");
+        }
+        let (last_reviewed_at, stability, difficulty, due_date, review_count) = match performance {
+            Performance::New => (None, None, None, None, 0),
+            Performance::Reviewed(rp) => (
+                Some(rp.last_reviewed_at),
+                Some(rp.stability),
+                Some(rp.difficulty),
+                Some(rp.due_date),
+                rp.review_count as i32,
+            ),
+        };
+        let sql = "update cards set last_reviewed_at = ?, stability = ?, difficulty = ?, due_date = ?, review_count = ? where card_hash = ?;";
+        self.conn.execute(
+            sql,
+            params![
+                last_reviewed_at,
+                stability,
+                difficulty,
+                due_date,
+                review_count,
+                card_hash
+            ],
+        )?;
+        Ok(())
+    }
+
+    /// Save a session.
     pub fn save_session(
         &mut self,
         started_at: Timestamp,
         ended_at: Timestamp,
-        reviews: Vec<Review>,
+        reviews: Vec<ReviewRecord>,
     ) -> Fallible<()> {
         let tx = self.conn.transaction()?;
         let sql = "insert into sessions (started_at, ended_at) values (?, ?) returning session_id;";
-        let session_id: i64 = tx.query_row(sql, (started_at, ended_at), |row| row.get(0))?;
-        for review in reviews.into_iter() {
+        let session_id: i64 = tx.query_row(sql, params![started_at, ended_at], |row| row.get(0))?;
+        for review in reviews {
             let sql = "insert into reviews (session_id, card_hash, reviewed_at, grade, stability, difficulty, due_date) values (?, ?, ?, ?, ?, ?, ?);";
             tx.execute(
                 sql,
-                (
+                params![
                     session_id,
-                    review.card.hash(),
+                    review.card_hash,
                     review.reviewed_at,
                     review.grade,
-                    review.params.stability,
-                    review.params.difficulty,
-                    review.params.due_date,
-                ),
+                    review.stability,
+                    review.difficulty,
+                    review.due_date
+                ],
             )?;
         }
         tx.commit()?;
         Ok(())
     }
 
-    /// Find the stage of the given card.
-    pub fn get_card_stage(&self, card_hash: CardHash) -> Fallible<Stage> {
-        let sql = "select count(*) from reviews where card_hash = ?;";
-        let count: i64 = self.conn.query_row(sql, [card_hash], |row| row.get(0))?;
-        if count == 0 {
-            Ok(Stage::New)
-        } else {
-            Ok(Stage::Review)
+    /// Delete a card and its reviews.
+    ///
+    /// If no card with the given hash exists, returns an error.
+    pub fn delete_card(&self, card_hash: CardHash) -> Fallible<()> {
+        if !self.card_exists(card_hash)? {
+            return fail("Card not found");
         }
-    }
-
-    /// Delete the card with the given hash, and all its reviews.
-    pub fn delete_card(&mut self, card_hash: &CardHash) -> Fallible<()> {
-        let tx = self.conn.transaction()?;
-        tx.execute("delete from reviews where card_hash = ?;", [card_hash])?;
-        tx.execute("delete from cards where card_hash = ?;", [card_hash])?;
-        tx.commit()?;
+        let sql = "delete from reviews where card_hash = ?;";
+        self.conn.execute(sql, params![card_hash])?;
+        let sql = "delete from cards where card_hash = ?;";
+        self.conn.execute(sql, params![card_hash])?;
         Ok(())
     }
 
-    /// Return the total number of cards in the database.
-    pub fn card_count(&self) -> Fallible<usize> {
-        let sql = "select count(*) from cards;";
-        let count: i64 = self.conn.query_row(sql, [], |row| row.get(0))?;
-        Ok(count as usize)
+    fn card_exists(&self, card_hash: CardHash) -> Fallible<bool> {
+        let sql = "select count(*) from cards where card_hash = ?;";
+        let count: i64 = self.conn.query_row(sql, [card_hash], |row| row.get(0))?;
+        Ok(count > 0)
     }
-
-    /// Return the number of reviews today.
-    pub fn today_review_count(&self, today: Timestamp) -> Fallible<usize> {
-        let (start_ts, end_ts) = today.day_range();
-        let sql = "select count(*) from reviews where reviewed_at >= ? and reviewed_at < ?;";
-        let count: i64 = self
-            .conn
-            .query_row(sql, (start_ts, end_ts), |row| row.get(0))?;
-        Ok(count as usize)
-    }
-}
-
-struct CardRow {
-    card_hash: CardHash,
-    card_type: CardType,
-    deck_name: String,
-    question: String,
-    answer: String,
-    cloze_start: usize,
-    cloze_end: usize,
-    added_at: Timestamp,
-}
-
-fn insert_card(conn: &Connection, card: &CardRow) -> Fallible<()> {
-    let sql = "insert into cards (card_hash, card_type, deck_name, question, answer, cloze_start, cloze_end, added_at) values (?, ?, ?, ?, ?, ?, ?, ?);";
-    conn.execute(
-        sql,
-        (
-            card.card_hash,
-            &card.card_type,
-            &card.deck_name,
-            &card.question,
-            &card.answer,
-            card.cloze_start,
-            card.cloze_end,
-            &card.added_at,
-        ),
-    )?;
-    Ok(())
 }
 
 fn probe_schema_exists(tx: &Transaction) -> Fallible<bool> {
@@ -241,146 +233,141 @@ fn probe_schema_exists(tx: &Transaction) -> Fallible<bool> {
 
 #[cfg(test)]
 mod tests {
-    use std::env::temp_dir;
-    use std::fs::create_dir_all;
-    use std::path::PathBuf;
-
-    use chrono::Duration;
-
     use super::*;
     use crate::fsrs::Grade;
-    use crate::types::review::Parameters;
+    use crate::types::performance::ReviewedPerformance;
 
     #[test]
-    fn test_empty_db() -> Fallible<()> {
-        let db = Database::new(":memory:")?;
-        assert!(db.card_hashes()?.is_empty());
-        assert!(db.due_today(Timestamp::now().local_date())?.is_empty());
+    fn test_probe_schema_exists() -> Fallible<()> {
+        let mut conn = Connection::open_in_memory()?;
+        let tx = conn.transaction()?;
+        assert!(!probe_schema_exists(&tx)?);
         Ok(())
     }
 
+    /// Insert a card, and see that its hash is returned by `card_hashes`, and
+    /// that `get_card_performance` returns an initial empty performance, and
+    /// `due_today` returns it since it's new.
     #[test]
-    fn test_add_basic_card() -> Fallible<()> {
+    fn test_insert_card() -> Fallible<()> {
         let db = Database::new(":memory:")?;
+        let card_hash = CardHash::hash_bytes(b"a");
         let now = Timestamp::now();
-        let card = Card::new(
-            "My Deck".to_string(),
-            PathBuf::new(),
-            (0, 1),
-            CardContent::new_basic("Q", "A"),
-        );
-        db.add_card(&card, now)?;
-
+        db.insert_card(card_hash, now)?;
         let hashes = db.card_hashes()?;
-        assert_eq!(hashes.len(), 1);
-        assert!(hashes.contains(&card.hash()));
-
+        assert!(hashes.contains(&card_hash));
+        let performance = db.get_card_performance(card_hash)?;
+        assert_eq!(performance, Performance::New);
         let due_today = db.due_today(now.local_date())?;
-        assert_eq!(due_today.len(), 1);
-        assert!(due_today.contains(&card.hash()));
-
-        let latest_review = db.get_latest_review(card.hash())?;
-        assert!(latest_review.is_none());
-
+        assert!(due_today.contains(&card_hash));
         Ok(())
     }
 
+    /// Inserting a card twice returns an error.
     #[test]
-    fn test_add_cloze_card() -> Fallible<()> {
+    fn test_insert_twice() -> Fallible<()> {
         let db = Database::new(":memory:")?;
+        let card_hash = CardHash::hash_bytes(b"a");
         let now = Timestamp::now();
-        let card = Card::new(
-            "My Deck".to_string(),
-            PathBuf::new(),
-            (0, 1),
-            CardContent::Cloze {
-                text: "Foo bar baz.".to_string(),
-                start: 0,
-                end: 3,
-            },
-        );
-        db.add_card(&card, now)?;
-
-        let hashes = db.card_hashes()?;
-        assert_eq!(hashes.len(), 1);
-        assert!(hashes.contains(&card.hash()));
-
-        let due_today = db.due_today(now.local_date())?;
-        assert_eq!(due_today.len(), 1);
-        assert!(due_today.contains(&card.hash()));
-
-        let latest_review = db.get_latest_review(card.hash())?;
-        assert!(latest_review.is_none());
-
-        Ok(())
-    }
-
-    #[test]
-    fn test_session() -> Fallible<()> {
-        let mut db = Database::new(":memory:")?;
-        let now = Timestamp::now();
-        let today = now.local_date();
-        let card = Card::new(
-            "My Deck".to_string(),
-            PathBuf::new(),
-            (0, 1),
-            CardContent::Cloze {
-                text: "Foo bar baz.".to_string(),
-                start: 0,
-                end: 3,
-            },
-        );
-        db.add_card(&card, now)?;
-
-        let review = Review {
-            reviewed_at: now,
-            card: card.clone(),
-            grade: Grade::Easy,
-            params: Parameters {
-                stability: 2.5,
-                difficulty: 2.0,
-                due_date: Date::new(today.into_inner() + Duration::days(5)),
-            },
-        };
-
-        db.save_session(now, now, vec![review.clone()])?;
-
-        let latest_review = db.get_latest_review(card.hash())?;
-        assert!(latest_review.is_some());
-        let latest_review = latest_review.unwrap();
-        assert_eq!(latest_review.reviewed_at, review.reviewed_at);
-        assert_eq!(latest_review.grade, review.grade);
-        assert_eq!(latest_review.params.stability, review.params.stability);
-        assert_eq!(latest_review.params.difficulty, review.params.difficulty);
-        assert_eq!(latest_review.params.due_date, review.params.due_date);
-
-        Ok(())
-    }
-
-    #[test]
-    fn test_open_db_twice() -> Fallible<()> {
-        let dir = temp_dir();
-        let dir = dir.join("test_open_db_twice");
-        create_dir_all(&dir)?;
-        let db_path = dir.join("test.db");
-        let _a = Database::new(db_path.to_str().unwrap())?;
-        let _b = Database::new(db_path.to_str().unwrap())?;
-        Ok(())
-    }
-
-    #[test]
-    fn test_add_card_twice() -> Fallible<()> {
-        let db = Database::new(":memory:")?;
-        let now = Timestamp::now();
-        let card = Card::new(
-            "My Deck".to_string(),
-            PathBuf::new(),
-            (0, 1),
-            CardContent::new_basic("Q", "A"),
-        );
-        db.add_card(&card, now)?;
-        let result = db.add_card(&card, now);
+        db.insert_card(card_hash, now)?;
+        let result = db.insert_card(card_hash, now);
         assert!(result.is_err());
+        let err = result.err().unwrap();
+        assert_eq!(err.to_string(), "error: Card already exists");
+        Ok(())
+    }
+
+    /// Updating a card's performance, and checking that `get_card_performance`
+    /// works and that `due_today` returns the card.
+    #[test]
+    fn test_update_performance() -> Fallible<()> {
+        let db = Database::new(":memory:")?;
+        let card_hash = CardHash::hash_bytes(b"a");
+        let now = Timestamp::now();
+        db.insert_card(card_hash, now)?;
+        let performance = Performance::Reviewed(ReviewedPerformance {
+            last_reviewed_at: now,
+            stability: 2.0,
+            difficulty: 2.0,
+            due_date: now.local_date(),
+            review_count: 1,
+        });
+        db.update_card_performance(card_hash, performance)?;
+        let fetched_performance = db.get_card_performance(card_hash)?;
+        assert_eq!(fetched_performance, performance);
+        let due_today = db.due_today(now.local_date())?;
+        assert!(due_today.contains(&card_hash));
+        Ok(())
+    }
+
+    /// `get_card_performance` fails if the card does not exist.
+    #[test]
+    fn test_get_performance_nonexistent() -> Fallible<()> {
+        let db = Database::new(":memory:")?;
+        let card_hash = CardHash::hash_bytes(b"a");
+        let result = db.get_card_performance(card_hash);
+        assert!(result.is_err());
+        let err = result.err().unwrap();
+        assert_eq!(err.to_string(), "error: Card not found");
+        Ok(())
+    }
+
+    /// `update_card_performance` fails if the card does not exist.
+    #[test]
+    fn test_update_performance_nonexistent() -> Fallible<()> {
+        let db = Database::new(":memory:")?;
+        let card_hash = CardHash::hash_bytes(b"a");
+        let performance = Performance::New;
+        let result = db.update_card_performance(card_hash, performance);
+        assert!(result.is_err());
+        let err = result.err().unwrap();
+        assert_eq!(err.to_string(), "error: Card not found");
+        Ok(())
+    }
+
+    /// Save a session.
+    #[test]
+    fn test_save_session() -> Fallible<()> {
+        let mut db = Database::new(":memory:")?;
+        let card_hash = CardHash::hash_bytes(b"a");
+        let now = Timestamp::now();
+        db.insert_card(card_hash, now)?;
+        let review = ReviewRecord {
+            card_hash,
+            reviewed_at: now,
+            grade: Grade::Good,
+            stability: 2.0,
+            difficulty: 2.0,
+            due_date: now.local_date(),
+        };
+        db.save_session(now, now, vec![review])?;
+        Ok(())
+    }
+
+    /// Trying to delete a non-existent card returns an error.
+    #[test]
+    fn test_delete_nonexistent_card() -> Fallible<()> {
+        let db = Database::new(":memory:")?;
+        let card_hash = CardHash::hash_bytes(b"a");
+        let result = db.delete_card(card_hash);
+        assert!(result.is_err());
+        let err = result.err().unwrap();
+        assert_eq!(err.to_string(), "error: Card not found");
+        Ok(())
+    }
+
+    /// Delete a card and see that it is gone.
+    #[test]
+    fn test_delete_card() -> Fallible<()> {
+        let db = Database::new(":memory:")?;
+        let card_hash = CardHash::hash_bytes(b"a");
+        let now = Timestamp::now();
+        db.insert_card(card_hash, now)?;
+        db.delete_card(card_hash)?;
+        let result = db.get_card_performance(card_hash);
+        assert!(result.is_err());
+        let err = result.err().unwrap();
+        assert_eq!(err.to_string(), "error: Card not found");
         Ok(())
     }
 }
