@@ -74,7 +74,7 @@ impl Database {
         Ok(())
     }
 
-    /// Find the set of cards due today.
+    /// Find the hashes of the cards due today.
     pub fn due_today(&self, today: Date) -> Fallible<HashSet<CardHash>> {
         let mut due = HashSet::new();
         let mut stmt = self.conn.prepare("select c.card_hash, max(r.due_date) from cards c left outer join reviews r on r.card_hash = c.card_hash group by c.card_hash;")?;
