@@ -325,7 +325,7 @@ mod tests {
             due_date: now.local_date(),
             review_count: 1,
         });
-        db.update_card_performance(card_hash, performance.clone())?;
+        db.update_card_performance(card_hash, performance)?;
         let fetched_performance = db.get_card_performance(card_hash)?;
         assert_eq!(fetched_performance, performance);
         let due_today = db.due_today(now.local_date())?;
