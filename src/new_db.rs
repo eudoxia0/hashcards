@@ -134,4 +134,29 @@ mod tests {
         assert!(perf.is_none());
         Ok(())
     }
+
+    #[test]
+    fn test_update_card_and_delete_card() -> Fallible<()> {
+        let mut db = Database::new(":memory:")?;
+        let hash = CardHash::hash_bytes(b"a");
+        let now = Timestamp::now();
+        db.add_card(hash, now)?;
+        let stability = 1.0;
+        let difficulty = 1.0;
+        let due_date = now.local_date();
+        db.update_card(hash, now, stability, difficulty, due_date)?;
+        let perf = db.get_card_performance(hash)?;
+        assert!(perf.is_some());
+        let perf = perf.unwrap();
+        assert_eq!(perf.stability, stability);
+        assert_eq!(perf.difficulty, difficulty);
+        assert_eq!(perf.due_date, due_date);
+        assert_eq!(perf.review_count, 1);
+        assert_eq!(perf.last_reviewed_at, now);
+        db.delete_card(hash)?;
+        let hashes = db.card_hashes()?;
+        assert!(!hashes.contains(&hash));
+        assert!(db.get_card_performance(hash)?.is_none());
+        Ok(())
+    }
 }
