@@ -13,7 +13,6 @@
 // limitations under the License.
 
 use std::collections::HashSet;
-use std::collections::hash_set::Difference;
 
 use rusqlite::Connection;
 use rusqlite::Transaction;
