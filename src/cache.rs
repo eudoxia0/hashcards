@@ -83,6 +83,7 @@ impl Cache {
 mod tests {
     use super::*;
     use crate::error::fail;
+    use crate::types::timestamp::Timestamp;
 
     #[test]
     fn test_cache_insert_and_get() -> Fallible<()> {
