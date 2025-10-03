@@ -39,7 +39,7 @@ const MIN_INTERVAL: f64 = 1.0;
 const MAX_INTERVAL: f64 = 256.0;
 
 /// Represents performance information for a card.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Performance {
     /// The card is new, and has never been reviewed.
     New,
@@ -47,7 +47,7 @@ pub enum Performance {
     Reviewed(ReviewedPerformance),
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct ReviewedPerformance {
     /// The timestamp when the card was last reviewed.
     pub last_reviewed_at: Timestamp,
