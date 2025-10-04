@@ -219,3 +219,17 @@ fn export_review(review: ReviewRow) -> ReviewExport {
         due_date: review.data.due_date,
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::helper::create_tmp_copy_of_test_directory;
+
+    #[test]
+    fn test_full_export() -> Fallible<()> {
+        let dir = create_tmp_copy_of_test_directory()?;
+        let coll = Collection::new(Some(dir))?;
+        let _ = get_export(coll)?;
+        Ok(())
+    }
+}
