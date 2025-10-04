@@ -26,6 +26,8 @@ use rusqlite::types::ToSqlOutput;
 use rusqlite::types::ValueRef;
 use serde::Serialize;
 
+use crate::error::ErrorReport;
+use crate::error::Fallible;
 use crate::types::date::Date;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -53,13 +55,14 @@ impl Timestamp {
 
     /// Returns the range of timestamps that comprise the (local) day around
     /// the given timestamp.
-    pub fn day_range(self) -> (Self, Self) {
+    pub fn day_range(self) -> Fallible<(Self, Self)> {
         let Self(ts) = self;
 
         // Start of day.
         let start_local: DateTime<Local> = Local
             .with_ymd_and_hms(ts.year(), ts.month(), ts.day(), 0, 0, 0)
-            .unwrap();
+            .single()
+            .ok_or_else(|| ErrorReport::new("Invalid date (possible DST transition?)."))?;
 
         // End of day.
         let end_local: DateTime<Local> = start_local + Duration::days(1);
@@ -68,7 +71,7 @@ impl Timestamp {
         let start_utc: DateTime<Utc> = start_local.with_timezone(&Utc);
         let end_utc: DateTime<Utc> = end_local.with_timezone(&Utc);
 
-        (Self(start_utc), Self(end_utc))
+        Ok((Self(start_utc), Self(end_utc)))
     }
 }
 

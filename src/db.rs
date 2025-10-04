@@ -281,7 +281,7 @@ impl Database {
 
     /// Count the number of reviews done in a given day.
     pub fn count_reviews_in_day(&self, day: Timestamp) -> Fallible<usize> {
-        let (start, end) = day.day_range();
+        let (start, end) = day.day_range()?;
         let sql = "select count(*) from reviews where reviewed_at >= ? and reviewed_at < ?;";
         let count: i64 = self
             .conn
