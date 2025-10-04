@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::fs::write;
+
 use serde::Serialize;
 
 use crate::collection::Collection;
@@ -29,11 +31,14 @@ use crate::types::performance::Performance;
 use crate::types::performance::ReviewedPerformance;
 use crate::types::timestamp::Timestamp;
 
-pub fn export_collection(directory: Option<String>) -> Fallible<()> {
+pub fn export_collection(directory: Option<String>, output: Option<String>) -> Fallible<()> {
     let coll: Collection = Collection::new(directory)?;
     let export: Export = get_export(coll)?;
-    let json: String = serde_json::to_string_pretty(&export)?;
-    println!("{json}");
+    let json = serde_json::to_string_pretty(&export)?;
+    match output {
+        Some(path) => write(path, json)?,
+        None => println!("{}", json),
+    }
     Ok(())
 }
 

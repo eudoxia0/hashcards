@@ -71,6 +71,9 @@ enum Command {
     Export {
         /// Path to the collection directory. By default, the current working directory is used.
         directory: Option<String>,
+        /// Optional path to the output file. By default, the output is printed to stdout.
+        #[arg(long)]
+        output: Option<String>,
     },
 }
 
@@ -126,6 +129,6 @@ pub async fn entrypoint() -> Fallible<()> {
             OrphanCommand::List { directory } => list_orphans(directory),
             OrphanCommand::Delete { directory } => delete_orphans(directory),
         },
-        Command::Export { directory } => export_collection(directory),
+        Command::Export { directory, output } => export_collection(directory, output),
     }
 }
