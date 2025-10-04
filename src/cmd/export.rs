@@ -227,6 +227,7 @@ mod tests {
     use super::*;
     use crate::db::ReviewRecord;
     use crate::helper::create_tmp_copy_of_test_directory;
+    use crate::helper::create_tmp_directory;
     use crate::parser::parse_deck;
 
     #[test]
@@ -251,7 +252,11 @@ mod tests {
             reviews.push(review);
         }
         coll.db.save_session(now, now, reviews)?;
-        export_collection(Some(dir), None)?;
+        // Export.
+        export_collection(Some(dir.clone()), None)?;
+        let tmp = create_tmp_directory()?;
+        let output = tmp.join("export.json").display().to_string();
+        export_collection(Some(dir), Some(output))?;
         Ok(())
     }
 }
