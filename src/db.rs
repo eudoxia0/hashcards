@@ -111,14 +111,10 @@ impl Database {
     }
 
     /// Get a card's performance information.
-    ///
-    /// If no card with the given hash exists, returns an error.
-    pub fn get_card_performance(&self, card_hash: CardHash) -> Fallible<Performance> {
-        if !self.card_exists(card_hash)? {
-            return fail("Card not found");
-        }
+    pub fn get_card_performance(&self, card_hash: CardHash) -> Fallible<Option<Performance>> {
         let sql = "select last_reviewed_at, stability, difficulty, interval_raw, interval_days, due_date, review_count from cards where card_hash = ?;";
-        let row = self.conn.query_one(sql, params![card_hash], |row| {
+        let mut stmt = self.conn.prepare(sql)?;
+        let rows = stmt.query_map(params![card_hash], |row| {
             let last_reviewed_at: Option<Timestamp> = row.get(0)?;
             let stability: Option<Stability> = row.get(1)?;
             let difficulty: Option<Difficulty> = row.get(2)?;
@@ -154,7 +150,11 @@ impl Database {
                 Ok(Performance::New)
             }
         })?;
-        Ok(row)
+        if let Some(row) = rows.into_iter().next() {
+            Ok(Some(row?))
+        } else {
+            Ok(None)
+        }
     }
 
     /// Update a card's performance information.
