@@ -52,7 +52,7 @@ impl Timestamp {
 
 impl Display for Timestamp {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0.format("%Y-%m-%dT%H:%M:%S").to_string())
+        write!(f, "{}", self.0.format("%Y-%m-%dT%H:%M:%S"))
     }
 }
 

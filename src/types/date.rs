@@ -47,7 +47,7 @@ impl Date {
 
 impl Display for Date {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0.format("%Y-%m-%d").to_string())
+        write!(f, "{}", self.0.format("%Y-%m-%d"))
     }
 }
 
