@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::path::Path;
 use std::path::PathBuf;
 
 /// Errors that can occur when validating an image path.
@@ -36,10 +37,7 @@ pub enum ImagePathError {
 /// 1. Rejecting paths containing ".." or absolute paths
 /// 2. Canonicalizing the path to resolve symlinks
 /// 3. Verifying the canonicalized path is within the base directory
-pub fn validate_image_path(
-    base_dir: &PathBuf,
-    user_path: String,
-) -> Result<PathBuf, ImagePathError> {
+pub fn validate_image_path(base_dir: &Path, user_path: String) -> Result<PathBuf, ImagePathError> {
     // The empty string is an invalid path.
     if user_path.trim().is_empty() {
         return Err(ImagePathError::Empty);
