@@ -29,16 +29,9 @@ pub fn create_tmp_directory() -> Fallible<PathBuf> {
 pub fn create_tmp_copy_of_test_directory() -> Fallible<String> {
     let source: PathBuf = PathBuf::from("./test").canonicalize()?;
     let target: PathBuf = create_tmp_directory()?;
-    for entry in source.read_dir()? {
-        let entry = entry?;
-        let path = entry.path();
-        if path.is_file()
-            && let Some(file_name) = path.file_name()
-            && file_name != "hashcards.db"
-        {
-            let target_path = target.join(file_name);
-            copy(&path, &target_path)?;
-        }
+    let files = ["Deck.md", "foo.jpg", "macros.tex"];
+    for file in files {
+        copy(source.join(file), target.join(file))?;
     }
     Ok(target.display().to_string())
 }
