@@ -284,7 +284,9 @@ impl Database {
         // The SQL query should find reviews where the timestamp starts with the
         // date string.
         let sql = "select count(*) from reviews where reviewed_at >= ? and reviewed_at < ?;";
-        let count: i64 = self.conn.query_row(sql, params![date], |row| row.get(0))?;
+        let count: i64 = self
+            .conn
+            .query_row(sql, params![date, date], |row| row.get(0))?;
         Ok(count as usize)
     }
 

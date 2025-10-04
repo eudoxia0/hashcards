@@ -17,6 +17,7 @@ use std::fmt::Formatter;
 
 use chrono::Local;
 use chrono::NaiveDateTime;
+use chrono::SubsecRound;
 use rusqlite::ToSql;
 use rusqlite::types::FromSql;
 use rusqlite::types::FromSqlError;
@@ -28,7 +29,7 @@ use serde::Serialize;
 use crate::error::ErrorReport;
 use crate::types::date::Date;
 
-/// A timestamp without a timezone.
+/// A timestamp without a timezone. Only down to second precision.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct Timestamp(NaiveDateTime);
 
@@ -40,12 +41,12 @@ impl Timestamp {
 
     /// The current timestamp in the user's local time.
     pub fn now() -> Self {
-        Self(Local::now().naive_local())
+        Self(Local::now().naive_local().trunc_subsecs(0))
     }
 
     /// The date component of this timestamp.
     pub fn date(self) -> Date {
-        Date::new(Local::now().naive_local().date())
+        Date::new(Local::now().naive_local().trunc_subsecs(0).date())
     }
 }
 
