@@ -148,4 +148,42 @@ mod tests {
         assert_eq!(interval_days, 3);
         assert_eq!(review_count, 1);
     }
+
+    #[test]
+    fn test_update_already_reviewed_card() {
+        let now = Timestamp::now();
+        let today = now.date();
+        let duration = Duration::days(3);
+        let last_reviewed_at = Timestamp::new(now.into_inner() - duration);
+        let initial_perf = ReviewedPerformance {
+            last_reviewed_at,
+            stability: 3.17,
+            difficulty: 5.28,
+            interval_raw: 3.17,
+            interval_days: 3,
+            due_date: Date::new(today.into_inner() + duration),
+            review_count: 1,
+        };
+        let reviewed_at = now;
+        let result = update_performance(
+            Performance::Reviewed(initial_perf),
+            Grade::Easy,
+            reviewed_at,
+        );
+        let ReviewedPerformance {
+            last_reviewed_at,
+            stability,
+            difficulty,
+            interval_raw,
+            interval_days,
+            due_date: _,
+            review_count,
+        } = result;
+        assert_eq!(last_reviewed_at, reviewed_at);
+        assert!(approx_eq(stability, 25.80));
+        assert!(approx_eq(difficulty, 4.50));
+        assert!(approx_eq(interval_raw, 25.80));
+        assert_eq!(interval_days, 26);
+        assert_eq!(review_count, 2);
+    }
 }
