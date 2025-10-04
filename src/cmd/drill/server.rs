@@ -30,13 +30,13 @@ use tokio::net::TcpListener;
 
 use crate::cmd::drill::cache::Cache;
 use crate::cmd::drill::get::get_handler;
+use crate::cmd::drill::image::validate_image_path;
 use crate::cmd::drill::post::post_handler;
 use crate::cmd::drill::state::MutableState;
 use crate::cmd::drill::state::ServerState;
 use crate::collection::Collection;
 use crate::db::Database;
 use crate::error::Fallible;
-use crate::image::validate_image_path;
 use crate::types::card::Card;
 use crate::types::card_hash::CardHash;
 use crate::types::date::Date;

@@ -20,7 +20,6 @@ mod error;
 mod fsrs;
 #[cfg(test)]
 mod helper;
-mod image;
 mod markdown;
 mod parser;
 mod types;

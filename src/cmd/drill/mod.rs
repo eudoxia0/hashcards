@@ -14,6 +14,7 @@
 
 mod cache;
 mod get;
+mod image;
 mod post;
 pub mod server;
 mod state;
