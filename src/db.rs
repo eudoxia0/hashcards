@@ -281,12 +281,8 @@ impl Database {
 
     /// Count the number of reviews performed in the given date.
     pub fn count_reviews_in_date(&self, date: Date) -> Fallible<usize> {
-        // The SQL query should find reviews where the timestamp starts with the
-        // date string.
-        let sql = "select count(*) from reviews where reviewed_at >= ? and reviewed_at < ?;";
-        let count: i64 = self
-            .conn
-            .query_row(sql, params![date, date], |row| row.get(0))?;
+        let sql = "select count(*) from reviews where substr(reviewed_at, 1, 10) = ?;";
+        let count: i64 = self.conn.query_row(sql, params![date], |row| row.get(0))?;
         Ok(count as usize)
     }
 
