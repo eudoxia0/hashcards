@@ -20,10 +20,15 @@ use tempfile::tempdir;
 
 use crate::error::Fallible;
 
+pub fn create_tmp_directory() -> Fallible<PathBuf> {
+    let dir: PathBuf = tempdir()?.path().to_path_buf().canonicalize()?;
+    create_dir_all(&dir)?;
+    Ok(dir)
+}
+
 pub fn create_tmp_copy_of_test_directory() -> Fallible<String> {
     let source: PathBuf = PathBuf::from("./test").canonicalize()?;
-    let target: PathBuf = tempdir()?.path().to_path_buf().canonicalize()?;
-    create_dir_all(&target)?;
+    let target: PathBuf = create_tmp_directory()?;
     for entry in source.read_dir()? {
         let entry = entry?;
         let path = entry.path();

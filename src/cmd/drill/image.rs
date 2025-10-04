@@ -86,18 +86,16 @@ mod tests {
     use std::fs::create_dir_all;
     use std::os::unix::fs::symlink;
 
-    use tempfile::tempdir;
-
     use super::*;
     use crate::error::Fallible;
+    use crate::helper::create_tmp_directory;
 
     /// Create a directory, and an image in it, and test the "normal" path to
     /// the image works.
     #[test]
     fn test_validate_image_path_valid() -> Fallible<()> {
         // Test data.
-        let dir: PathBuf = tempdir()?.path().to_path_buf();
-        create_dir_all(&dir)?;
+        let dir: PathBuf = create_tmp_directory()?;
         let image = dir.join("test.jpg");
         File::create(&image)?;
 
@@ -113,8 +111,7 @@ mod tests {
     #[test]
     fn test_validate_image_path_in_subdirectory() -> Fallible<()> {
         // Test data.
-        let dir: PathBuf = tempdir()?.path().to_path_buf();
-        create_dir_all(&dir)?;
+        let dir: PathBuf = create_tmp_directory()?;
         let sub_dir: PathBuf = dir.join("images");
         create_dir(&sub_dir)?;
         let image_path = sub_dir.join("photo.png");
@@ -131,8 +128,7 @@ mod tests {
     #[test]
     fn test_validate_image_path_not_found() -> Fallible<()> {
         // Test data.
-        let dir = tempdir()?.path().to_path_buf();
-        create_dir_all(&dir)?;
+        let dir = create_tmp_directory()?;
 
         // Assertions.
         let result = validate_image_path(&dir, "nonexistent.jpg".to_string());
@@ -144,8 +140,7 @@ mod tests {
     #[test]
     fn test_validate_image_path_with_dot_dot() -> Fallible<()> {
         // Test data.
-        let dir = tempdir()?.path().to_path_buf();
-        create_dir_all(&dir)?;
+        let dir = create_tmp_directory()?;
 
         // Assertions.
         let result = validate_image_path(&dir, "../etc/passwd".to_string());
@@ -157,8 +152,7 @@ mod tests {
     #[test]
     fn test_validate_image_path_with_dot_dot_middle() -> Fallible<()> {
         // Test data.
-        let dir = tempdir()?.path().to_path_buf();
-        create_dir_all(&dir)?;
+        let dir = create_tmp_directory()?;
 
         // Assertions.
         let result = validate_image_path(&dir, "images/../../../etc/passwd".to_string());
@@ -170,8 +164,7 @@ mod tests {
     #[test]
     fn test_validate_image_path_absolute() -> Fallible<()> {
         // Test data.
-        let dir = tempdir()?.path().to_path_buf();
-        create_dir_all(&dir)?;
+        let dir = create_tmp_directory()?;
 
         // Assertions.
         let result = validate_image_path(&dir, "/etc/passwd".to_string());
@@ -183,8 +176,7 @@ mod tests {
     #[test]
     fn test_validate_image_path_symlink_inside() -> Fallible<()> {
         // Test data.
-        let dir = tempdir()?.path().to_path_buf();
-        create_dir_all(&dir)?;
+        let dir = create_tmp_directory()?;
         let target = dir.join("target.jpg");
         File::create(&target)?;
         let link = dir.join("link.jpg");
@@ -200,8 +192,8 @@ mod tests {
     #[test]
     fn test_validate_image_path_symlink_outside() -> Fallible<()> {
         // Test data.
-        let dir1 = tempdir()?.path().to_path_buf();
-        let dir2 = tempdir()?.path().to_path_buf();
+        let dir1 = create_tmp_directory()?;
+        let dir2 = create_tmp_directory()?;
         create_dir_all(&dir1)?;
         create_dir_all(&dir2)?;
         let outside_file = dir2.join("outside.txt");
@@ -219,8 +211,7 @@ mod tests {
     #[test]
     fn test_validate_image_path_url_encoded_dot_dot() -> Fallible<()> {
         // Test data.
-        let dir = tempdir()?.path().to_path_buf();
-        create_dir_all(&dir)?;
+        let dir = create_tmp_directory()?;
 
         // Assertions.
         let result = validate_image_path(&dir, "..%2F..%2Fetc%2Fpasswd".to_string());
@@ -232,8 +223,7 @@ mod tests {
     #[test]
     fn test_validate_image_path_empty_string() -> Fallible<()> {
         // Test data.
-        let dir = tempdir()?.path().to_path_buf();
-        create_dir_all(&dir)?;
+        let dir = create_tmp_directory()?;
 
         // Assertions.
         let result = validate_image_path(&dir, "".to_string());
@@ -245,8 +235,7 @@ mod tests {
     #[test]
     fn test_validate_image_path_with_spaces() -> Fallible<()> {
         // Test data.
-        let dir = tempdir()?.path().to_path_buf();
-        create_dir_all(&dir)?;
+        let dir = create_tmp_directory()?;
         let image_path = dir.join("my image.jpg");
         File::create(&image_path)?;
 
@@ -260,8 +249,7 @@ mod tests {
     #[test]
     fn test_validate_image_path_unicode() -> Fallible<()> {
         // Test data.
-        let dir = tempdir()?.path().to_path_buf();
-        create_dir_all(&dir)?;
+        let dir = create_tmp_directory()?;
         let image_path = dir.join("画像.jpg");
         File::create(&image_path)?;
 
