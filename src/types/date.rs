@@ -62,3 +62,17 @@ impl Serialize for Date {
         serializer.serialize_str(&s)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::error::Fallible;
+
+    #[test]
+    fn test_serialize() -> Fallible<()> {
+        let date = Date::new(NaiveDate::from_ymd_opt(2024, 1, 2).unwrap());
+        let serialized = serde_json::to_string(&date)?;
+        assert_eq!(serialized, "\"2024-01-02\"");
+        Ok(())
+    }
+}
