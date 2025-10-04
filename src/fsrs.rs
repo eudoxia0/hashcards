@@ -402,6 +402,15 @@ mod tests {
             let expected = format!("\"{}\"", expected);
             assert_eq!(serialized, expected);
         }
+
         Ok(())
+    }
+
+    #[test]
+    fn test_invalid_grade_string() {
+        let invalid_strings = ["", "invalid"];
+        for s in invalid_strings {
+            assert!(Grade::try_from(s.to_string()).is_err());
+        }
     }
 }
