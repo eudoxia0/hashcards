@@ -23,6 +23,8 @@ use crate::fsrs::T;
 use crate::types::card::CardContent;
 use crate::types::card_hash::CardHash;
 use crate::types::date::Date;
+use crate::types::performance::Performance;
+use crate::types::performance::ReviewedPerformance;
 use crate::types::timestamp::Timestamp;
 
 pub fn export_collection(directory: Option<String>) -> Fallible<()> {
@@ -115,6 +117,7 @@ fn get_export(coll: Collection) -> Fallible<Export> {
 fn get_card_export(coll: &Collection) -> Fallible<Vec<CardExport>> {
     let mut cards: Vec<CardExport> = Vec::new();
     for card in coll.cards.iter() {
+        let p = coll.db.get_card_performance_opt(card.hash())?;
         let ce = CardExport {
             hash: card.hash(),
             family_hash: card.family_hash(),
@@ -135,11 +138,37 @@ fn get_card_export(coll: &Collection) -> Fallible<Vec<CardExport>> {
                     end: *end,
                 },
             },
-            performance: todo!(),
+            performance: export_performance(p),
         };
         cards.push(ce);
     }
     Ok(cards)
+}
+
+fn export_performance(p: Option<Performance>) -> Option<PerformanceExport> {
+    match p {
+        Some(p) => match p {
+            Performance::New => None,
+            Performance::Reviewed(ReviewedPerformance {
+                last_reviewed_at,
+                stability,
+                difficulty,
+                interval_raw,
+                interval_days,
+                due_date,
+                review_count,
+            }) => Some(PerformanceExport {
+                last_reviewed_at,
+                stability,
+                difficulty,
+                interval_raw,
+                interval_days,
+                due_date,
+                review_count,
+            }),
+        },
+        None => None,
+    }
 }
 
 fn get_session_export(coll: &Collection) -> Fallible<Vec<SessionExport>> {
