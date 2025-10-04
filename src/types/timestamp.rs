@@ -24,6 +24,7 @@ use rusqlite::types::FromSqlError;
 use rusqlite::types::FromSqlResult;
 use rusqlite::types::ToSqlOutput;
 use rusqlite::types::ValueRef;
+use serde::Serialize;
 
 use crate::types::date::Date;
 
@@ -85,5 +86,15 @@ impl FromSql for Timestamp {
             DateTime::parse_from_rfc3339(&string).map_err(|e| FromSqlError::Other(Box::new(e)))?;
         let ts = ts.with_timezone(&Utc);
         Ok(Timestamp(ts))
+    }
+}
+
+impl Serialize for Timestamp {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let s = self.0.to_rfc3339();
+        serializer.serialize_str(&s)
     }
 }
