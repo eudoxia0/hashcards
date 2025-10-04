@@ -57,16 +57,14 @@ fn get_orphans(coll: &Collection) -> Fallible<Vec<CardHash>> {
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
-
     use super::*;
-    use crate::helper::create_tmp_directory;
+    use crate::helper::create_tmp_copy_of_test_directory;
     use crate::types::timestamp::Timestamp;
 
     #[test]
     fn test_get_orphans() -> Fallible<()> {
-        let dir: PathBuf = create_tmp_directory()?;
-        let coll = Collection::new(Some(dir.display().to_string()))?;
+        let dir: String = create_tmp_copy_of_test_directory()?;
+        let coll = Collection::new(Some(dir))?;
         let hash = CardHash::hash_bytes(b"a");
         let now = Timestamp::now();
         coll.db.insert_card(hash, now)?;
@@ -77,14 +75,13 @@ mod tests {
 
     #[test]
     fn test_list_and_delete_orphans() -> Fallible<()> {
-        let dir: PathBuf = create_tmp_directory()?;
-        let dirstring = dir.display().to_string();
-        let coll = Collection::new(Some(dirstring.clone()))?;
+        let dir: String = create_tmp_copy_of_test_directory()?;
+        let coll = Collection::new(Some(dir.clone()))?;
         let hash = CardHash::hash_bytes(b"a");
         let now = Timestamp::now();
         coll.db.insert_card(hash, now)?;
-        list_orphans(Some(dirstring.clone()))?;
-        delete_orphans(Some(dirstring.clone()))?;
+        list_orphans(Some(dir.clone()))?;
+        delete_orphans(Some(dir.clone()))?;
         assert!(coll.db.card_hashes()?.is_empty());
         Ok(())
     }
