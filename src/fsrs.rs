@@ -89,16 +89,16 @@ impl FromSql for Grade {
     }
 }
 
-pub type T = f64;
+pub type Interval = f64;
 
 const F: f64 = 19.0 / 81.0;
 const C: f64 = -0.5;
 
-pub fn retrievability(t: T, s: Stability) -> Recall {
+pub fn retrievability(t: Interval, s: Stability) -> Recall {
     (1.0 + F * (t / s)).powf(C)
 }
 
-pub fn interval(r_d: Recall, s: Stability) -> T {
+pub fn interval(r_d: Recall, s: Stability) -> Interval {
     (s / F) * (r_d.powf(1.0 / C) - 1.0)
 }
 
@@ -196,13 +196,13 @@ mod tests {
     #[derive(Clone, Copy, Debug)]
     struct Step {
         /// The time when the review took place.
-        t: T,
+        t: Interval,
         /// New stability.
         s: Stability,
         /// New difficulty.
         d: Difficulty,
         /// Next interval.
-        i: T,
+        i: Interval,
     }
 
     impl PartialEq for Step {
@@ -216,7 +216,7 @@ mod tests {
 
     /// Simulate a series of reviews.
     fn sim(grades: Vec<Grade>) -> Vec<Step> {
-        let mut t: T = 0.0;
+        let mut t: Interval = 0.0;
         let r_d: f64 = 0.9;
         let mut steps = vec![];
 
@@ -226,7 +226,7 @@ mod tests {
         let g: Grade = grades.remove(0);
         let mut s: Stability = initial_stability(g);
         let mut d: Difficulty = initial_difficulty(g);
-        let mut i: T = f64::max(interval(r_d, s).round(), 1.0);
+        let mut i: Interval = f64::max(interval(r_d, s).round(), 1.0);
         steps.push(Step { t, s, d, i });
 
         // n-th review

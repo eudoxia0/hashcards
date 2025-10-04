@@ -17,9 +17,9 @@ use chrono::NaiveDate;
 
 use crate::fsrs::Difficulty;
 use crate::fsrs::Grade;
+use crate::fsrs::Interval;
 use crate::fsrs::Recall;
 use crate::fsrs::Stability;
-use crate::fsrs::T;
 use crate::fsrs::initial_difficulty;
 use crate::fsrs::initial_stability;
 use crate::fsrs::interval;
@@ -63,7 +63,7 @@ pub struct ReviewedPerformance {
     pub difficulty: Difficulty,
     /// The FSRS-calculated interval in hours until the next review. This is
     /// the raw interval, before any rounding and clamping.
-    pub interval_raw: T,
+    pub interval_raw: Interval,
     /// The FSRS interval as an integer number of days.
     pub interval_days: usize,
     /// The card's next due date.
@@ -88,16 +88,16 @@ pub fn update_performance(
             ..
         }) => {
             let last_reviewed_at: NaiveDate = last_reviewed_at.local_date().into_inner();
-            let time: T = (today - last_reviewed_at).num_days() as f64;
+            let time: Interval = (today - last_reviewed_at).num_days() as f64;
             let retr: Recall = retrievability(time, stability);
             let stability: Stability = new_stability(difficulty, stability, retr, grade);
             let difficulty: Difficulty = new_difficulty(difficulty, grade);
             (stability, difficulty, review_count)
         }
     };
-    let interval_raw: T = interval(TARGET_RECALL, stability);
-    let interval_rounded: T = interval_raw.round();
-    let interval_clamped: T = interval_rounded.clamp(MIN_INTERVAL, MAX_INTERVAL);
+    let interval_raw: Interval = interval(TARGET_RECALL, stability);
+    let interval_rounded: Interval = interval_raw.round();
+    let interval_clamped: Interval = interval_rounded.clamp(MIN_INTERVAL, MAX_INTERVAL);
     let interval_days: usize = interval_clamped as usize;
     let interval_duration: Duration = Duration::days(interval_clamped as i64);
     let due_date: Date = Date::new(today + interval_duration);

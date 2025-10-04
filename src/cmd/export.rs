@@ -22,8 +22,8 @@ use crate::db::SessionRow;
 use crate::error::Fallible;
 use crate::fsrs::Difficulty;
 use crate::fsrs::Grade;
+use crate::fsrs::Interval;
 use crate::fsrs::Stability;
-use crate::fsrs::T;
 use crate::types::aliases::DeckName;
 use crate::types::card::CardContent;
 use crate::types::card_hash::CardHash;
@@ -89,7 +89,7 @@ struct PerformanceExport {
     last_reviewed_at: Timestamp,
     stability: Stability,
     difficulty: Difficulty,
-    interval_raw: T,
+    interval_raw: Interval,
     interval_days: usize,
     due_date: Date,
     review_count: usize,
@@ -113,7 +113,7 @@ struct ReviewExport {
     grade: Grade,
     stability: Stability,
     difficulty: Difficulty,
-    interval_raw: T,
+    interval_raw: Interval,
     interval_days: usize,
     due_date: Date,
 }
