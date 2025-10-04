@@ -17,8 +17,10 @@ use std::path::PathBuf;
 /// Errors that can occur when validating an image path.
 #[derive(Debug, PartialEq)]
 pub enum ImagePathError {
-    /// User provided an empty path.
-    EmptyPath,
+    /// Path is the empty string.
+    Empty,
+    /// Path is a symbolic link.
+    Symlink,
     /// Path contains invalid components (e.g., ".." or is absolute).
     InvalidPath,
     /// File does not exist or cannot be accessed
@@ -40,30 +42,36 @@ pub fn validate_image_path(
 ) -> Result<PathBuf, ImagePathError> {
     // The empty string is an invalid path.
     if user_path.trim().is_empty() {
-        return Err(ImagePathError::EmptyPath);
+        return Err(ImagePathError::Empty);
     }
 
     let requested_path = PathBuf::from(&user_path);
 
-    // Reject paths containing ".." or absolute paths
+    // Reject paths containing ".." or absolute paths.
     if user_path.contains("..") || requested_path.is_absolute() {
         return Err(ImagePathError::InvalidPath);
     }
 
-    // Join the path with the base directory
+    // Join the path with the base directory.
     let full_path = base_dir.join(&requested_path);
 
-    // Canonicalize the full path (resolves symlinks and validates existence)
+    // Is the path a symbolic link? Reject it.
+    if full_path.is_symlink() {
+        return Err(ImagePathError::Symlink);
+    }
+
+    // Canonicalize the full path (validates existence).
     let canonical_full = full_path
         .canonicalize()
         .map_err(|_| ImagePathError::NotFound)?;
 
-    // Canonicalize the base directory (should always succeed since it was validated at startup)
+    // Canonicalize the base directory (should always succeed since it was validated at startup).
     let canonical_dir = base_dir
         .canonicalize()
         .map_err(|_| ImagePathError::NotFound)?;
 
-    // Ensure the resolved path is within the base directory
+    // Ensure the resolved path is within the base directory. This should be
+    // caught by the symlink check, but nevertheless.
     if !canonical_full.starts_with(&canonical_dir) {
         return Err(ImagePathError::OutsideDirectory);
     }
@@ -171,7 +179,7 @@ mod tests {
         Ok(())
     }
 
-    /// Symlinks pointing to files within the base directory should be allowed.
+    /// Symlinks pointing to files within the base directory should be rejected.
     #[test]
     fn test_validate_image_path_symlink_inside() -> Fallible<()> {
         // Test data.
@@ -184,7 +192,7 @@ mod tests {
 
         // Assertions.
         let result = validate_image_path(&dir, "link.jpg".to_string());
-        assert!(result.is_ok());
+        assert_eq!(result, Err(ImagePathError::Symlink));
         Ok(())
     }
 
@@ -203,7 +211,7 @@ mod tests {
 
         // Assertions.
         let result = validate_image_path(&dir1, "evil_link.jpg".to_string());
-        assert_eq!(result, Err(ImagePathError::OutsideDirectory));
+        assert_eq!(result, Err(ImagePathError::Symlink));
         Ok(())
     }
 
@@ -229,7 +237,7 @@ mod tests {
 
         // Assertions.
         let result = validate_image_path(&dir, "".to_string());
-        assert_eq!(result, Err(ImagePathError::EmptyPath));
+        assert_eq!(result, Err(ImagePathError::Empty));
         Ok(())
     }
 
