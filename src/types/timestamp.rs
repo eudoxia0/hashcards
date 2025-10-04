@@ -95,3 +95,16 @@ impl Serialize for Timestamp {
         serializer.serialize_str(&s)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_serialize() -> Fallible<()> {
+        let ts = Timestamp(Utc.with_ymd_and_hms(2024, 1, 2, 15, 4, 5).single().unwrap());
+        let serialized = serde_json::to_string(&ts)?;
+        assert_eq!(serialized, "\"2024-01-02T15:04:05+00:00\"");
+        Ok(())
+    }
+}
