@@ -16,7 +16,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::Mutex;
 
-use crate::cache::Cache;
+use crate::cmd::drill::cache::Cache;
 use crate::db::Database;
 use crate::db::ReviewRecord;
 use crate::fsrs::Difficulty;
