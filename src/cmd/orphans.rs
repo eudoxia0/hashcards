@@ -54,3 +54,24 @@ fn get_orphans(coll: &Collection) -> Fallible<Vec<CardHash>> {
     orphans.sort();
     Ok(orphans)
 }
+
+#[cfg(test)]
+mod tests {
+    use std::path::PathBuf;
+
+    use super::*;
+    use crate::helper::create_tmp_directory;
+    use crate::types::timestamp::Timestamp;
+
+    #[test]
+    fn test_get_orphans() -> Fallible<()> {
+        let dir: PathBuf = create_tmp_directory()?;
+        let coll = Collection::new(Some(dir.display().to_string()))?;
+        let hash = CardHash::hash_bytes(b"a");
+        let now = Timestamp::now();
+        coll.db.insert_card(hash, now)?;
+        let orphans = get_orphans(&coll)?;
+        assert_eq!(orphans, vec![hash]);
+        Ok(())
+    }
+}
