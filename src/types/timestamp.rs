@@ -34,6 +34,11 @@ use crate::types::date::Date;
 pub struct Timestamp(NaiveDateTime);
 
 impl Timestamp {
+    #[cfg(test)]
+    pub fn new(ndt: NaiveDateTime) -> Self {
+        Self(ndt.trunc_subsecs(3))
+    }
+
     /// Converts a timestamp into a `NaiveDateTime`.
     pub fn into_inner(self) -> NaiveDateTime {
         self.0
@@ -46,7 +51,7 @@ impl Timestamp {
 
     /// The date component of this timestamp.
     pub fn date(self) -> Date {
-        Date::new(Local::now().naive_local().trunc_subsecs(3).date())
+        Date::new(self.0.date())
     }
 }
 
