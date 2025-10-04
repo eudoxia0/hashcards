@@ -82,6 +82,19 @@ mod tests {
     use crate::helper::create_tmp_copy_of_test_directory;
 
     #[test]
+    fn test_display_stats_format() {
+        assert_eq!(StatsFormat::Html.to_string(), "html");
+        assert_eq!(StatsFormat::Json.to_string(), "json");
+    }
+
+    #[test]
+    fn test_print_stats_json() -> Fallible<()> {
+        let directory = create_tmp_copy_of_test_directory()?;
+        print_stats(Some(directory), StatsFormat::Json)?;
+        Ok(())
+    }
+
+    #[test]
     fn test_get_stats() -> Fallible<()> {
         let directory = create_tmp_copy_of_test_directory()?;
         let stats = get_stats(Some(directory)).unwrap();
