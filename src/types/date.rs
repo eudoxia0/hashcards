@@ -12,6 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::fmt::Display;
+use std::fmt::Formatter;
+
+use chrono::Local;
 use chrono::NaiveDate;
 use rusqlite::ToSql;
 use rusqlite::types::FromSql;
@@ -23,6 +27,7 @@ use serde::Serialize;
 
 use crate::error::ErrorReport;
 
+/// Represents a date.
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
 pub struct Date(NaiveDate);
 
@@ -31,14 +36,24 @@ impl Date {
         Self(naive_date)
     }
 
+    pub fn today() -> Self {
+        Self(Local::now().naive_local().date())
+    }
+
     pub fn into_inner(self) -> NaiveDate {
         self.0
     }
 }
 
+impl Display for Date {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0.format("%Y-%m-%d"))
+    }
+}
+
 impl ToSql for Date {
     fn to_sql(&self) -> rusqlite::Result<ToSqlOutput<'_>> {
-        let str = self.0.format("%Y-%m-%d").to_string();
+        let str = self.to_string();
         Ok(ToSqlOutput::from(str))
     }
 }
@@ -58,7 +73,7 @@ impl Serialize for Date {
     where
         S: serde::Serializer,
     {
-        let s = self.0.format("%Y-%m-%d").to_string();
+        let s = self.to_string();
         serializer.serialize_str(&s)
     }
 }

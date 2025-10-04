@@ -94,7 +94,7 @@ The `cards` table has the following schema:
 | Column             | Type               | Description                                                                                                                         |
 |--------------------|--------------------|-------------------------------------------------------------------------------------------------------------------------------------|
 | `card_hash`        | `text primary key` | The hash of the card.                                                                                                               |
-| `added_at`         | `text not null`    | The timestamp when the card was first added to the database, in [RFC 3339] format.                                                  |
+| `added_at`         | `text not null`    | The timestamp when the card was first added to the database, in timestamp format.                                                   |
 | `last_reviewed_at` | `text`             | The timestamp when the card was most recently reviewed. `null` if the card is new.                                                  |
 | `stability`        | `real`             | The card's stability. `null` if the card is new.                                                                                    |
 | `difficulty`       | `real`             | The card's difficulty. `null` if the card is new.                                                                                   |
@@ -105,11 +105,11 @@ The `cards` table has the following schema:
 
 The `sessions` table has the following schema:
 
-| Column       | Type                  | Description                                                   |
-|--------------|-----------------------|---------------------------------------------------------------|
-| `session_id` | `integer primary key` | The ID of the session.                                        |
-| `started_at` | `text not null`       | The timestamp when the session started, in [RFC 3339] format. |
-| `ended_at`   | `text not null`       | The timestamp when the session ended, in [RFC 3339] format.   |
+| Column       | Type                  | Description                                                  |
+|--------------|-----------------------|--------------------------------------------------------------|
+| `session_id` | `integer primary key` | The ID of the session.                                       |
+| `started_at` | `text not null`       | The timestamp when the session started, in timestamp format. |
+| `ended_at`   | `text not null`       | The timestamp when the session ended, in timestamp format.   |
 
 The `reviews` table has the following schema:
 
@@ -126,7 +126,7 @@ The `reviews` table has the following schema:
 | `interval_days` | `real`                | The interval as an integer number of days, after rounding and clamping. `null` if the card is new.                                 |
 | `due_date`      | `text not null`       | The date, in the user's local time, when the card is next due, in `YYYY-MM-DD` format.                                             |
 
-[RFC 3339]: https://datatracker.ietf.org/doc/html/rfc3339
+Note: "timestamp format" is `YYYY-MM-DDTHH:MM:SS`.
 
 ## Prior Art
 

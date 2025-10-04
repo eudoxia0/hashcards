@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use chrono::DateTime;
-use chrono::Datelike;
-use chrono::Duration;
+use std::fmt::Display;
+use std::fmt::Formatter;
+
 use chrono::Local;
-use chrono::TimeZone;
-use chrono::Utc;
+use chrono::NaiveDateTime;
+use chrono::SubsecRound;
 use rusqlite::ToSql;
 use rusqlite::types::FromSql;
 use rusqlite::types::FromSqlError;
@@ -27,51 +27,38 @@ use rusqlite::types::ValueRef;
 use serde::Serialize;
 
 use crate::error::ErrorReport;
-use crate::error::Fallible;
 use crate::types::date::Date;
 
+/// A timestamp without a timezone and millisecond precision.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub struct Timestamp(DateTime<Utc>);
+pub struct Timestamp(NaiveDateTime);
 
 impl Timestamp {
-    pub fn into_inner(self) -> DateTime<Utc> {
+    /// Converts a timestamp into a `NaiveDateTime`.
+    pub fn into_inner(self) -> NaiveDateTime {
         self.0
     }
 
+    /// The current timestamp in the user's local time.
     pub fn now() -> Self {
-        Self(Utc::now())
+        Self(Local::now().naive_local().trunc_subsecs(3))
     }
 
-    pub fn local_date(self) -> Date {
-        let ts = self.0.with_timezone(&Local);
-        Date::new(ts.date_naive())
+    /// The date component of this timestamp.
+    pub fn date(self) -> Date {
+        Date::new(Local::now().naive_local().trunc_subsecs(3).date())
     }
+}
 
-    /// Returns the range of timestamps that comprise the (local) day around
-    /// the given timestamp.
-    pub fn day_range(self) -> Fallible<(Self, Self)> {
-        let Self(ts) = self;
-
-        // Start of day.
-        let start_local: DateTime<Local> = Local
-            .with_ymd_and_hms(ts.year(), ts.month(), ts.day(), 0, 0, 0)
-            .single()
-            .ok_or_else(|| ErrorReport::new("Invalid date (possible DST transition?)."))?;
-
-        // End of day.
-        let end_local: DateTime<Local> = start_local + Duration::days(1);
-
-        // Convert to UTC.
-        let start_utc: DateTime<Utc> = start_local.with_timezone(&Utc);
-        let end_utc: DateTime<Utc> = end_local.with_timezone(&Utc);
-
-        Ok((Self(start_utc), Self(end_utc)))
+impl Display for Timestamp {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0.format("%Y-%m-%dT%H:%M:%S%.3f"))
     }
 }
 
 impl ToSql for Timestamp {
     fn to_sql(&self) -> rusqlite::Result<ToSqlOutput<'_>> {
-        let str = self.0.to_rfc3339();
+        let str: String = self.to_string();
         Ok(ToSqlOutput::from(str))
     }
 }
@@ -79,10 +66,13 @@ impl ToSql for Timestamp {
 impl FromSql for Timestamp {
     fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
         let string: String = FromSql::column_result(value)?;
-        let ts =
-            DateTime::parse_from_rfc3339(&string).map_err(|e| FromSqlError::Other(Box::new(e)))?;
-        let ts = ts.with_timezone(&Utc);
-        Ok(Timestamp(ts))
+        let ndt: NaiveDateTime = NaiveDateTime::parse_from_str(&string, "%Y-%m-%dT%H:%M:%S%.3f")
+            .map_err(|_| {
+                FromSqlError::Other(Box::new(ErrorReport::new(format!(
+                    "Failed to parse timestamp: '{string}'."
+                ))))
+            })?;
+        Ok(Timestamp(ndt))
     }
 }
 
@@ -91,7 +81,7 @@ impl Serialize for Timestamp {
     where
         S: serde::Serializer,
     {
-        let s = self.0.to_rfc3339();
+        let s = self.to_string();
         serializer.serialize_str(&s)
     }
 }
@@ -101,10 +91,10 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_serialize() -> Fallible<()> {
-        let ts = Timestamp(Utc.with_ymd_and_hms(2024, 1, 2, 15, 4, 5).single().unwrap());
-        let serialized = serde_json::to_string(&ts)?;
-        assert_eq!(serialized, "\"2024-01-02T15:04:05+00:00\"");
-        Ok(())
+    fn test_timestamp_to_string() {
+        let ndt = NaiveDateTime::parse_from_str("2023-10-05T14:30:15.123", "%Y-%m-%dT%H:%M:%S%.3f")
+            .unwrap();
+        let ts = Timestamp(ndt);
+        assert_eq!(ts.to_string(), "2023-10-05T14:30:15.123");
     }
 }

@@ -83,6 +83,7 @@ impl Cache {
 mod tests {
     use super::*;
     use crate::error::fail;
+    use crate::types::date::Date;
     use crate::types::timestamp::Timestamp;
 
     #[test]
@@ -109,7 +110,7 @@ mod tests {
         let difficulty = 2.0;
         let interval_raw = 0.4;
         let interval_days = 1;
-        let due_date = Timestamp::now().local_date();
+        let due_date = Date::today();
         let review_count = 3;
         cache.update(
             card_hash,
@@ -166,7 +167,7 @@ mod tests {
         let difficulty = 2.0;
         let interval_raw = 0.4;
         let interval_days = 1;
-        let due_date = Timestamp::now().local_date();
+        let due_date = Date::today();
         let review_count = 3;
         let rp = ReviewedPerformance {
             last_reviewed_at,

@@ -77,7 +77,7 @@ pub fn update_performance(
     grade: Grade,
     reviewed_at: Timestamp,
 ) -> ReviewedPerformance {
-    let today: NaiveDate = reviewed_at.local_date().into_inner();
+    let today: NaiveDate = reviewed_at.date().into_inner();
     let (stability, difficulty, review_count): (Stability, Difficulty, usize) = match perf {
         Performance::New => (initial_stability(grade), initial_difficulty(grade), 0),
         Performance::Reviewed(ReviewedPerformance {
@@ -87,7 +87,7 @@ pub fn update_performance(
             review_count,
             ..
         }) => {
-            let last_reviewed_at: NaiveDate = last_reviewed_at.local_date().into_inner();
+            let last_reviewed_at: NaiveDate = last_reviewed_at.date().into_inner();
             let time: Interval = (today - last_reviewed_at).num_days() as f64;
             let retr: Recall = retrievability(time, stability);
             let stability: Stability = new_stability(difficulty, stability, retr, grade);

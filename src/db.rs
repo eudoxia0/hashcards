@@ -279,13 +279,14 @@ impl Database {
         Ok(count > 0)
     }
 
-    /// Count the number of reviews done in a given day.
-    pub fn count_reviews_in_day(&self, day: Timestamp) -> Fallible<usize> {
-        let (start, end) = day.day_range()?;
+    /// Count the number of reviews performed in the given date.
+    pub fn count_reviews_in_date(&self, date: Date) -> Fallible<usize> {
+        // The SQL query should find reviews where the timestamp starts with the
+        // date string.
         let sql = "select count(*) from reviews where reviewed_at >= ? and reviewed_at < ?;";
         let count: i64 = self
             .conn
-            .query_row(sql, params![start, end], |row| row.get(0))?;
+            .query_row(sql, params![date, date], |row| row.get(0))?;
         Ok(count as usize)
     }
 
@@ -367,7 +368,7 @@ mod tests {
         assert!(hashes.contains(&card_hash));
         let performance = db.get_card_performance(card_hash)?;
         assert_eq!(performance, Performance::New);
-        let due_today = db.due_today(now.local_date())?;
+        let due_today = db.due_today(now.date())?;
         assert!(due_today.contains(&card_hash));
         Ok(())
     }
@@ -400,13 +401,13 @@ mod tests {
             difficulty: 2.0,
             interval_raw: 1.0,
             interval_days: 1,
-            due_date: now.local_date(),
+            due_date: now.date(),
             review_count: 1,
         });
         db.update_card_performance(card_hash, performance)?;
         let fetched_performance = db.get_card_performance(card_hash)?;
         assert_eq!(fetched_performance, performance);
-        let due_today = db.due_today(now.local_date())?;
+        let due_today = db.due_today(now.date())?;
         assert!(due_today.contains(&card_hash));
         Ok(())
     }
@@ -454,7 +455,7 @@ mod tests {
             difficulty: 2.0,
             interval_raw: 1.0,
             interval_days: 1,
-            due_date: now.local_date(),
+            due_date: now.date(),
         };
         db.save_session(now, now, vec![review])?;
 
@@ -473,7 +474,7 @@ mod tests {
         assert_eq!(fetched_review.data.difficulty, 2.0);
         assert_eq!(fetched_review.data.interval_raw, 1.0);
         assert_eq!(fetched_review.data.interval_days, 1);
-        assert_eq!(fetched_review.data.due_date, now.local_date());
+        assert_eq!(fetched_review.data.due_date, now.date());
         Ok(())
     }
 
