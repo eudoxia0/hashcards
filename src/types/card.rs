@@ -81,7 +81,6 @@ impl Card {
         &self.deck_name
     }
 
-    #[cfg(test)]
     pub fn content(&self) -> &CardContent {
         &self.content
     }
@@ -92,6 +91,14 @@ impl Card {
 
     pub fn family_hash(&self) -> Option<CardHash> {
         self.content.family_hash()
+    }
+
+    pub fn file_path(&self) -> &PathBuf {
+        &self.file_path
+    }
+
+    pub fn range(&self) -> (usize, usize) {
+        self.range
     }
 
     pub fn card_type(&self) -> CardType {
