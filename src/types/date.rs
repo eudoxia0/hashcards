@@ -19,6 +19,7 @@ use rusqlite::types::FromSqlError;
 use rusqlite::types::FromSqlResult;
 use rusqlite::types::ToSqlOutput;
 use rusqlite::types::ValueRef;
+use serde::Serialize;
 
 use crate::error::ErrorReport;
 
@@ -49,5 +50,15 @@ impl FromSql for Date {
             .map_err(|_| ErrorReport::new(format!("invalid date: {}", string)))
             .map_err(|e| FromSqlError::Other(Box::new(e)))?;
         Ok(Date(date))
+    }
+}
+
+impl Serialize for Date {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let s = self.0.format("%Y-%m-%d").to_string();
+        serializer.serialize_str(&s)
     }
 }
