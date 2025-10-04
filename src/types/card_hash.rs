@@ -22,6 +22,7 @@ use rusqlite::types::FromSqlError;
 use rusqlite::types::FromSqlResult;
 use rusqlite::types::ToSqlOutput;
 use rusqlite::types::ValueRef;
+use serde::Serialize;
 
 use crate::error::ErrorReport;
 use crate::error::Fallible;
@@ -80,6 +81,15 @@ impl FromSql for CardHash {
 impl Display for CardHash {
     fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
         write!(f, "{}", self.to_hex())
+    }
+}
+
+impl Serialize for CardHash {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(&self.to_hex())
     }
 }
 
