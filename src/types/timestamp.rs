@@ -34,12 +34,6 @@ use crate::types::date::Date;
 pub struct Timestamp(DateTime<Utc>);
 
 impl Timestamp {
-    #[cfg(test)]
-    #[allow(dead_code)]
-    pub fn new(ts: DateTime<Utc>) -> Self {
-        Self(ts)
-    }
-
     pub fn into_inner(self) -> DateTime<Utc> {
         self.0
     }
