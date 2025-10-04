@@ -24,7 +24,6 @@ use crate::markdown::markdown_to_html_inline;
 use crate::types::aliases::DeckName;
 use crate::types::card_hash::CardHash;
 use crate::types::card_hash::Hasher;
-use crate::types::card_type::CardType;
 
 const CLOZE_TAG_BYTES: &[u8] = b"CLOZE_DELETION";
 const CLOZE_TAG: &str = "CLOZE_DELETION";
@@ -59,6 +58,12 @@ pub enum CardContent {
         /// The position of the last character of the deletion.
         end: usize,
     },
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum CardType {
+    Basic,
+    Cloze,
 }
 
 impl Card {

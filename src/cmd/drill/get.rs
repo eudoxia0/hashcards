@@ -23,7 +23,7 @@ use crate::cmd::drill::state::ServerState;
 use crate::cmd::drill::template::page_template;
 use crate::error::Fallible;
 use crate::types::card::Card;
-use crate::types::card_type::CardType;
+use crate::types::card::CardType;
 
 pub async fn get_handler(State(state): State<ServerState>) -> (StatusCode, Html<String>) {
     let html = match inner(state).await {
