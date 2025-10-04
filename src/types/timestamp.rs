@@ -102,4 +102,13 @@ mod tests {
         let ts = Timestamp(ndt);
         assert_eq!(ts.to_string(), "2023-10-05T14:30:15.123");
     }
+
+    #[test]
+    fn test_serialize() {
+        let ndt = NaiveDateTime::parse_from_str("2023-10-05T14:30:15.123", "%Y-%m-%dT%H:%M:%S%.3f")
+            .unwrap();
+        let ts = Timestamp(ndt);
+        let serialized = serde_json::to_string(&ts).unwrap();
+        assert_eq!(serialized, "\"2023-10-05T14:30:15.123\"");
+    }
 }
