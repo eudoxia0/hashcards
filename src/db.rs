@@ -457,6 +457,23 @@ mod tests {
             due_date: now.local_date(),
         };
         db.save_session(now, now, vec![review])?;
+
+        let sessions = db.get_all_sessions()?;
+        assert_eq!(sessions.len(), 1);
+        let session = &sessions[0];
+        assert_eq!(session.started_at, now);
+        assert_eq!(session.ended_at, now);
+        let reviews = db.get_reviews_for_session(session.session_id)?;
+        assert_eq!(reviews.len(), 1);
+        let fetched_review = &reviews[0];
+        assert_eq!(fetched_review.data.card_hash, card_hash);
+        assert_eq!(fetched_review.data.reviewed_at, now);
+        assert_eq!(fetched_review.data.grade, Grade::Good);
+        assert_eq!(fetched_review.data.stability, 2.0);
+        assert_eq!(fetched_review.data.difficulty, 2.0);
+        assert_eq!(fetched_review.data.interval_raw, 1.0);
+        assert_eq!(fetched_review.data.interval_days, 1);
+        assert_eq!(fetched_review.data.due_date, now.local_date());
         Ok(())
     }
 
