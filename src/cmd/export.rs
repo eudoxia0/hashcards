@@ -239,12 +239,22 @@ mod tests {
         let mut reviews = Vec::new();
         for card in deck {
             coll.db.insert_card(card.hash(), now)?;
+            let performance = Performance::Reviewed(ReviewedPerformance {
+                last_reviewed_at: now,
+                stability: 1.0,
+                difficulty: 3.0,
+                interval_raw: 1.0,
+                interval_days: 1,
+                due_date: now.date(),
+                review_count: 1,
+            });
+            coll.db.update_card_performance(card.hash(), performance)?;
             let review = ReviewRecord {
                 card_hash: card.hash(),
                 reviewed_at: now,
-                grade: Grade::Good,
-                stability: 2.0,
-                difficulty: 2.0,
+                grade: Grade::Easy,
+                stability: 1.0,
+                difficulty: 3.0,
                 interval_raw: 1.0,
                 interval_days: 1,
                 due_date: now.date(),
