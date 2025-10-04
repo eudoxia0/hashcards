@@ -15,6 +15,8 @@
 use serde::Serialize;
 
 use crate::collection::Collection;
+use crate::db::ReviewRow;
+use crate::db::SessionRow;
 use crate::error::Fallible;
 use crate::fsrs::Difficulty;
 use crate::fsrs::Grade;
@@ -90,6 +92,7 @@ struct PerformanceExport {
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct SessionExport {
+    session_id: i64,
     started_at: Timestamp,
     ended_at: Timestamp,
     reviews: Vec<ReviewExport>,
@@ -98,6 +101,7 @@ struct SessionExport {
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct ReviewExport {
+    review_id: i64,
     hash: CardHash,
     reviewed_at: Timestamp,
     grade: Grade,
@@ -172,5 +176,40 @@ fn export_performance(p: Option<Performance>) -> Option<PerformanceExport> {
 }
 
 fn get_session_export(coll: &Collection) -> Fallible<Vec<SessionExport>> {
-    todo!()
+    let sessions = coll.db.get_all_sessions()?;
+    let mut session_exports: Vec<SessionExport> = Vec::new();
+    for session in sessions.into_iter() {
+        let session_export = export_session(coll, session)?;
+        session_exports.push(session_export);
+    }
+    Ok(session_exports)
+}
+
+fn export_session(coll: &Collection, session: SessionRow) -> Fallible<SessionExport> {
+    let reviews = coll.db.get_reviews_for_session(session.session_id)?;
+    let mut review_exports: Vec<ReviewExport> = Vec::new();
+    for review in reviews.into_iter() {
+        let review_export = export_review(review);
+        review_exports.push(review_export)
+    }
+    Ok(SessionExport {
+        session_id: session.session_id,
+        started_at: session.started_at,
+        ended_at: session.ended_at,
+        reviews: review_exports,
+    })
+}
+
+fn export_review(review: ReviewRow) -> ReviewExport {
+    ReviewExport {
+        review_id: review.review_id,
+        hash: review.data.card_hash,
+        reviewed_at: review.data.reviewed_at,
+        grade: review.data.grade,
+        stability: review.data.stability,
+        difficulty: review.data.difficulty,
+        interval_raw: review.data.interval_raw,
+        interval_days: review.data.interval_days,
+        due_date: review.data.due_date,
+    }
 }

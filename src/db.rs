@@ -45,6 +45,17 @@ pub struct ReviewRecord {
     pub due_date: Date,
 }
 
+pub struct SessionRow {
+    pub session_id: i64,
+    pub started_at: Timestamp,
+    pub ended_at: Timestamp,
+}
+
+pub struct ReviewRow {
+    pub review_id: i64,
+    pub data: ReviewRecord,
+}
+
 impl Database {
     pub fn new(database_path: &str) -> Fallible<Self> {
         let mut conn = Connection::open(database_path)?;
@@ -261,12 +272,14 @@ impl Database {
         Ok(())
     }
 
+    /// Does a card with the given hash exist?
     fn card_exists(&self, card_hash: CardHash) -> Fallible<bool> {
         let sql = "select count(*) from cards where card_hash = ?;";
         let count: i64 = self.conn.query_row(sql, [card_hash], |row| row.get(0))?;
         Ok(count > 0)
     }
 
+    /// Count the number of reviews done in a given day.
     pub fn count_reviews_in_day(&self, day: Timestamp) -> Fallible<usize> {
         let (start, end) = day.day_range();
         let sql = "select count(*) from reviews where reviewed_at >= ? and reviewed_at < ?;";
@@ -274,6 +287,50 @@ impl Database {
             .conn
             .query_row(sql, params![start, end], |row| row.get(0))?;
         Ok(count as usize)
+    }
+
+    /// Get the list of all sessions in the database.
+    pub fn get_all_sessions(&self) -> Fallible<Vec<SessionRow>> {
+        let sql = "select session_id, started_at, ended_at from sessions order by started_at;";
+        let mut stmt = self.conn.prepare(sql)?;
+        let session_iter = stmt.query_map([], |row| {
+            Ok(SessionRow {
+                session_id: row.get(0)?,
+                started_at: row.get(1)?,
+                ended_at: row.get(2)?,
+            })
+        })?;
+        let mut sessions = Vec::new();
+        for session in session_iter {
+            sessions.push(session?);
+        }
+        Ok(sessions)
+    }
+
+    /// Get the list of all reviews for a given session.
+    pub fn get_reviews_for_session(&self, session_id: i64) -> Fallible<Vec<ReviewRow>> {
+        let sql = "select review_id, card_hash, reviewed_at, grade, stability, difficulty, interval_raw, interval_days, due_date from reviews where session_id = ? order by reviewed_at;";
+        let mut stmt = self.conn.prepare(sql)?;
+        let review_iter = stmt.query_map(params![session_id], |row| {
+            Ok(ReviewRow {
+                review_id: row.get(0)?,
+                data: ReviewRecord {
+                    card_hash: row.get(1)?,
+                    reviewed_at: row.get(2)?,
+                    grade: row.get(3)?,
+                    stability: row.get(4)?,
+                    difficulty: row.get(5)?,
+                    interval_raw: row.get(6)?,
+                    interval_days: row.get(7)?,
+                    due_date: row.get(8)?,
+                },
+            })
+        })?;
+        let mut reviews = Vec::new();
+        for review in review_iter {
+            reviews.push(review?);
+        }
+        Ok(reviews)
     }
 }
 
