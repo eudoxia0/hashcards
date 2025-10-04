@@ -57,7 +57,7 @@ pub async fn start_server(
         macros,
     } = Collection::new(directory)?;
 
-    let today: Date = session_started_at.local_date();
+    let today: Date = session_started_at.date();
 
     let db_hashes: HashSet<CardHash> = db.card_hashes()?;
     // If a card is in the directory, but not in the DB, it is new. Add it to
