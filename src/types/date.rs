@@ -51,6 +51,16 @@ impl Display for Date {
     }
 }
 
+impl TryFrom<String> for Date {
+    type Error = ErrorReport;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        let date = NaiveDate::parse_from_str(&value, "%Y-%m-%d")
+            .map_err(|_| ErrorReport::new(format!("invalid date: {}", value)))?;
+        Ok(Date(date))
+    }
+}
+
 impl ToSql for Date {
     fn to_sql(&self) -> rusqlite::Result<ToSqlOutput<'_>> {
         let str = self.to_string();
@@ -61,10 +71,7 @@ impl ToSql for Date {
 impl FromSql for Date {
     fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
         let string: String = FromSql::column_result(value)?;
-        let date = NaiveDate::parse_from_str(&string, "%Y-%m-%d")
-            .map_err(|_| ErrorReport::new(format!("invalid date: {}", string)))
-            .map_err(|e| FromSqlError::Other(Box::new(e)))?;
-        Ok(Date(date))
+        Date::try_from(string).map_err(|e| FromSqlError::Other(Box::new(e)))
     }
 }
 
