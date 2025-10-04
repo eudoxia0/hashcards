@@ -228,8 +228,7 @@ mod tests {
     #[test]
     fn test_full_export() -> Fallible<()> {
         let dir = create_tmp_copy_of_test_directory()?;
-        let coll = Collection::new(Some(dir))?;
-        let _ = get_export(coll)?;
+        export_collection(Some(dir), None)?;
         Ok(())
     }
 }
