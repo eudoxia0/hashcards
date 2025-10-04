@@ -362,7 +362,10 @@ mod tests {
         let result = db.get_card_performance(card_hash);
         assert!(result.is_err());
         let err = result.err().unwrap();
-        assert_eq!(err.to_string(), "error: Card not found");
+        assert_eq!(
+            err.to_string(),
+            format!("error: No performance data found for card with hash {card_hash}")
+        );
         Ok(())
     }
 
@@ -423,7 +426,10 @@ mod tests {
         let result = db.get_card_performance(card_hash);
         assert!(result.is_err());
         let err = result.err().unwrap();
-        assert_eq!(err.to_string(), "error: Card not found");
+        assert_eq!(
+            err.to_string(),
+            format!("error: No performance data found for card with hash {card_hash}")
+        );
         Ok(())
     }
 }
