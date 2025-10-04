@@ -729,4 +729,25 @@ mod tests {
             }
         }
     }
+
+    /// Parsing invalid UTF-8.
+    ///
+    /// This is tricky to test directly because Rust strings are UTF-8. We can
+    /// simulate it by creating a byte array with invalid UTF-8, and using an
+    /// unsafe method to convert it to a string without validation.
+    #[test]
+    fn test_invalid_utf8() {
+        let input = unsafe {
+            #[allow(invalid_from_utf8_unchecked)]
+            std::str::from_utf8_unchecked(b"C: Valid text [\xFF\xFF]")
+        };
+        let parser = make_test_parser();
+        let result = parser.parse(input);
+        assert!(result.is_err());
+        let err = result.err().unwrap();
+        assert_eq!(
+            err.to_string(),
+            "Cloze card contains invalid UTF-8. Location: test.md:1"
+        );
+    }
 }
