@@ -13,7 +13,6 @@
 // limitations under the License.
 
 use std::collections::HashSet;
-use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::Mutex;
 
@@ -37,6 +36,7 @@ use crate::cmd::drill::state::ServerState;
 use crate::collection::Collection;
 use crate::db::Database;
 use crate::error::Fallible;
+use crate::image::validate_image_path;
 use crate::types::card::Card;
 use crate::types::card_hash::CardHash;
 use crate::types::date::Date;
@@ -156,16 +156,17 @@ async fn image_handler(
     State(state): State<ServerState>,
     Path(path): Path<String>,
 ) -> (StatusCode, [(HeaderName, &'static str); 1], Vec<u8>) {
-    let path = PathBuf::from(path);
-    let path = state.directory.join(path);
-    if !path.exists() {
-        return (
-            StatusCode::NOT_FOUND,
-            [(CONTENT_TYPE, "text/plain")],
-            b"Not Found".to_vec(),
-        );
-    }
-    let content = tokio::fs::read(path).await;
+    let validated_path = match validate_image_path(&state.directory, path) {
+        Ok(p) => p,
+        Err(_) => {
+            return (
+                StatusCode::NOT_FOUND,
+                [(CONTENT_TYPE, "text/plain")],
+                b"Not Found".to_vec(),
+            );
+        }
+    };
+    let content = tokio::fs::read(validated_path).await;
     match content {
         Ok(bytes) => (
             StatusCode::OK,
