@@ -30,6 +30,7 @@ use crate::error::ErrorReport;
 use crate::error::Fallible;
 use crate::types::date::Date;
 
+/// A timestamp without a timezone.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct Timestamp(DateTime<Utc>);
 
