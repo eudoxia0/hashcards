@@ -18,6 +18,7 @@ use rusqlite::types::FromSqlError;
 use rusqlite::types::FromSqlResult;
 use rusqlite::types::ToSqlOutput;
 use rusqlite::types::ValueRef;
+use serde::Serialize;
 
 use crate::error::ErrorReport;
 use crate::error::fail;
@@ -31,7 +32,7 @@ pub type Recall = f64;
 pub type Stability = f64;
 pub type Difficulty = f64;
 
-#[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Clone, Copy, PartialEq, Debug, Serialize)]
 pub enum Grade {
     Forgot,
     Hard,
@@ -387,6 +388,19 @@ mod tests {
         let grades = [Grade::Forgot, Grade::Hard, Grade::Good, Grade::Easy];
         for grade in grades {
             assert_eq!(grade, Grade::try_from(grade.as_str().to_string())?);
+        }
+        Ok(())
+    }
+
+    /// Test the serialization format of Grade.
+    #[test]
+    fn test_grade_serialization_format() -> Fallible<()> {
+        let grades = [Grade::Forgot, Grade::Hard, Grade::Good, Grade::Easy];
+        let expected = ["Forgot", "Hard", "Good", "Easy"];
+        for (grade, expected) in zip(grades, expected) {
+            let serialized = serde_json::to_string(&grade)?;
+            let expected = format!("\"{}\"", expected);
+            assert_eq!(serialized, expected);
         }
         Ok(())
     }
