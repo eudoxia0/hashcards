@@ -33,10 +33,8 @@ pub struct Card {
     /// The name of the deck this card belongs to.
     deck_name: DeckName,
     /// The absolute path to the file this card was parsed from.
-    #[allow(dead_code)]
     file_path: PathBuf,
     /// The line number range that contains the card.
-    #[allow(dead_code)]
     range: (usize, usize),
     /// The card's content.
     content: CardContent,
