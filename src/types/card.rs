@@ -21,6 +21,7 @@ use maud::html;
 use crate::error::Fallible;
 use crate::markdown::markdown_to_html;
 use crate::markdown::markdown_to_html_inline;
+use crate::types::aliases::DeckName;
 use crate::types::card_hash::CardHash;
 use crate::types::card_hash::Hasher;
 use crate::types::card_type::CardType;
@@ -31,7 +32,7 @@ const CLOZE_TAG: &str = "CLOZE_DELETION";
 #[derive(Clone)]
 pub struct Card {
     /// The name of the deck this card belongs to.
-    deck_name: String,
+    deck_name: DeckName,
     /// The absolute path to the file this card was parsed from.
     #[allow(dead_code)]
     file_path: PathBuf,
@@ -62,7 +63,7 @@ pub enum CardContent {
 
 impl Card {
     pub fn new(
-        deck_name: String,
+        deck_name: DeckName,
         file_path: PathBuf,
         range: (usize, usize),
         content: CardContent,
@@ -77,7 +78,7 @@ impl Card {
         }
     }
 
-    pub fn deck_name(&self) -> &str {
+    pub fn deck_name(&self) -> &DeckName {
         &self.deck_name
     }
 

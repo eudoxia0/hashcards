@@ -24,6 +24,7 @@ use crate::fsrs::Difficulty;
 use crate::fsrs::Grade;
 use crate::fsrs::Stability;
 use crate::fsrs::T;
+use crate::types::aliases::DeckName;
 use crate::types::card::CardContent;
 use crate::types::card_hash::CardHash;
 use crate::types::date::Date;
@@ -54,7 +55,7 @@ struct Export {
 struct CardExport {
     hash: CardHash,
     family_hash: Option<CardHash>,
-    deck_name: String,
+    deck_name: DeckName,
     location: LocationExport,
     content: CardContentExport,
     performance: Option<PerformanceExport>,

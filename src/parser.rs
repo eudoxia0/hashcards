@@ -21,6 +21,7 @@ use std::path::PathBuf;
 use walkdir::WalkDir;
 
 use crate::error::Fallible;
+use crate::types::aliases::DeckName;
 use crate::types::card::Card;
 use crate::types::card::CardContent;
 
@@ -32,7 +33,7 @@ pub fn parse_deck(directory: &PathBuf) -> Fallible<Vec<Card>> {
         let path = entry.path();
         if path.is_file() && path.extension().is_some_and(|ext| ext == "md") {
             let text = std::fs::read_to_string(path)?;
-            let deck_name: String = path
+            let deck_name: DeckName = path
                 .file_stem()
                 .and_then(|os_str| os_str.to_str())
                 .unwrap_or("None")
@@ -57,7 +58,7 @@ pub fn parse_deck(directory: &PathBuf) -> Fallible<Vec<Card>> {
 }
 
 pub struct Parser {
-    deck_name: String,
+    deck_name: DeckName,
     file_path: PathBuf,
 }
 
@@ -149,7 +150,7 @@ fn trim(line: &str) -> String {
 }
 
 impl Parser {
-    pub fn new(deck_name: String, file_path: PathBuf) -> Self {
+    pub fn new(deck_name: DeckName, file_path: PathBuf) -> Self {
         Parser {
             deck_name,
             file_path,

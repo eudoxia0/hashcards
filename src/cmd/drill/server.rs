@@ -191,7 +191,7 @@ fn filter_deck(
     let deck = match deck_filter {
         Some(filter) => deck
             .into_iter()
-            .filter(|card| card.deck_name() == filter)
+            .filter(|card| card.deck_name() == &filter)
             .collect(),
         None => deck,
     };
