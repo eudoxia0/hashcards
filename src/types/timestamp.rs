@@ -61,6 +61,16 @@ impl Display for Timestamp {
     }
 }
 
+impl TryFrom<String> for Timestamp {
+    type Error = ErrorReport;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        let ndt = NaiveDateTime::parse_from_str(&value, "%Y-%m-%dT%H:%M:%S%.3f")
+            .map_err(|_| ErrorReport::new(format!("Failed to parse timestamp: '{value}'.")))?;
+        Ok(Timestamp(ndt))
+    }
+}
+
 impl ToSql for Timestamp {
     fn to_sql(&self) -> rusqlite::Result<ToSqlOutput<'_>> {
         let str: String = self.to_string();
@@ -71,13 +81,7 @@ impl ToSql for Timestamp {
 impl FromSql for Timestamp {
     fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
         let string: String = FromSql::column_result(value)?;
-        let ndt: NaiveDateTime = NaiveDateTime::parse_from_str(&string, "%Y-%m-%dT%H:%M:%S%.3f")
-            .map_err(|_| {
-                FromSqlError::Other(Box::new(ErrorReport::new(format!(
-                    "Failed to parse timestamp: '{string}'."
-                ))))
-            })?;
-        Ok(Timestamp(ndt))
+        Timestamp::try_from(string).map_err(|e| FromSqlError::Other(Box::new(e)))
     }
 }
 
@@ -101,6 +105,16 @@ mod tests {
             .unwrap();
         let ts = Timestamp(ndt);
         assert_eq!(ts.to_string(), "2023-10-05T14:30:15.123");
+    }
+
+    #[test]
+    fn test_try_from_string() {
+        let s = "2023-10-05T14:30:15.123".to_string();
+        let ts = Timestamp::try_from(s).unwrap();
+        let expected_ndt =
+            NaiveDateTime::parse_from_str("2023-10-05T14:30:15.123", "%Y-%m-%dT%H:%M:%S%.3f")
+                .unwrap();
+        assert_eq!(ts.0, expected_ndt);
     }
 
     #[test]
