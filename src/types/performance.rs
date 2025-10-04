@@ -111,3 +111,41 @@ pub fn update_performance(
         review_count: review_count + 1,
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn approx_eq(a: f64, b: f64) -> bool {
+        (a - b).abs() < 1e-2
+    }
+
+    #[test]
+    fn test_new() {
+        assert!(Performance::New.is_new());
+        let reviewed_at = Timestamp::now();
+        let reviewed_perf = update_performance(Performance::New, Grade::Good, reviewed_at);
+        assert!(!Performance::Reviewed(reviewed_perf).is_new());
+    }
+
+    #[test]
+    fn test_update_new_card() {
+        let reviewed_at = Timestamp::now();
+        let result = update_performance(Performance::New, Grade::Good, reviewed_at);
+        let ReviewedPerformance {
+            last_reviewed_at,
+            stability,
+            difficulty,
+            interval_raw,
+            interval_days,
+            due_date: _,
+            review_count,
+        } = result;
+        assert_eq!(last_reviewed_at, reviewed_at);
+        assert!(approx_eq(stability, 3.17));
+        assert!(approx_eq(difficulty, 5.28));
+        assert!(approx_eq(interval_raw, 3.17));
+        assert_eq!(interval_days, 3);
+        assert_eq!(review_count, 1);
+    }
+}
