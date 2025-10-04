@@ -20,6 +20,7 @@ use tokio::spawn;
 
 use crate::cmd::check::check_collection;
 use crate::cmd::drill::server::start_server;
+use crate::cmd::export::export_collection;
 use crate::cmd::orphans::delete_orphans;
 use crate::cmd::orphans::list_orphans;
 use crate::cmd::stats::StatsFormat;
@@ -65,6 +66,11 @@ enum Command {
     Orphans {
         #[command(subcommand)]
         command: OrphanCommand,
+    },
+    /// Export a collection.
+    Export {
+        /// Path to the collection directory. By default, the current working directory is used.
+        directory: Option<String>,
     },
 }
 
@@ -120,5 +126,6 @@ pub async fn entrypoint() -> Fallible<()> {
             OrphanCommand::List { directory } => list_orphans(directory),
             OrphanCommand::Delete { directory } => delete_orphans(directory),
         },
+        Command::Export { directory } => export_collection(directory),
     }
 }
