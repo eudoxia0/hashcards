@@ -470,14 +470,15 @@ mod tests {
         let input = "Q: What is Rust?\nA: A systems programming language.";
         let parser = make_test_parser();
         let cards = parser.parse(input)?;
+
         assert_eq!(cards.len(), 1);
-        match &cards[0].content() {
-            CardContent::Basic { question, answer } => {
-                assert_eq!(question, "What is Rust?");
-                assert_eq!(answer, "A systems programming language.");
-            }
-            _ => panic!("Expected basic card"),
-        }
+        assert!(matches!(
+            &cards[0].content(),
+            CardContent::Basic {
+                question,
+                answer,
+            } if question == "What is Rust?" && answer == "A systems programming language."
+        ));
         Ok(())
     }
 
@@ -488,13 +489,13 @@ mod tests {
         let cards = parser.parse(input)?;
 
         assert_eq!(cards.len(), 1);
-        match &cards[0].content() {
-            CardContent::Basic { question, answer } => {
-                assert_eq!(question, "foo\nbaz\nbaz");
-                assert_eq!(answer, "FOO\nBAR\nBAZ");
-            }
-            _ => panic!("Expected basic card"),
-        }
+        assert!(matches!(
+            &cards[0].content(),
+            CardContent::Basic {
+                question,
+                answer,
+            } if question == "foo\nbaz\nbaz" && answer == "FOO\nBAR\nBAZ"
+        ));
         Ok(())
     }
 
@@ -503,21 +504,22 @@ mod tests {
         let input = "Q: foo\nA: bar\n\nQ: baz\nA: quux\n\n";
         let parser = make_test_parser();
         let cards = parser.parse(input)?;
+
         assert_eq!(cards.len(), 2);
-        match &cards[0].content() {
-            CardContent::Basic { question, answer } => {
-                assert_eq!(question, "foo");
-                assert_eq!(answer, "bar");
-            }
-            _ => panic!("Expected basic card"),
-        }
-        match &cards[1].content() {
-            CardContent::Basic { question, answer } => {
-                assert_eq!(question, "baz");
-                assert_eq!(answer, "quux");
-            }
-            _ => panic!("Expected basic card"),
-        }
+        assert!(matches!(
+            &cards[0].content(),
+            CardContent::Basic {
+                question,
+                answer,
+            } if question == "foo" && answer == "bar"
+        ));
+        assert!(matches!(
+            &cards[1].content(),
+            CardContent::Basic {
+                question,
+                answer,
+            } if question == "baz" && answer == "quux"
+        ));
         Ok(())
     }
 
@@ -526,15 +528,16 @@ mod tests {
         let input = "C: [foo]\nQ: Question\nA: Answer";
         let parser = make_test_parser();
         let cards = parser.parse(input)?;
+
         assert_eq!(cards.len(), 2);
         assert_cloze(&cards[0..1], "foo", &[(0, 2)]);
-        match &cards[1].content() {
-            CardContent::Basic { question, answer } => {
-                assert_eq!(question, "Question");
-                assert_eq!(answer, "Answer");
-            }
-            _ => panic!("Expected basic card"),
-        }
+        assert!(matches!(
+            &cards[1].content(),
+            CardContent::Basic {
+                question,
+                answer,
+            } if question == "Question" && answer == "Answer"
+        ));
         Ok(())
     }
 
@@ -583,6 +586,7 @@ mod tests {
         let input = "C: [foo]\nC: [bar]";
         let parser = make_test_parser();
         let cards = parser.parse(input)?;
+
         assert_eq!(cards.len(), 2);
         assert_cloze(&cards[0..1], "foo", &[(0, 2)]);
         assert_cloze(&cards[1..2], "bar", &[(0, 2)]);
@@ -594,6 +598,7 @@ mod tests {
         let input = "Q: Question without answer";
         let parser = make_test_parser();
         let result = parser.parse(input);
+
         assert!(result.is_err());
         Ok(())
     }
@@ -603,6 +608,7 @@ mod tests {
         let input = "A: Answer without question";
         let parser = make_test_parser();
         let result = parser.parse(input);
+
         assert!(result.is_err());
         Ok(())
     }
@@ -612,6 +618,7 @@ mod tests {
         let input = "Q: Question\nC: Cloze";
         let parser = make_test_parser();
         let result = parser.parse(input);
+
         assert!(result.is_err());
         Ok(())
     }
@@ -621,6 +628,7 @@ mod tests {
         let input = "Q: Question\nQ: Another";
         let parser = make_test_parser();
         let result = parser.parse(input);
+
         assert!(result.is_err());
         Ok(())
     }
@@ -630,6 +638,7 @@ mod tests {
         let input = "Q: Question\nA: Answer\nA: Another answer";
         let parser = make_test_parser();
         let result = parser.parse(input);
+
         assert!(result.is_err());
         Ok(())
     }
@@ -639,6 +648,7 @@ mod tests {
         let input = "C: Cloze\nA: Answer";
         let parser = make_test_parser();
         let result = parser.parse(input);
+
         assert!(result.is_err());
         Ok(())
     }
@@ -648,6 +658,7 @@ mod tests {
         let input = "C: Cloze";
         let parser = make_test_parser();
         let result = parser.parse(input);
+
         assert!(result.is_err());
         Ok(())
     }
@@ -670,6 +681,7 @@ mod tests {
     fn test_parse_deck() -> Fallible<()> {
         let directory = PathBuf::from("./test");
         let deck = parse_deck(&directory);
+
         assert!(deck.is_ok());
         let cards = deck?;
         assert_eq!(cards.len(), 2);
@@ -681,6 +693,7 @@ mod tests {
         let input = "Q: foo\nA: bar\n\nQ: foo\nA: bar\n\n";
         let parser = make_test_parser();
         let cards = parser.parse(input)?;
+
         assert_eq!(cards.len(), 1);
         Ok(())
     }
@@ -690,6 +703,7 @@ mod tests {
         let input = "C: foo [bar]\n\nC: foo [bar]";
         let parser = make_test_parser();
         let cards = parser.parse(input)?;
+
         assert_eq!(cards.len(), 1);
         Ok(())
     }
@@ -704,6 +718,7 @@ mod tests {
         std::fs::write(&file1, "Q: foo\nA: bar").expect("Failed to write test file");
         std::fs::write(&file2, "Q: foo\nA: bar").expect("Failed to write test file");
         let deck = parse_deck(&directory)?;
+
         assert_eq!(deck.len(), 1);
         Ok(())
     }
@@ -715,18 +730,14 @@ mod tests {
     fn assert_cloze(cards: &[Card], clean_text: &str, deletions: &[(usize, usize)]) {
         assert_eq!(cards.len(), deletions.len());
         for (i, (start, end)) in deletions.iter().enumerate() {
-            match &cards[i].content() {
+            assert!(matches!(
+                &cards[i].content(),
                 CardContent::Cloze {
                     text,
                     start: s,
                     end: e,
-                } => {
-                    assert_eq!(text, clean_text);
-                    assert_eq!(*s, *start);
-                    assert_eq!(*e, *end);
-                }
-                _ => panic!("Expected cloze card"),
-            }
+                } if text == clean_text && *s == *start && *e == *end
+            ));
         }
     }
 
