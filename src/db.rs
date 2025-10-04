@@ -211,19 +211,17 @@ impl Database {
             ),
         };
         let sql = "update cards set last_reviewed_at = ?, stability = ?, difficulty = ?, interval_raw = ?, interval_days = ?, due_date = ?, review_count = ? where card_hash = ?;";
-        self.conn.execute(
-            sql,
-            params![
-                last_reviewed_at,
-                stability,
-                difficulty,
-                interval_raw,
-                interval_days,
-                due_date,
-                review_count,
-                card_hash
-            ],
-        )?;
+        let params = params![
+            last_reviewed_at,
+            stability,
+            difficulty,
+            interval_raw,
+            interval_days,
+            due_date,
+            review_count,
+            card_hash
+        ];
+        self.conn.execute(sql, params)?;
         Ok(())
     }
 
