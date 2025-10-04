@@ -29,7 +29,7 @@ use serde::Serialize;
 use crate::error::ErrorReport;
 use crate::types::date::Date;
 
-/// A timestamp without a timezone. Only down to second precision.
+/// A timestamp without a timezone and millisecond precision.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct Timestamp(NaiveDateTime);
 
@@ -41,18 +41,18 @@ impl Timestamp {
 
     /// The current timestamp in the user's local time.
     pub fn now() -> Self {
-        Self(Local::now().naive_local().trunc_subsecs(0))
+        Self(Local::now().naive_local().trunc_subsecs(3))
     }
 
     /// The date component of this timestamp.
     pub fn date(self) -> Date {
-        Date::new(Local::now().naive_local().trunc_subsecs(0).date())
+        Date::new(Local::now().naive_local().trunc_subsecs(3).date())
     }
 }
 
 impl Display for Timestamp {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0.format("%Y-%m-%dT%H:%M:%S"))
+        write!(f, "{}", self.0.format("%Y-%m-%dT%H:%M:%S%.3f"))
     }
 }
 
@@ -66,7 +66,7 @@ impl ToSql for Timestamp {
 impl FromSql for Timestamp {
     fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
         let string: String = FromSql::column_result(value)?;
-        let ndt: NaiveDateTime = NaiveDateTime::parse_from_str(&string, "%Y-%m-%dT%H:%M:%S")
+        let ndt: NaiveDateTime = NaiveDateTime::parse_from_str(&string, "%Y-%m-%dT%H:%M:%S%.3f")
             .map_err(|_| {
                 FromSqlError::Other(Box::new(ErrorReport::new(format!(
                     "Failed to parse timestamp: '{string}'."
@@ -83,5 +83,18 @@ impl Serialize for Timestamp {
     {
         let s = self.to_string();
         serializer.serialize_str(&s)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_timestamp_to_string() {
+        let ndt = NaiveDateTime::parse_from_str("2023-10-05T14:30:15.123", "%Y-%m-%dT%H:%M:%S%.3f")
+            .unwrap();
+        let ts = Timestamp(ndt);
+        assert_eq!(ts.to_string(), "2023-10-05T14:30:15.123");
     }
 }
