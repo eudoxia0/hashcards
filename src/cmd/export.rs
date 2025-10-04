@@ -222,12 +222,35 @@ fn export_review(review: ReviewRow) -> ReviewExport {
 
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
+
     use super::*;
+    use crate::db::ReviewRecord;
     use crate::helper::create_tmp_copy_of_test_directory;
+    use crate::parser::parse_deck;
 
     #[test]
     fn test_full_export() -> Fallible<()> {
         let dir = create_tmp_copy_of_test_directory()?;
+        let mut coll = Collection::new(Some(dir.clone()))?;
+        let deck = parse_deck(&PathBuf::from(dir.clone()))?;
+        let now = Timestamp::now();
+        let mut reviews = Vec::new();
+        for card in deck {
+            coll.db.insert_card(card.hash(), now)?;
+            let review = ReviewRecord {
+                card_hash: card.hash(),
+                reviewed_at: now,
+                grade: Grade::Good,
+                stability: 2.0,
+                difficulty: 2.0,
+                interval_raw: 1.0,
+                interval_days: 1,
+                due_date: now.date(),
+            };
+            reviews.push(review);
+        }
+        coll.db.save_session(now, now, reviews)?;
         export_collection(Some(dir), None)?;
         Ok(())
     }
