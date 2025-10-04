@@ -74,4 +74,18 @@ mod tests {
         assert_eq!(orphans, vec![hash]);
         Ok(())
     }
+
+    #[test]
+    fn test_list_and_delete_orphans() -> Fallible<()> {
+        let dir: PathBuf = create_tmp_directory()?;
+        let dirstring = dir.display().to_string();
+        let coll = Collection::new(Some(dirstring.clone()))?;
+        let hash = CardHash::hash_bytes(b"a");
+        let now = Timestamp::now();
+        coll.db.insert_card(hash, now)?;
+        list_orphans(Some(dirstring.clone()))?;
+        delete_orphans(Some(dirstring.clone()))?;
+        assert!(coll.db.card_hashes()?.is_empty());
+        Ok(())
+    }
 }
