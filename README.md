@@ -72,6 +72,83 @@ This opens a web interface at `http://localhost:8000` where you can review your 
 
 Be honest. If you got the answer almost right, press "Forgot". If you mis-grade something, you can undo (shortcut: `u`). The session ends when every card has been graded "Good" or higher. You can end the session prematurely by clicking "End", this will save your changes.
 
+## Commands
+
+This section documents the hashcards command line interface.
+
+### `drill`
+
+Start a drilling session.
+
+```bash
+$ hashcards drill [DIRECTORY]
+```
+
+Options:
+
+- `--card-limit=<N>`: Limit the session to at most N cards.
+- `--new-card-limit=<N>`: Limit the number of new cards in the session.
+- `--port=<PORT>`: Use a specific port (default: 8000).
+- `--from-deck=<NAME>`: Only drill cards from a deck with the given name.
+
+### `stats`
+
+Print collection statistics to standard output.
+
+```bash
+$ hashcards stats [DIRECTORY]
+```
+
+Options:
+
+- `--format=<FORMAT>`: Output format (`html` or `json`)
+
+At present, only JSON output is supported.
+
+### `check`
+
+Check the integrity of a collection.
+
+```bash
+$ hashcards check [DIRECTORY]
+```
+
+### `orphans`
+
+Manage orphan cards (cards that exist in the database, but not in the collection, i.e., cards that were deleted from the collection).
+
+```bash
+$ hashcards orphans list [DIRECTORY]
+$ hashcards orphans delete [DIRECTORY]
+```
+
+Example:
+
+```
+$ hashcards orphans list Cards
+04effc035b71692b66a90a622559479516526e7720c41afa22b29562915d58af
+059e4e0fd5c3d0ab7ef0cc902cdc402a555ec4152b842fe584109de6c8082ce3
+061b8c27e0f437d0c6ae735e829b39cc3bf0ad8218cb16387dcb4271c20b244d
+$ hashcards orphans delete Cards
+04effc035b71692b66a90a622559479516526e7720c41afa22b29562915d58af
+059e4e0fd5c3d0ab7ef0cc902cdc402a555ec4152b842fe584109de6c8082ce3
+061b8c27e0f437d0c6ae735e829b39cc3bf0ad8218cb16387dcb4271c20b244d
+$ hashcards orphans list Cards
+# no output
+```
+
+### `export`
+
+Export a collection to a JSON file.
+
+```bash
+$ hashcards export [DIRECTORY]
+```
+
+Options:
+
+- `--output=<PATH>`: The path to the output. By default, the export is printed to stdout.
+
 ## Format
 
 This section describes the text format used by hashcards.
