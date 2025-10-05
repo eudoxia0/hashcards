@@ -20,6 +20,8 @@ A plain text-based spaced repetition system. Features:
 - **Efficient:** uses [FSRS] for scheduling reviews, maximizing learning while
   minimizing time spent reviewing.
 
+Announcement blog post: [Hashcards: A Plain-Text Spaced Repetition System][blog].
+
 ## Example
 
 The following Markdown file is a valid hashcards deck:
@@ -309,8 +311,9 @@ Note: "timestamp format" is `YYYY-MM-DDTHH:MM:SS.MMM`, e.g. `2025-10-04T17:09:51
 - [carddown](https://github.com/martintrojer/carddown)
 - [My implementation of a personal mnemonic medium](https://notes.andymatuschak.org/My_implementation_of_a_personal_mnemonic_medium)
 
+[FSRS]: https://github.com/open-spaced-repetition/fsrs4anki
+[blog]: https://borretti.me/article/hashcards-plain-text-spaced-repetition
 [cargo]: https://doc.rust-lang.org/cargo/
-[rustup]: https://rustup.rs/
 [esr]: https://borretti.me/article/effective-spaced-repetition
 [fc]: https://github.com/eudoxia0/flashcards
-[FSRS]: https://github.com/open-spaced-repetition/fsrs4anki
+[rustup]: https://rustup.rs/
