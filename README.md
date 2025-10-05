@@ -23,6 +23,8 @@ A: Paris
 C: [Paris] is the capital of [France].
 ```
 
+For a larger example, see [my deck][fc].
+
 ## Building
 
 You need [cargo] installed. You can get it through [rustup]. Then:
@@ -281,3 +283,4 @@ Note: "timestamp format" is `YYYY-MM-DDTHH:MM:SS.MMM`, e.g. `2025-10-04T17:09:51
 [cargo]: https://doc.rust-lang.org/cargo/
 [rustup]: https://rustup.rs/
 [esr]: https://borretti.me/article/effective-spaced-repetition
+[fc]: https://github.com/eudoxia0/flashcards
