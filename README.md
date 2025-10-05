@@ -104,6 +104,8 @@ Start a drilling session.
 $ hashcards drill [DIRECTORY]
 ```
 
+Note: your progress is not saved until the session ends, either when you run out of cards, or when you click "End".
+
 Options:
 
 - `--card-limit=<N>`: Limit the session to at most N cards.
