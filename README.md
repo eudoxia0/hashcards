@@ -72,6 +72,8 @@ This opens a web interface at `http://localhost:8000` where you can review your 
 
 Be honest. If you got the answer almost right, press "Forgot". If you mis-grade something, you can undo (shortcut: `u`). The session ends when every card has been graded "Good" or higher. You can end the session prematurely by clicking "End", this will save your changes.
 
+To learn how to write good flashcards, read [Effective Spaced Repetition][esr].
+
 ## Commands
 
 This section documents the hashcards command line interface.
@@ -278,3 +280,4 @@ Note: "timestamp format" is `YYYY-MM-DDTHH:MM:SS.MMM`, e.g. `2025-10-04T17:09:51
 
 [cargo]: https://doc.rust-lang.org/cargo/
 [rustup]: https://rustup.rs/
+[esr]: https://borretti.me/article/effective-spaced-repetition
