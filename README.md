@@ -194,6 +194,38 @@ desire: this is also vanity and vexation of spirit.
 — [Ecclesiastes] [6]:[9]
 ```
 
+### LaTeX Support
+
+Cards support LaTeX math via KaTeX. Use `$...$` for inline math and `$$...$$` for display math:
+
+```
+Q: What is Euler's identity?
+A: $e^{i\pi} + 1 = 0$
+```
+
+You can define custom LaTeX macros by creating a `macros.tex` file in your collection root:
+
+```
+\C \mathbb{C}
+\R \mathbb{R}
+```
+
+Macro definitions can refer to arguments: `#1` for the first, `#2` for the second and so on.
+
+### Images
+
+Ordinary Markdown image syntax works:
+
+```
+Q: What does this diagram show?
+
+![diagram](images/diagram.png)
+
+A: The structure of a neuron.
+```
+
+Image paths are resolved relative to the collection root (i.e., the directory passed to the `drill` command), _not_ the current file. Image paths cannot be symbolic links or point (via `..` components) to files outside the collection.
+
 ## Database
 
 hashcards stores card performance data and the review history in an SQLite3 database. The file is called `hashcards.db` and is found in the root of the card directory (i.e., the path you pass to the `drill` command).
