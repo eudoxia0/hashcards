@@ -7,10 +7,16 @@
 
 A plain text-based spaced repetition system. Features:
 
-- **Plain Text:** all your flashcards are stored as plain text files, so you can operate on them with standard tools, write with your editor of choice, and track changes in a VCS.
-- **Content Addressable:** cards are identified by the hash of their text. This means a card's progress is reset when the card is edited.
-- **Low Friction:** you create flashcards by typing into a text file, using a lightweight notation to denote flashcard sides and cloze deletions.
-- **Simple:** the only card types are front-back and cloze cards. More complex workflows (e.g.: Anki-style note types, card templates, automation) be can implemented using a Makefile and some scripts.
+- **Plain Text:** all your flashcards are stored as plain text files, so you can
+  operate on them with standard tools, write with your editor of choice, and
+  track changes in a VCS.
+- **Content Addressable:** cards are identified by the hash of their text. This
+  means a card's progress is reset when the card is edited.
+- **Low Friction:** you create flashcards by typing into a text file, using a
+  lightweight notation to denote flashcard sides and cloze deletions.
+- **Simple:** the only card types are front-back and cloze cards. More complex
+  workflows (e.g.: Anki-style note types, card templates, automation) be can
+  implemented using a Makefile and some scripts.
 
 ## Example
 
@@ -57,7 +63,9 @@ C: [Paris] is the capital of [France].
 EOF
 ```
 
-A Markdown file is called a "deck", and the name of the file, sans extension, is the name of the deck. This will be shown on top of the flashcard during reviews, this saves you from having to specify the context in each of the flashcards.
+A Markdown file is called a "deck", and the name of the file, sans extension, is
+the name of the deck. This will be shown on top of the flashcard during reviews,
+this saves you from having to specify the context in each of the flashcards.
 
 Start drilling:
 
@@ -65,14 +73,20 @@ Start drilling:
 $ hashcards drill
 ```
 
-This opens a web interface at `http://localhost:8000` where you can review your cards. The interface is simple: you read the question, mentally recall the answer, and click reveal (or press space). Then you grade yourself on how you did, with one of four choices:
+This opens a web interface at `http://localhost:8000` where you can review your
+cards. The interface is simple: you read the question, mentally recall the
+answer, and click reveal (or press space). Then you grade yourself on how you
+did, with one of four choices:
 
 1. Forgot (shortcut: `1`)
 2. Hard (shortcut: `2`)
 3. Good (shortcut: `3`)
 4. Easy (shortcut: `4`)
 
-Be honest. If you got the answer almost right, press "Forgot". If you mis-grade something, you can undo (shortcut: `u`). The session ends when every card has been graded "Good" or higher. You can end the session prematurely by clicking "End", this will save your changes.
+Be honest. If you got the answer almost right, press "Forgot". If you mis-grade
+something, you can undo (shortcut: `u`). The session ends when every card has
+been graded "Good" or higher. You can end the session prematurely by clicking
+"End", this will save your changes.
 
 To learn how to write good flashcards, read [Effective Spaced Repetition][esr].
 
@@ -119,7 +133,8 @@ $ hashcards check [DIRECTORY]
 
 ### `orphans`
 
-Manage orphan cards (cards that exist in the database, but not in the collection, i.e., cards that were deleted from the collection).
+Manage orphan cards (cards that exist in the database, but not in the
+collection, i.e., cards that were deleted from the collection).
 
 ```bash
 $ hashcards orphans list [DIRECTORY]
@@ -151,7 +166,8 @@ $ hashcards export [DIRECTORY]
 
 Options:
 
-- `--output=<PATH>`: The path to the output. By default, the export is printed to stdout.
+- `--output=<PATH>`: The path to the output. By default, the export is printed
+  to stdout.
 
 ## Format
 
@@ -182,7 +198,8 @@ A:
 
 ### Cloze Cards
 
-Cloze cards start with the `C:` tag, and use square brackets to denote cloze deletions:
+Cloze cards start with the `C:` tag, and use square brackets to denote cloze
+deletions:
 
 ```
 C: The [order] of a group is [the cardinality of its underlying set].
@@ -200,21 +217,24 @@ desire: this is also vanity and vexation of spirit.
 
 ### LaTeX Support
 
-Cards support LaTeX math via KaTeX. Use `$...$` for inline math and `$$...$$` for display math:
+Cards support LaTeX math via KaTeX. Use `$...$` for inline math and `$$...$$`
+for display math:
 
 ```
 Q: What is Euler's identity?
 A: $e^{i\pi} + 1 = 0$
 ```
 
-You can define custom LaTeX macros by creating a `macros.tex` file in your collection root:
+You can define custom LaTeX macros by creating a `macros.tex` file in your
+collection root:
 
 ```
 \C \mathbb{C}
 \R \mathbb{R}
 ```
 
-Macro definitions can refer to arguments: `#1` for the first, `#2` for the second and so on.
+Macro definitions can refer to arguments: `#1` for the first, `#2` for the
+second and so on.
 
 ### Images
 
@@ -228,11 +248,15 @@ Q: What does this diagram show?
 A: The structure of a neuron.
 ```
 
-Image paths are resolved relative to the collection root (i.e., the directory passed to the `drill` command), _not_ the current file. Image paths cannot be symbolic links or point (via `..` components) to files outside the collection.
+Image paths are resolved relative to the collection root (i.e., the directory
+passed to the `drill` command), _not_ the current file. Image paths cannot be
+symbolic links or point (via `..` components) to files outside the collection.
 
 ## Database
 
-hashcards stores card performance data and the review history in an SQLite3 database. The file is called `hashcards.db` and is found in the root of the card directory (i.e., the path you pass to the `drill` command).
+hashcards stores card performance data and the review history in an SQLite3
+database. The file is called `hashcards.db` and is found in the root of the card
+directory (i.e., the path you pass to the `drill` command).
 
 The `cards` table has the following schema:
 
