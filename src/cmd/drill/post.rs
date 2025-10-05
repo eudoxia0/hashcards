@@ -82,7 +82,7 @@ async fn action_handler(state: ServerState, action: Action) -> Fallible<()> {
         Action::Undo => {
             if !mutable.reviews.is_empty() {
                 let last_review: Review = mutable.reviews.pop().unwrap();
-                if last_review.grade == Grade::Forgot || last_review.grade == Grade::Hard {
+                if last_review.should_repeat() {
                     // Remove the card from the back of the queue.
                     mutable.cards.pop();
                 }
@@ -113,15 +113,12 @@ async fn action_handler(state: ServerState, action: Action) -> Fallible<()> {
                     interval_days: performance.interval_days,
                     due_date: performance.due_date,
                 };
-                mutable.reviews.push(review);
-                mutable.cache.update(hash, performance)?;
 
-                // Cards graded `Forgot` or `Hard` are put at the back of the
-                // queue.
-                if grade == Grade::Forgot || grade == Grade::Hard {
+                mutable.cache.update(hash, performance)?;
+                if review.should_repeat() {
                     mutable.cards.push(card.clone());
                 }
-
+                mutable.reviews.push(review);
                 mutable.reveal = false;
 
                 // Was this the last card?

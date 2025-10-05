@@ -58,6 +58,10 @@ pub struct Review {
 }
 
 impl Review {
+    pub fn should_repeat(&self) -> bool {
+        self.grade == Grade::Forgot || self.grade == Grade::Hard
+    }
+
     pub fn into_record(self) -> ReviewRecord {
         ReviewRecord {
             card_hash: self.card.hash(),
