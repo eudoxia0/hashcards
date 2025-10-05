@@ -23,7 +23,7 @@ A: Paris
 C: [Paris] is the capital of [France].
 ```
 
-For a larger example, see [my deck][fc].
+For a larger example, see [my personal flashcards repo][fc].
 
 ## Building
 
