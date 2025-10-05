@@ -40,6 +40,38 @@ To drill flashcards in a directory, run:
 $ hashcards drill $DIRNAME
 ```
 
+## Tutorial
+
+Create a directory for your flashcards, and add a Markdown file with some cards:
+
+```bash
+$ mkdir cards
+$ cd cards
+$ cat > Geography.md << 'EOF'
+Q: What is the capital of France?
+A: Paris
+
+C: [Paris] is the capital of [France].
+EOF
+```
+
+A Markdown file is called a "deck", and the name of the file, sans extension, is the name of the deck. This will be shown on top of the flashcard during reviews, this saves you from having to specify the context in each of the flashcards.
+
+Start drilling:
+
+```bash
+$ hashcards drill
+```
+
+This opens a web interface at `http://localhost:8000` where you can review your cards. The interface is simple: you read the question, mentally recall the answer, and click reveal (or press space). Then you grade yourself on how you did, with one of four choices:
+
+1. Forgot (shortcut: `1`)
+2. Hard (shortcut: `2`)
+3. Good (shortcut: `3`)
+4. Easy (shortcut: `4`)
+
+Be honest. If you got the answer almost right, press "Forgot". If you mis-grade something, you can undo (shortcut: `u`). The session ends when every card has been graded "Good" or higher. You can end the session prematurely by clicking "End", this will save your changes.
+
 ## Format
 
 This section describes the text format used by hashcards.
