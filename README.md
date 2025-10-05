@@ -17,6 +17,8 @@ A plain text-based spaced repetition system. Features:
 - **Simple:** the only card types are front-back and cloze cards. More complex
   workflows (e.g.: Anki-style note types, card templates, automation) be can
   implemented using a Makefile and some scripts.
+- **Efficient:** uses [FSRS] for scheduling reviews, maximizing learning while
+  minimizing time spent reviewing.
 
 ## Example
 
@@ -309,3 +311,4 @@ Note: "timestamp format" is `YYYY-MM-DDTHH:MM:SS.MMM`, e.g. `2025-10-04T17:09:51
 [rustup]: https://rustup.rs/
 [esr]: https://borretti.me/article/effective-spaced-repetition
 [fc]: https://github.com/eudoxia0/flashcards
+[FSRS]: https://github.com/open-spaced-repetition/fsrs4anki
