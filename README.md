@@ -303,6 +303,7 @@ Note: "timestamp format" is `YYYY-MM-DDTHH:MM:SS.MMM`, e.g. `2025-10-04T17:09:51
 - [org-drill](https://orgmode.org/worg/org-contrib/org-drill.html)
 - [hascard](https://hackage.haskell.org/package/hascard)
 - [carddown](https://github.com/martintrojer/carddown)
+- [My implementation of a personal mnemonic medium](https://notes.andymatuschak.org/My_implementation_of_a_personal_mnemonic_medium)
 
 [cargo]: https://doc.rust-lang.org/cargo/
 [rustup]: https://rustup.rs/
