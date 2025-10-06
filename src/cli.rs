@@ -48,6 +48,9 @@ enum Command {
         /// Only drill cards from this deck.
         #[arg(long)]
         from_deck: Option<String>,
+        /// Whether to open the browser automatically. Default is true.
+        #[arg(long)]
+        open_browser: Option<bool>,
     },
     /// Check the integrity of a collection.
     Check {
@@ -100,19 +103,22 @@ pub async fn entrypoint() -> Fallible<()> {
             new_card_limit,
             port,
             from_deck,
+            open_browser,
         } => {
-            // Start a separate task to open the browser once the server is up.
-            spawn(async move {
-                match wait_for_server(port).await {
-                    Ok(_) => {
-                        let _ = open::that(format!("http://0.0.0.0:{port}/"));
+            if open_browser.unwrap_or(true) {
+                // Start a separate task to open the browser once the server is up.
+                spawn(async move {
+                    match wait_for_server(port).await {
+                        Ok(_) => {
+                            let _ = open::that(format!("http://0.0.0.0:{port}/"));
+                        }
+                        Err(e) => {
+                            eprintln!("Failed to connect to server: {e}");
+                            exit(-1)
+                        }
                     }
-                    Err(e) => {
-                        eprintln!("Failed to connect to server: {e}");
-                        exit(-1)
-                    }
-                }
-            });
+                });
+            }
             start_server(
                 directory,
                 port,
