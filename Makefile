@@ -32,3 +32,4 @@ coverage:
 clean:
 	rm -f hashcards
 	rm -rf __build
+	cargo clean
