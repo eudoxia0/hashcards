@@ -110,7 +110,7 @@ pub async fn entrypoint() -> Fallible<()> {
                 spawn(async move {
                     match wait_for_server(port).await {
                         Ok(_) => {
-                            let _ = open::that(format!("http://0.0.0.0:{port}/"));
+                            let _ = open::that(format!("http://127.0.0.1:{port}/"));
                         }
                         Err(e) => {
                             eprintln!("Failed to connect to server: {e}");
