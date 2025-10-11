@@ -92,16 +92,16 @@ mod tests {
         let response = reqwest::get(format!("http://0.0.0.0:{port}/herp-derp")).await?;
         assert_eq!(response.status(), StatusCode::NOT_FOUND);
 
-        // Hit the image endpoint.
-        let response = reqwest::get(format!("http://0.0.0.0:{port}/image/foo.jpg")).await?;
+        // Hit the file endpoint.
+        let response = reqwest::get(format!("http://0.0.0.0:{port}/file/foo.jpg")).await?;
         assert!(response.status().is_success());
         assert_eq!(
             response.headers().get("content-type").unwrap(),
-            "application/octet-stream"
+            "image/jpeg"
         );
 
-        // Hit the image endpoint with a non-existent image.
-        let response = reqwest::get(format!("http://0.0.0.0:{port}/image/foo.png")).await?;
+        // Hit the file endpoint with a non-existent file.
+        let response = reqwest::get(format!("http://0.0.0.0:{port}/file/foo.png")).await?;
         assert_eq!(response.status(), StatusCode::NOT_FOUND);
 
         // Hit the root endpoint.
