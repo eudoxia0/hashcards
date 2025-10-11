@@ -21,7 +21,7 @@ use pulldown_cmark::html::push_html;
 const AUDIO_EXTENSIONS: [&str; 3] = ["mp3", "wav", "ogg"];
 
 fn is_audio_file(url: &str) -> bool {
-    if let Some(ext) = url.split('.').last() {
+    if let Some(ext) = url.split('.').next_back() {
         AUDIO_EXTENSIONS.contains(&ext)
     } else {
         false
@@ -41,13 +41,13 @@ pub fn markdown_to_html(markdown: &str, port: u16) -> String {
             // Does the URL point to an audio file?
             if is_audio_file(&url) {
                 // If so, render it as an HTML5 audio element.
-                return Event::Html(CowStr::Boxed(
+                Event::Html(CowStr::Boxed(
                     format!(
                         r#"<audio controls src="{}" title="{}"></audio>"#,
                         url, title
                     )
                     .into_boxed_str(),
-                ));
+                ))
             } else {
                 // Treat it as a normal image.
                 Event::Start(Tag::Image {
