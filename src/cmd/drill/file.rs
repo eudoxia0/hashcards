@@ -15,9 +15,9 @@
 use std::path::Path;
 use std::path::PathBuf;
 
-/// Errors that can occur when validating an image path.
+/// Errors that can occur when validating a file path.
 #[derive(Debug, PartialEq)]
-pub enum ImagePathError {
+pub enum FilePathError {
     /// Path is the empty string.
     Empty,
     /// Path is a symbolic link.
@@ -37,17 +37,17 @@ pub enum ImagePathError {
 /// 1. Rejecting paths containing ".." or absolute paths
 /// 2. Canonicalizing the path to resolve symlinks
 /// 3. Verifying the canonicalized path is within the base directory
-pub fn validate_image_path(base_dir: &Path, user_path: String) -> Result<PathBuf, ImagePathError> {
+pub fn validate_file_path(base_dir: &Path, user_path: String) -> Result<PathBuf, FilePathError> {
     // The empty string is an invalid path.
     if user_path.trim().is_empty() {
-        return Err(ImagePathError::Empty);
+        return Err(FilePathError::Empty);
     }
 
     let requested_path = PathBuf::from(&user_path);
 
     // Reject paths containing ".." or absolute paths.
     if user_path.contains("..") || requested_path.is_absolute() {
-        return Err(ImagePathError::InvalidPath);
+        return Err(FilePathError::InvalidPath);
     }
 
     // Join the path with the base directory.
@@ -55,23 +55,23 @@ pub fn validate_image_path(base_dir: &Path, user_path: String) -> Result<PathBuf
 
     // Is the path a symbolic link? Reject it.
     if full_path.is_symlink() {
-        return Err(ImagePathError::Symlink);
+        return Err(FilePathError::Symlink);
     }
 
     // Canonicalize the full path (validates existence).
     let canonical_full = full_path
         .canonicalize()
-        .map_err(|_| ImagePathError::NotFound)?;
+        .map_err(|_| FilePathError::NotFound)?;
 
     // Canonicalize the base directory (should always succeed since it was validated at startup).
     let canonical_dir = base_dir
         .canonicalize()
-        .map_err(|_| ImagePathError::NotFound)?;
+        .map_err(|_| FilePathError::NotFound)?;
 
     // Ensure the resolved path is within the base directory. This should be
     // caught by the symlink check, but nevertheless.
     if !canonical_full.starts_with(&canonical_dir) {
-        return Err(ImagePathError::OutsideDirectory);
+        return Err(FilePathError::OutsideDirectory);
     }
 
     Ok(canonical_full)
@@ -91,14 +91,14 @@ mod tests {
     /// Create a directory, and an image in it, and test the "normal" path to
     /// the image works.
     #[test]
-    fn test_validate_image_path_valid() -> Fallible<()> {
+    fn test_validate_file_path_valid() -> Fallible<()> {
         // Test data.
         let dir: PathBuf = create_tmp_directory()?;
         let image = dir.join("test.jpg");
         File::create(&image)?;
 
         // Assertions.
-        let result = validate_image_path(&dir, "test.jpg".to_string());
+        let result = validate_file_path(&dir, "test.jpg".to_string());
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), image.canonicalize().unwrap());
         Ok(())
@@ -107,7 +107,7 @@ mod tests {
     /// Create a directory, a subdirectory, and an image in the subdirectory,
     /// and test that the path to the image works.
     #[test]
-    fn test_validate_image_path_in_subdirectory() -> Fallible<()> {
+    fn test_validate_file_path_in_subdirectory() -> Fallible<()> {
         // Test data.
         let dir: PathBuf = create_tmp_directory()?;
         let sub_dir: PathBuf = dir.join("images");
@@ -116,7 +116,7 @@ mod tests {
         File::create(&image_path).unwrap();
 
         // Assertions.
-        let result = validate_image_path(&dir, "images/photo.png".to_string());
+        let result = validate_file_path(&dir, "images/photo.png".to_string());
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), image_path.canonicalize().unwrap());
         Ok(())
@@ -124,55 +124,55 @@ mod tests {
 
     /// Requesting a nonexistent image should return NotFound.
     #[test]
-    fn test_validate_image_path_not_found() -> Fallible<()> {
+    fn test_validate_file_path_not_found() -> Fallible<()> {
         // Test data.
         let dir = create_tmp_directory()?;
 
         // Assertions.
-        let result = validate_image_path(&dir, "nonexistent.jpg".to_string());
-        assert_eq!(result, Err(ImagePathError::NotFound));
+        let result = validate_file_path(&dir, "nonexistent.jpg".to_string());
+        assert_eq!(result, Err(FilePathError::NotFound));
         Ok(())
     }
 
     /// Paths starting with ".." should be rejected.
     #[test]
-    fn test_validate_image_path_with_dot_dot() -> Fallible<()> {
+    fn test_validate_file_path_with_dot_dot() -> Fallible<()> {
         // Test data.
         let dir = create_tmp_directory()?;
 
         // Assertions.
-        let result = validate_image_path(&dir, "../etc/passwd".to_string());
-        assert_eq!(result, Err(ImagePathError::InvalidPath));
+        let result = validate_file_path(&dir, "../etc/passwd".to_string());
+        assert_eq!(result, Err(FilePathError::InvalidPath));
         Ok(())
     }
 
     /// Paths with ".." in the middle should be rejected.
     #[test]
-    fn test_validate_image_path_with_dot_dot_middle() -> Fallible<()> {
+    fn test_validate_file_path_with_dot_dot_middle() -> Fallible<()> {
         // Test data.
         let dir = create_tmp_directory()?;
 
         // Assertions.
-        let result = validate_image_path(&dir, "images/../../../etc/passwd".to_string());
-        assert_eq!(result, Err(ImagePathError::InvalidPath));
+        let result = validate_file_path(&dir, "images/../../../etc/passwd".to_string());
+        assert_eq!(result, Err(FilePathError::InvalidPath));
         Ok(())
     }
 
     /// Absolute paths should be rejected.
     #[test]
-    fn test_validate_image_path_absolute() -> Fallible<()> {
+    fn test_validate_file_path_absolute() -> Fallible<()> {
         // Test data.
         let dir = create_tmp_directory()?;
 
         // Assertions.
-        let result = validate_image_path(&dir, "/etc/passwd".to_string());
-        assert_eq!(result, Err(ImagePathError::InvalidPath));
+        let result = validate_file_path(&dir, "/etc/passwd".to_string());
+        assert_eq!(result, Err(FilePathError::InvalidPath));
         Ok(())
     }
 
     /// Symlinks pointing to files within the base directory should be rejected.
     #[test]
-    fn test_validate_image_path_symlink_inside() -> Fallible<()> {
+    fn test_validate_file_path_symlink_inside() -> Fallible<()> {
         // Test data.
         let dir = create_tmp_directory()?;
         let target = dir.join("target.jpg");
@@ -181,14 +181,14 @@ mod tests {
         symlink(&target, &link)?;
 
         // Assertions.
-        let result = validate_image_path(&dir, "link.jpg".to_string());
-        assert_eq!(result, Err(ImagePathError::Symlink));
+        let result = validate_file_path(&dir, "link.jpg".to_string());
+        assert_eq!(result, Err(FilePathError::Symlink));
         Ok(())
     }
 
     /// Symlinks pointing outside the base directory should be rejected.
     #[test]
-    fn test_validate_image_path_symlink_outside() -> Fallible<()> {
+    fn test_validate_file_path_symlink_outside() -> Fallible<()> {
         // Test data.
         let dir1 = create_tmp_directory()?;
         let dir2 = create_tmp_directory()?;
@@ -200,59 +200,59 @@ mod tests {
         symlink(&outside_file, &link)?;
 
         // Assertions.
-        let result = validate_image_path(&dir1, "evil_link.jpg".to_string());
-        assert_eq!(result, Err(ImagePathError::Symlink));
+        let result = validate_file_path(&dir1, "evil_link.jpg".to_string());
+        assert_eq!(result, Err(FilePathError::Symlink));
         Ok(())
     }
 
     /// URL-encoded ".." sequences should still be caught by string check.
     #[test]
-    fn test_validate_image_path_url_encoded_dot_dot() -> Fallible<()> {
+    fn test_validate_file_path_url_encoded_dot_dot() -> Fallible<()> {
         // Test data.
         let dir = create_tmp_directory()?;
 
         // Assertions.
-        let result = validate_image_path(&dir, "..%2F..%2Fetc%2Fpasswd".to_string());
-        assert_eq!(result, Err(ImagePathError::InvalidPath));
+        let result = validate_file_path(&dir, "..%2F..%2Fetc%2Fpasswd".to_string());
+        assert_eq!(result, Err(FilePathError::InvalidPath));
         Ok(())
     }
 
     /// The empty string should be rejected.
     #[test]
-    fn test_validate_image_path_empty_string() -> Fallible<()> {
+    fn test_validate_file_path_empty_string() -> Fallible<()> {
         // Test data.
         let dir = create_tmp_directory()?;
 
         // Assertions.
-        let result = validate_image_path(&dir, "".to_string());
-        assert_eq!(result, Err(ImagePathError::Empty));
+        let result = validate_file_path(&dir, "".to_string());
+        assert_eq!(result, Err(FilePathError::Empty));
         Ok(())
     }
 
     /// File names with spaces should be handled correctly.
     #[test]
-    fn test_validate_image_path_with_spaces() -> Fallible<()> {
+    fn test_validate_file_path_with_spaces() -> Fallible<()> {
         // Test data.
         let dir = create_tmp_directory()?;
         let image_path = dir.join("my image.jpg");
         File::create(&image_path)?;
 
         // Assertions.
-        let result = validate_image_path(&dir, "my image.jpg".to_string());
+        let result = validate_file_path(&dir, "my image.jpg".to_string());
         assert!(result.is_ok());
         Ok(())
     }
 
     /// File names with Unicode characters should be handled correctly.
     #[test]
-    fn test_validate_image_path_unicode() -> Fallible<()> {
+    fn test_validate_file_path_unicode() -> Fallible<()> {
         // Test data.
         let dir = create_tmp_directory()?;
         let image_path = dir.join("画像.jpg");
         File::create(&image_path)?;
 
         // Assertions.
-        let result = validate_image_path(&dir, "画像.jpg".to_string());
+        let result = validate_file_path(&dir, "画像.jpg".to_string());
         assert!(result.is_ok());
         Ok(())
     }

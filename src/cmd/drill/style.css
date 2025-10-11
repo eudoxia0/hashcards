@@ -142,6 +142,10 @@ body {
                             margin-bottom: 16px;
                         }
                     }
+
+                    audio {
+                        width: 100%;
+                    }
                 }
             }
         }

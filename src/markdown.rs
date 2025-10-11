@@ -18,6 +18,16 @@ use pulldown_cmark::Parser;
 use pulldown_cmark::Tag;
 use pulldown_cmark::html::push_html;
 
+const AUDIO_EXTENSIONS: [&str; 3] = ["mp3", "wav", "ogg"];
+
+fn is_audio_file(url: &str) -> bool {
+    if let Some(ext) = url.split('.').last() {
+        AUDIO_EXTENSIONS.contains(&ext)
+    } else {
+        false
+    }
+}
+
 pub fn markdown_to_html(markdown: &str, port: u16) -> String {
     let parser = Parser::new(markdown);
     let parser = parser.map(|event| match event {
@@ -27,13 +37,26 @@ pub fn markdown_to_html(markdown: &str, port: u16) -> String {
             dest_url,
             id,
         }) => {
-            let new_url = modify_url(&dest_url, port);
-            Event::Start(Tag::Image {
-                link_type,
-                title,
-                dest_url: CowStr::Boxed(new_url.into_boxed_str()),
-                id,
-            })
+            let url = modify_url(&dest_url, port);
+            // Does the URL point to an audio file?
+            if is_audio_file(&url) {
+                // If so, render it as an HTML5 audio element.
+                return Event::Html(CowStr::Boxed(
+                    format!(
+                        r#"<audio controls src="{}" title="{}"></audio>"#,
+                        url, title
+                    )
+                    .into_boxed_str(),
+                ));
+            } else {
+                // Treat it as a normal image.
+                Event::Start(Tag::Image {
+                    link_type,
+                    title,
+                    dest_url: CowStr::Boxed(url.into_boxed_str()),
+                    id,
+                })
+            }
         }
         _ => event,
     });
@@ -53,7 +76,7 @@ pub fn markdown_to_html_inline(markdown: &str, port: u16) -> String {
 }
 
 fn modify_url(url: &str, port: u16) -> String {
-    format!("http://localhost:{port}/image/{url}")
+    format!("http://localhost:{port}/file/{url}")
 }
 
 #[cfg(test)]
@@ -66,7 +89,7 @@ mod tests {
         let html = markdown_to_html(markdown, 1234);
         assert_eq!(
             html,
-            "<p><img src=\"http://localhost:1234/image/image.png\" alt=\"alt\" /></p>\n"
+            "<p><img src=\"http://localhost:1234/file/image.png\" alt=\"alt\" /></p>\n"
         );
     }
 

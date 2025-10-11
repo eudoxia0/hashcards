@@ -13,6 +13,7 @@
 // limitations under the License.
 
 use std::collections::HashSet;
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::Mutex;
 
@@ -29,8 +30,8 @@ use axum::routing::post;
 use tokio::net::TcpListener;
 
 use crate::cmd::drill::cache::Cache;
+use crate::cmd::drill::file::validate_file_path;
 use crate::cmd::drill::get::get_handler;
-use crate::cmd::drill::image::validate_image_path;
 use crate::cmd::drill::post::post_handler;
 use crate::cmd::drill::state::MutableState;
 use crate::cmd::drill::state::ServerState;
@@ -109,7 +110,7 @@ pub async fn start_server(
     let app = app.route("/", post(post_handler));
     let app = app.route("/script.js", get(script_handler));
     let app = app.route("/style.css", get(style_handler));
-    let app = app.route("/image/{*path}", get(image_handler));
+    let app = app.route("/file/{*path}", get(file_handler));
     let app = app.fallback(not_found_handler);
     let app = app.with_state(state);
     let bind = format!("0.0.0.0:{port}");
@@ -152,11 +153,11 @@ async fn not_found_handler() -> (StatusCode, Html<String>) {
     (StatusCode::NOT_FOUND, Html("Not Found".to_string()))
 }
 
-async fn image_handler(
+async fn file_handler(
     State(state): State<ServerState>,
     Path(path): Path<String>,
 ) -> (StatusCode, [(HeaderName, &'static str); 1], Vec<u8>) {
-    let validated_path = match validate_image_path(&state.directory, path) {
+    let validated_path: PathBuf = match validate_file_path(&state.directory, path) {
         Ok(p) => p,
         Err(_) => {
             return (
@@ -166,13 +167,26 @@ async fn image_handler(
             );
         }
     };
+    let extension = validated_path
+        .extension()
+        .and_then(|ext| ext.to_str())
+        .unwrap_or("")
+        .to_lowercase();
+    let content_type: &str = match extension.as_str() {
+        "png" => "image/png",
+        "jpg" | "jpeg" => "image/jpeg",
+        "gif" => "image/gif",
+        "svg" => "image/svg+xml",
+        "mp3" => "audio/mpeg",
+        "wav" => "audio/wav",
+        "ogg" => "audio/ogg",
+        "mp4" => "video/mp4",
+        "webm" => "video/webm",
+        _ => "application/octet-stream",
+    };
     let content = tokio::fs::read(validated_path).await;
     match content {
-        Ok(bytes) => (
-            StatusCode::OK,
-            [(CONTENT_TYPE, "application/octet-stream")],
-            bytes,
-        ),
+        Ok(bytes) => (StatusCode::OK, [(CONTENT_TYPE, content_type)], bytes),
         Err(_) => (
             StatusCode::INTERNAL_SERVER_ERROR,
             [(CONTENT_TYPE, "text/plain")],

@@ -13,8 +13,8 @@
 // limitations under the License.
 
 mod cache;
+mod file;
 mod get;
-mod image;
 mod post;
 pub mod server;
 mod state;
