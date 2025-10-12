@@ -1,0 +1,118 @@
+name: Release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*.*.*'
+  schedule:
+    - cron: '0 2 * * *'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  create-release:
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write # to create/delete releases
+    outputs:
+      release-name: ${{ steps.generate-name.outputs.release-name }}
+    steps:
+      - name: generate release name
+        id: generate-name
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          if [[ "$EVENT_NAME" == "push" && "$REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "release-name=$REF_NAME" >> $GITHUB_OUTPUT
+          else
+            echo "release-name=nightly" >> $GITHUB_OUTPUT
+          fi
+
+      - name: delete existing nightly release
+        if: steps.generate-name.outputs.release-name == 'nightly'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh release delete nightly --yes -R "$REPO" || true
+
+      - name: create release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_NAME: ${{ steps.generate-name.outputs.release-name }}
+          REPO: ${{ github.repository }}
+        run: |
+          if [ "$RELEASE_NAME" = "nightly" ]; then
+            gh release create "$RELEASE_NAME" -R "$REPO" \
+              --title "$RELEASE_NAME" \
+              --notes "Nightly build from $(date -u '+%Y-%m-%d %H:%M:%S UTC')" \
+              --prerelease
+          else
+            gh release create "$RELEASE_NAME" -R "$REPO" \
+              --title "$RELEASE_NAME" \
+              --notes "Release $RELEASE_NAME"
+          fi
+
+  release:
+    needs: create-release
+    permissions:
+      contents: write # to upload build assets to releases
+    strategy:
+      matrix:
+        include:
+          - target: aarch64-apple-darwin
+            os: macos-15
+          - target: x86_64-apple-darwin
+            os: macos-15-intel
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: use rust nightly
+        uses: dtolnay/rust-toolchain@55d80eb3c5a4228eec5390a083c092095115c6f1 # nightly
+        with:
+          toolchain: nightly
+          targets: ${{ matrix.target }}
+
+      - name: cache rust dependencies
+        uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2.8.1
+
+      - name: fetch dependencies
+        run: cargo fetch
+
+      - name: set binary version
+        env:
+          RELEASE_NAME: ${{ needs.create-release.outputs.release-name }}
+        run: |
+          if [ "$RELEASE_NAME" = "nightly" ]; then
+            VERSION=$(cargo metadata --format-version=1 --no-deps | jq -r '.packages[0].version')-nightly.$(date +%Y%m%d)
+          else
+            VERSION=${RELEASE_NAME#v}
+          fi
+          sed -i.bak 's/^version = ".*"/version = "'$VERSION'"/' Cargo.toml
+
+      - name: build release binary
+        env:
+          TARGET: ${{ matrix.target }}
+        run: |
+          cargo +nightly build --release --target "$TARGET"
+
+      - name: upload binary to release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_NAME: ${{ needs.create-release.outputs.release-name }}
+          REPO: ${{ github.repository }}
+          TARGET: ${{ matrix.target }}
+        run: |
+          cp "target/$TARGET/release/hashcards" "hashcards-$RELEASE_NAME-$TARGET"
+          gh release upload "$RELEASE_NAME" "hashcards-$RELEASE_NAME-$TARGET" -R "$REPO"
