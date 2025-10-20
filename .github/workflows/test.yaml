@@ -100,12 +100,22 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libxml2-utils
 
-      - name: validate CHANGELOG.xml
+      - name: validate CHANGELOG.xml is well-formed
         run: |
           xmllint --noout CHANGELOG.xml
           if [ $? -eq 0 ]; then
             echo "✓ CHANGELOG.xml is well-formed"
           else
             echo "✗ CHANGELOG.xml is malformed"
+            exit 1
+          fi
+
+      - name: validate CHANGELOG.xml against schema
+        run: |
+          xmllint --noout --schema CHANGELOG.xsd CHANGELOG.xml
+          if [ $? -eq 0 ]; then
+            echo "✓ CHANGELOG.xml validates against schema"
+          else
+            echo "✗ CHANGELOG.xml does not conform to schema"
             exit 1
           fi
