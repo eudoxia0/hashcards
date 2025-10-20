@@ -145,6 +145,10 @@ body {
                     audio {
                         width: 100%;
                     }
+
+                    .katex {
+                        font-size: 1em;
+                    }
                 }
             }
         }
@@ -238,8 +242,4 @@ body {
             }
         }
     }
-}
-
-.katex {
-    font-size: 1em;
 }
