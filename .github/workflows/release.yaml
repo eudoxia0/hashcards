@@ -67,15 +67,7 @@ jobs:
         uses: dtolnay/rust-toolchain@55d80eb3c5a4228eec5390a083c092095115c6f1 # nightly
         with:
           toolchain: nightly
-
-      - name: install cross-compilation tools
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y musl-tools
-          if [ "${{ matrix.target }}" = "aarch64-unknown-linux-gnu" ]; then
-            sudo apt-get install -y gcc-aarch64-linux-gnu
-          fi
+          targets: ${{ matrix.target }}
 
       - name: build
         run: cargo build --release --target ${{ matrix.target }}
