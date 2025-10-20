@@ -20,7 +20,7 @@ jobs:
 
       - name: parse release version from CHANGELOG.xml
         run: |
-          VERSION=$(python extract_changelog.py --version-only)
+          VERSION=$(python release.py --version-only)
           echo "Found version: $VERSION"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
