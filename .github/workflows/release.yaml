@@ -18,14 +18,17 @@ jobs:
       - name: checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
-      - name: parse CHANGELOG.xml
-        id: parse
+      - name: parse release version from CHANGELOG.xml
         run: |
-          python release.py >> $GITHUB_OUTPUT
-          echo "Parsed version and changelog:"
-          cat $GITHUB_OUTPUT
+          VERSION=$(python extract_changelog.py --version-only)
+          echo "Found version: $VERSION"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-      - name: Check if tag exists
+      - name: parse release notes from CHANGELOG.xml
+        run: |
+          python release.py --output release-notes.md
+
+      - name: check if tag exists
         run: |
           if git rev-parse "v${{ steps.parse.outputs.version }}" >/dev/null 2>&1; then
             echo "Tag v${{ steps.parse.outputs.version }} already exists!"
@@ -38,5 +41,5 @@ jobs:
         run: |
           gh release create "v${{ steps.parse.outputs.version }}" \
             --title "v${{ steps.parse.outputs.version }}" \
-            --notes "${{ steps.parse.outputs.changelog }}" \
+            --notes-file release-notes.md \
             --draft

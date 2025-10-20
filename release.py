@@ -3,6 +3,8 @@
 Extract the latest release from CHANGELOG.xml and format as Markdown.
 """
 
+import os
+import argparse
 import xml.etree.ElementTree as ET
 import sys
 from pathlib import Path
@@ -81,6 +83,15 @@ def extract_latest_release(changelog_path: Path) -> tuple[str, str]:
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Extract changelog for latest release")
+    _ = parser.add_argument(
+        "--output", help="Output file for changelog markdown (default: stdout)"
+    )
+    _ = parser.add_argument(
+        "--version-only", action="store_true", help="Only output the version"
+    )
+    args = parser.parse_args()
+
     changelog_path = Path("CHANGELOG.xml")
 
     if not changelog_path.exists():
@@ -89,8 +100,12 @@ if __name__ == "__main__":
 
     version, markdown = extract_latest_release(changelog_path)
 
-    # Output for GitHub Actions
-    print(f"VERSION={version}")
-    print("CHANGELOG<<EOF")
-    print(markdown)
-    print("EOF")
+    if args.version_only:
+        print(version)
+    elif args.output:
+        # Write to file
+        Path(args.output).write_text(markdown)
+        print(f"Wrote changelog to {args.output}")
+    else:
+        # Write to stdout
+        print(markdown)
