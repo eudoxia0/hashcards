@@ -16,6 +16,22 @@ jobs:
       - name: checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
+      - name: verify Cargo.toml version matches changelog
+        run: |
+          CHANGELOG_VERSION=$(python release.py --version-only)
+          CARGO_VERSION=$(grep '^version = ' Cargo.toml | head -n1 | sed 's/version = "\(.*\)"/\1/')
+
+          echo "CHANGELOG.xml version: $CHANGELOG_VERSION"
+          echo "Cargo.toml version: $CARGO_VERSION"
+
+          if [ "$CHANGELOG_VERSION" != "$CARGO_VERSION" ]; then
+            echo "❌ Version mismatch!"
+            echo "Update Cargo.toml to version $CHANGELOG_VERSION before releasing"
+            exit 1
+          fi
+
+          echo "✅ Versions match"
+
       - name: parse release version from CHANGELOG.xml
         id: parse
         run: |
