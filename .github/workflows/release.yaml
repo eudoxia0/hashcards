@@ -42,3 +42,31 @@ jobs:
             --title "v${{ steps.parse.outputs.version }}" \
             --notes-file release-notes.md \
             --draft
+
+  build:
+    needs: create-release
+    strategy:
+      matrix:
+        include:
+          - name: linux-amd64
+            os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - name: linux-arm64
+            os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+          - name: macos-amd64
+            os: macos-latest
+            target: aarch64-apple-darwin
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: use rust nightly
+        uses: dtolnay/rust-toolchain@55d80eb3c5a4228eec5390a083c092095115c6f1 # nightly
+        with:
+          toolchain: nightly
+
+      - name: build
+        run: cargo build --release --target ${{ matrix.target }}
