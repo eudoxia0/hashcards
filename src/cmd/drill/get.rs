@@ -66,10 +66,12 @@ fn render_session_page(state: &ServerState, mutable: &MutableState) -> Fallible<
             form action="/" method="post" {
                 (undo_button(undo_disabled))
                 div.spacer {}
-                input id="forgot" type="submit" name="action" value="Forgot";
-                input id="hard" type="submit" name="action" value="Hard";
-                input id="good" type="submit" name="action" value="Good";
-                input id="easy" type="submit" name="action" value="Easy";
+                div.grades {
+                    input id="forgot" type="submit" name="action" value="Forgot";
+                    input id="hard" type="submit" name="action" value="Hard";
+                    input id="good" type="submit" name="action" value="Good";
+                    input id="easy" type="submit" name="action" value="Easy";
+                }
                 div.spacer {}
                 (end_button())
             }

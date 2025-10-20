@@ -151,11 +151,9 @@ body {
 
     .controls {
         border-top: 1px solid black;
-        padding: 32px;
 
         form {
             display: flex;
-            flex-direction: row;
             justify-content: space-between;
 
             .spacer {
@@ -163,7 +161,6 @@ body {
             }
 
             input {
-                margin: 0 12px;
                 background: white;
                 border: 1px solid #999;
                 padding: 7px 12px;
@@ -246,6 +243,24 @@ body {
         height: 100%;
         box-shadow: none;
     }
+
+    .controls {
+        padding: 12px;
+
+        form {
+            flex-direction: column;
+
+            input {
+                margin: 6px 0;
+            }
+
+            .grades {
+                display: flex;
+                flex-direction: row;
+                justify-content: space-between;
+            }
+        }
+    }
 }
 
 /* Desktop */
@@ -256,5 +271,17 @@ body {
         max-height: 90%;
         box-shadow: 0px 0px 48px 16px #ddd;
         border: 1px solid black;
+    }
+
+    .controls {
+        padding: 32px;
+
+        form {
+            flex-direction: row;
+
+            input {
+                margin: 0 12px;
+            }
+        }
     }
 }
