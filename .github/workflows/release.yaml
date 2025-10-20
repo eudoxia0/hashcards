@@ -1,0 +1,31 @@
+name: Release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    outputs:
+      # The version of the release to create.
+      version: ${{ steps.parse.outputs.version }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: extract version from CHANGELOG.xml
+        run: |
+          # Extract version from the first release entry
+          VERSION=$(xmllint --xpath "string(/changelog/releases/release[1]/@version)" CHANGELOG.xml)
+          echo "Latest version: $VERSION"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: check if tag exists
+        run: |
+          if git rev-parse "v${{ steps.parse.outputs.version }}" >/dev/null 2>&1; then
+            echo "Tag v${{ steps.parse.outputs.version }} already exists!"
+            exit 1
+          fi
