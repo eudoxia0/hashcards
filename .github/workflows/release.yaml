@@ -12,8 +12,6 @@ jobs:
     outputs:
       # The version of the new release.
       version: ${{ steps.parse.outputs.version }}
-      # The changelog text for the new release.
-      changelog: ${{ steps.parse.outputs.changelog }}
     steps:
       - name: checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
