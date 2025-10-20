@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+  <!-- Root element -->
+  <xs:element name="changelog">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="unreleased" type="changesType" minOccurs="1" maxOccurs="1"/>
+        <xs:element name="releases" minOccurs="1" maxOccurs="1">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="release" type="releaseType" minOccurs="0" maxOccurs="unbounded"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- Release type with version and date attributes -->
+  <xs:complexType name="releaseType">
+    <xs:complexContent>
+      <xs:extension base="changesType">
+        <xs:attribute name="version" type="versionType" use="required"/>
+        <xs:attribute name="date" type="xs:date" use="required"/>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <!-- Changes container (added, fixed, changed, removed, deprecated, security, breaking) -->
+  <xs:complexType name="changesType">
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:element name="added" type="changeListType"/>
+      <xs:element name="fixed" type="changeListType"/>
+      <xs:element name="changed" type="changeListType"/>
+      <xs:element name="removed" type="changeListType"/>
+      <xs:element name="deprecated" type="changeListType"/>
+      <xs:element name="security" type="changeListType"/>
+      <xs:element name="breaking" type="changeListType"/>
+    </xs:choice>
+  </xs:complexType>
+
+  <!-- List of changes -->
+  <xs:complexType name="changeListType">
+    <xs:sequence>
+      <xs:element name="change" type="changeType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Individual change with optional author attribute -->
+  <xs:complexType name="changeType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute name="author" type="xs:string" use="optional"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+
+  <!-- Semantic version pattern (e.g., 0.1.0, 1.2.3, 2.0.0-beta.1) -->
+  <xs:simpleType name="versionType">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="\d+\.\d+\.\d+(-[a-zA-Z0-9\.\-]+)?"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+</xs:schema>
