@@ -31,3 +31,12 @@ jobs:
             echo "Tag v${{ steps.parse.outputs.version }} already exists!"
             exit 1
           fi
+
+      - name: create release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "v${{ steps.parse.outputs.version }}" \
+            --title "v${{ steps.parse.outputs.version }}" \
+            --notes "${{ steps.parse.outputs.changelog }}" \
+            --draft
