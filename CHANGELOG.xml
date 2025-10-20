@@ -6,7 +6,7 @@
         <release version="0.1.0" date="2025-10-21">
             <added>
                 <change author="eudoxia0">
-                    Added `changelog.xml`.
+                    Added `CHANGELOG.xml`.
                 </change>
             </added>
         </release>
