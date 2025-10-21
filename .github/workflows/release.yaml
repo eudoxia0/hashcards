@@ -104,7 +104,7 @@ jobs:
           tar czf "${ARCHIVE_NAME}.tar.gz" -C "target/${{ matrix.target }}/release" "${{ steps.binary.outputs.name }}${{ steps.binary.outputs.extension }}"
           ASSET="${ARCHIVE_NAME}.tar.gz"
 
-          shasum -a 256 "$ASSET" | cut -d ' ' -f 1 > "${ASSET}.sha256"
+          shasum -a 256 "$ASSET" | cut -d ' ' -f 1 > "${ASSET}.sha256.txt"
 
           echo "asset=$ASSET" >> $GITHUB_ENV
 
