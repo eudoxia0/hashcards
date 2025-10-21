@@ -50,6 +50,21 @@ jobs:
             exit 1
           fi
 
+      - name: check if release exists
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="v${{ steps.parse.outputs.version }}"
+
+          # Check if GitHub release exists (including drafts)
+          if gh release view "$VERSION" >/dev/null 2>&1; then
+            echo "❌ GitHub release $VERSION already exists!"
+            echo "Delete it first: gh release delete $VERSION"
+            exit 1
+          fi
+
+          echo "✅ No conflicts found"
+
       - name: create release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
