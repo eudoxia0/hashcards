@@ -3,7 +3,7 @@
         <!-- WIP changes go here -->
     </unreleased>
     <releases>
-        <release version="0.0.0-dummy" date="2025-10-21">
+        <release version="0.1.0" date="2025-10-21">
             <added>
                 <change author="eudoxia0">
                     Added `CHANGELOG.xml`.
