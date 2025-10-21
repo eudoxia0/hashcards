@@ -9,6 +9,11 @@
                     Added `CHANGELOG.xml`.
                 </change>
             </added>
+            <changed>
+                <change author="eudoxia0">
+                    SQLite is no longer bundled into the binary, reducing the executable size.
+                </change>
+            </changed>
         </release>
     </releases>
 </changelog>
