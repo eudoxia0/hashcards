@@ -35,13 +35,13 @@ jobs:
       - name: parse release version from CHANGELOG.xml
         id: parse
         run: |
-          VERSION=$(python release.py --version-only)
+          VERSION=$(python release.py version)
           echo "Found version: $VERSION"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: parse release notes from CHANGELOG.xml
         run: |
-          python release.py --output release-notes.md
+          python release.py markdown > release-notes.md
 
       - name: check if tag exists
         run: |
