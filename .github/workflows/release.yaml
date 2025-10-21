@@ -114,4 +114,4 @@ jobs:
         run: |
           gh release upload "v${{ needs.create-release.outputs.version }}" \
             "${{ env.asset }}" \
-            "${{ env.asset }}.sha256"
+            "${{ env.asset }}.sha256.txt"
