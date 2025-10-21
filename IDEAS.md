@@ -38,3 +38,7 @@ or one deck at a time, and see how they render.
 # Jitter
 
 Add random noise to review intervals, to diffuse the peaks.
+
+# Logo
+
+Make up a logo and a favicon.
