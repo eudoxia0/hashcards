@@ -117,7 +117,14 @@ jobs:
         shell: bash
         run: |
           ARCHIVE_NAME="hashcards-v${{ needs.create-release.outputs.version }}-${{ matrix.name }}"
-          BINARY_PATH="target/${{ matrix.target }}/release/hashcards"
+          BINARY_PATH="target/release/hashcards"
+
+          # Check: does the binary exist?
+          if [ ! -f "${BINARY_PATH}" ]; then
+            echo "❌ Binary not found at ${BINARY_PATH}"
+            exit 1
+          fi
+
           echo "Packaging ${BINARY_PATH} into ${ARCHIVE_NAME}.tar.gz"
           tar czf "${ARCHIVE_NAME}.tar.gz" -C "${BINARY_PATH}"
           ASSET="${ARCHIVE_NAME}.tar.gz"
