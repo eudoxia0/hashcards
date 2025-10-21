@@ -127,13 +127,10 @@ jobs:
 
           tar czf "${ARCHIVE_NAME}.tar.gz" "${BINARY_PATH}"
           ASSET="${ARCHIVE_NAME}.tar.gz"
-          shasum -a 256 "$ASSET" | cut -d ' ' -f 1 > "${ASSET}.sha256.txt"
           echo "asset=$ASSET" >> $GITHUB_ENV
 
       - name: upload to release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload "v${{ needs.create-release.outputs.version }}" \
-            "${{ env.asset }}" \
-            "${{ env.asset }}.sha256.txt"
+          gh release upload "v${{ needs.create-release.outputs.version }}" "${{ env.asset }}
