@@ -92,7 +92,10 @@ jobs:
             sudo apt-get install -y gcc-aarch64-linux-gnu
           fi
 
-      - name: build
+      - name: cargo fetch
+        run: cargo fetch --target ${{ matrix.target }}
+
+      - name: cargo build
         run: cargo build --release --target ${{ matrix.target }}
 
       - name: package
