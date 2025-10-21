@@ -24,5 +24,7 @@ check "clippy" "cargo clippy" &
 check "machete" "cargo machete" &
 check "deny" "cargo deny check licenses" &
 check "test" "cargo test" &
+check "changelog syntax" "xmllint --noout CHANGELOG.xml" &
+check "changelog schema" "xmllint --noout --schema CHANGELOG.xsd CHANGELOG.xml" &
 wait
 echo "${GREEN}🎉 all done!${NC}"
