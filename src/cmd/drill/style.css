@@ -184,12 +184,8 @@ body {
 }
 
 .finished {
-    padding: 48px;
-
     h1 {
-        font-size: 48px;
         text-align: center;
-        margin-bottom: 48px;
     }
 
     .summary {
@@ -198,14 +194,10 @@ body {
     }
 
     h2 {
-        font-size: 36px;
-        margin-bottom: 24px;
         border-bottom: 1px solid #ccc;
     }
 
     .stats {
-        font-size: 22px;
-
         table {
             width: 100%;
             border-collapse: collapse;
@@ -214,7 +206,8 @@ body {
                 border-bottom: 1px solid #eee;
 
                 td {
-                    padding: 12px 0;
+                    padding-top: 12px;
+                    padding-bottom: 12px;
 
                     &.key {
                         font-family: "SF Pro", sans-serif;
@@ -228,7 +221,6 @@ body {
                         font-feature-settings: "tnum";
                         font-variant-numeric: tabular-nums;
                         width: 100%;
-                        padding-left: 48px;
                     }
                 }
             }
@@ -261,6 +253,28 @@ body {
             }
         }
     }
+
+    .finished {
+        padding: 24px;
+
+        h1 {
+            font-size: 36px;
+            margin-bottom: 36px;
+        }
+
+        h2 {
+            font-size: 30px;
+            margin-bottom: 16px;
+        }
+
+        .stats {
+            font-size: 16px;
+        }
+
+        .val {
+            padding-left: 24px;
+        }
+    }
 }
 
 /* Desktop */
@@ -282,6 +296,28 @@ body {
             input {
                 margin: 0 12px;
             }
+        }
+    }
+
+    .finished {
+        padding: 48px;
+
+        h1 {
+            font-size: 48px;
+            margin-bottom: 48px;
+        }
+
+        h2 {
+            font-size: 36px;
+            margin-bottom: 24px;
+        }
+
+        .stats {
+            font-size: 22px;
+        }
+
+        .val {
+            padding-left: 48px;
         }
     }
 }
