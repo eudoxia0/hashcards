@@ -126,8 +126,7 @@ jobs:
           fi
 
           tar czf "${ARCHIVE_NAME}.tar.gz" "${BINARY_PATH}"
-          ASSET="${ARCHIVE_NAME}.tar.gz"
-          echo "asset=$ASSET" >> $GITHUB_ENV
+          echo "asset=${ARCHIVE_NAME}.tar.gz" >> $GITHUB_ENV
 
       - name: upload to release
         env:
