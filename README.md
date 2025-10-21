@@ -3,7 +3,7 @@
 [![Test](https://github.com/eudoxia0/hashcards/actions/workflows/test.yaml/badge.svg)](https://github.com/eudoxia0/hashcards/actions/workflows/test.yaml)
 [![Release](https://github.com/eudoxia0/hashcards/actions/workflows/release.yaml/badge.svg?branch=master)](https://github.com/eudoxia0/hashcards/actions/workflows/release.yaml)
 [![codecov](https://codecov.io/gh/eudoxia0/hashcards/branch/master/graph/badge.svg?token=GDV3CYZMHQ)](https://codecov.io/gh/eudoxia0/hashcards)
-[![deps.rs](https://deps.rs/repo/github/eudoxia0/hashcards/status.svg)](https://deps.rs/repo/github/eudoxia0/hashcards)
+[![dependency status](https://deps.rs/repo/github/eudoxia0/hashcards/status.svg)](https://deps.rs/repo/github/eudoxia0/hashcards)
 
 ![Screenshot of the app, showing a front/back flashcard.](screenshot.webp)
 
