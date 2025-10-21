@@ -125,7 +125,11 @@ jobs:
             exit 1
           fi
 
-          tar czf "${ARCHIVE_NAME}.tar.gz" "${BINARY_PATH}"
+          mkdir -p "${ARCHIVE_NAME}"
+          cp "${BINARY_PATH}" "${ARCHIVE_NAME}/hashcards"
+          tar czf "${ARCHIVE_NAME}.tar.gz" "${ARCHIVE_NAME}"
+          rm -rf "${ARCHIVE_NAME}"
+
           echo "asset=${ARCHIVE_NAME}.tar.gz" >> $GITHUB_ENV
 
       - name: upload to release
