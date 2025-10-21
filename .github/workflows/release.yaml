@@ -18,7 +18,7 @@ jobs:
 
       - name: verify Cargo.toml version matches changelog
         run: |
-          CHANGELOG_VERSION=$(python release.py --version-only)
+          CHANGELOG_VERSION=$(python release.py version)
           CARGO_VERSION=$(grep '^version = ' Cargo.toml | head -n1 | sed 's/version = "\(.*\)"/\1/')
 
           echo "CHANGELOG.xml version: $CHANGELOG_VERSION"
