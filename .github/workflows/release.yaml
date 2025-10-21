@@ -139,7 +139,9 @@ jobs:
           gh release upload "v${{ needs.create-release.outputs.version }}" "${{ env.asset }}"
 
   publish:
-    needs: build
+    needs:
+      - create-release
+      - build
     runs-on: ubuntu-latest
     steps:
       - name: checkout
