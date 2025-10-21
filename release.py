@@ -41,9 +41,8 @@ def extract_latest_release(changelog_path: Path) -> tuple[str, str]:
     # Build markdown content
     lines: list[str] = []
 
-    lines.append(f"# hashcards {version}")
-    lines.append("")
-    lines.append(f"Date: {date}")
+    lines.append(f"- **Version:** {version}")
+    lines.append(f"- **Date:** {date}")
     lines.append("")
 
     # Category mapping to nice headers
