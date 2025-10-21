@@ -1,14 +1,13 @@
 PREFIX ?= /usr/local
 BINDIR = $(PREFIX)/bin
-SRC := $(shell find src -name '*.rs')
+SRC    = $(shell find src -name '*.rs')
 
 .PHONY: all
 all: hashcards
 
 hashcards: $(SRC) Cargo.toml Cargo.lock
-	cargo build --release --target-dir __build
-	cp __build/release/hashcards hashcards
-	rm -rf __build
+	cargo build --release
+	cp "target/release/hashcards" hashcards
 
 .PHONY: install
 install: hashcards
@@ -31,5 +30,4 @@ coverage:
 .PHONY: clean
 clean:
 	rm -f hashcards
-	rm -rf __build
 	cargo clean
