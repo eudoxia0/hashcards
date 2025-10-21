@@ -9,12 +9,6 @@ from pathlib import Path
 
 
 def extract_latest_release(changelog_path: Path) -> tuple[str, str]:
-    """
-    Parse CHANGELOG.xml and extract the latest release.
-
-    Returns:
-        (version, markdown_content)
-    """
     tree = ET.parse(changelog_path)
     root = tree.getroot()
 
