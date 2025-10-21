@@ -125,7 +125,7 @@ jobs:
             exit 1
           fi
 
-          tar czf "${ARCHIVE_NAME}.tar.gz" -C "${BINARY_PATH}"
+          tar czf "${ARCHIVE_NAME}.tar.gz" "${BINARY_PATH}"
           ASSET="${ARCHIVE_NAME}.tar.gz"
           shasum -a 256 "$ASSET" | cut -d ' ' -f 1 > "${ASSET}.sha256.txt"
           echo "asset=$ASSET" >> $GITHUB_ENV
