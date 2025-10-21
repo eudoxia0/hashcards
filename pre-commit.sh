@@ -8,7 +8,7 @@ NC='\033[0m'
 function check() {
     name=$1
     command=$2
-    sh -c "$command" >/dev/null 2>&1
+    sh -c "$command >/dev/null 2>&1"
     result=$?
     if [ $result -eq 0 ]; then
         echo "${GREEN}✅ $name${NC}"
