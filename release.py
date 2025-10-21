@@ -66,11 +66,7 @@ def extract_latest_release(changelog_path: Path) -> tuple[str, str]:
                 lines.append("")
                 for change in changes:
                     text = change.text.strip() if change.text else ""
-                    author = change.get("author")
-                    if author:
-                        lines.append(f"- {text} (@{author})")
-                    else:
-                        lines.append(f"- {text}")
+                    lines.append(f"- {text}")
                 lines.append("")
 
     # Remove trailing empty line
