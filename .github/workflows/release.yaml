@@ -132,4 +132,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload "v${{ needs.create-release.outputs.version }}" "${{ env.asset }}
+          gh release upload "v${{ needs.create-release.outputs.version }}" "${{ env.asset }}"
