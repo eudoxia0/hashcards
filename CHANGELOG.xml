@@ -1,6 +1,10 @@
 <changelog>
     <unreleased>
-        <!-- WIP changes go here -->
+        <changed>
+            <change author="eudoxia0">
+                The UI now works for small and mobile device sizes.
+            </change>
+        </changed>
     </unreleased>
     <releases>
         <release version="0.1.0" date="2025-10-21">
