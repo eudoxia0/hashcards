@@ -98,3 +98,42 @@ jobs:
 
       - name: build
         run: cargo build --release --target ${{ matrix.target }}
+
+      - name: get binary name
+        id: binary
+        run: |
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            echo "name=hashcards.exe" >> $GITHUB_OUTPUT
+          else
+            echo "name=hashcards" >> $GITHUB_OUTPUT
+          fi
+
+      - name: package
+        shell: bash
+        run: |
+          BINARY_PATH="target/${{ matrix.target }}/release/${{ steps.binary.outputs.name }}"
+          ARCHIVE_NAME="${{ steps.binary.outputs.name }}-v${{ needs.create-release.outputs.version }}-${{ matrix.name }}"
+
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            7z a "${ARCHIVE_NAME}.zip" "$BINARY_PATH"
+            ASSET="${ARCHIVE_NAME}.zip"
+          else
+            tar czf "${ARCHIVE_NAME}.tar.gz" -C "target/${{ matrix.target }}/release" "${{ steps.binary.outputs.name }}${{ steps.binary.outputs.extension }}"
+            ASSET="${ARCHIVE_NAME}.tar.gz"
+          fi
+
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            certutil -hashfile "$ASSET" SHA256 | grep -v "hash" | tr -d '\r\n ' > "${ASSET}.sha256"
+          else
+            shasum -a 256 "$ASSET" | cut -d ' ' -f 1 > "${ASSET}.sha256"
+          fi
+
+          echo "asset=$ASSET" >> $GITHUB_ENV
+
+      - name: upload to release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "v${{ needs.create-release.outputs.version }}" \
+            "${{ env.asset }}" \
+            "${{ env.asset }}.sha256"
