@@ -30,7 +30,7 @@ coverage:
 .PHONY: install-hooks
 install-hooks: pre-commit.sh
 	@mkdir -p .git/hooks
-	@cp pre-commit.sh .git/hooks/pre-commit
+	@ln -sf pre-commit.sh .git/hooks/pre-commit
 
 .PHONY: uninstall-hooks
 uninstall-hooks:
