@@ -1,5 +1,10 @@
 <changelog>
     <unreleased>
+        <added>
+            <change author="eudoxia0">
+                Extra metadata to `Cargo.toml`.
+            </change>
+        </added>
         <changed>
             <change author="eudoxia0">
                 The UI now works for small and mobile device sizes.
