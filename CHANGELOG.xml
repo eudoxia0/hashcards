@@ -4,6 +4,9 @@
             <change author="eudoxia0">
                 Extra metadata to `Cargo.toml`.
             </change>
+            <change author="eudoxia0">
+                `pre-commish.sh` hook.
+            </change>
         </added>
         <changed>
             <change author="eudoxia0">
