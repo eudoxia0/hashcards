@@ -2,6 +2,7 @@
 name = "hashcards"
 version = "0.1.0"
 edition = "2024"
+description = "A plain text-based spaced repetition system."
 license = "Apache-2.0"
 
 [dependencies]
