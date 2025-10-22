@@ -55,7 +55,10 @@ impl Collection {
             if macros_path.exists() {
                 let content = read_to_string(macros_path)?;
                 for line in content.lines() {
-                    if let Some((name, definition)) = line.split_once(' ') {
+                    // Skip lines starting with '%'.
+                    if !line.trim_start().starts_with('%')
+                        && let Some((name, definition)) = line.split_once(' ')
+                    {
                         macros.push((name.to_string(), definition.to_string()));
                     }
                 }
