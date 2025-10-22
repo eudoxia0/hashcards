@@ -7,6 +7,9 @@
             <change author="eudoxia0">
                 Add `pre-commish.sh` hook.
             </change>
+            <change author="eudoxia0">
+                The `macros.tex` file now supports comments: lines starting with `%` are ignored.
+            </change>
         </added>
         <changed>
             <change author="eudoxia0">
