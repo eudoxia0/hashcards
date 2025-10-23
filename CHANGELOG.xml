@@ -15,6 +15,9 @@
             <change author="eudoxia0">
                 The UI now works for small and mobile device sizes.
             </change>
+            <change author="eudoxia0">
+                Updated dependencies.
+            </change>
         </changed>
     </unreleased>
     <releases>
