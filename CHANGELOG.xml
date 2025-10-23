@@ -16,7 +16,10 @@
                 The UI now works for small and mobile device sizes.
             </change>
             <change author="eudoxia0">
-                Updated dependencies.
+                Update dependencies.
+            </change>
+            <change author="eudoxia0">
+                Update KaTeX to `0.16.25`.
             </change>
         </changed>
     </unreleased>
