@@ -1,30 +1,40 @@
 {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
-    #flake-utils.url = "github:numtide/flake-utils";
+    crane.url = "github:ipetkov/crane";
   };
 
-  outputs = { self, nixpkgs, flake-utils }:
+  outputs = { self, nixpkgs, crane, flake-utils }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs { inherit system; };
+        craneLib = crane.mkLib pkgs;
+        # Crane filters source files, so that mods to eg README.md don't
+        # trigger a rebuild. srcFilter adds css, js and sql files to
+        # the filtered source files.
+        srcFilter = path: _type: builtins.match ".*css$|.*js$|.*sql$" path != null;
+        allSrcFilter = path: type:
+          (srcFilter path type) || (craneLib.filterCargoSources path type);
+
       in
       {
-        packages.default = pkgs.rustPlatform.buildRustPackage rec {
-          pname = "hashcards";
-          version = "0.1.0";
-          src = ./.;
-          cargoLock = {
-            lockFile = ./Cargo.lock;
-            # If cargo.lock has git deps, check their hash
-            # automatically :
-            allowBuiltinFetchGit = true;
+        packages.default = craneLib.buildPackage {
+          src = pkgs.lib.cleanSourceWith {
+            src = ./.;
+            filter = allSrcFilter;
+            # Be reproducible, regardless of the directory name :
+            name = "source";
           };
-          #RUSTFLAGS = "-C target-feature=+crt-static";
+          # Do not run cargo tests on build, because cargo takes so
+          # long anyway :
+          doCheck = false;
           buildInputs = with pkgs; [
-            #glibc.static
+            sqlite
+            openssl
+          ];
+          nativeBuildInputs = with pkgs; [
+            pkg-config
           ];
         };
-        #devShells.default = pkgs.mkShell {};
       });
 }
