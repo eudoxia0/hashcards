@@ -365,3 +365,10 @@ Note: "timestamp format" is `YYYY-MM-DDTHH:MM:SS.MMM`, e.g. `2025-10-04T17:09:51
 [esr]: https://borretti.me/article/effective-spaced-repetition
 [fc]: https://github.com/eudoxia0/flashcards
 [rustup]: https://rustup.rs/
+
+## License
+
+© 2025 by [Fernando Borretti][fb]. Licensed under the [Apache 2.0][apache2] license.
+
+[fb]: https://borretti.me/
+[apache2]: https://www.apache.org/licenses/LICENSE-2.0
