@@ -131,10 +131,19 @@ body {
                     img,
                     ol,
                     ul,
+                    blockquote,
                     table {
                         &:not(:last-child) {
                             margin-bottom: 16px;
                         }
+                    }
+
+                    blockquote {
+                        border-left: 4px solid #ccc;
+                        padding-left: 12px;
+                        background: #f7f7f7;
+                        padding-top: 8px;
+                        padding-bottom: 8px;
                     }
 
                     audio {
