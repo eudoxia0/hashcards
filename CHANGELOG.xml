@@ -12,6 +12,9 @@
             <change author="eudoxia0">
                 Killing the server with `ctrl+c` at the end of a session causes the server to die with exit code 0.
             </change>
+            <change author="eudoxia0">
+                SQLite is once again bundled into the binary, increasing the executable size but reducing build problems especially on NixOS.
+            </change>
         </changed>
     </unreleased>
     <releases>
