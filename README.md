@@ -196,7 +196,7 @@ A: The cardinality of its underlying set.
 Both the question and the answer can span multiple lines:
 
 ```
-Q: List the PGM minerals.
+Q: List the elements of the Platinum group.
 A:
 
 - ruthenium
