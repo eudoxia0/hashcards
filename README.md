@@ -62,10 +62,11 @@ Create a directory for your flashcards, and add a Markdown file with some cards:
 $ mkdir cards
 $ cd cards
 $ cat > Geography.md << 'EOF'
-Q: What is the capital of France?
-A: Paris
+Q: What is Coulomb's constant?
+A: The proportionality constant of the electric force.
 
-C: [Paris] is the capital of [France].
+Q: What is an object with zero net charge called?
+A: Neutral.
 EOF
 ```
 
