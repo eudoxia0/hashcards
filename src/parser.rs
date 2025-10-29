@@ -952,7 +952,7 @@ A: A systems programming language."#;
         let result = extract_frontmatter(input);
         assert!(result.is_err());
         let err = result.err().unwrap();
-        assert!(err.contains("no closing '---'"));
+        assert!(err.to_string().contains("no closing '---'"));
     }
 
     #[test]
