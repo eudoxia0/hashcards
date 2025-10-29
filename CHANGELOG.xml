@@ -23,7 +23,7 @@
             </added>
             <changed>
                 <change author="eudoxia0">
-                    The UI now works pn small and mobile viewports.
+                    The UI now works on small and mobile viewports.
                 </change>
                 <change author="eudoxia0">
                     Update dependencies.
