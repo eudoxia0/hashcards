@@ -16,7 +16,6 @@ use axum::Form;
 use axum::extract::State;
 use axum::response::Redirect;
 use serde::Deserialize;
-use tokio::sync::oneshot::Sender;
 
 use crate::cmd::drill::state::MutableState;
 use crate::cmd::drill::state::Review;
