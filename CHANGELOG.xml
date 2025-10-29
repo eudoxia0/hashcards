@@ -5,7 +5,7 @@
                 Add extra metadata to `Cargo.toml`.
             </change>
             <change author="eudoxia0">
-                Add `pre-commish.sh` hook.
+                Add `pre-commit.sh` hook.
             </change>
             <change author="eudoxia0">
                 The `macros.tex` file now supports comments: lines starting with `%` are ignored.
