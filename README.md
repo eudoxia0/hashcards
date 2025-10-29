@@ -263,7 +263,7 @@ Image paths are resolved relative to the collection root (i.e., the directory
 passed to the `drill` command), _not_ the current file. Image paths cannot be
 symbolic links or point (via `..` components) to files outside the collection.
 
-###
+### Deck Names
 
 By default, the filename of a deck is the name of a deck, e.g. a file
 `Medicine.md` will be parsed as a deck called `Medicine`. It is possible to
