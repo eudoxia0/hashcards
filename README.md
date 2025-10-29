@@ -226,6 +226,10 @@ desire: this is also vanity and vexation of spirit.
 — [Ecclesiastes] [6]:[9]
 ```
 
+## Features
+
+This section documents specific hashcards features.
+
 ### LaTeX Support
 
 Cards support LaTeX math via KaTeX. Use `$...$` for inline math and `$$...$$`
