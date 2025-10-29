@@ -190,6 +190,8 @@ enum Line {
     StartAnswer(String),
     /// A line like `C: <text>`.
     StartCloze(String),
+    /// A horizontal rule separator (---).
+    Separator,
     /// Any other line.
     Text(String),
 }
@@ -202,6 +204,8 @@ impl Line {
             Line::StartAnswer(trim(line))
         } else if is_cloze(line) {
             Line::StartCloze(trim(line))
+        } else if is_separator(line) {
+            Line::Separator
         } else {
             Line::Text(line.to_string())
         }
@@ -218,6 +222,10 @@ fn is_answer(line: &str) -> bool {
 
 fn is_cloze(line: &str) -> bool {
     line.starts_with("C:")
+}
+
+fn is_separator(line: &str) -> bool {
+    line.trim() == "---"
 }
 
 fn trim(line: &str) -> String {
@@ -276,6 +284,7 @@ impl Parser {
                     text,
                     start_line: line_num,
                 }),
+                Line::Separator => Ok(State::Initial),
                 Line::Text(_) => Ok(State::Initial),
             },
             State::ReadingQuestion {
@@ -297,6 +306,10 @@ impl Parser {
                     self.file_path.clone(),
                     line_num,
                 )),
+                Line::Separator => Ok(State::ReadingQuestion {
+                    question,
+                    start_line,
+                }),
                 Line::Text(text) => Ok(State::ReadingQuestion {
                     question: format!("{question}\n{text}"),
                     start_line,
@@ -343,6 +356,11 @@ impl Parser {
                             start_line: line_num,
                         })
                     }
+                    Line::Separator => Ok(State::ReadingAnswer {
+                        question,
+                        answer,
+                        start_line,
+                    }),
                     Line::Text(text) => Ok(State::ReadingAnswer {
                         question,
                         answer: format!("{answer}\n{text}"),
@@ -375,6 +393,10 @@ impl Parser {
                             start_line: line_num,
                         })
                     }
+                    Line::Separator => Ok(State::ReadingCloze {
+                        text,
+                        start_line,
+                    }),
                     Line::Text(new_text) => Ok(State::ReadingCloze {
                         text: format!("{text}\n{new_text}"),
                         start_line,
@@ -1027,6 +1049,74 @@ A: Genetic material."#,
         // Clean up
         std::fs::remove_dir_all(&directory).ok();
 
+        Ok(())
+    }
+
+    #[test]
+    fn test_hr_separator_ignored_in_question() -> Result<(), ParserError> {
+        let input = "Q: What is\n---\nRust?\nA: A language.";
+        let parser = make_test_parser();
+        let cards = parser.parse(input)?;
+
+        assert_eq!(cards.len(), 1);
+        assert!(matches!(
+            &cards[0].content(),
+            CardContent::Basic {
+                question,
+                answer,
+            } if question == "What is\nRust?" && answer == "A language."
+        ));
+        Ok(())
+    }
+
+    #[test]
+    fn test_hr_separator_ignored_in_answer() -> Result<(), ParserError> {
+        let input = "Q: What is Rust?\nA: A systems\n---\nprogramming language.";
+        let parser = make_test_parser();
+        let cards = parser.parse(input)?;
+
+        assert_eq!(cards.len(), 1);
+        assert!(matches!(
+            &cards[0].content(),
+            CardContent::Basic {
+                question,
+                answer,
+            } if question == "What is Rust?" && answer == "A systems\nprogramming language."
+        ));
+        Ok(())
+    }
+
+    #[test]
+    fn test_hr_separator_ignored_in_cloze() -> Result<(), ParserError> {
+        let input = "C: Foo [bar]\n---\nbaz [quux].";
+        let parser = make_test_parser();
+        let cards = parser.parse(input)?;
+
+        assert_cloze(&cards, "Foo bar\nbaz quux.", &[(4, 6), (8, 11)]);
+        Ok(())
+    }
+
+    #[test]
+    fn test_hr_separator_between_cards() -> Result<(), ParserError> {
+        let input = "Q: Question 1\nA: Answer 1\n---\nQ: Question 2\nA: Answer 2";
+        let parser = make_test_parser();
+        let cards = parser.parse(input)?;
+
+        assert_eq!(cards.len(), 2);
+        assert!(matches!(
+            &cards[0].content(),
+            CardContent::Basic {
+                question,
+                answer,
+            } if question == "Question 1" && answer == "Answer 1"
+        ));
+        assert!(matches!(
+            &cards[1].content(),
+            CardContent::Basic {
+                question,
+                answer,
+            } if question == "Question 2" && answer == "Answer 2"
+        ));
         Ok(())
     }
 }
