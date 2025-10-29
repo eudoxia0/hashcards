@@ -1,7 +1,9 @@
 <changelog>
     <unreleased>
         <added>
-            Deck files now accept TOML frontmatter, so you can override the inferred deck name.
+            <change author="eudoxia0">
+                Deck files now accept TOML frontmatter, so you can override the inferred deck name.
+            </change>
         </added>
     </unreleased>
     <releases>
