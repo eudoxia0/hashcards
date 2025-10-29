@@ -16,7 +16,7 @@ function check() {
     fi
 }
 
-check "fmt" "cargo fmt"
+check "fmt" "cargo +nightly fmt"
 check "check" "cargo check"
 check "clippy" "cargo clippy" &
 check "machete" "cargo machete" &
