@@ -263,6 +263,36 @@ Image paths are resolved relative to the collection root (i.e., the directory
 passed to the `drill` command), _not_ the current file. Image paths cannot be
 symbolic links or point (via `..` components) to files outside the collection.
 
+### Deck Names
+
+By default, the filename of a deck is the name of a deck, e.g. a file
+`Medicine.md` will be parsed as a deck called `Medicine`. It is possible to
+override the name using [TOML](https://toml.io/en/) frontmatter, like so:
+
+```
+---
+name = "Medicine"
+---
+
+C: The mitochondria is the [powerhouse] of the cell.
+```
+
+Regardless of the filename, cards in this deck will have `Medicine` as their
+deck name. This is particularly useful when you want to organize a large number
+of cards into different files, while keeping their deck name the same. For
+example, when taking notes from a textbook, you might have something like so:
+
+```
+Principles of Neural Science/
+  Ch1.md
+  Ch2.md
+  ...
+```
+
+But you don't want the cards in those Markdown files to have `Ch1`, `Ch2`, etc.
+as their deck name. TOML frontmatter allows you to give each chapter deck the same
+deck name.
+
 ## Database
 
 hashcards stores card performance data and the review history in an SQLite3

@@ -16,14 +16,83 @@ use std::collections::HashSet;
 use std::error::Error;
 use std::fmt::Display;
 use std::fmt::Formatter;
+use std::fs::read_to_string;
 use std::path::PathBuf;
 
+use serde::Deserialize;
 use walkdir::WalkDir;
 
+use crate::error::ErrorReport;
 use crate::error::Fallible;
 use crate::types::aliases::DeckName;
 use crate::types::card::Card;
 use crate::types::card::CardContent;
+
+/// Metadata that can be specified at the top of a deck file.
+#[derive(Debug, Deserialize)]
+struct DeckMetadata {
+    name: Option<String>,
+}
+
+/// Extract TOML frontmatter from markdown text.
+/// Returns (frontmatter_metadata, content_without_frontmatter)
+///
+/// This function returns a slice of the original text to avoid
+/// collecting lines, joining them, and then re-splitting in parse().
+fn extract_frontmatter(text: &str) -> Fallible<(DeckMetadata, &str)> {
+    let mut lines = text.lines().enumerate().peekable();
+
+    // Check if the file starts with frontmatter delimiter
+    match lines.peek() {
+        Some((_, line)) if line.trim() == "---" => {}
+        _ => return Ok((DeckMetadata { name: None }, text)),
+    };
+    lines.next(); // consume the opening delimiter
+
+    // Collect frontmatter lines and find closing delimiter
+    let mut frontmatter_lines = Vec::new();
+    let mut closing_line_idx = None;
+
+    for (idx, line) in lines {
+        if line.trim() == "---" {
+            closing_line_idx = Some(idx);
+            break;
+        }
+        frontmatter_lines.push(line);
+    }
+
+    let closing_line_idx = closing_line_idx
+        .ok_or_else(|| ErrorReport::new("Frontmatter opening '---' found but no closing '---'"))?;
+
+    // Parse TOML from frontmatter
+    let frontmatter_str = frontmatter_lines.join("\n");
+    let metadata: DeckMetadata = toml::from_str(&frontmatter_str)
+        .map_err(|e| ErrorReport::new(format!("Failed to parse TOML frontmatter: {}", e)))?;
+
+    // Find byte offset where content starts (line after closing delimiter)
+    // We do this by finding the position of the closing delimiter line in the original text
+    let content_start_line = closing_line_idx + 1;
+    let mut current_line = 0;
+    let mut byte_pos = None;
+
+    for (pos, ch) in text.char_indices() {
+        if ch == '\n' {
+            current_line += 1;
+            if current_line == content_start_line {
+                byte_pos = Some(pos + 1); // Start after the newline
+                break;
+            }
+        }
+    }
+
+    // If byte_pos was never set, content starts at end of text (empty content)
+    let content = match byte_pos {
+        Some(pos) if pos < text.len() => &text[pos..],
+        _ => "",
+    };
+
+    Ok((metadata, content))
+}
 
 /// Parses all Markdown files in the given directory.
 pub fn parse_deck(directory: &PathBuf) -> Fallible<Vec<Card>> {
@@ -32,14 +101,20 @@ pub fn parse_deck(directory: &PathBuf) -> Fallible<Vec<Card>> {
         let entry = entry?;
         let path = entry.path();
         if path.is_file() && path.extension().is_some_and(|ext| ext == "md") {
-            let text = std::fs::read_to_string(path)?;
-            let deck_name: DeckName = path
-                .file_stem()
-                .and_then(|os_str| os_str.to_str())
-                .unwrap_or("None")
-                .to_string();
+            let text = read_to_string(path)?;
+
+            // Extract frontmatter and get custom deck name if specified
+            let (metadata, content) = extract_frontmatter(&text)?;
+
+            let deck_name: DeckName = metadata.name.unwrap_or_else(|| {
+                path.file_stem()
+                    .and_then(|os_str| os_str.to_str())
+                    .unwrap_or("None")
+                    .to_string()
+            });
+
             let parser = Parser::new(deck_name, path.to_path_buf());
-            let cards = parser.parse(&text)?;
+            let cards = parser.parse(content)?;
             all_cards.extend(cards);
         }
     }
@@ -797,6 +872,161 @@ mod tests {
             }
             _ => panic!("Expected cloze card."),
         }
+        Ok(())
+    }
+
+    #[test]
+    fn test_extract_frontmatter_with_name() {
+        let input = r#"---
+name = "Custom Deck Name"
+---
+
+Q: What is Rust?
+A: A systems programming language."#;
+
+        let result = extract_frontmatter(input);
+        assert!(result.is_ok());
+        let (metadata, content) = result.unwrap();
+        assert_eq!(metadata.name, Some("Custom Deck Name".to_string()));
+        assert_eq!(
+            content.trim(),
+            "Q: What is Rust?\nA: A systems programming language."
+        );
+    }
+
+    #[test]
+    fn test_extract_frontmatter_without_name() {
+        let input = r#"---
+other_field = "value"
+---
+
+Q: What is Rust?
+A: A systems programming language."#;
+
+        let result = extract_frontmatter(input);
+        assert!(result.is_ok());
+        let (metadata, content) = result.unwrap();
+        assert_eq!(metadata.name, None);
+        assert_eq!(
+            content.trim(),
+            "Q: What is Rust?\nA: A systems programming language."
+        );
+    }
+
+    #[test]
+    fn test_extract_frontmatter_empty() {
+        let input = r#"---
+---
+
+Q: What is Rust?
+A: A systems programming language."#;
+
+        let result = extract_frontmatter(input);
+        assert!(result.is_ok());
+        let (metadata, content) = result.unwrap();
+        assert_eq!(metadata.name, None);
+        assert_eq!(
+            content.trim(),
+            "Q: What is Rust?\nA: A systems programming language."
+        );
+    }
+
+    #[test]
+    fn test_no_frontmatter() {
+        let input = "Q: What is Rust?\nA: A systems programming language.";
+        let result = extract_frontmatter(input);
+        assert!(result.is_ok());
+        let (metadata, content) = result.unwrap();
+        assert_eq!(metadata.name, None);
+        assert_eq!(content, input);
+    }
+
+    #[test]
+    fn test_frontmatter_unclosed() {
+        let input = r#"---
+name = "Custom Deck Name"
+
+Q: What is Rust?
+A: A systems programming language."#;
+
+        let result = extract_frontmatter(input);
+        assert!(result.is_err());
+        let err = result.err().unwrap();
+        assert!(err.to_string().contains("no closing '---'"));
+    }
+
+    #[test]
+    fn test_frontmatter_invalid_toml() {
+        let input = r#"---
+name = Custom Deck Name (missing quotes)
+---
+
+Q: What is Rust?"#;
+
+        let result = extract_frontmatter(input);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_parse_with_frontmatter() -> Result<(), ParserError> {
+        let input = r#"---
+name = "Custom Deck Name"
+---
+
+Q: What is Rust?
+A: A systems programming language."#;
+
+        let (metadata, content) = extract_frontmatter(input).unwrap();
+        assert_eq!(metadata.name, Some("Custom Deck Name".to_string()));
+
+        let parser = make_test_parser();
+        let cards = parser.parse(content)?;
+        assert_eq!(cards.len(), 1);
+        Ok(())
+    }
+
+    #[test]
+    fn test_parse_deck_with_frontmatter() -> Fallible<()> {
+        let directory = temp_dir();
+        let directory = directory.join("frontmatter_test");
+        create_dir_all(&directory).expect("Failed to create test directory");
+
+        let file1 = directory.join("ch1.md");
+        let file2 = directory.join("ch2.md");
+
+        std::fs::write(
+            &file1,
+            r#"---
+name = "Cell Biology"
+---
+
+Q: What is a cell?
+A: The basic unit of life."#,
+        )
+        .expect("Failed to write test file");
+
+        std::fs::write(
+            &file2,
+            r#"---
+name = "Cell Biology"
+---
+
+Q: What is DNA?
+A: Genetic material."#,
+        )
+        .expect("Failed to write test file");
+
+        let deck = parse_deck(&directory)?;
+
+        // Both cards should have the custom deck name "Cell Biology"
+        assert_eq!(deck.len(), 2);
+        for card in &deck {
+            assert_eq!(card.deck_name(), "Cell Biology");
+        }
+
+        // Clean up
+        std::fs::remove_dir_all(&directory).ok();
+
         Ok(())
     }
 }

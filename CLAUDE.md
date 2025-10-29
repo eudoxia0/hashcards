@@ -160,6 +160,29 @@ If you need to validate something about all cards or the collection as a whole:
 
 **Why:** Both commands use `Collection::new()` as their entry point, so validation added there runs for both.
 
+# Pattern: Adding New Features
+
+When adding a new user-facing feature or significant improvement:
+
+1. Implement the feature
+2. Add tests
+3. Update `CHANGELOG.xml` in the `<unreleased>` section
+4. Update `README.md` if the feature affects user-facing documentation
+5. Update this `CLAUDE.md` if the feature introduces new patterns or conventions
+
+**CHANGELOG.xml format:**
+```xml
+<unreleased>
+    <added>
+        <change author="your-github-username">
+            Brief description of the feature.
+        </change>
+    </added>
+</unreleased>
+```
+
+Other sections include `<changed>`, `<fixed>`, and `<removed>`.
+
 # Testing Strategy
 
 - Unit tests for individual functions/methods. E2E tests simulate a full drilling session via HTTP requests.
