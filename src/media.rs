@@ -26,7 +26,7 @@ use crate::types::card::Card;
 use crate::types::card::CardContent;
 
 /// Represents a missing media file reference.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct MissingMedia {
     pub file_path: String,
     pub card_file: PathBuf,
@@ -84,12 +84,7 @@ pub fn validate_media_files(cards: &[Card], base_dir: &Path) -> Fallible<()> {
     if !missing.is_empty() {
         // Sort missing files for consistent error messages.
         let mut missing: Vec<MissingMedia> = missing.into_iter().collect();
-        missing.sort_by(|a, b| {
-            a.card_file
-                .cmp(&b.card_file)
-                .then_with(|| a.card_lines.cmp(&b.card_lines))
-                .then_with(|| a.file_path.cmp(&b.file_path))
-        });
+        missing.sort();
 
         // Build error message.
         let mut msg = String::from("Missing media files referenced in cards:\n");
