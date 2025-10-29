@@ -35,38 +35,63 @@ struct DeckMetadata {
 
 /// Extract TOML frontmatter from markdown text.
 /// Returns (frontmatter_metadata, content_without_frontmatter)
-fn extract_frontmatter(text: &str) -> Fallible<(DeckMetadata, String)> {
-    let lines: Vec<&str> = text.lines().collect();
+///
+/// This function returns a slice of the original text to avoid
+/// collecting lines, joining them, and then re-splitting in parse().
+fn extract_frontmatter(text: &str) -> Fallible<(DeckMetadata, &str)> {
+    let mut lines = text.lines().enumerate().peekable();
 
     // Check if the file starts with frontmatter delimiter
-    if lines.first().map(|l| l.trim()) != Some("---") {
-        return Ok((DeckMetadata { name: None }, text.to_string()));
+    match lines.peek() {
+        Some((_, line)) if line.trim() == "---" => {},
+        _ => return Ok((DeckMetadata { name: None }, text)),
+    };
+    lines.next(); // consume the opening delimiter
+
+    // Collect frontmatter lines and find closing delimiter
+    let mut frontmatter_lines = Vec::new();
+    let mut closing_line_idx = None;
+
+    for (idx, line) in lines {
+        if line.trim() == "---" {
+            closing_line_idx = Some(idx);
+            break;
+        }
+        frontmatter_lines.push(line);
     }
 
-    // Find the closing delimiter
-    let closing_index = lines[1..]
-        .iter()
-        .position(|l| l.trim() == "---")
-        .map(|i| i + 1); // +1 because we started from index 1
+    let closing_line_idx = closing_line_idx.ok_or_else(|| {
+        crate::error::ErrorReport::new("Frontmatter opening '---' found but no closing '---'")
+    })?;
 
-    if let Some(end_idx) = closing_index {
-        // Extract frontmatter content (between the delimiters)
-        let frontmatter_lines = &lines[1..end_idx];
-        let frontmatter_str = frontmatter_lines.join("\n");
+    // Parse TOML from frontmatter
+    let frontmatter_str = frontmatter_lines.join("\n");
+    let metadata: DeckMetadata = toml::from_str(&frontmatter_str)
+        .map_err(|e| crate::error::ErrorReport::new(format!("Failed to parse TOML frontmatter: {}", e)))?;
 
-        // Parse TOML
-        let metadata: DeckMetadata = toml::from_str(&frontmatter_str)
-            .map_err(|e| crate::error::ErrorReport::new(format!("Failed to parse TOML frontmatter: {}", e)))?;
+    // Find byte offset where content starts (line after closing delimiter)
+    // We do this by finding the position of the closing delimiter line in the original text
+    let content_start_line = closing_line_idx + 1;
+    let mut current_line = 0;
+    let mut byte_pos = None;
 
-        // Extract content after frontmatter
-        let content_lines = &lines[end_idx + 1..];
-        let content = content_lines.join("\n");
-
-        Ok((metadata, content))
-    } else {
-        // Opening delimiter found but no closing delimiter
-        fail("Frontmatter opening '---' found but no closing '---'")
+    for (pos, ch) in text.char_indices() {
+        if ch == '\n' {
+            current_line += 1;
+            if current_line == content_start_line {
+                byte_pos = Some(pos + 1); // Start after the newline
+                break;
+            }
+        }
     }
+
+    // If byte_pos was never set, content starts at end of text (empty content)
+    let content = match byte_pos {
+        Some(pos) if pos < text.len() => &text[pos..],
+        _ => "",
+    };
+
+    Ok((metadata, content))
 }
 
 /// Parses all Markdown files in the given directory.
