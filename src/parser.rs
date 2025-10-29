@@ -78,20 +78,19 @@ pub fn parse_deck(directory: &PathBuf) -> Fallible<Vec<Card>> {
             let text = std::fs::read_to_string(path)?;
 
             // Extract frontmatter and get custom deck name if specified
-            let (metadata, content) = extract_frontmatter(&text)
-                .map_err(|e| std::io::Error::new(
+            let (metadata, content) = extract_frontmatter(&text).map_err(|e| {
+                std::io::Error::new(
                     std::io::ErrorKind::InvalidData,
-                    format!("Error in {}: {}", path.display(), e)
-                ))?;
+                    format!("Error in {}: {}", path.display(), e),
+                )
+            })?;
 
-            let deck_name: DeckName = metadata
-                .and_then(|m| m.name)
-                .unwrap_or_else(|| {
-                    path.file_stem()
-                        .and_then(|os_str| os_str.to_str())
-                        .unwrap_or("None")
-                        .to_string()
-                });
+            let deck_name: DeckName = metadata.and_then(|m| m.name).unwrap_or_else(|| {
+                path.file_stem()
+                    .and_then(|os_str| os_str.to_str())
+                    .unwrap_or("None")
+                    .to_string()
+            });
 
             let parser = Parser::new(deck_name, path.to_path_buf());
             let cards = parser.parse(&content)?;
