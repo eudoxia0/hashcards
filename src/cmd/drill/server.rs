@@ -28,8 +28,10 @@ use axum::response::Html;
 use axum::routing::get;
 use axum::routing::post;
 use tokio::net::TcpListener;
+use tokio::select;
 use tokio::signal;
-use tokio::sync::oneshot;
+use tokio::sync::oneshot::Receiver;
+use tokio::sync::oneshot::channel;
 
 use crate::cmd::drill::cache::Cache;
 use crate::cmd::drill::file::validate_file_path;
@@ -94,7 +96,7 @@ pub async fn start_server(
     }
 
     // Create shutdown channel
-    let (shutdown_tx, shutdown_rx) = oneshot::channel();
+    let (shutdown_tx, shutdown_rx) = channel();
 
     let state = ServerState {
         port,
@@ -213,7 +215,7 @@ async fn file_handler(
     }
 }
 
-async fn shutdown_signal(shutdown_rx: oneshot::Receiver<()>) {
+async fn shutdown_signal(shutdown_rx: Receiver<()>) {
     let ctrl_c = async {
         signal::ctrl_c()
             .await
@@ -224,7 +226,7 @@ async fn shutdown_signal(shutdown_rx: oneshot::Receiver<()>) {
         shutdown_rx.await.ok();
     };
 
-    tokio::select! {
+    select! {
         _ = ctrl_c => {
             log::debug!("Received Ctrl+C, shutting down gracefully");
         },
