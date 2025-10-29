@@ -100,11 +100,6 @@ jobs:
       - name: checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
-      - name: validate CHANGELOG.xml is well-formed
-        uses: ChristophWurst/xmllint-action@7c54ff113fc0f6d4588a15cb4dfe31b6ecca5212
-        with:
-          xml-file: CHANGELOG.xml
-
       - name: validate CHANGELOG.xml against schema
         uses: ChristophWurst/xmllint-action@7c54ff113fc0f6d4588a15cb4dfe31b6ecca5212
         with:
