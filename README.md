@@ -189,8 +189,8 @@ This section describes the text format used by hashcards.
 Question-answer flashcards are written like this:
 
 ```
-Q: What is the order of a group?
-A: The cardinality of its underlying set.
+Q: What are the possible values of electric charge?
+A: Any integer multiple of the fundamental charge.
 ```
 
 Both the question and the answer can span multiple lines:
