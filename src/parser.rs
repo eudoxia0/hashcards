@@ -381,9 +381,10 @@ impl Parser {
                         // marks in other positions would trigger it.
                         let nextopt = text.as_bytes().get(bytepos + 1).copied();
                         if let Some(next) = nextopt
-                            && next == b'[' {
-                                image_mode = true;
-                            }
+                            && next == b'['
+                        {
+                            image_mode = true;
+                        }
                     }
                     clean_text.push(c);
                 } else {
@@ -436,9 +437,10 @@ impl Parser {
                     // marks in other positions would trigger it.
                     let nextopt = text.as_bytes().get(bytepos + 1).copied();
                     if let Some(next) = nextopt
-                        && next == b'[' {
-                            image_mode = true;
-                        }
+                        && next == b'['
+                    {
+                        image_mode = true;
+                    }
                 }
                 index += 1;
             } else {
