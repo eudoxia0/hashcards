@@ -19,7 +19,7 @@
         </added>
         <changed>
             <change author="eudoxia0">
-                The UI now works for small and mobile device sizes.
+                The UI now works pn small and mobile viewports.
             </change>
             <change author="eudoxia0">
                 Update dependencies.
