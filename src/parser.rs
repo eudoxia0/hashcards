@@ -21,8 +21,8 @@ use std::path::PathBuf;
 use serde::Deserialize;
 use walkdir::WalkDir;
 
-use crate::error::fail;
 use crate::error::Fallible;
+use crate::error::fail;
 use crate::types::aliases::DeckName;
 use crate::types::card::Card;
 use crate::types::card::CardContent;
@@ -43,7 +43,7 @@ fn extract_frontmatter(text: &str) -> Fallible<(DeckMetadata, &str)> {
 
     // Check if the file starts with frontmatter delimiter
     match lines.peek() {
-        Some((_, line)) if line.trim() == "---" => {},
+        Some((_, line)) if line.trim() == "---" => {}
         _ => return Ok((DeckMetadata { name: None }, text)),
     };
     lines.next(); // consume the opening delimiter
@@ -66,8 +66,9 @@ fn extract_frontmatter(text: &str) -> Fallible<(DeckMetadata, &str)> {
 
     // Parse TOML from frontmatter
     let frontmatter_str = frontmatter_lines.join("\n");
-    let metadata: DeckMetadata = toml::from_str(&frontmatter_str)
-        .map_err(|e| crate::error::ErrorReport::new(format!("Failed to parse TOML frontmatter: {}", e)))?;
+    let metadata: DeckMetadata = toml::from_str(&frontmatter_str).map_err(|e| {
+        crate::error::ErrorReport::new(format!("Failed to parse TOML frontmatter: {}", e))
+    })?;
 
     // Find byte offset where content starts (line after closing delimiter)
     // We do this by finding the position of the closing delimiter line in the original text
