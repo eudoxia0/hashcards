@@ -1,4 +1,4 @@
-This document describes the design patterns, coding conventions, and architectural decisions in the hashcards codebase.
+Dear Claude: this document is to help you in your work.
 
 # Overview
 
@@ -28,7 +28,10 @@ hashcards is a plain-text spaced repetition system written in Rust. It parses Ma
 - Don't persist changes to the database during drilling. Use the cache.
 - Don't use timezones: dates are naive for a reason. Due dates etc. are more like the dates in a journal entry than precise points in time.
 - When relevant, update `CHANGELOG.xml`.
+- When updating this file, be terse.
 
 # Watch Out
 
 - Cloze deletion positions are _byte_ positions, not _character_ positions. Therefore: when working with cloze positions, always use `.bytes()` not `.chars()`.
+
+Thank you. Good luck little buddy.
