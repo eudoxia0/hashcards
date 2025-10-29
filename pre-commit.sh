@@ -18,7 +18,7 @@ function check() {
 
 check "fmt" "cargo +nightly fmt"
 check "check" "cargo check"
-check "clippy" "cargo clippy" &
+check "clippy" "cargo clippy -- -D warnings" &
 check "machete" "cargo machete" &
 check "deny" "cargo deny check licenses" &
 check "test" "cargo test" &
