@@ -232,12 +232,25 @@ This section documents specific hashcards features.
 
 ### LaTeX Support
 
-Cards support LaTeX math via KaTeX. Use `$...$` for inline math and `$$...$$`
-for display math:
+Cards support LaTeX math via KaTeX.
+
+Use `$...$` for inline math:
 
 ```
-Q: What is Euler's identity?
-A: $e^{i\pi} + 1 = 0$
+Q: What is the combinatorial meaning of $\binom{n}{k}$?
+A: From a set of size $n$, we can choose $\binom{n}{k}$ subsets of size $k$.
+```
+
+And `$$...$$` for display matH:
+
+```
+C: The [amount of substance] of a sample, denoted $n$, is defined as:
+
+$$
+n = \frac{N}{N_A}
+$$
+
+where $N$ is [the number of elementary entities] and $N_A$ is [Avogadro's constant].
 ```
 
 You can define custom LaTeX macros by creating a `macros.tex` file in your
