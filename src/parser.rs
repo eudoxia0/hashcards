@@ -22,7 +22,6 @@ use serde::Deserialize;
 use walkdir::WalkDir;
 
 use crate::error::Fallible;
-use crate::error::fail;
 use crate::types::aliases::DeckName;
 use crate::types::card::Card;
 use crate::types::card::CardContent;
@@ -115,7 +114,7 @@ pub fn parse_deck(directory: &PathBuf) -> Fallible<Vec<Card>> {
             });
 
             let parser = Parser::new(deck_name, path.to_path_buf());
-            let cards = parser.parse(&content)?;
+            let cards = parser.parse(content)?;
             all_cards.extend(cards);
         }
     }
