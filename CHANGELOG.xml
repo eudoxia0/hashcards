@@ -1,40 +1,43 @@
 <changelog>
     <unreleased>
-        <added>
-            <change author="eudoxia0">
-                Add extra metadata to `Cargo.toml`.
-            </change>
-            <change author="eudoxia0">
-                Add `pre-commish.sh` hook.
-            </change>
-            <change author="eudoxia0">
-                The `macros.tex` file now supports comments: lines starting with `%` are ignored.
-            </change>
-            <change author="eudoxia0">
-                Add CSS to render `blockquote` elements in a grey box.
-            </change>
-            <change author="eudoxia0">
-                The `drill` and `check` commands now validate that images/audio files referenced in flashcards actually exist.
-            </change>
-        </added>
-        <changed>
-            <change author="eudoxia0">
-                The UI now works for small and mobile device sizes.
-            </change>
-            <change author="eudoxia0">
-                Update dependencies.
-            </change>
-            <change author="eudoxia0">
-                Update KaTeX to `0.16.25`.
-            </change>
-        </changed>
-        <fixed>
-            <change author="eudoxia0">
-                Fixed a bug where exclamation marks broke the parsing of Cloze deletions. See [issue 29](https://github.com/eudoxia0/hashcards/issues/29).
-            </change>
-        </fixed>
+
     </unreleased>
     <releases>
+        <release version="0.1.1" date="2025-10-29">
+            <added>
+                <change author="eudoxia0">
+                    Add extra metadata to `Cargo.toml`.
+                </change>
+                <change author="eudoxia0">
+                    Add `pre-commit.sh` hook.
+                </change>
+                <change author="eudoxia0">
+                    The `macros.tex` file now supports comments: lines starting with `%` are ignored.
+                </change>
+                <change author="eudoxia0">
+                    Add CSS to render `blockquote` elements in a grey box.
+                </change>
+                <change author="eudoxia0">
+                    The `drill` and `check` commands now validate that images/audio files referenced in flashcards actually exist.
+                </change>
+            </added>
+            <changed>
+                <change author="eudoxia0">
+                    The UI now works pn small and mobile viewports.
+                </change>
+                <change author="eudoxia0">
+                    Update dependencies.
+                </change>
+                <change author="eudoxia0">
+                    Update KaTeX to `0.16.25`.
+                </change>
+            </changed>
+            <fixed>
+                <change author="eudoxia0">
+                    Fixed a bug where exclamation marks broke the parsing of Cloze deletions. See [issue 29](https://github.com/eudoxia0/hashcards/issues/29).
+                </change>
+            </fixed>
+        </release>
         <release version="0.1.0" date="2025-10-21">
             <added>
                 <change author="eudoxia0">
