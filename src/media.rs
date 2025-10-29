@@ -83,7 +83,8 @@ pub fn validate_media_files(cards: &[Card], base_dir: &Path) -> Fallible<()> {
         // Sort missing files for consistent error messages
         let mut missing: Vec<_> = missing.into_iter().collect();
         missing.sort_by(|a, b| {
-            a.card_file.cmp(&b.card_file)
+            a.card_file
+                .cmp(&b.card_file)
                 .then_with(|| a.card_lines.cmp(&b.card_lines))
                 .then_with(|| a.file_path.cmp(&b.file_path))
         });
