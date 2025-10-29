@@ -267,6 +267,15 @@ Image paths are resolved relative to the collection root (i.e., the directory
 passed to the `drill` command), _not_ the current file. Image paths cannot be
 symbolic links or point (via `..` components) to files outside the collection.
 
+### Audio
+
+Works like images:
+
+```
+Q: How do you pronounce "پرنده" in Persian?
+A: ![](audio/parande.mp3)
+```
+
 ### Deck Names
 
 By default, the filename of a deck is the name of a deck, e.g. a file
