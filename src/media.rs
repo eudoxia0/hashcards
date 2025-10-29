@@ -53,12 +53,14 @@ pub fn validate_media_files(cards: &[Card], base_dir: &Path) -> Fallible<()> {
 
     for card in cards {
         // Extract markdown content from the card.
+        //
+        // TODO: perhaps this should be lifted to a method of the `CardContent`
+        // enum.
         let markdown_texts = match card.content() {
             CardContent::Basic { question, answer } => vec![question.as_str(), answer.as_str()],
             CardContent::Cloze { text, .. } => vec![text.as_str()],
         };
 
-        // Extract and validate media paths.
         for markdown in markdown_texts {
             for path in extract_media_paths(markdown) {
                 // Skip URLs (http://, https://, etc.)
@@ -81,7 +83,7 @@ pub fn validate_media_files(cards: &[Card], base_dir: &Path) -> Fallible<()> {
 
     if !missing.is_empty() {
         // Sort missing files for consistent error messages.
-        let mut missing: Vec<_> = missing.into_iter().collect();
+        let mut missing: Vec<MissingMedia> = missing.into_iter().collect();
         missing.sort_by(|a, b| {
             a.card_file
                 .cmp(&b.card_file)
