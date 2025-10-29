@@ -235,6 +235,43 @@ body {
             }
         }
     }
+
+    .shutdown-container {
+        margin-top: 48px;
+        text-align: center;
+
+        form {
+            display: inline-block;
+        }
+
+        .shutdown-button {
+            background: #dc3545;
+            color: white;
+            border: 1px solid #c82333;
+            padding: 12px 24px;
+            font-size: 18px;
+            font-family:
+                system-ui,
+                -apple-system,
+                "Helvetica Neue",
+                sans-serif;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            box-shadow: rgba(220, 53, 69, 0.3) 0px 2px 8px 0px;
+            transition: background-color 0.2s, box-shadow 0.2s;
+
+            &:hover {
+                background: #c82333;
+                box-shadow: rgba(220, 53, 69, 0.5) 0px 4px 12px 0px;
+            }
+
+            &:active {
+                background: #bd2130;
+                box-shadow: rgba(220, 53, 69, 0.2) 0px 1px 4px 0px;
+            }
+        }
+    }
 }
 
 /* Mobile */
