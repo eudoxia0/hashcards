@@ -16,7 +16,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::Mutex;
 
-use tokio::sync::oneshot;
+use tokio::sync::oneshot::Sender;
 
 use crate::cmd::drill::cache::Cache;
 use crate::db::Database;
@@ -36,7 +36,7 @@ pub struct ServerState {
     pub total_cards: usize,
     pub session_started_at: Timestamp,
     pub mutable: Arc<Mutex<MutableState>>,
-    pub shutdown_tx: Arc<Mutex<Option<oneshot::Sender<()>>>>,
+    pub shutdown_tx: Arc<Mutex<Option<Sender<()>>>>,
 }
 
 pub struct MutableState {
