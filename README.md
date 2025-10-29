@@ -256,11 +256,11 @@ second and so on.
 Ordinary Markdown image syntax works:
 
 ```
-Q: What does this diagram show?
+Q: Identify this painting:
 
-![diagram](images/diagram.png)
+![](art/diagram.png)
 
-A: The structure of a neuron.
+A: _The Siren_, by John William Waterhouse.
 ```
 
 Image paths are resolved relative to the collection root (i.e., the directory
