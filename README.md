@@ -29,10 +29,15 @@ Announcement blog post: [Hashcards: A Plain-Text Spaced Repetition System][blog]
 The following Markdown file is a valid hashcards deck:
 
 ```
-Q: What is the capital of France?
-A: Paris
+Q: How many neurons are there in the human brain?
+A: ~80 billion.
 
-C: [Paris] is the capital of [France].
+C: An [agonist] is a ligand that binds to a receptor and [activates it].
+
+Q: How many synapses are there in a human brain?
+A: ~100 trillion
+
+C: In the nervous system, [chemical] communication happens [between] neurons.
 ```
 
 For a larger example, see [my personal flashcards repo][fc].
