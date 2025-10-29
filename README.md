@@ -290,7 +290,7 @@ Principles of Neural Science/
 ```
 
 But you don't want the cards in those Markdown files to have `Ch1`, `Ch2`, etc.
-as their deck name. TOML frontmatter allows you to give chapter deck the same
+as their deck name. TOML frontmatter allows you to give each chapter deck the same
 deck name.
 
 ## Database
