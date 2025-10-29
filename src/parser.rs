@@ -21,6 +21,7 @@ use std::path::PathBuf;
 use serde::Deserialize;
 use walkdir::WalkDir;
 
+use crate::error::fail;
 use crate::error::Fallible;
 use crate::types::aliases::DeckName;
 use crate::types::card::Card;
@@ -34,12 +35,12 @@ struct DeckMetadata {
 
 /// Extract TOML frontmatter from markdown text.
 /// Returns (frontmatter_metadata, content_without_frontmatter)
-fn extract_frontmatter(text: &str) -> Result<(Option<DeckMetadata>, String), String> {
+fn extract_frontmatter(text: &str) -> Fallible<(DeckMetadata, String)> {
     let lines: Vec<&str> = text.lines().collect();
 
     // Check if the file starts with frontmatter delimiter
     if lines.first().map(|l| l.trim()) != Some("---") {
-        return Ok((None, text.to_string()));
+        return Ok((DeckMetadata { name: None }, text.to_string()));
     }
 
     // Find the closing delimiter
@@ -55,16 +56,16 @@ fn extract_frontmatter(text: &str) -> Result<(Option<DeckMetadata>, String), Str
 
         // Parse TOML
         let metadata: DeckMetadata = toml::from_str(&frontmatter_str)
-            .map_err(|e| format!("Failed to parse TOML frontmatter: {}", e))?;
+            .map_err(|e| crate::error::ErrorReport::new(format!("Failed to parse TOML frontmatter: {}", e)))?;
 
         // Extract content after frontmatter
         let content_lines = &lines[end_idx + 1..];
         let content = content_lines.join("\n");
 
-        Ok((Some(metadata), content))
+        Ok((metadata, content))
     } else {
         // Opening delimiter found but no closing delimiter
-        Err("Frontmatter opening '---' found but no closing '---'".to_string())
+        fail("Frontmatter opening '---' found but no closing '---'")
     }
 }
 
@@ -78,14 +79,9 @@ pub fn parse_deck(directory: &PathBuf) -> Fallible<Vec<Card>> {
             let text = std::fs::read_to_string(path)?;
 
             // Extract frontmatter and get custom deck name if specified
-            let (metadata, content) = extract_frontmatter(&text).map_err(|e| {
-                std::io::Error::new(
-                    std::io::ErrorKind::InvalidData,
-                    format!("Error in {}: {}", path.display(), e),
-                )
-            })?;
+            let (metadata, content) = extract_frontmatter(&text)?;
 
-            let deck_name: DeckName = metadata.and_then(|m| m.name).unwrap_or_else(|| {
+            let deck_name: DeckName = metadata.name.unwrap_or_else(|| {
                 path.file_stem()
                     .and_then(|os_str| os_str.to_str())
                     .unwrap_or("None")
@@ -866,8 +862,6 @@ A: A systems programming language."#;
         let result = extract_frontmatter(input);
         assert!(result.is_ok());
         let (metadata, content) = result.unwrap();
-        assert!(metadata.is_some());
-        let metadata = metadata.unwrap();
         assert_eq!(metadata.name, Some("Custom Deck Name".to_string()));
         assert_eq!(
             content.trim(),
@@ -887,8 +881,6 @@ A: A systems programming language."#;
         let result = extract_frontmatter(input);
         assert!(result.is_ok());
         let (metadata, content) = result.unwrap();
-        assert!(metadata.is_some());
-        let metadata = metadata.unwrap();
         assert_eq!(metadata.name, None);
         assert_eq!(
             content.trim(),
@@ -907,7 +899,7 @@ A: A systems programming language."#;
         let result = extract_frontmatter(input);
         assert!(result.is_ok());
         let (metadata, content) = result.unwrap();
-        assert!(metadata.is_some());
+        assert_eq!(metadata.name, None);
         assert_eq!(
             content.trim(),
             "Q: What is Rust?\nA: A systems programming language."
@@ -920,7 +912,7 @@ A: A systems programming language."#;
         let result = extract_frontmatter(input);
         assert!(result.is_ok());
         let (metadata, content) = result.unwrap();
-        assert!(metadata.is_none());
+        assert_eq!(metadata.name, None);
         assert_eq!(content, input);
     }
 
@@ -960,10 +952,7 @@ Q: What is Rust?
 A: A systems programming language."#;
 
         let (metadata, content) = extract_frontmatter(input).unwrap();
-        assert_eq!(
-            metadata.as_ref().and_then(|m| m.name.clone()),
-            Some("Custom Deck Name".to_string())
-        );
+        assert_eq!(metadata.name, Some("Custom Deck Name".to_string()));
 
         let parser = make_test_parser();
         let cards = parser.parse(&content)?;
