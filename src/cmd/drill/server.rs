@@ -39,6 +39,7 @@ use crate::cmd::drill::state::ServerState;
 use crate::collection::Collection;
 use crate::db::Database;
 use crate::error::Fallible;
+use crate::error::fail;
 use crate::types::card::Card;
 use crate::types::card_hash::CardHash;
 use crate::types::date::Date;
@@ -130,7 +131,7 @@ pub async fn start_server(
         Ok(())
     } else {
         // Session was not complete, exit with error code
-        Err(crate::error::fail("Session interrupted before completion"))
+        fail("Session interrupted before completion")
     }
 }
 
