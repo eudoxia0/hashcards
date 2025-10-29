@@ -25,6 +25,11 @@
                 Update KaTeX to `0.16.25`.
             </change>
         </changed>
+        <fixed>
+            <change author="eudoxia0">
+                Fixed a bug where exclamation marks broke the parsing of Cloze deletions. See [issue 29](https://github.com/eudoxia0/hashcards/issues/29).
+            </change>
+        </fixed>
     </unreleased>
     <releases>
         <release version="0.1.0" date="2025-10-21">

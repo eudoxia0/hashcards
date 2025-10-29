@@ -362,7 +362,7 @@ impl Parser {
             // positions are byte positions, not character positions. This
             // keeps things tractable: bytes are well-understood, "characters"
             // are a vague abstract concept.
-            for c in text.bytes() {
+            for (bytepos, c) in text.bytes().enumerate() {
                 if c == b'[' {
                     if image_mode {
                         clean_text.push(c);
@@ -375,7 +375,17 @@ impl Parser {
                         clean_text.push(c);
                     }
                 } else if c == b'!' {
-                    image_mode = true;
+                    if !image_mode {
+                        // image_mode must be turned on *only* if the '!' is
+                        // immediately before a `[`. Otherwise, exclamation
+                        // marks in other positions would trigger it.
+                        let nextopt = text.bytes().nth(bytepos + 1);
+                        if let Some(next) = nextopt {
+                            if next == b'[' {
+                                image_mode = true;
+                            }
+                        }
+                    }
                     clean_text.push(c);
                 } else {
                     clean_text.push(c);
@@ -396,7 +406,7 @@ impl Parser {
         let mut start = None;
         let mut index = 0;
         let mut image_mode = false;
-        for c in text.bytes() {
+        for (bytepos, c) in text.bytes().enumerate() {
             if c == b'[' {
                 if image_mode {
                     index += 1;
@@ -421,7 +431,17 @@ impl Parser {
                     start = None;
                 }
             } else if c == b'!' {
-                image_mode = true;
+                if !image_mode {
+                    // image_mode must be turned on *only* if the '!' is
+                    // immediately before a `[`. Otherwise, exclamation
+                    // marks in other positions would trigger it.
+                    let nextopt = text.bytes().nth(bytepos + 1);
+                    if let Some(next) = nextopt {
+                        if next == b'[' {
+                            image_mode = true;
+                        }
+                    }
+                }
                 index += 1;
             } else {
                 index += 1;
@@ -760,5 +780,23 @@ mod tests {
             err.to_string(),
             "Cloze card contains invalid UTF-8. Location: test.md:1"
         );
+    }
+
+    /// See: <https://github.com/eudoxia0/hashcards/issues/29>
+    #[test]
+    fn test_cloze_deletion_with_exclamation_sign() -> Result<(), ParserError> {
+        let input = "C: The notation [$n!$] means 'n factorial'.";
+        let parser = make_test_parser();
+        let result = parser.parse(input);
+        let cards = result.unwrap();
+        assert_eq!(cards.len(), 1);
+        let card: Card = cards[0].clone();
+        match &card.content() {
+            CardContent::Cloze { text, .. } => {
+                assert_eq!(text, "The notation $n!$ means 'n factorial'.");
+            }
+            _ => panic!("Expected cloze card."),
+        }
+        Ok(())
     }
 }
