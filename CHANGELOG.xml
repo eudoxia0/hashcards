@@ -1,6 +1,8 @@
 <changelog>
     <unreleased>
-
+        <added>
+            Deck files now accept TOML frontmatter, so you can override the inferred deck name.
+        </added>
     </unreleased>
     <releases>
         <release version="0.1.1" date="2025-10-29">
