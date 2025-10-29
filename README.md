@@ -247,7 +247,7 @@ Q: What is the combinatorial meaning of $\binom{n}{k}$?
 A: From a set of size $n$, we can choose $\binom{n}{k}$ subsets of size $k$.
 ```
 
-And `$$...$$` for display matH:
+And `$$...$$` for display math:
 
 ```
 C: The [amount of substance] of a sample, denoted $n$, is defined as:
