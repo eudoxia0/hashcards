@@ -39,6 +39,7 @@ enum Action {
     Hard,
     Good,
     Easy,
+    Shutdown,
 }
 
 impl Action {
@@ -93,6 +94,20 @@ async fn action_handler(state: ServerState, action: Action) -> Fallible<()> {
         }
         Action::End => {
             finish_session(&mut mutable, &state)?;
+        }
+        Action::Shutdown => {
+            // Only allow shutdown if session is finished
+            if mutable.finished_at.is_some() {
+                // Release the lock before sending shutdown signal.
+                drop(mutable);
+                let mut shutdown_tx = state.shutdown_tx.lock().unwrap();
+                // Since this is a one-shot channel, `send()` linearly consumes
+                // `tx`. Therefore we have to mutate the cell and put a `None`
+                // in its place using the `take()` method.
+                if let Some(tx) = shutdown_tx.take() {
+                    let _ = tx.send(());
+                }
+            }
         }
         Action::Forgot | Action::Hard | Action::Good | Action::Easy => {
             if mutable.reveal {

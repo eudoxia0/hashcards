@@ -28,7 +28,10 @@ use axum::response::Html;
 use axum::routing::get;
 use axum::routing::post;
 use tokio::net::TcpListener;
+use tokio::select;
 use tokio::signal;
+use tokio::sync::oneshot::Receiver;
+use tokio::sync::oneshot::channel;
 
 use crate::cmd::drill::cache::Cache;
 use crate::cmd::drill::file::validate_file_path;
@@ -92,6 +95,9 @@ pub async fn start_server(
         cache.insert(card.hash(), performance)?;
     }
 
+    // Create shutdown channel
+    let (shutdown_tx, shutdown_rx) = channel();
+
     let state = ServerState {
         port,
         directory,
@@ -106,6 +112,7 @@ pub async fn start_server(
             reviews: Vec::new(),
             finished_at: None,
         })),
+        shutdown_tx: Arc::new(Mutex::new(Some(shutdown_tx))),
     };
     let app = Router::new();
     let app = app.route("/", get(get_handler));
@@ -117,11 +124,11 @@ pub async fn start_server(
     let app = app.with_state(state.clone());
     let bind = format!("0.0.0.0:{port}");
 
-    // Start the server with graceful shutdown on Ctrl+C.
+    // Start the server with graceful shutdown on Ctrl+C or shutdown button.
     log::debug!("Starting server on {bind}");
     let listener = TcpListener::bind(bind).await?;
     axum::serve(listener, app)
-        .with_graceful_shutdown(shutdown_signal())
+        .with_graceful_shutdown(shutdown_signal(shutdown_rx))
         .await?;
 
     // Check if session was complete when server shut down
@@ -208,9 +215,25 @@ async fn file_handler(
     }
 }
 
-async fn shutdown_signal() {
-    let _ = signal::ctrl_c().await;
-    log::debug!("Received Ctrl+C, shutting down gracefully");
+async fn shutdown_signal(shutdown_rx: Receiver<()>) {
+    let ctrl_c = async {
+        signal::ctrl_c()
+            .await
+            .expect("failed to install Ctrl+C handler");
+    };
+
+    let shutdown = async {
+        shutdown_rx.await.ok();
+    };
+
+    select! {
+        _ = ctrl_c => {
+            log::debug!("Received Ctrl+C, shutting down gracefully");
+        },
+        _ = shutdown => {
+            log::debug!("Received shutdown signal, shutting down gracefully");
+        },
+    }
 }
 
 fn filter_deck(
