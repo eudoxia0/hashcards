@@ -29,10 +29,10 @@ Announcement blog post: [Hashcards: A Plain-Text Spaced Repetition System][blog]
 The following Markdown file is a valid hashcards deck:
 
 ```
-Q: What is the capital of France?
-A: Paris
+Q: What is the "overview effect"?
+A: The cognitive shift experienced by astronauts when viewing Earth from space—a sense of awe and interconnectedness.
 
-C: [Paris] is the capital of [France].
+C: In 1969, [Apollo 11] landed on the Moon with astronauts [Neil Armstrong] and [Buzz Aldrin].
 ```
 
 For a larger example, see [my personal flashcards repo][fc].
@@ -61,11 +61,11 @@ Create a directory for your flashcards, and add a Markdown file with some cards:
 ```bash
 $ mkdir cards
 $ cd cards
-$ cat > Geography.md << 'EOF'
-Q: What is the capital of France?
-A: Paris
+$ cat > Space.md << 'EOF'
+Q: What is the "overview effect"?
+A: The cognitive shift experienced by astronauts when viewing Earth from space—a sense of awe and interconnectedness.
 
-C: [Paris] is the capital of [France].
+C: In 1969, [Apollo 11] landed on the Moon with astronauts [Neil Armstrong] and [Buzz Aldrin].
 EOF
 ```
 
@@ -189,22 +189,20 @@ This section describes the text format used by hashcards.
 Question-answer flashcards are written like this:
 
 ```
-Q: What is the order of a group?
-A: The cardinality of its underlying set.
+Q: What is confirmation bias?
+A: The tendency to search for, interpret, and recall information in a way that confirms one's preexisting beliefs.
 ```
 
 Both the question and the answer can span multiple lines:
 
 ```
-Q: List the PGM minerals.
+Q: What are the four fundamental forces of nature?
 A:
 
-- ruthenium
-- rhodium
-- palladium
-- osmium
-- iridium
-- platinum
+- Gravity (attraction between masses)
+- Electromagnetism (electric and magnetic fields)
+- Strong nuclear force (binds atomic nuclei)
+- Weak nuclear force (radioactive decay)
 ```
 
 ### Cloze Cards
@@ -213,17 +211,18 @@ Cloze cards start with the `C:` tag, and use square brackets to denote cloze
 deletions:
 
 ```
-C: The [order] of a group is [the cardinality of its underlying set].
+C: The speed of light in a vacuum is approximately [299,792] kilometers per second, often rounded to [300,000] km/s.
 ```
 
 Again, cloze cards can span multiple lines:
 
 ```
 C:
-Better is the sight of the eyes than the wandering of the
-desire: this is also vanity and vexation of spirit.
+We shall not cease from exploration, and the end of all our
+exploring will be to arrive where we started and know the place
+for the first time.
 
-— [Ecclesiastes] [6]:[9]
+— [T.S. Eliot], ["Little Gidding"]
 ```
 
 ## Features
@@ -236,8 +235,8 @@ Cards support LaTeX math via KaTeX. Use `$...$` for inline math and `$$...$$`
 for display math:
 
 ```
-Q: What is Euler's identity?
-A: $e^{i\pi} + 1 = 0$
+Q: What is considered the most beautiful equation in mathematics?
+A: Euler's identity: $e^{i\pi} + 1 = 0$
 ```
 
 You can define custom LaTeX macros by creating a `macros.tex` file in your
@@ -256,11 +255,11 @@ second and so on.
 Ordinary Markdown image syntax works:
 
 ```
-Q: What does this diagram show?
+Q: What architectural style is this?
 
-![diagram](images/diagram.png)
+![building](images/taj-mahal.jpg)
 
-A: The structure of a neuron.
+A: Mughal architecture, exemplified by the Taj Mahal.
 ```
 
 Image paths are resolved relative to the collection root (i.e., the directory
@@ -272,8 +271,8 @@ symbolic links or point (via `..` components) to files outside the collection.
 Works like images:
 
 ```
-Q: How do you pronounce "پرنده" in Persian?
-A: ![](audio/parande.mp3)
+Q: How do you pronounce "مرحبا" (hello) in Arabic?
+A: ![](audio/marhaba.mp3)
 ```
 
 ### Deck Names
@@ -284,13 +283,13 @@ override the name using [TOML](https://toml.io/en/) frontmatter, like so:
 
 ```
 ---
-name = "Medicine"
+name = "Neuroscience"
 ---
 
-C: The mitochondria is the [powerhouse] of the cell.
+C: The [hippocampus] is crucial for forming new [memories] and spatial navigation.
 ```
 
-Regardless of the filename, cards in this deck will have `Medicine` as their
+Regardless of the filename, cards in this deck will have `Neuroscience` as their
 deck name. This is particularly useful when you want to organize a large number
 of cards into different files, while keeping their deck name the same. For
 example, when taking notes from a textbook, you might have something like so:
