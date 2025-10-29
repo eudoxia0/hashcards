@@ -16,11 +16,13 @@ use std::collections::HashSet;
 use std::error::Error;
 use std::fmt::Display;
 use std::fmt::Formatter;
+use std::fs::read_to_string;
 use std::path::PathBuf;
 
 use serde::Deserialize;
 use walkdir::WalkDir;
 
+use crate::error::ErrorReport;
 use crate::error::Fallible;
 use crate::types::aliases::DeckName;
 use crate::types::card::Card;
@@ -59,15 +61,13 @@ fn extract_frontmatter(text: &str) -> Fallible<(DeckMetadata, &str)> {
         frontmatter_lines.push(line);
     }
 
-    let closing_line_idx = closing_line_idx.ok_or_else(|| {
-        crate::error::ErrorReport::new("Frontmatter opening '---' found but no closing '---'")
-    })?;
+    let closing_line_idx = closing_line_idx
+        .ok_or_else(|| ErrorReport::new("Frontmatter opening '---' found but no closing '---'"))?;
 
     // Parse TOML from frontmatter
     let frontmatter_str = frontmatter_lines.join("\n");
-    let metadata: DeckMetadata = toml::from_str(&frontmatter_str).map_err(|e| {
-        crate::error::ErrorReport::new(format!("Failed to parse TOML frontmatter: {}", e))
-    })?;
+    let metadata: DeckMetadata = toml::from_str(&frontmatter_str)
+        .map_err(|e| ErrorReport::new(format!("Failed to parse TOML frontmatter: {}", e)))?;
 
     // Find byte offset where content starts (line after closing delimiter)
     // We do this by finding the position of the closing delimiter line in the original text
@@ -101,7 +101,7 @@ pub fn parse_deck(directory: &PathBuf) -> Fallible<Vec<Card>> {
         let entry = entry?;
         let path = entry.path();
         if path.is_file() && path.extension().is_some_and(|ext| ext == "md") {
-            let text = std::fs::read_to_string(path)?;
+            let text = read_to_string(path)?;
 
             // Extract frontmatter and get custom deck name if specified
             let (metadata, content) = extract_frontmatter(&text)?;
