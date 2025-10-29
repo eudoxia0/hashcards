@@ -22,7 +22,7 @@ rusqlite = "0.37.0"
 serde = { version = "1.0.224", features = ["derive"] }
 serde_json = "1.0.145"
 tokio = { version = "1.48.0", features = ["rt-multi-thread", "fs"] }
-toml = "0.9"
+toml = "0.9.8"
 walkdir = "2"
 
 [dev-dependencies]
