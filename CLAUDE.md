@@ -99,9 +99,26 @@ Cards are deduplicated in two places:
 - All timestamps stored in UTC (`Timestamp` wraps `DateTime<Utc>`).
 - Converted to local time only for display/due date calculation.
 
-## Images
+## Media Files (Images and Audio)
 
-Images are served via a special endpoint, their path is resolved relative to the collection directory.
+Media files are referenced in markdown using standard image syntax: `![](path/to/file.ext)`
+
+**Supported formats:**
+- Images: PNG, JPG, GIF, SVG, WEBP
+- Audio: MP3, WAV, OGG (auto-detected and rendered as HTML5 `<audio>` elements)
+- Video: MP4, WEBM
+
+**Processing:**
+- Markdown is parsed using `pulldown-cmark` library
+- In `markdown.rs`: URLs are rewritten to `/file/{url}` endpoints for serving
+- In `media.rs`: Image references are extracted and validated during collection loading
+- Files are served via `/file/*path` endpoint, resolved relative to collection directory
+- Path validation (in `cmd/drill/file.rs`) prevents directory traversal attacks
+
+**Validation:**
+- `Collection::new()` calls `validate_media_files()` to check all referenced files exist
+- Both `drill` and `check` commands validate media on startup
+- External URLs (containing `://`) are skipped during validation
 
 ## TeX Macros
 
@@ -133,10 +150,35 @@ These are passed on to KaTeX for rendering.
 4. Add to `entrypoint()` match statement.
 5. Add tests if possible.
 
+# Pattern: Adding Collection-Wide Validation
+
+If you need to validate something about all cards or the collection as a whole:
+
+1. Add validation function to appropriate module (e.g., `media.rs`)
+2. Call it from `Collection::new()` in `collection.rs`
+3. This ensures both `drill` and `check` commands validate automatically
+
+**Why:** Both commands use `Collection::new()` as their entry point, so validation added there runs for both.
+
 # Testing Strategy
 
 - Unit tests for individual functions/methods. E2E tests simulate a full drilling session via HTTP requests.
 - When fixing bugs, add a failing regression test first.
+
+## Testing with Parsed Cards
+
+When testing functionality that operates on cards:
+
+```rust
+use crate::parser::Parser;
+use std::env::temp_dir;
+
+let parser = Parser::new("test_deck".to_string(), PathBuf::from("test.md"));
+let cards = parser.parse(markdown).expect("Failed to parse");
+// Now test your functionality with real parsed cards
+```
+
+This pattern tests the full pipeline from markdown → parsed cards → your feature.
 
 # Things to Avoid
 

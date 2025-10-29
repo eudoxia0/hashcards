@@ -13,6 +13,9 @@
             <change author="eudoxia0">
                 Add CSS to render `blockquote` elements in a grey box.
             </change>
+            <change author="eudoxia0">
+                The `drill` and `check` commands now validate that images/audio files referenced in flashcards actually exist.
+            </change>
         </added>
         <changed>
             <change author="eudoxia0">

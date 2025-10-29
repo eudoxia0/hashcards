@@ -21,6 +21,7 @@ use crate::db::Database;
 use crate::error::ErrorReport;
 use crate::error::Fallible;
 use crate::error::fail;
+use crate::media::validate_media_files;
 use crate::parser::parse_deck;
 use crate::types::card::Card;
 
@@ -75,6 +76,9 @@ impl Collection {
             log::debug!("Deck loaded in {duration}ms.");
             cards
         };
+
+        // Validate media files
+        validate_media_files(&cards, &directory)?;
 
         Ok(Self {
             directory,

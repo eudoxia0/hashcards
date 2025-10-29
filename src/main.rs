@@ -21,6 +21,7 @@ mod fsrs;
 #[cfg(test)]
 mod helper;
 mod markdown;
+mod media;
 mod parser;
 mod types;
 mod utils;
