@@ -35,3 +35,6 @@ strip = "symbols"
 lto = true
 codegen-units = 1
 panic = "abort"
+
+[lints.clippy]
+collapsible_if = "allow"
