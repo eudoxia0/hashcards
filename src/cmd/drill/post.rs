@@ -16,6 +16,7 @@ use axum::Form;
 use axum::extract::State;
 use axum::response::Redirect;
 use serde::Deserialize;
+use tokio::sync::oneshot::Sender;
 
 use crate::cmd::drill::state::MutableState;
 use crate::cmd::drill::state::Review;
@@ -98,8 +99,12 @@ async fn action_handler(state: ServerState, action: Action) -> Fallible<()> {
         Action::Shutdown => {
             // Only allow shutdown if session is finished
             if mutable.finished_at.is_some() {
-                drop(mutable); // Release the lock before sending shutdown signal
+                // Release the lock before sending shutdown signal.
+                drop(mutable);
                 let mut shutdown_tx = state.shutdown_tx.lock().unwrap();
+                // Since this is a one-shot channel, `send()` linearly consumes
+                // `tx`. Therefore we have to mutate the cell and put a `None`
+                // in its place using the `take()` method.
                 if let Some(tx) = shutdown_tx.take() {
                     let _ = tx.send(());
                 }
