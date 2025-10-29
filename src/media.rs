@@ -105,10 +105,11 @@ pub fn validate_media_files(cards: &[Card], base_dir: &Path) -> Fallible<()> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::parser::Parser as CardParser;
     use std::env::temp_dir;
     use std::fs::create_dir_all;
+
+    use super::*;
+    use crate::parser::Parser as CardParser;
 
     #[test]
     fn test_extract_media_paths() {
