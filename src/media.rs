@@ -25,7 +25,7 @@ use crate::error::Fallible;
 use crate::types::card::Card;
 use crate::types::card::CardContent;
 
-/// Represents a missing media file reference
+/// Represents a missing media file reference.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct MissingMedia {
     pub file_path: String,
@@ -33,7 +33,7 @@ pub struct MissingMedia {
     pub card_lines: (usize, usize),
 }
 
-/// Extract all media file paths from markdown text
+/// Extract all media file paths from markdown text.
 fn extract_media_paths(markdown: &str) -> Vec<String> {
     let parser = Parser::new(markdown);
     let mut paths = Vec::new();
@@ -47,18 +47,18 @@ fn extract_media_paths(markdown: &str) -> Vec<String> {
     paths
 }
 
-/// Validate that all media files referenced in cards exist
+/// Validate that all media files referenced in cards exist.
 pub fn validate_media_files(cards: &[Card], base_dir: &Path) -> Fallible<()> {
     let mut missing = HashSet::new();
 
     for card in cards {
-        // Extract markdown content from the card
+        // Extract markdown content from the card.
         let markdown_texts = match card.content() {
             CardContent::Basic { question, answer } => vec![question.as_str(), answer.as_str()],
             CardContent::Cloze { text, .. } => vec![text.as_str()],
         };
 
-        // Extract and validate media paths
+        // Extract and validate media paths.
         for markdown in markdown_texts {
             for path in extract_media_paths(markdown) {
                 // Skip URLs (http://, https://, etc.)
@@ -66,7 +66,7 @@ pub fn validate_media_files(cards: &[Card], base_dir: &Path) -> Fallible<()> {
                     continue;
                 }
 
-                // Check if file exists
+                // Check if file exists.
                 let full_path = base_dir.join(&path);
                 if !full_path.exists() {
                     missing.insert(MissingMedia {
@@ -80,7 +80,7 @@ pub fn validate_media_files(cards: &[Card], base_dir: &Path) -> Fallible<()> {
     }
 
     if !missing.is_empty() {
-        // Sort missing files for consistent error messages
+        // Sort missing files for consistent error messages.
         let mut missing: Vec<_> = missing.into_iter().collect();
         missing.sort_by(|a, b| {
             a.card_file
@@ -89,7 +89,7 @@ pub fn validate_media_files(cards: &[Card], base_dir: &Path) -> Fallible<()> {
                 .then_with(|| a.file_path.cmp(&b.file_path))
         });
 
-        // Build error message
+        // Build error message.
         let mut msg = String::from("Missing media files referenced in cards:\n");
         for m in missing {
             msg.push_str(&format!(
