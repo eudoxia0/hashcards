@@ -379,11 +379,11 @@ impl Parser {
                         // image_mode must be turned on *only* if the '!' is
                         // immediately before a `[`. Otherwise, exclamation
                         // marks in other positions would trigger it.
-                        let nextopt = text.bytes().nth(bytepos + 1);
-                        if let Some(next) = nextopt {
-                            if next == b'[' {
-                                image_mode = true;
-                            }
+                        let nextopt = text.as_bytes().get(bytepos + 1).copied();
+                        if let Some(next) = nextopt
+                            && next == b'['
+                        {
+                            image_mode = true;
                         }
                     }
                     clean_text.push(c);
@@ -435,11 +435,11 @@ impl Parser {
                     // image_mode must be turned on *only* if the '!' is
                     // immediately before a `[`. Otherwise, exclamation
                     // marks in other positions would trigger it.
-                    let nextopt = text.bytes().nth(bytepos + 1);
-                    if let Some(next) = nextopt {
-                        if next == b'[' {
-                            image_mode = true;
-                        }
+                    let nextopt = text.as_bytes().get(bytepos + 1).copied();
+                    if let Some(next) = nextopt
+                        && next == b'['
+                    {
+                        image_mode = true;
                     }
                 }
                 index += 1;
