@@ -18,12 +18,55 @@ use std::fmt::Display;
 use std::fmt::Formatter;
 use std::path::PathBuf;
 
+use serde::Deserialize;
 use walkdir::WalkDir;
 
 use crate::error::Fallible;
 use crate::types::aliases::DeckName;
 use crate::types::card::Card;
 use crate::types::card::CardContent;
+
+/// Metadata that can be specified at the top of a deck file.
+#[derive(Debug, Deserialize)]
+struct DeckMetadata {
+    name: Option<String>,
+}
+
+/// Extract TOML frontmatter from markdown text.
+/// Returns (frontmatter_metadata, content_without_frontmatter)
+fn extract_frontmatter(text: &str) -> Result<(Option<DeckMetadata>, String), String> {
+    let lines: Vec<&str> = text.lines().collect();
+
+    // Check if the file starts with frontmatter delimiter
+    if lines.first().map(|l| l.trim()) != Some("---") {
+        return Ok((None, text.to_string()));
+    }
+
+    // Find the closing delimiter
+    let closing_index = lines[1..]
+        .iter()
+        .position(|l| l.trim() == "---")
+        .map(|i| i + 1); // +1 because we started from index 1
+
+    if let Some(end_idx) = closing_index {
+        // Extract frontmatter content (between the delimiters)
+        let frontmatter_lines = &lines[1..end_idx];
+        let frontmatter_str = frontmatter_lines.join("\n");
+
+        // Parse TOML
+        let metadata: DeckMetadata = toml::from_str(&frontmatter_str)
+            .map_err(|e| format!("Failed to parse TOML frontmatter: {}", e))?;
+
+        // Extract content after frontmatter
+        let content_lines = &lines[end_idx + 1..];
+        let content = content_lines.join("\n");
+
+        Ok((Some(metadata), content))
+    } else {
+        // Opening delimiter found but no closing delimiter
+        Err("Frontmatter opening '---' found but no closing '---'".to_string())
+    }
+}
 
 /// Parses all Markdown files in the given directory.
 pub fn parse_deck(directory: &PathBuf) -> Fallible<Vec<Card>> {
@@ -33,13 +76,25 @@ pub fn parse_deck(directory: &PathBuf) -> Fallible<Vec<Card>> {
         let path = entry.path();
         if path.is_file() && path.extension().is_some_and(|ext| ext == "md") {
             let text = std::fs::read_to_string(path)?;
-            let deck_name: DeckName = path
-                .file_stem()
-                .and_then(|os_str| os_str.to_str())
-                .unwrap_or("None")
-                .to_string();
+
+            // Extract frontmatter and get custom deck name if specified
+            let (metadata, content) = extract_frontmatter(&text)
+                .map_err(|e| std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    format!("Error in {}: {}", path.display(), e)
+                ))?;
+
+            let deck_name: DeckName = metadata
+                .and_then(|m| m.name)
+                .unwrap_or_else(|| {
+                    path.file_stem()
+                        .and_then(|os_str| os_str.to_str())
+                        .unwrap_or("None")
+                        .to_string()
+                });
+
             let parser = Parser::new(deck_name, path.to_path_buf());
-            let cards = parser.parse(&text)?;
+            let cards = parser.parse(&content)?;
             all_cards.extend(cards);
         }
     }
@@ -797,6 +852,168 @@ mod tests {
             }
             _ => panic!("Expected cloze card."),
         }
+        Ok(())
+    }
+
+    #[test]
+    fn test_extract_frontmatter_with_name() {
+        let input = r#"---
+name = "Custom Deck Name"
+---
+
+Q: What is Rust?
+A: A systems programming language."#;
+
+        let result = extract_frontmatter(input);
+        assert!(result.is_ok());
+        let (metadata, content) = result.unwrap();
+        assert!(metadata.is_some());
+        let metadata = metadata.unwrap();
+        assert_eq!(metadata.name, Some("Custom Deck Name".to_string()));
+        assert_eq!(
+            content.trim(),
+            "Q: What is Rust?\nA: A systems programming language."
+        );
+    }
+
+    #[test]
+    fn test_extract_frontmatter_without_name() {
+        let input = r#"---
+other_field = "value"
+---
+
+Q: What is Rust?
+A: A systems programming language."#;
+
+        let result = extract_frontmatter(input);
+        assert!(result.is_ok());
+        let (metadata, content) = result.unwrap();
+        assert!(metadata.is_some());
+        let metadata = metadata.unwrap();
+        assert_eq!(metadata.name, None);
+        assert_eq!(
+            content.trim(),
+            "Q: What is Rust?\nA: A systems programming language."
+        );
+    }
+
+    #[test]
+    fn test_extract_frontmatter_empty() {
+        let input = r#"---
+---
+
+Q: What is Rust?
+A: A systems programming language."#;
+
+        let result = extract_frontmatter(input);
+        assert!(result.is_ok());
+        let (metadata, content) = result.unwrap();
+        assert!(metadata.is_some());
+        assert_eq!(
+            content.trim(),
+            "Q: What is Rust?\nA: A systems programming language."
+        );
+    }
+
+    #[test]
+    fn test_no_frontmatter() {
+        let input = "Q: What is Rust?\nA: A systems programming language.";
+        let result = extract_frontmatter(input);
+        assert!(result.is_ok());
+        let (metadata, content) = result.unwrap();
+        assert!(metadata.is_none());
+        assert_eq!(content, input);
+    }
+
+    #[test]
+    fn test_frontmatter_unclosed() {
+        let input = r#"---
+name = "Custom Deck Name"
+
+Q: What is Rust?
+A: A systems programming language."#;
+
+        let result = extract_frontmatter(input);
+        assert!(result.is_err());
+        let err = result.err().unwrap();
+        assert!(err.contains("no closing '---'"));
+    }
+
+    #[test]
+    fn test_frontmatter_invalid_toml() {
+        let input = r#"---
+name = Custom Deck Name (missing quotes)
+---
+
+Q: What is Rust?"#;
+
+        let result = extract_frontmatter(input);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_parse_with_frontmatter() -> Result<(), ParserError> {
+        let input = r#"---
+name = "Custom Deck Name"
+---
+
+Q: What is Rust?
+A: A systems programming language."#;
+
+        let (metadata, content) = extract_frontmatter(input).unwrap();
+        assert_eq!(
+            metadata.as_ref().and_then(|m| m.name.clone()),
+            Some("Custom Deck Name".to_string())
+        );
+
+        let parser = make_test_parser();
+        let cards = parser.parse(&content)?;
+        assert_eq!(cards.len(), 1);
+        Ok(())
+    }
+
+    #[test]
+    fn test_parse_deck_with_frontmatter() -> Fallible<()> {
+        let directory = temp_dir();
+        let directory = directory.join("frontmatter_test");
+        create_dir_all(&directory).expect("Failed to create test directory");
+
+        let file1 = directory.join("ch1.md");
+        let file2 = directory.join("ch2.md");
+
+        std::fs::write(
+            &file1,
+            r#"---
+name = "Cell Biology"
+---
+
+Q: What is a cell?
+A: The basic unit of life."#,
+        )
+        .expect("Failed to write test file");
+
+        std::fs::write(
+            &file2,
+            r#"---
+name = "Cell Biology"
+---
+
+Q: What is DNA?
+A: Genetic material."#,
+        )
+        .expect("Failed to write test file");
+
+        let deck = parse_deck(&directory)?;
+
+        // Both cards should have the custom deck name "Cell Biology"
+        assert_eq!(deck.len(), 2);
+        for card in &deck {
+            assert_eq!(card.deck_name(), "Cell Biology");
+        }
+
+        // Clean up
+        std::fs::remove_dir_all(&directory).ok();
+
         Ok(())
     }
 }
