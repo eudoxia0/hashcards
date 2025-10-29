@@ -980,7 +980,7 @@ A: A systems programming language."#;
         assert_eq!(metadata.name, Some("Custom Deck Name".to_string()));
 
         let parser = make_test_parser();
-        let cards = parser.parse(&content)?;
+        let cards = parser.parse(content)?;
         assert_eq!(cards.len(), 1);
         Ok(())
     }
