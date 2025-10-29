@@ -28,6 +28,7 @@ use axum::response::Html;
 use axum::routing::get;
 use axum::routing::post;
 use tokio::net::TcpListener;
+use tokio::signal;
 
 use crate::cmd::drill::cache::Cache;
 use crate::cmd::drill::file::validate_file_path;
@@ -38,6 +39,7 @@ use crate::cmd::drill::state::ServerState;
 use crate::collection::Collection;
 use crate::db::Database;
 use crate::error::Fallible;
+use crate::error::fail;
 use crate::types::card::Card;
 use crate::types::card_hash::CardHash;
 use crate::types::date::Date;
@@ -112,14 +114,25 @@ pub async fn start_server(
     let app = app.route("/style.css", get(style_handler));
     let app = app.route("/file/{*path}", get(file_handler));
     let app = app.fallback(not_found_handler);
-    let app = app.with_state(state);
+    let app = app.with_state(state.clone());
     let bind = format!("0.0.0.0:{port}");
 
-    // Start the server.
+    // Start the server with graceful shutdown on Ctrl+C.
     log::debug!("Starting server on {bind}");
     let listener = TcpListener::bind(bind).await?;
-    axum::serve(listener, app).await?;
-    Ok(())
+    axum::serve(listener, app)
+        .with_graceful_shutdown(shutdown_signal())
+        .await?;
+
+    // Check if session was complete when server shut down
+    let mutable = state.mutable.lock().unwrap();
+    if mutable.finished_at.is_some() {
+        // Session was complete, exit with code 0
+        Ok(())
+    } else {
+        // Session was not complete, exit with error code
+        fail("Session interrupted before completion")
+    }
 }
 
 async fn script_handler(
@@ -193,6 +206,11 @@ async fn file_handler(
             b"Internal Server Error".to_vec(),
         ),
     }
+}
+
+async fn shutdown_signal() {
+    let _ = signal::ctrl_c().await;
+    log::debug!("Received Ctrl+C, shutting down gracefully");
 }
 
 fn filter_deck(
