@@ -113,12 +113,12 @@ impl Card {
         }
     }
 
-    pub fn html_front(&self, port: u16, collection_root: &std::path::Path) -> Fallible<Markup> {
+    pub fn html_front(&self, port: u16, collection_root: &Path) -> Fallible<Markup> {
         self.content
             .html_front(port, &self.file_path, collection_root)
     }
 
-    pub fn html_back(&self, port: u16, collection_root: &std::path::Path) -> Fallible<Markup> {
+    pub fn html_back(&self, port: u16, collection_root: &Path) -> Fallible<Markup> {
         self.content
             .html_back(port, &self.file_path, collection_root)
     }
@@ -177,7 +177,7 @@ impl CardContent {
         &self,
         port: u16,
         deck_file_path: &Path,
-        collection_root: &std::path::Path,
+        collection_root: &Path,
     ) -> Fallible<Markup> {
         let html = match self {
             CardContent::Basic { question, .. } => {
@@ -204,7 +204,7 @@ impl CardContent {
         &self,
         port: u16,
         deck_file_path: &Path,
-        collection_root: &std::path::Path,
+        collection_root: &Path,
     ) -> Fallible<Markup> {
         let html = match self {
             CardContent::Basic { answer, .. } => {
