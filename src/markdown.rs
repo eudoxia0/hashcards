@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::path::PathBuf;
-
 use pulldown_cmark::CowStr;
 use pulldown_cmark::Event;
 use pulldown_cmark::Parser;
@@ -22,7 +20,6 @@ use pulldown_cmark::html::push_html;
 
 use crate::error::ErrorReport;
 use crate::error::Fallible;
-use crate::utils::resolve_media_path;
 
 const AUDIO_EXTENSIONS: [&str; 3] = ["mp3", "wav", "ogg"];
 
@@ -39,12 +36,6 @@ pub struct MarkdownRendererConfig {
     /// The port where the server is running. This is used to construct URLs
     /// for media files.
     pub port: u16,
-    /// The path to the file that contains the flashcard being rendered. This
-    /// is used to resolve the paths of deck-relative media.
-    pub deck_file_path: PathBuf,
-    /// The path to the collection root directory. This is used to resolve the
-    /// paths of collection-relative media.
-    pub collection_root: PathBuf,
 }
 
 /// Render Markdown to HTML.
@@ -144,11 +135,7 @@ mod tests {
         File::create(&image_file).unwrap();
 
         let markdown = "![alt](image.png)";
-        let config = MarkdownRendererConfig {
-            port: 1234,
-            deck_file_path: deck_file.clone(),
-            collection_root: temp_dir.path().to_path_buf(),
-        };
+        let config = MarkdownRendererConfig { port: 1234 };
         let html = markdown_to_html(markdown, &config).unwrap();
         assert_eq!(
             html,
@@ -164,11 +151,7 @@ mod tests {
         File::create(&deck_file).unwrap();
 
         let markdown = "This is **bold** text.";
-        let config = MarkdownRendererConfig {
-            port: 0,
-            deck_file_path: deck_file.clone(),
-            collection_root: temp_dir.path().to_path_buf(),
-        };
+        let config = MarkdownRendererConfig { port: 0 };
         let html = markdown_to_html_inline(markdown, &config).unwrap();
         assert_eq!(html, "This is <strong>bold</strong> text.");
     }
@@ -181,11 +164,7 @@ mod tests {
         File::create(&deck_file).unwrap();
 
         let markdown = "# Foo";
-        let config = MarkdownRendererConfig {
-            port: 0,
-            deck_file_path: deck_file.clone(),
-            collection_root: temp_dir.path().to_path_buf(),
-        };
+        let config = MarkdownRendererConfig { port: 0 };
         let html = markdown_to_html_inline(markdown, &config).unwrap();
         assert_eq!(html, "<h1>Foo</h1>\n");
     }
@@ -209,11 +188,7 @@ mod tests {
         File::create(&image_file).unwrap();
 
         let markdown = "![Cell Structure](images/cell.png)";
-        let config = MarkdownRendererConfig {
-            port: 8080,
-            deck_file_path: deck_file.clone(),
-            collection_root: temp_dir.path().to_path_buf(),
-        };
+        let config = MarkdownRendererConfig { port: 8080 };
         let html = markdown_to_html(markdown, &config).unwrap();
 
         // Path should be resolved relative to deck file, resulting in biology/images/cell.png
@@ -240,11 +215,7 @@ mod tests {
         File::create(&image_file).unwrap();
 
         let markdown = "![Logo](../shared_images/logo.png)";
-        let config = MarkdownRendererConfig {
-            port: 8080,
-            deck_file_path: deck_file.clone(),
-            collection_root: temp_dir.path().to_path_buf(),
-        };
+        let config = MarkdownRendererConfig { port: 8080 };
         let html = markdown_to_html(markdown, &config).unwrap();
 
         // Path with .. should be resolved relative to deck file
@@ -272,11 +243,7 @@ mod tests {
         File::create(&image_file).unwrap();
 
         let markdown = "![Banner](@/global/banner.jpg)";
-        let config = MarkdownRendererConfig {
-            port: 8080,
-            deck_file_path: deck_file.clone(),
-            collection_root: temp_dir.path().to_path_buf(),
-        };
+        let config = MarkdownRendererConfig { port: 8080 };
         let html = markdown_to_html(markdown, &config).unwrap();
 
         // Path starting with @/ should be resolved relative to collection root
@@ -291,11 +258,7 @@ mod tests {
         File::create(&deck_file).unwrap();
 
         let markdown = "![Remote](https://example.com/image.png)";
-        let config = MarkdownRendererConfig {
-            port: 8080,
-            deck_file_path: deck_file.clone(),
-            collection_root: temp_dir.path().to_path_buf(),
-        };
+        let config = MarkdownRendererConfig { port: 8080 };
         let html = markdown_to_html(markdown, &config).unwrap();
 
         // External URLs should be passed through as-is

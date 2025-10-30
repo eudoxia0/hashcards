@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::path::Path;
 use std::path::PathBuf;
 
 use maud::Markup;
@@ -114,14 +113,12 @@ impl Card {
         }
     }
 
-    pub fn html_front(&self, port: u16, collection_root: &Path) -> Fallible<Markup> {
-        self.content
-            .html_front(port, &self.file_path, collection_root)
+    pub fn html_front(&self, port: u16) -> Fallible<Markup> {
+        self.content.html_front(port)
     }
 
-    pub fn html_back(&self, port: u16, collection_root: &Path) -> Fallible<Markup> {
-        self.content
-            .html_back(port, &self.file_path, collection_root)
+    pub fn html_back(&self, port: u16) -> Fallible<Markup> {
+        self.content.html_back(port)
     }
 }
 
@@ -174,17 +171,8 @@ impl CardContent {
         }
     }
 
-    pub fn html_front(
-        &self,
-        port: u16,
-        deck_file_path: &Path,
-        collection_root: &Path,
-    ) -> Fallible<Markup> {
-        let config = MarkdownRendererConfig {
-            port,
-            deck_file_path: deck_file_path.to_owned(),
-            collection_root: collection_root.to_owned(),
-        };
+    pub fn html_front(&self, port: u16) -> Fallible<Markup> {
+        let config = MarkdownRendererConfig { port };
         let html = match self {
             CardContent::Basic { question, .. } => {
                 html! {
@@ -206,17 +194,8 @@ impl CardContent {
         Ok(html)
     }
 
-    pub fn html_back(
-        &self,
-        port: u16,
-        deck_file_path: &Path,
-        collection_root: &Path,
-    ) -> Fallible<Markup> {
-        let config = MarkdownRendererConfig {
-            port,
-            deck_file_path: deck_file_path.to_owned(),
-            collection_root: collection_root.to_owned(),
-        };
+    pub fn html_back(&self, port: u16) -> Fallible<Markup> {
+        let config = MarkdownRendererConfig { port };
         let html = match self {
             CardContent::Basic { answer, .. } => {
                 html! {

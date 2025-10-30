@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::path::Path;
-
 use axum::extract::State;
 use axum::http::StatusCode;
 use axum::response::Html;
@@ -62,7 +60,7 @@ fn render_session_page(state: &ServerState, mutable: &MutableState) -> Fallible<
     };
     let progress_bar_style = format!("width: {}%;", percent_done);
     let card = mutable.cards[0].clone();
-    let card_content = render_card(&card, mutable.reveal, state.port, &state.directory)?;
+    let card_content = render_card(&card, mutable.reveal, state.port)?;
     let card_controls = if mutable.reveal {
         html! {
             form action="/" method="post" {
@@ -114,22 +112,22 @@ fn render_session_page(state: &ServerState, mutable: &MutableState) -> Fallible<
     Ok(html)
 }
 
-fn render_card(card: &Card, reveal: bool, port: u16, collection_root: &Path) -> Fallible<Markup> {
+fn render_card(card: &Card, reveal: bool, port: u16) -> Fallible<Markup> {
     let html = match card.card_type() {
         CardType::Basic => {
             if reveal {
                 html! {
                     div .question .rich-text {
-                        (card.html_front(port, collection_root)?)
+                        (card.html_front(port)?)
                     }
                     div .answer .rich-text {
-                        (card.html_back(port, collection_root)?)
+                        (card.html_back(port)?)
                     }
                 }
             } else {
                 html! {
                     div .question .rich-text {
-                        (card.html_front(port, collection_root)?)
+                        (card.html_front(port)?)
                     }
                     div .answer .rich-text {}
                 }
@@ -139,13 +137,13 @@ fn render_card(card: &Card, reveal: bool, port: u16, collection_root: &Path) -> 
             if reveal {
                 html! {
                     div .prompt .rich-text {
-                        (card.html_back(port, collection_root)?)
+                        (card.html_back(port)?)
                     }
                 }
             } else {
                 html! {
                     div .prompt .rich-text {
-                        (card.html_front(port, collection_root)?)
+                        (card.html_front(port)?)
                     }
                 }
             }
