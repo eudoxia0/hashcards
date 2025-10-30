@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::path::Path;
+
 use axum::extract::State;
 use axum::http::StatusCode;
 use axum::response::Html;
@@ -112,12 +114,7 @@ fn render_session_page(state: &ServerState, mutable: &MutableState) -> Fallible<
     Ok(html)
 }
 
-fn render_card(
-    card: &Card,
-    reveal: bool,
-    port: u16,
-    collection_root: &std::path::Path,
-) -> Fallible<Markup> {
+fn render_card(card: &Card, reveal: bool, port: u16, collection_root: &Path) -> Fallible<Markup> {
     let html = match card.card_type() {
         CardType::Basic => {
             if reveal {
