@@ -176,7 +176,7 @@ impl CardContent {
     pub fn html_front(
         &self,
         port: u16,
-        deck_file_path: &PathBuf,
+        deck_file_path: &Path,
         collection_root: &std::path::Path,
     ) -> Fallible<Markup> {
         let html = match self {
