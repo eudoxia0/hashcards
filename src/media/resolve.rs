@@ -199,7 +199,7 @@ mod tests {
         // Assertions.
         let resolver = MediaResolver { root: dir.clone() };
         let result = resolver.resolve("/etc/passwd");
-        assert_eq!(result, Err(ResolveError::InvalidPath));
+        assert_eq!(result, Err(ResolveError::AbsolutePath));
         Ok(())
     }
 
