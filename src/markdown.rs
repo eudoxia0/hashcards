@@ -110,7 +110,7 @@ pub fn markdown_to_html_inline(
 fn modify_url(url: &str, config: &MarkdownRendererConfig) -> Fallible<String> {
     // Skip external URLs
     if url.contains("://") {
-        return Ok(url.to_string());
+        Ok(url.to_string())
     } else {
         let port = config.port;
         Ok(format!("http://localhost:{port}/file/{url}"))
