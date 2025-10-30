@@ -119,11 +119,8 @@ pub fn parse_deck(directory: &PathBuf) -> Fallible<Vec<Card>> {
         }
     }
 
-    // Cards are sorted by their hash. This means cards are shown in a
-    // deterministic sequence, but it appears random to the user. This gives us
-    // both the debugging benefits of determinism, and the learning benefits of
-    // randomization (mixing cards from different decks) without needing an
-    // RNG.
+    // Cards are sorted by their hash to make subsequent code more
+    // deterministic.
     all_cards.sort_by_key(|c| c.hash());
 
     // Remove duplicates.

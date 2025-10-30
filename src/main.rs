@@ -23,6 +23,7 @@ mod helper;
 mod markdown;
 mod media;
 mod parser;
+mod rng;
 mod types;
 mod utils;
 

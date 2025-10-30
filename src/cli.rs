@@ -127,6 +127,7 @@ pub async fn entrypoint() -> Fallible<()> {
                 card_limit,
                 new_card_limit,
                 deck_filter: from_deck,
+                shuffle: true,
             };
             start_server(config).await
         }

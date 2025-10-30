@@ -1,5 +1,10 @@
 <changelog>
     <unreleased>
+        <changed>
+            <change author="eudoxia0">
+                Cards are shuffled randomly at the start of a session.
+            </change>
+        </changed>
     </unreleased>
     <releases>
         <release version="0.1.2" date="2025-10-30">

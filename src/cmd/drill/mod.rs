@@ -46,6 +46,7 @@ mod tests {
             card_limit: None,
             new_card_limit: None,
             deck_filter: None,
+            shuffle: false,
         };
         let result = start_server(config).await;
         assert!(result.is_err());
@@ -68,6 +69,7 @@ mod tests {
             card_limit: None,
             new_card_limit: None,
             deck_filter: None,
+            shuffle: false,
         };
         start_server(config).await?;
         Ok(())
@@ -85,6 +87,7 @@ mod tests {
             card_limit: None,
             new_card_limit: None,
             deck_filter: None,
+            shuffle: false,
         };
         spawn(async move { start_server(config).await });
         wait_for_server(port).await?;
@@ -183,6 +186,7 @@ mod tests {
             card_limit: None,
             new_card_limit: None,
             deck_filter: None,
+            shuffle: false,
         };
         spawn(async move { start_server(config).await });
         wait_for_server(port).await?;
@@ -228,6 +232,7 @@ mod tests {
             card_limit: None,
             new_card_limit: None,
             deck_filter: None,
+            shuffle: false,
         };
         spawn(async move { start_server(config).await });
         wait_for_server(port).await?;
@@ -255,6 +260,7 @@ mod tests {
             card_limit: None,
             new_card_limit: None,
             deck_filter: None,
+            shuffle: false,
         };
         spawn(async move { start_server(config).await });
         wait_for_server(port).await?;
@@ -282,6 +288,7 @@ mod tests {
             card_limit: None,
             new_card_limit: None,
             deck_filter: None,
+            shuffle: false,
         };
         spawn(async move { start_server(config).await });
         wait_for_server(port).await?;
@@ -327,6 +334,7 @@ mod tests {
             card_limit: None,
             new_card_limit: None,
             deck_filter: None,
+            shuffle: false,
         };
         spawn(async move { start_server(config).await });
         wait_for_server(port).await?;

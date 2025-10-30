@@ -16,6 +16,8 @@ use std::collections::HashSet;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::Mutex;
+use std::time::SystemTime;
+use std::time::UNIX_EPOCH;
 
 use axum::Router;
 use axum::extract::Path;
@@ -43,6 +45,8 @@ use crate::db::Database;
 use crate::error::Fallible;
 use crate::error::fail;
 use crate::media::resolve::MediaResolver;
+use crate::rng::TinyRng;
+use crate::rng::shuffle;
 use crate::types::card::Card;
 use crate::types::card_hash::CardHash;
 use crate::types::date::Date;
@@ -55,6 +59,7 @@ pub struct ServerConfig {
     pub card_limit: Option<usize>,
     pub new_card_limit: Option<usize>,
     pub deck_filter: Option<String>,
+    pub shuffle: bool,
 }
 
 pub async fn start_server(config: ServerConfig) -> Fallible<()> {
@@ -95,6 +100,18 @@ pub async fn start_server(config: ServerConfig) -> Fallible<()> {
         println!("No cards due today.");
         return Ok(());
     }
+
+    // Finally, shuffle the cards.
+    let due_today: Vec<Card> = if config.shuffle {
+        let seed = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos() as u64;
+        let mut rng = TinyRng::from_seed(seed);
+        shuffle(due_today, &mut rng)
+    } else {
+        due_today
+    };
 
     // For all cards due today, fetch their performance from the database and store it in the cache.
     let mut cache = Cache::new();
