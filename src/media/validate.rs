@@ -22,9 +22,9 @@ use pulldown_cmark::Tag;
 
 use crate::error::ErrorReport;
 use crate::error::Fallible;
+use crate::media::resolve::resolve_media_path;
 use crate::types::card::Card;
 use crate::types::card::CardContent;
-use crate::utils::resolve_media_path;
 
 /// Represents a missing media file reference.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]

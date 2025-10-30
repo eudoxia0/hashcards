@@ -12,20 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::time::Duration;
-
-use tokio::net::TcpStream;
-use tokio::time::sleep;
-
-use crate::error::Fallible;
-
-pub async fn wait_for_server(port: u16) -> Fallible<()> {
-    loop {
-        if let Ok(stream) = TcpStream::connect(format!("0.0.0.0:{port}")).await {
-            drop(stream);
-            break;
-        }
-        sleep(Duration::from_millis(1)).await;
-    }
-    Ok(())
-}
+pub mod resolve;
+pub mod validate;

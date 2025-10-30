@@ -21,7 +21,7 @@ use crate::db::Database;
 use crate::error::ErrorReport;
 use crate::error::Fallible;
 use crate::error::fail;
-use crate::media::validate_media_files;
+use crate::media::validate::validate_media_files;
 use crate::parser::parse_deck;
 use crate::types::card::Card;
 
