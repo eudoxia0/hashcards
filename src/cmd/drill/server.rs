@@ -48,29 +48,31 @@ use crate::types::card_hash::CardHash;
 use crate::types::date::Date;
 use crate::types::timestamp::Timestamp;
 
-pub async fn start_server(
-    directory: Option<String>,
-    port: u16,
-    session_started_at: Timestamp,
-    card_limit: Option<usize>,
-    new_card_limit: Option<usize>,
-    deck_filter: Option<String>,
-) -> Fallible<()> {
+pub struct ServerConfig {
+    pub directory: Option<String>,
+    pub port: u16,
+    pub session_started_at: Timestamp,
+    pub card_limit: Option<usize>,
+    pub new_card_limit: Option<usize>,
+    pub deck_filter: Option<String>,
+}
+
+pub async fn start_server(config: ServerConfig) -> Fallible<()> {
     let Collection {
         directory,
         db,
         cards,
         macros,
-    } = Collection::new(directory)?;
+    } = Collection::new(config.directory)?;
 
-    let today: Date = session_started_at.date();
+    let today: Date = config.session_started_at.date();
 
     let db_hashes: HashSet<CardHash> = db.card_hashes()?;
     // If a card is in the directory, but not in the DB, it is new. Add it to
     // the database.
     for card in cards.iter() {
         if !db_hashes.contains(&card.hash()) {
-            db.insert_card(card.hash(), session_started_at)?;
+            db.insert_card(card.hash(), config.session_started_at)?;
         }
     }
 
@@ -81,7 +83,13 @@ pub async fn start_server(
         .filter(|card| due_today.contains(&card.hash()))
         .collect::<Vec<_>>();
 
-    let due_today = filter_deck(&db, due_today, card_limit, new_card_limit, deck_filter)?;
+    let due_today = filter_deck(
+        &db,
+        due_today,
+        config.card_limit,
+        config.new_card_limit,
+        config.deck_filter,
+    )?;
 
     if due_today.is_empty() {
         println!("No cards due today.");
@@ -99,11 +107,11 @@ pub async fn start_server(
     let (shutdown_tx, shutdown_rx) = channel();
 
     let state = ServerState {
-        port,
+        port: config.port,
         directory,
         macros,
         total_cards: due_today.len(),
-        session_started_at,
+        session_started_at: config.session_started_at,
         mutable: Arc::new(Mutex::new(MutableState {
             reveal: false,
             db,
@@ -122,7 +130,7 @@ pub async fn start_server(
     let app = app.route("/file/{*path}", get(file_handler));
     let app = app.fallback(not_found_handler);
     let app = app.with_state(state.clone());
-    let bind = format!("0.0.0.0:{port}");
+    let bind = format!("0.0.0.0:{}", config.port);
 
     // Start the server with graceful shutdown on Ctrl+C or shutdown button.
     log::debug!("Starting server on {bind}");

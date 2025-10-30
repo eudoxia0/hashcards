@@ -19,6 +19,7 @@ use clap::Subcommand;
 use tokio::spawn;
 
 use crate::cmd::check::check_collection;
+use crate::cmd::drill::server::ServerConfig;
 use crate::cmd::drill::server::start_server;
 use crate::cmd::export::export_collection;
 use crate::cmd::orphans::delete_orphans;
@@ -119,15 +120,15 @@ pub async fn entrypoint() -> Fallible<()> {
                     }
                 });
             }
-            start_server(
+            let config = ServerConfig {
                 directory,
                 port,
-                Timestamp::now(),
+                session_started_at: Timestamp::now(),
                 card_limit,
                 new_card_limit,
-                from_deck,
-            )
-            .await
+                deck_filter: from_deck,
+            };
+            start_server(config).await
         }
         Command::Check { directory } => check_collection(directory),
         Command::Stats { directory, format } => print_stats(directory, format),

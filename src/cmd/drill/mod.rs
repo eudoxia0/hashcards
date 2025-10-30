@@ -28,6 +28,7 @@ mod tests {
     use tempfile::tempdir;
     use tokio::spawn;
 
+    use crate::cmd::drill::server::ServerConfig;
     use crate::cmd::drill::server::start_server;
     use crate::error::Fallible;
     use crate::helper::create_tmp_copy_of_test_directory;
@@ -38,15 +39,15 @@ mod tests {
     async fn test_start_server_on_non_existent_directory() -> Fallible<()> {
         let port = pick_unused_port().unwrap();
         let session_started_at = Timestamp::now();
-        let result = start_server(
-            Some("./derpherp".to_string()),
+        let config = ServerConfig {
+            directory: Some("./derpherp".to_string()),
             port,
             session_started_at,
-            None,
-            None,
-            None,
-        )
-        .await;
+            card_limit: None,
+            new_card_limit: None,
+            deck_filter: None,
+        };
+        let result = start_server(config).await;
         assert!(result.is_err());
         let err = result.err().unwrap();
         assert_eq!(err.to_string(), "error: directory does not exist.");
@@ -60,7 +61,15 @@ mod tests {
         create_dir_all(&dir)?;
         let session_started_at = Timestamp::now();
         let dir = dir.canonicalize().unwrap().display().to_string();
-        start_server(Some(dir), port, session_started_at, None, None, None).await?;
+        let config = ServerConfig {
+            directory: Some(dir),
+            port,
+            session_started_at,
+            card_limit: None,
+            new_card_limit: None,
+            deck_filter: None,
+        };
+        start_server(config).await?;
         Ok(())
     }
 
@@ -69,9 +78,15 @@ mod tests {
         let port = pick_unused_port().unwrap();
         let directory = create_tmp_copy_of_test_directory()?;
         let session_started_at = Timestamp::now();
-        spawn(async move {
-            start_server(Some(directory), port, session_started_at, None, None, None).await
-        });
+        let config = ServerConfig {
+            directory: Some(directory),
+            port,
+            session_started_at,
+            card_limit: None,
+            new_card_limit: None,
+            deck_filter: None,
+        };
+        spawn(async move { start_server(config).await });
         wait_for_server(port).await?;
 
         // Hit the `style.css` endpoint.
@@ -161,9 +176,15 @@ mod tests {
         let port = pick_unused_port().unwrap();
         let directory = create_tmp_copy_of_test_directory()?;
         let session_started_at = Timestamp::now();
-        spawn(async move {
-            start_server(Some(directory), port, session_started_at, None, None, None).await
-        });
+        let config = ServerConfig {
+            directory: Some(directory),
+            port,
+            session_started_at,
+            card_limit: None,
+            new_card_limit: None,
+            deck_filter: None,
+        };
+        spawn(async move { start_server(config).await });
         wait_for_server(port).await?;
 
         // Hit reveal.
@@ -200,9 +221,15 @@ mod tests {
         let port = pick_unused_port().unwrap();
         let directory = create_tmp_copy_of_test_directory()?;
         let session_started_at = Timestamp::now();
-        spawn(async move {
-            start_server(Some(directory), port, session_started_at, None, None, None).await
-        });
+        let config = ServerConfig {
+            directory: Some(directory),
+            port,
+            session_started_at,
+            card_limit: None,
+            new_card_limit: None,
+            deck_filter: None,
+        };
+        spawn(async move { start_server(config).await });
         wait_for_server(port).await?;
 
         // Hit undo.
@@ -221,9 +248,15 @@ mod tests {
         let port = pick_unused_port().unwrap();
         let directory = create_tmp_copy_of_test_directory()?;
         let session_started_at = Timestamp::now();
-        spawn(async move {
-            start_server(Some(directory), port, session_started_at, None, None, None).await
-        });
+        let config = ServerConfig {
+            directory: Some(directory),
+            port,
+            session_started_at,
+            card_limit: None,
+            new_card_limit: None,
+            deck_filter: None,
+        };
+        spawn(async move { start_server(config).await });
         wait_for_server(port).await?;
 
         // Hit 'Hard'.
@@ -242,9 +275,15 @@ mod tests {
         let port = pick_unused_port().unwrap();
         let directory = create_tmp_copy_of_test_directory()?;
         let session_started_at = Timestamp::now();
-        spawn(async move {
-            start_server(Some(directory), port, session_started_at, None, None, None).await
-        });
+        let config = ServerConfig {
+            directory: Some(directory),
+            port,
+            session_started_at,
+            card_limit: None,
+            new_card_limit: None,
+            deck_filter: None,
+        };
+        spawn(async move { start_server(config).await });
         wait_for_server(port).await?;
 
         // Hit reveal.
@@ -281,9 +320,15 @@ mod tests {
         let port = pick_unused_port().unwrap();
         let directory = create_tmp_copy_of_test_directory()?;
         let session_started_at = Timestamp::now();
-        spawn(async move {
-            start_server(Some(directory), port, session_started_at, None, None, None).await
-        });
+        let config = ServerConfig {
+            directory: Some(directory),
+            port,
+            session_started_at,
+            card_limit: None,
+            new_card_limit: None,
+            deck_filter: None,
+        };
+        spawn(async move { start_server(config).await });
         wait_for_server(port).await?;
 
         // Hit end.
