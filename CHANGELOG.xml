@@ -1,31 +1,33 @@
 <changelog>
     <unreleased>
-        <added>
-            <change author="eudoxia0">
-                Deck files now accept TOML frontmatter, so you can override the inferred deck name.
-            </change>
-            <change author="eudoxia0">
-                The session completed page now shows a button to shut down the server.
-            </change>
-            <change author="claude">
-                Flashcards can now be separated using `---` as an explicit separator.
-            </change>
-        </added>
-        <changed>
-            <change author="eudoxia0">
-                Killing the server with `ctrl+c` at the end of a session causes the server to die with exit code 0.
-            </change>
-            <change author="eudoxia0">
-                SQLite is once again bundled into the binary, increasing the executable size but reducing build problems especially on NixOS.
-            </change>
-        </changed>
-        <fixed>
-            <change author="eudoxia0">
-                Flashcards can reference external URLs now.
-            </change>
-        </fixed>
     </unreleased>
     <releases>
+        <release version="0.1.2" date="2025-10-30">
+            <added>
+                <change author="eudoxia0">
+                    Deck files accept TOML frontmatter, so you can override the inferred deck name.
+                </change>
+                <change author="eudoxia0">
+                    The session completed page shows a button to shut down the server.
+                </change>
+                <change author="claude">
+                    Flashcards can be separated using `---` as an explicit separator.
+                </change>
+            </added>
+            <changed>
+                <change author="eudoxia0">
+                    Killing the server with `ctrl+c` at the end of a session causes the server to die with exit code 0.
+                </change>
+                <change author="eudoxia0">
+                    SQLite is once again bundled into the binary, increasing the executable size but reducing build problems especially on NixOS.
+                </change>
+            </changed>
+            <fixed>
+                <change author="eudoxia0">
+                    Flashcards can reference external URLs.
+                </change>
+            </fixed>
+        </release>
         <release version="0.1.1" date="2025-10-29">
             <added>
                 <change author="eudoxia0">
