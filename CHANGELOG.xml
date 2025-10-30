@@ -12,9 +12,6 @@
             </change>
         </added>
         <changed>
-            <change author="claude">
-                **Breaking:** Media file paths are now resolved relative to the deck file by default, instead of relative to the collection root. Paths starting with `@/` are resolved relative to the collection root. This allows for better co-location of images with deck files and makes deck directories more portable.
-            </change>
             <change author="eudoxia0">
                 Killing the server with `ctrl+c` at the end of a session causes the server to die with exit code 0.
             </change>
@@ -22,6 +19,11 @@
                 SQLite is once again bundled into the binary, increasing the executable size but reducing build problems especially on NixOS.
             </change>
         </changed>
+        <breaking>
+            <change author="claude">
+                **Breaking:** Media file paths are now resolved relative to the deck file by default, instead of relative to the collection root. Paths starting with `@/` are resolved relative to the collection root. This allows for better co-location of images with deck files and makes deck directories more portable.
+            </change>
+        </breaking>
     </unreleased>
     <releases>
         <release version="0.1.1" date="2025-10-29">
