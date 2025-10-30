@@ -12,69 +12,96 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::path::Path;
 use std::path::PathBuf;
 
-/// Errors that can occur when validating a file path.
+/// The media resolver takes media paths as entered in the Markdown text of the
+/// flashcards, and resolves them to absolute file paths on disk, based on the
+/// resolution rules.
+pub struct MediaResolver {
+    /// Path to the collection root directory.
+    pub root: PathBuf,
+}
+
+/// Errors that can occur when resolve a file path.
 #[derive(Debug, PartialEq)]
-pub enum FilePathError {
+pub enum ResolveError {
     /// Path is the empty string.
     Empty,
+    /// Path is an external URL.
+    ExternalUrl,
     /// Path is a symbolic link.
     Symlink,
-    /// Path contains invalid components (e.g., ".." or is absolute).
+    /// Path contains invalid components (e.g., "..").
     InvalidPath,
+    /// Path is absolute.
+    AbsolutePath,
     /// File does not exist or cannot be accessed
     NotFound,
     /// Path resolves outside the collection directory
     OutsideDirectory,
 }
 
-/// Validates a user-provided path and returns a canonicalized path that is
-/// guaranteed to be within the base directory.
-///
-/// This function prevents directory traversal attacks by:
-/// 1. Rejecting paths containing ".." or absolute paths
-/// 2. Canonicalizing the path to resolve symlinks
-/// 3. Verifying the canonicalized path is within the base directory
-pub fn validate_file_path(base_dir: &Path, user_path: String) -> Result<PathBuf, FilePathError> {
-    // The empty string is an invalid path.
-    if user_path.trim().is_empty() {
-        return Err(FilePathError::Empty);
+impl MediaResolver {
+    /// Resolve the given media path to an absolute file path on disk.
+    ///
+    /// Rules:
+    ///
+    /// 1. Absolute paths are forbidden.
+    /// 2. Relative paths are resolved relative to the collection root
+    ///    directory.
+    /// 3. Paths containing ".." segments are forbidden.
+    pub fn resolve(&self, path: &str) -> Result<PathBuf, ResolveError> {
+        // The empty string is an invalid path.
+        if path.trim().is_empty() {
+            return Err(ResolveError::Empty);
+        }
+
+        // External URLs (e.g. `http`, `https`) cannot be resolved.
+        if path.contains("://") {
+            return Err(ResolveError::ExternalUrl);
+        }
+
+        // Reject paths containing "..".
+        if path.contains("..") {
+            return Err(ResolveError::InvalidPath);
+        }
+
+        // Parse the string as a PathBuf.
+        let requested_path = PathBuf::from(&path);
+
+        // Absolute paths are forbidden.
+        if requested_path.is_absolute() {
+            return Err(ResolveError::AbsolutePath);
+        }
+
+        // Join the path with the base directory.
+        let full_path = self.root.join(&requested_path);
+
+        // Is the path a symbolic link? Reject it.
+        if full_path.is_symlink() {
+            return Err(ResolveError::Symlink);
+        }
+
+        // Canonicalize the full path (validates existence).
+        let canonical_full = full_path
+            .canonicalize()
+            .map_err(|_| ResolveError::NotFound)?;
+
+        // Canonicalize the base directory (should always succeed since it was
+        // validated at startup).
+        let canonical_dir = self
+            .root
+            .canonicalize()
+            .map_err(|_| ResolveError::NotFound)?;
+
+        // Ensure the resolved path is within the base directory. This should be
+        // caught by the symlink check, but nevertheless.
+        if !canonical_full.starts_with(&canonical_dir) {
+            return Err(ResolveError::OutsideDirectory);
+        }
+
+        Ok(canonical_full)
     }
-
-    let requested_path = PathBuf::from(&user_path);
-
-    // Reject paths containing ".." or absolute paths.
-    if user_path.contains("..") || requested_path.is_absolute() {
-        return Err(FilePathError::InvalidPath);
-    }
-
-    // Join the path with the base directory.
-    let full_path = base_dir.join(&requested_path);
-
-    // Is the path a symbolic link? Reject it.
-    if full_path.is_symlink() {
-        return Err(FilePathError::Symlink);
-    }
-
-    // Canonicalize the full path (validates existence).
-    let canonical_full = full_path
-        .canonicalize()
-        .map_err(|_| FilePathError::NotFound)?;
-
-    // Canonicalize the base directory (should always succeed since it was validated at startup).
-    let canonical_dir = base_dir
-        .canonicalize()
-        .map_err(|_| FilePathError::NotFound)?;
-
-    // Ensure the resolved path is within the base directory. This should be
-    // caught by the symlink check, but nevertheless.
-    if !canonical_full.starts_with(&canonical_dir) {
-        return Err(FilePathError::OutsideDirectory);
-    }
-
-    Ok(canonical_full)
 }
 
 #[cfg(test)]
@@ -98,7 +125,8 @@ mod tests {
         File::create(&image)?;
 
         // Assertions.
-        let result = validate_file_path(&dir, "test.jpg".to_string());
+        let resolver = MediaResolver { root: dir.clone() };
+        let result = resolver.resolve("test.jpg");
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), image.canonicalize().unwrap());
         Ok(())
@@ -116,7 +144,8 @@ mod tests {
         File::create(&image_path).unwrap();
 
         // Assertions.
-        let result = validate_file_path(&dir, "images/photo.png".to_string());
+        let resolver = MediaResolver { root: dir.clone() };
+        let result = resolver.resolve("images/photo.png");
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), image_path.canonicalize().unwrap());
         Ok(())
@@ -129,8 +158,9 @@ mod tests {
         let dir = create_tmp_directory()?;
 
         // Assertions.
-        let result = validate_file_path(&dir, "nonexistent.jpg".to_string());
-        assert_eq!(result, Err(FilePathError::NotFound));
+        let resolver = MediaResolver { root: dir.clone() };
+        let result = resolver.resolve("nonexistent.jpg");
+        assert_eq!(result, Err(ResolveError::NotFound));
         Ok(())
     }
 
@@ -141,8 +171,9 @@ mod tests {
         let dir = create_tmp_directory()?;
 
         // Assertions.
-        let result = validate_file_path(&dir, "../etc/passwd".to_string());
-        assert_eq!(result, Err(FilePathError::InvalidPath));
+        let resolver = MediaResolver { root: dir.clone() };
+        let result = resolver.resolve("../etc/passwd");
+        assert_eq!(result, Err(ResolveError::InvalidPath));
         Ok(())
     }
 
@@ -153,8 +184,9 @@ mod tests {
         let dir = create_tmp_directory()?;
 
         // Assertions.
-        let result = validate_file_path(&dir, "images/../../../etc/passwd".to_string());
-        assert_eq!(result, Err(FilePathError::InvalidPath));
+        let resolver = MediaResolver { root: dir.clone() };
+        let result = resolver.resolve("images/../../../etc/passwd");
+        assert_eq!(result, Err(ResolveError::InvalidPath));
         Ok(())
     }
 
@@ -165,8 +197,9 @@ mod tests {
         let dir = create_tmp_directory()?;
 
         // Assertions.
-        let result = validate_file_path(&dir, "/etc/passwd".to_string());
-        assert_eq!(result, Err(FilePathError::InvalidPath));
+        let resolver = MediaResolver { root: dir.clone() };
+        let result = resolver.resolve("/etc/passwd");
+        assert_eq!(result, Err(ResolveError::InvalidPath));
         Ok(())
     }
 
@@ -181,8 +214,9 @@ mod tests {
         symlink(&target, &link)?;
 
         // Assertions.
-        let result = validate_file_path(&dir, "link.jpg".to_string());
-        assert_eq!(result, Err(FilePathError::Symlink));
+        let resolver = MediaResolver { root: dir.clone() };
+        let result = resolver.resolve("link.jpg");
+        assert_eq!(result, Err(ResolveError::Symlink));
         Ok(())
     }
 
@@ -200,8 +234,9 @@ mod tests {
         symlink(&outside_file, &link)?;
 
         // Assertions.
-        let result = validate_file_path(&dir1, "evil_link.jpg".to_string());
-        assert_eq!(result, Err(FilePathError::Symlink));
+        let resolver = MediaResolver { root: dir1.clone() };
+        let result = resolver.resolve("evil_link.jpg");
+        assert_eq!(result, Err(ResolveError::Symlink));
         Ok(())
     }
 
@@ -212,8 +247,9 @@ mod tests {
         let dir = create_tmp_directory()?;
 
         // Assertions.
-        let result = validate_file_path(&dir, "..%2F..%2Fetc%2Fpasswd".to_string());
-        assert_eq!(result, Err(FilePathError::InvalidPath));
+        let resolver = MediaResolver { root: dir.clone() };
+        let result = resolver.resolve("..%2F..%2Fetc%2Fpasswd");
+        assert_eq!(result, Err(ResolveError::InvalidPath));
         Ok(())
     }
 
@@ -224,8 +260,9 @@ mod tests {
         let dir = create_tmp_directory()?;
 
         // Assertions.
-        let result = validate_file_path(&dir, "".to_string());
-        assert_eq!(result, Err(FilePathError::Empty));
+        let resolver = MediaResolver { root: dir.clone() };
+        let result = resolver.resolve("");
+        assert_eq!(result, Err(ResolveError::Empty));
         Ok(())
     }
 
@@ -238,7 +275,8 @@ mod tests {
         File::create(&image_path)?;
 
         // Assertions.
-        let result = validate_file_path(&dir, "my image.jpg".to_string());
+        let resolver = MediaResolver { root: dir.clone() };
+        let result = resolver.resolve("my image.jpg");
         assert!(result.is_ok());
         Ok(())
     }
@@ -252,7 +290,8 @@ mod tests {
         File::create(&image_path)?;
 
         // Assertions.
-        let result = validate_file_path(&dir, "画像.jpg".to_string());
+        let resolver = MediaResolver { root: dir.clone() };
+        let result = resolver.resolve("画像.jpg");
         assert!(result.is_ok());
         Ok(())
     }

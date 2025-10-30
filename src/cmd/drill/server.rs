@@ -34,7 +34,6 @@ use tokio::sync::oneshot::Receiver;
 use tokio::sync::oneshot::channel;
 
 use crate::cmd::drill::cache::Cache;
-use crate::cmd::drill::file::validate_file_path;
 use crate::cmd::drill::get::get_handler;
 use crate::cmd::drill::post::post_handler;
 use crate::cmd::drill::state::MutableState;
@@ -43,6 +42,7 @@ use crate::collection::Collection;
 use crate::db::Database;
 use crate::error::Fallible;
 use crate::error::fail;
+use crate::media::resolve::MediaResolver;
 use crate::types::card::Card;
 use crate::types::card_hash::CardHash;
 use crate::types::date::Date;
@@ -177,7 +177,10 @@ async fn file_handler(
     State(state): State<ServerState>,
     Path(path): Path<String>,
 ) -> (StatusCode, [(HeaderName, &'static str); 1], Vec<u8>) {
-    let validated_path: PathBuf = match validate_file_path(&state.directory, path) {
+    let resolve = MediaResolver {
+        root: state.directory.clone(),
+    };
+    let validated_path: PathBuf = match resolve.resolve(&path) {
         Ok(p) => p,
         Err(_) => {
             return (
