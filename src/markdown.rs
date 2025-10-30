@@ -118,7 +118,8 @@ fn modify_url(
     let resolved_path = resolve_media_path(deck_file_path, collection_root, url)?;
 
     // Convert to string for URL
-    let path_str = resolved_path.to_str()
+    let path_str = resolved_path
+        .to_str()
         .ok_or_else(|| crate::error::fail("Path contains invalid UTF-8"))?;
 
     Ok(format!("http://localhost:{port}/file/{path_str}"))
@@ -126,10 +127,12 @@ fn modify_url(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::fs::File;
     use std::path::PathBuf;
+
     use tempfile::tempdir;
+
+    use super::*;
 
     #[test]
     fn test_markdown_to_html() {

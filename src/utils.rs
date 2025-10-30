@@ -48,13 +48,16 @@ pub fn resolve_media_path(
     }
 
     // Normalize the paths
-    let collection_root = collection_root.canonicalize()
+    let collection_root = collection_root
+        .canonicalize()
         .map_err(|_| fail("Failed to canonicalize collection root"))?;
 
-    let deck_file_path = deck_file_path.canonicalize()
+    let deck_file_path = deck_file_path
+        .canonicalize()
         .map_err(|_| fail("Failed to canonicalize deck file path"))?;
 
-    let deck_dir = deck_file_path.parent()
+    let deck_dir = deck_file_path
+        .parent()
         .ok_or_else(|| fail("Deck file has no parent directory"))?;
 
     // Handle collection-relative paths (starting with @/)
@@ -68,7 +71,8 @@ pub fn resolve_media_path(
     };
 
     // Canonicalize to resolve .. and . components
-    let canonical_path = absolute_path.canonicalize()
+    let canonical_path = absolute_path
+        .canonicalize()
         .map_err(|_| fail(&format!("Failed to resolve media path: {}", media_path)))?;
 
     // Ensure the resolved path is within the collection root
@@ -80,16 +84,20 @@ pub fn resolve_media_path(
     }
 
     // Return the path relative to collection root
-    canonical_path.strip_prefix(&collection_root)
+    canonical_path
+        .strip_prefix(&collection_root)
         .map(|p| p.to_path_buf())
         .map_err(|_| fail("Failed to strip collection root prefix"))
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use std::fs::{File, create_dir_all};
+    use std::fs::File;
+    use std::fs::create_dir_all;
+
     use tempfile::tempdir;
+
+    use super::*;
 
     #[test]
     fn test_resolve_media_path_deck_relative() {
@@ -134,7 +142,8 @@ mod tests {
         File::create(&image_file).unwrap();
 
         // Deck-relative path with .. should resolve to images/photo.jpg
-        let resolved = resolve_media_path(&deck_file, collection_root, "../images/photo.jpg").unwrap();
+        let resolved =
+            resolve_media_path(&deck_file, collection_root, "../images/photo.jpg").unwrap();
         assert_eq!(resolved, PathBuf::from("images/photo.jpg"));
     }
 
@@ -160,7 +169,8 @@ mod tests {
         File::create(&image_file).unwrap();
 
         // Collection-relative path (with @/) should resolve to shared/logo.png
-        let resolved = resolve_media_path(&deck_file, collection_root, "@/shared/logo.png").unwrap();
+        let resolved =
+            resolve_media_path(&deck_file, collection_root, "@/shared/logo.png").unwrap();
         assert_eq!(resolved, PathBuf::from("shared/logo.png"));
     }
 
@@ -199,8 +209,12 @@ mod tests {
         File::create(&image_file).unwrap();
 
         // Deck-relative path
-        let resolved = resolve_media_path(&deck_file, collection_root, "images/mitochondria.png").unwrap();
-        assert_eq!(resolved, PathBuf::from("biology/cell/images/mitochondria.png"));
+        let resolved =
+            resolve_media_path(&deck_file, collection_root, "images/mitochondria.png").unwrap();
+        assert_eq!(
+            resolved,
+            PathBuf::from("biology/cell/images/mitochondria.png")
+        );
     }
 
     #[test]
