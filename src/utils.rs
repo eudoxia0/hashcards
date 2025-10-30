@@ -19,6 +19,7 @@ use std::time::Duration;
 use tokio::net::TcpStream;
 use tokio::time::sleep;
 
+use crate::error::ErrorReport;
 use crate::error::Fallible;
 use crate::error::fail;
 
@@ -50,15 +51,15 @@ pub fn resolve_media_path(
     // Normalize the paths
     let collection_root = collection_root
         .canonicalize()
-        .map_err(|_| fail("Failed to canonicalize collection root"))?;
+        .map_err(|_| ErrorReport::new("Failed to canonicalize collection root"))?;
 
     let deck_file_path = deck_file_path
         .canonicalize()
-        .map_err(|_| fail("Failed to canonicalize deck file path"))?;
+        .map_err(|_| ErrorReport::new("Failed to canonicalize deck file path"))?;
 
     let deck_dir = deck_file_path
         .parent()
-        .ok_or_else(|| fail("Deck file has no parent directory"))?;
+        .ok_or_else(|| ErrorReport::new("Deck file has no parent directory"))?;
 
     // Handle collection-relative paths (starting with @/)
     let absolute_path = if media_path.starts_with("@/") {
@@ -73,13 +74,12 @@ pub fn resolve_media_path(
     // Canonicalize to resolve .. and . components
     let canonical_path = absolute_path
         .canonicalize()
-        .map_err(|_| fail(&format!("Failed to resolve media path: {}", media_path)))?;
+        .map_err(|_| ErrorReport::new(format!("Failed to resolve media path: {media_path}")))?;
 
     // Ensure the resolved path is within the collection root
     if !canonical_path.starts_with(&collection_root) {
-        return fail(&format!(
-            "Media path '{}' resolves outside the collection directory",
-            media_path
+        return fail(format!(
+            "Media path '{media_path}' resolves outside the collection directory"
         ));
     }
 
@@ -87,7 +87,7 @@ pub fn resolve_media_path(
     canonical_path
         .strip_prefix(&collection_root)
         .map(|p| p.to_path_buf())
-        .map_err(|_| fail("Failed to strip collection root prefix"))
+        .map_err(|_| ErrorReport::new("Failed to strip collection root prefix"))
 }
 
 #[cfg(test)]
