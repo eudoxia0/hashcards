@@ -19,6 +19,11 @@
                 SQLite is once again bundled into the binary, increasing the executable size but reducing build problems especially on NixOS.
             </change>
         </changed>
+        <fixed>
+            <change author="eudoxia0">
+                Flashcards can reference external URLs now.
+            </change>
+        </fixed>
     </unreleased>
     <releases>
         <release version="0.1.1" date="2025-10-29">

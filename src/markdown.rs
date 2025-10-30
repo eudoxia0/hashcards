@@ -76,7 +76,12 @@ pub fn markdown_to_html_inline(markdown: &str, port: u16) -> String {
 }
 
 fn modify_url(url: &str, port: u16) -> String {
-    format!("http://localhost:{port}/file/{url}")
+    if url.contains("://") {
+        // Leave external URLs alone.
+        url.to_string()
+    } else {
+        format!("http://localhost:{port}/file/{url}")
+    }
 }
 
 #[cfg(test)]
@@ -105,5 +110,13 @@ mod tests {
         let markdown = "# Foo";
         let html = markdown_to_html_inline(markdown, 0);
         assert_eq!(html, "<h1>Foo</h1>\n");
+    }
+
+    #[test]
+    fn test_external_url_is_unchanged() {
+        let url = "https://upload.wikimedia.org/wikipedia/commons/6/63/Circe_Invidiosa_-_John_William_Waterhouse.jpg";
+        let markdown = format!("![alt]({url})");
+        let html = markdown_to_html(&markdown, 1234);
+        assert_eq!(html, format!("<p><img src=\"{url}\" alt=\"alt\" /></p>\n"));
     }
 }
