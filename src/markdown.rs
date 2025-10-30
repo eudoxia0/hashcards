@@ -36,11 +36,14 @@ fn is_audio_file(url: &str) -> bool {
 
 /// Configuration for the Markdown renderer.
 pub struct MarkdownRendererConfig {
-    /// The port where the server is running. This is used to construct URLs for media files.
+    /// The port where the server is running. This is used to construct URLs
+    /// for media files.
     pub port: u16,
-    /// The path to the file that contains the flashcard being rendered. This is used to resolve the paths of deck-relative media.
+    /// The path to the file that contains the flashcard being rendered. This
+    /// is used to resolve the paths of deck-relative media.
     pub deck_file_path: PathBuf,
-    /// The path to the collection root directory. This is used to resolve the paths of collection-relative media.
+    /// The path to the collection root directory. This is used to resolve the
+    /// paths of collection-relative media.
     pub collection_root: PathBuf,
 }
 
