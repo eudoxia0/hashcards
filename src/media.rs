@@ -24,6 +24,7 @@ use crate::error::ErrorReport;
 use crate::error::Fallible;
 use crate::types::card::Card;
 use crate::types::card::CardContent;
+use crate::utils::resolve_media_path;
 
 /// Represents a missing media file reference.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -68,9 +69,22 @@ pub fn validate_media_files(cards: &[Card], base_dir: &Path) -> Fallible<()> {
                     continue;
                 }
 
-                // Check if file exists.
-                let full_path = base_dir.join(&path);
-                if !full_path.exists() {
+                // Resolve path according to hashcards rules
+                let resolved_path = match resolve_media_path(card.file_path(), base_dir, &path) {
+                    Ok(p) => base_dir.join(p),
+                    Err(_) => {
+                        // If resolution fails, mark as missing
+                        missing.insert(MissingMedia {
+                            file_path: path.clone(),
+                            card_file: card.file_path().clone(),
+                            card_lines: card.range(),
+                        });
+                        continue;
+                    }
+                };
+
+                // Check if file exists
+                if !resolved_path.exists() {
                     missing.insert(MissingMedia {
                         file_path: path,
                         card_file: card.file_path().clone(),

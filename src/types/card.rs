@@ -112,12 +112,12 @@ impl Card {
         }
     }
 
-    pub fn html_front(&self, port: u16) -> Fallible<Markup> {
-        self.content.html_front(port)
+    pub fn html_front(&self, port: u16, collection_root: &std::path::Path) -> Fallible<Markup> {
+        self.content.html_front(port, &self.file_path, collection_root)
     }
 
-    pub fn html_back(&self, port: u16) -> Fallible<Markup> {
-        self.content.html_back(port)
+    pub fn html_back(&self, port: u16, collection_root: &std::path::Path) -> Fallible<Markup> {
+        self.content.html_back(port, &self.file_path, collection_root)
     }
 }
 
@@ -170,18 +170,23 @@ impl CardContent {
         }
     }
 
-    pub fn html_front(&self, port: u16) -> Fallible<Markup> {
+    pub fn html_front(
+        &self,
+        port: u16,
+        deck_file_path: &PathBuf,
+        collection_root: &std::path::Path,
+    ) -> Fallible<Markup> {
         let html = match self {
             CardContent::Basic { question, .. } => {
                 html! {
-                    (PreEscaped(markdown_to_html(question, port)))
+                    (PreEscaped(markdown_to_html(question, port, deck_file_path, collection_root)?))
                 }
             }
             CardContent::Cloze { text, start, end } => {
                 let mut text_bytes: Vec<u8> = text.as_bytes().to_owned();
                 text_bytes.splice(*start..*end + 1, CLOZE_TAG_BYTES.iter().copied());
                 let text: String = String::from_utf8(text_bytes)?;
-                let text: String = markdown_to_html(&text, port);
+                let text: String = markdown_to_html(&text, port, deck_file_path, collection_root)?;
                 let text: String =
                     text.replace(CLOZE_TAG, "<span class='cloze'>.............</span>");
                 html! {
@@ -192,21 +197,26 @@ impl CardContent {
         Ok(html)
     }
 
-    pub fn html_back(&self, port: u16) -> Fallible<Markup> {
+    pub fn html_back(
+        &self,
+        port: u16,
+        deck_file_path: &PathBuf,
+        collection_root: &std::path::Path,
+    ) -> Fallible<Markup> {
         let html = match self {
             CardContent::Basic { answer, .. } => {
                 html! {
-                    (PreEscaped(markdown_to_html(answer, port)))
+                    (PreEscaped(markdown_to_html(answer, port, deck_file_path, collection_root)?))
                 }
             }
             CardContent::Cloze { text, start, end } => {
                 let mut text_bytes: Vec<u8> = text.as_bytes().to_owned();
                 let deleted_text: Vec<u8> = text_bytes[*start..*end + 1].to_owned();
                 let deleted_text: String = String::from_utf8(deleted_text)?;
-                let deleted_text: String = markdown_to_html_inline(&deleted_text, port);
+                let deleted_text: String = markdown_to_html_inline(&deleted_text, port, deck_file_path, collection_root)?;
                 text_bytes.splice(*start..*end + 1, CLOZE_TAG_BYTES.iter().copied());
                 let text: String = String::from_utf8(text_bytes)?;
-                let text = markdown_to_html(&text, port);
+                let text = markdown_to_html(&text, port, deck_file_path, collection_root)?;
                 let text = text.replace(
                     CLOZE_TAG,
                     &format!("<span class='cloze-reveal'>{}</span>", deleted_text),

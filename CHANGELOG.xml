@@ -12,6 +12,9 @@
             </change>
         </added>
         <changed>
+            <change author="claude">
+                **Breaking:** Media file paths are now resolved relative to the deck file by default, instead of relative to the collection root. Paths starting with `@/` are resolved relative to the collection root. This allows for better co-location of images with deck files and makes deck directories more portable.
+            </change>
             <change author="eudoxia0">
                 Killing the server with `ctrl+c` at the end of a session causes the server to die with exit code 0.
             </change>
