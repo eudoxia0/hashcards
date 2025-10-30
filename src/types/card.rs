@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::path::Path;
 use std::path::PathBuf;
 
 use maud::Markup;
@@ -202,7 +203,7 @@ impl CardContent {
     pub fn html_back(
         &self,
         port: u16,
-        deck_file_path: &PathBuf,
+        deck_file_path: &Path,
         collection_root: &std::path::Path,
     ) -> Fallible<Markup> {
         let html = match self {
