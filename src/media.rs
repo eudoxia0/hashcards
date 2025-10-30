@@ -159,8 +159,9 @@ mod tests {
         let test_dir = temp_dir().join("hashcards_media_test");
         create_dir_all(&test_dir).expect("Failed to create test directory");
 
-        // Create a markdown file path (doesn't need to exist for this test)
+        // Create the deck file (needed for path canonicalization)
         let card_file = test_dir.join("test_deck.md");
+        std::fs::write(&card_file, b"").expect("Failed to create deck file");
 
         // Parse cards from markdown with missing media references
         let markdown = "Q: What is this image?\n\n![](missing_image.jpg)\n\nA: Unknown\n\nQ: What is this audio?\nA: ![](missing_audio.mp3)";
@@ -193,8 +194,9 @@ mod tests {
         let image_path = test_dir.join("existing_image.jpg");
         std::fs::write(&image_path, b"fake image data").expect("Failed to create test image");
 
-        // Create a markdown file path
+        // Create the deck file (needed for path canonicalization)
         let card_file = test_dir.join("test_deck.md");
+        std::fs::write(&card_file, b"").expect("Failed to create deck file");
 
         // Parse cards from markdown with existing media reference
         let markdown = "Q: What is this image?\n\n![](existing_image.jpg)\n\nA: A test image";
@@ -214,8 +216,9 @@ mod tests {
         let test_dir = temp_dir().join("hashcards_media_test_urls");
         create_dir_all(&test_dir).expect("Failed to create test directory");
 
-        // Create a markdown file path
+        // Create the deck file (needed for path canonicalization)
         let card_file = test_dir.join("test_deck.md");
+        std::fs::write(&card_file, b"").expect("Failed to create deck file");
 
         // Parse cards from markdown with external URL (should be skipped)
         let markdown = "Q: What is this?\nA: ![](https://example.com/image.jpg)";
@@ -235,8 +238,9 @@ mod tests {
         let test_dir = temp_dir().join("hashcards_media_test_cloze");
         create_dir_all(&test_dir).expect("Failed to create test directory");
 
-        // Create a markdown file path
+        // Create the deck file (needed for path canonicalization)
         let card_file = test_dir.join("test_deck.md");
+        std::fs::write(&card_file, b"").expect("Failed to create deck file");
 
         // Parse cloze card with missing media reference
         let markdown = "C: The capital of [France] is ![](paris.jpg)";
