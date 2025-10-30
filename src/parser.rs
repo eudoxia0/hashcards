@@ -190,6 +190,8 @@ enum Line {
     StartAnswer(String),
     /// A line like `C: <text>`.
     StartCloze(String),
+    /// A line that's just `---` (flashcard separator).
+    Separator,
     /// Any other line.
     Text(String),
 }
@@ -202,6 +204,8 @@ impl Line {
             Line::StartAnswer(trim(line))
         } else if is_cloze(line) {
             Line::StartCloze(trim(line))
+        } else if is_separator(line) {
+            Line::Separator
         } else {
             Line::Text(line.to_string())
         }
@@ -218,6 +222,10 @@ fn is_answer(line: &str) -> bool {
 
 fn is_cloze(line: &str) -> bool {
     line.starts_with("C:")
+}
+
+fn is_separator(line: &str) -> bool {
+    line.trim() == "---"
 }
 
 fn trim(line: &str) -> String {
@@ -276,6 +284,7 @@ impl Parser {
                     text,
                     start_line: line_num,
                 }),
+                Line::Separator => Ok(State::Initial),
                 Line::Text(_) => Ok(State::Initial),
             },
             State::ReadingQuestion {
@@ -294,6 +303,11 @@ impl Parser {
                 }),
                 Line::StartCloze(_) => Err(ParserError::new(
                     "Found cloze tag while reading a question.",
+                    self.file_path.clone(),
+                    line_num,
+                )),
+                Line::Separator => Err(ParserError::new(
+                    "Found flashcard separator while reading a question.",
                     self.file_path.clone(),
                     line_num,
                 )),
@@ -343,6 +357,18 @@ impl Parser {
                             start_line: line_num,
                         })
                     }
+                    Line::Separator => {
+                        // Finalize the current card.
+                        let card = Card::new(
+                            self.deck_name.clone(),
+                            self.file_path.clone(),
+                            (start_line, line_num),
+                            CardContent::new_basic(question, answer),
+                        );
+                        cards.push(card);
+                        // Return to initial state.
+                        Ok(State::Initial)
+                    }
                     Line::Text(text) => Ok(State::ReadingAnswer {
                         question,
                         answer: format!("{answer}\n{text}"),
@@ -374,6 +400,12 @@ impl Parser {
                             text: new_text,
                             start_line: line_num,
                         })
+                    }
+                    Line::Separator => {
+                        // Finalize the current cloze card.
+                        cards.extend(self.parse_cloze_cards(text, start_line, line_num)?);
+                        // Return to initial state.
+                        Ok(State::Initial)
                     }
                     Line::Text(new_text) => Ok(State::ReadingCloze {
                         text: format!("{text}\n{new_text}"),
@@ -1027,6 +1059,114 @@ A: Genetic material."#,
         // Clean up
         std::fs::remove_dir_all(&directory).ok();
 
+        Ok(())
+    }
+
+    #[test]
+    fn test_separator_between_basic_cards() -> Result<(), ParserError> {
+        let input = "Q: foo\nA: bar\n---\nQ: baz\nA: quux";
+        let parser = make_test_parser();
+        let cards = parser.parse(input)?;
+
+        assert_eq!(cards.len(), 2);
+        assert!(matches!(
+            &cards[0].content(),
+            CardContent::Basic {
+                question,
+                answer,
+            } if question == "foo" && answer == "bar"
+        ));
+        assert!(matches!(
+            &cards[1].content(),
+            CardContent::Basic {
+                question,
+                answer,
+            } if question == "baz" && answer == "quux"
+        ));
+        Ok(())
+    }
+
+    #[test]
+    fn test_separator_after_cloze_card() -> Result<(), ParserError> {
+        let input = "C: [foo]\n---\nQ: Question\nA: Answer";
+        let parser = make_test_parser();
+        let cards = parser.parse(input)?;
+
+        assert_eq!(cards.len(), 2);
+        assert_cloze(&cards[0..1], "foo", &[(0, 2)]);
+        assert!(matches!(
+            &cards[1].content(),
+            CardContent::Basic {
+                question,
+                answer,
+            } if question == "Question" && answer == "Answer"
+        ));
+        Ok(())
+    }
+
+    #[test]
+    fn test_separator_between_cloze_cards() -> Result<(), ParserError> {
+        let input = "C: [foo]\n---\nC: [bar]";
+        let parser = make_test_parser();
+        let cards = parser.parse(input)?;
+
+        assert_eq!(cards.len(), 2);
+        assert_cloze(&cards[0..1], "foo", &[(0, 2)]);
+        assert_cloze(&cards[1..2], "bar", &[(0, 2)]);
+        Ok(())
+    }
+
+    #[test]
+    fn test_separator_in_question_errors() -> Result<(), ParserError> {
+        let input = "Q: Question\n---\nA: Answer";
+        let parser = make_test_parser();
+        let result = parser.parse(input);
+
+        assert!(result.is_err());
+        if let Err(e) = result {
+            assert!(e.to_string().contains("separator"));
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn test_multiple_separators() -> Result<(), ParserError> {
+        let input = "Q: foo\nA: bar\n---\n---\nQ: baz\nA: quux";
+        let parser = make_test_parser();
+        let cards = parser.parse(input)?;
+
+        assert_eq!(cards.len(), 2);
+        assert!(matches!(
+            &cards[0].content(),
+            CardContent::Basic {
+                question,
+                answer,
+            } if question == "foo" && answer == "bar"
+        ));
+        assert!(matches!(
+            &cards[1].content(),
+            CardContent::Basic {
+                question,
+                answer,
+            } if question == "baz" && answer == "quux"
+        ));
+        Ok(())
+    }
+
+    #[test]
+    fn test_separator_at_end() -> Result<(), ParserError> {
+        let input = "Q: foo\nA: bar\n---";
+        let parser = make_test_parser();
+        let cards = parser.parse(input)?;
+
+        assert_eq!(cards.len(), 1);
+        assert!(matches!(
+            &cards[0].content(),
+            CardContent::Basic {
+                question,
+                answer,
+            } if question == "foo" && answer == "bar"
+        ));
         Ok(())
     }
 }
