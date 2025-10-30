@@ -112,7 +112,7 @@ fn modify_url(
 ) -> Fallible<String> {
     // Skip external URLs
     if url.contains("://") {
-        return Ok(format!("http://localhost:{port}/file/{url}"));
+        return Ok(url.to_string());
     }
 
     // Resolve the path according to hashcards rules
