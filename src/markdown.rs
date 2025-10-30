@@ -120,18 +120,10 @@ fn modify_url(url: &str, config: &MarkdownRendererConfig) -> Fallible<String> {
     // Skip external URLs
     if url.contains("://") {
         return Ok(url.to_string());
+    } else {
+        let port = config.port;
+        Ok(format!("http://localhost:{port}/file/{url}"))
     }
-
-    // Resolve the path according to hashcards rules
-    let resolved_path = resolve_media_path(&config.deck_file_path, &config.collection_root, url)?;
-
-    // Convert to string for URL
-    let path_str = resolved_path
-        .to_str()
-        .ok_or_else(|| ErrorReport::new("Path contains invalid UTF-8"))?;
-
-    let port = config.port;
-    Ok(format!("http://localhost:{port}/file/{path_str}"))
 }
 
 #[cfg(test)]
