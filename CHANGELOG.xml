@@ -7,6 +7,9 @@
             <change author="eudoxia0">
                 The session completed page now shows a button to shut down the server.
             </change>
+            <change author="claude">
+                Flashcards can now be separated using `---` as an explicit separator.
+            </change>
         </added>
         <changed>
             <change author="eudoxia0">
