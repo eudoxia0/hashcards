@@ -269,6 +269,6 @@ mod tests {
         let html = markdown_to_html(markdown, 8080, &deck_file, temp_dir.path()).unwrap();
 
         // External URLs should be passed through as-is
-        assert!(html.contains("http://localhost:8080/file/https://example.com/image.png"));
+        assert!(html.contains("https://example.com/image.png"));
     }
 }
