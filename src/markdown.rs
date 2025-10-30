@@ -20,6 +20,7 @@ use pulldown_cmark::Parser;
 use pulldown_cmark::Tag;
 use pulldown_cmark::html::push_html;
 
+use crate::error::ErrorReport;
 use crate::error::Fallible;
 use crate::utils::resolve_media_path;
 
@@ -120,7 +121,7 @@ fn modify_url(
     // Convert to string for URL
     let path_str = resolved_path
         .to_str()
-        .ok_or_else(|| crate::error::fail("Path contains invalid UTF-8"))?;
+        .ok_or_else(|| ErrorReport::new("Path contains invalid UTF-8"))?;
 
     Ok(format!("http://localhost:{port}/file/{path_str}"))
 }
@@ -128,7 +129,6 @@ fn modify_url(
 #[cfg(test)]
 mod tests {
     use std::fs::File;
-    use std::path::PathBuf;
 
     use tempfile::tempdir;
 
