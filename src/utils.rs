@@ -62,9 +62,8 @@ pub fn resolve_media_path(
         .ok_or_else(|| ErrorReport::new("Deck file has no parent directory"))?;
 
     // Handle collection-relative paths (starting with @/)
-    let absolute_path = if media_path.starts_with("@/") {
+    let absolute_path = if let Some(relative_path) = media_path.strip_prefix("@/") {
         // Strip the @ and resolve relative to collection root
-        let relative_path = &media_path[2..];
         collection_root.join(relative_path)
     } else {
         // Resolve relative to deck file's directory
