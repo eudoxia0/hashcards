@@ -82,8 +82,16 @@ pub fn markdown_to_html(
     let mut html_output = String::new();
     push_html(&mut html_output, parser);
 
-    if let Some(error) = errors.into_iter().next() {
-        return Err(error);
+    if !errors.is_empty() {
+        let error_messages: Vec<String> = errors
+            .into_iter()
+            .map(|e| e.to_string())
+            .collect();
+        let combined_message = format!(
+            "Failed to resolve media paths:\n{}",
+            error_messages.join("\n")
+        );
+        return Err(ErrorReport::new(&combined_message));
     }
 
     Ok(html_output)
