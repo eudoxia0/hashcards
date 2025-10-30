@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::path::Path;
+use std::path::PathBuf;
 
 use pulldown_cmark::CowStr;
 use pulldown_cmark::Event;
@@ -34,12 +34,18 @@ fn is_audio_file(url: &str) -> bool {
     }
 }
 
-pub fn markdown_to_html(
-    markdown: &str,
-    port: u16,
-    deck_file_path: &Path,
-    collection_root: &Path,
-) -> Fallible<String> {
+/// Configuration for the Markdown renderer.
+pub struct MarkdownRendererConfig {
+    /// The port where the server is running. This is used to construct URLs for media files.
+    pub port: u16,
+    /// The path to the file that contains the flashcard being rendered. This is used to resolve the paths of deck-relative media.
+    pub deck_file_path: PathBuf,
+    /// The path to the collection root directory. This is used to resolve the paths of collection-relative media.
+    pub collection_root: PathBuf,
+}
+
+/// Render Markdown to HTML.
+pub fn markdown_to_html(markdown: &str, config: &MarkdownRendererConfig) -> Fallible<String> {
     let parser = Parser::new(markdown);
     let mut errors = Vec::new();
 
@@ -50,7 +56,7 @@ pub fn markdown_to_html(
             dest_url,
             id,
         }) => {
-            let url = match modify_url(&dest_url, port, deck_file_path, collection_root) {
+            let url = match modify_url(&dest_url, config) {
                 Ok(url) => url,
                 Err(e) => {
                     errors.push(e);
@@ -96,11 +102,9 @@ pub fn markdown_to_html(
 
 pub fn markdown_to_html_inline(
     markdown: &str,
-    port: u16,
-    deck_file_path: &Path,
-    collection_root: &Path,
+    config: &MarkdownRendererConfig,
 ) -> Fallible<String> {
-    let text = markdown_to_html(markdown, port, deck_file_path, collection_root)?;
+    let text = markdown_to_html(markdown, config)?;
     if text.starts_with("<p>") && text.ends_with("</p>\n") {
         let len = text.len();
         Ok(text[3..len - 5].to_string())
@@ -109,25 +113,21 @@ pub fn markdown_to_html_inline(
     }
 }
 
-fn modify_url(
-    url: &str,
-    port: u16,
-    deck_file_path: &Path,
-    collection_root: &Path,
-) -> Fallible<String> {
+fn modify_url(url: &str, config: &MarkdownRendererConfig) -> Fallible<String> {
     // Skip external URLs
     if url.contains("://") {
         return Ok(url.to_string());
     }
 
     // Resolve the path according to hashcards rules
-    let resolved_path = resolve_media_path(deck_file_path, collection_root, url)?;
+    let resolved_path = resolve_media_path(&config.deck_file_path, &config.collection_root, url)?;
 
     // Convert to string for URL
     let path_str = resolved_path
         .to_str()
         .ok_or_else(|| ErrorReport::new("Path contains invalid UTF-8"))?;
 
+    let port = config.port;
     Ok(format!("http://localhost:{port}/file/{path_str}"))
 }
 
@@ -149,7 +149,12 @@ mod tests {
         File::create(&image_file).unwrap();
 
         let markdown = "![alt](image.png)";
-        let html = markdown_to_html(markdown, 1234, &deck_file, temp_dir.path()).unwrap();
+        let config = MarkdownRendererConfig {
+            port: 1234,
+            deck_file_path: deck_file.clone(),
+            collection_root: temp_dir.path().to_path_buf(),
+        };
+        let html = markdown_to_html(markdown, &config).unwrap();
         assert_eq!(
             html,
             "<p><img src=\"http://localhost:1234/file/image.png\" alt=\"alt\" /></p>\n"
@@ -164,7 +169,12 @@ mod tests {
         File::create(&deck_file).unwrap();
 
         let markdown = "This is **bold** text.";
-        let html = markdown_to_html_inline(markdown, 0, &deck_file, temp_dir.path()).unwrap();
+        let config = MarkdownRendererConfig {
+            port: 0,
+            deck_file_path: deck_file.clone(),
+            collection_root: temp_dir.path().to_path_buf(),
+        };
+        let html = markdown_to_html_inline(markdown, &config).unwrap();
         assert_eq!(html, "This is <strong>bold</strong> text.");
     }
 
@@ -176,7 +186,12 @@ mod tests {
         File::create(&deck_file).unwrap();
 
         let markdown = "# Foo";
-        let html = markdown_to_html_inline(markdown, 0, &deck_file, temp_dir.path()).unwrap();
+        let config = MarkdownRendererConfig {
+            port: 0,
+            deck_file_path: deck_file.clone(),
+            collection_root: temp_dir.path().to_path_buf(),
+        };
+        let html = markdown_to_html_inline(markdown, &config).unwrap();
         assert_eq!(html, "<h1>Foo</h1>\n");
     }
 
@@ -199,7 +214,12 @@ mod tests {
         File::create(&image_file).unwrap();
 
         let markdown = "![Cell Structure](images/cell.png)";
-        let html = markdown_to_html(markdown, 8080, &deck_file, temp_dir.path()).unwrap();
+        let config = MarkdownRendererConfig {
+            port: 8080,
+            deck_file_path: deck_file.clone(),
+            collection_root: temp_dir.path().to_path_buf(),
+        };
+        let html = markdown_to_html(markdown, &config).unwrap();
 
         // Path should be resolved relative to deck file, resulting in biology/images/cell.png
         assert!(html.contains("http://localhost:8080/file/biology/images/cell.png"));
@@ -225,7 +245,12 @@ mod tests {
         File::create(&image_file).unwrap();
 
         let markdown = "![Logo](../shared_images/logo.png)";
-        let html = markdown_to_html(markdown, 8080, &deck_file, temp_dir.path()).unwrap();
+        let config = MarkdownRendererConfig {
+            port: 8080,
+            deck_file_path: deck_file.clone(),
+            collection_root: temp_dir.path().to_path_buf(),
+        };
+        let html = markdown_to_html(markdown, &config).unwrap();
 
         // Path with .. should be resolved relative to deck file
         assert!(html.contains("http://localhost:8080/file/shared_images/logo.png"));
@@ -252,7 +277,12 @@ mod tests {
         File::create(&image_file).unwrap();
 
         let markdown = "![Banner](@/global/banner.jpg)";
-        let html = markdown_to_html(markdown, 8080, &deck_file, temp_dir.path()).unwrap();
+        let config = MarkdownRendererConfig {
+            port: 8080,
+            deck_file_path: deck_file.clone(),
+            collection_root: temp_dir.path().to_path_buf(),
+        };
+        let html = markdown_to_html(markdown, &config).unwrap();
 
         // Path starting with @/ should be resolved relative to collection root
         assert!(html.contains("http://localhost:8080/file/global/banner.jpg"));
@@ -266,7 +296,12 @@ mod tests {
         File::create(&deck_file).unwrap();
 
         let markdown = "![Remote](https://example.com/image.png)";
-        let html = markdown_to_html(markdown, 8080, &deck_file, temp_dir.path()).unwrap();
+        let config = MarkdownRendererConfig {
+            port: 8080,
+            deck_file_path: deck_file.clone(),
+            collection_root: temp_dir.path().to_path_buf(),
+        };
+        let html = markdown_to_html(markdown, &config).unwrap();
 
         // External URLs should be passed through as-is
         assert!(html.contains("https://example.com/image.png"));

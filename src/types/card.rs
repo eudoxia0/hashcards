@@ -20,6 +20,7 @@ use maud::PreEscaped;
 use maud::html;
 
 use crate::error::Fallible;
+use crate::markdown::MarkdownRendererConfig;
 use crate::markdown::markdown_to_html;
 use crate::markdown::markdown_to_html_inline;
 use crate::types::aliases::DeckName;
@@ -179,17 +180,22 @@ impl CardContent {
         deck_file_path: &Path,
         collection_root: &Path,
     ) -> Fallible<Markup> {
+        let config = MarkdownRendererConfig {
+            port,
+            deck_file_path: deck_file_path.to_owned(),
+            collection_root: collection_root.to_owned(),
+        };
         let html = match self {
             CardContent::Basic { question, .. } => {
                 html! {
-                    (PreEscaped(markdown_to_html(question, port, deck_file_path, collection_root)?))
+                    (PreEscaped(markdown_to_html(question, &config)?))
                 }
             }
             CardContent::Cloze { text, start, end } => {
                 let mut text_bytes: Vec<u8> = text.as_bytes().to_owned();
                 text_bytes.splice(*start..*end + 1, CLOZE_TAG_BYTES.iter().copied());
                 let text: String = String::from_utf8(text_bytes)?;
-                let text: String = markdown_to_html(&text, port, deck_file_path, collection_root)?;
+                let text: String = markdown_to_html(&text, &config)?;
                 let text: String =
                     text.replace(CLOZE_TAG, "<span class='cloze'>.............</span>");
                 html! {
@@ -206,21 +212,25 @@ impl CardContent {
         deck_file_path: &Path,
         collection_root: &Path,
     ) -> Fallible<Markup> {
+        let config = MarkdownRendererConfig {
+            port,
+            deck_file_path: deck_file_path.to_owned(),
+            collection_root: collection_root.to_owned(),
+        };
         let html = match self {
             CardContent::Basic { answer, .. } => {
                 html! {
-                    (PreEscaped(markdown_to_html(answer, port, deck_file_path, collection_root)?))
+                    (PreEscaped(markdown_to_html(answer, &config)?))
                 }
             }
             CardContent::Cloze { text, start, end } => {
                 let mut text_bytes: Vec<u8> = text.as_bytes().to_owned();
                 let deleted_text: Vec<u8> = text_bytes[*start..*end + 1].to_owned();
                 let deleted_text: String = String::from_utf8(deleted_text)?;
-                let deleted_text: String =
-                    markdown_to_html_inline(&deleted_text, port, deck_file_path, collection_root)?;
+                let deleted_text: String = markdown_to_html_inline(&deleted_text, &config)?;
                 text_bytes.splice(*start..*end + 1, CLOZE_TAG_BYTES.iter().copied());
                 let text: String = String::from_utf8(text_bytes)?;
-                let text = markdown_to_html(&text, port, deck_file_path, collection_root)?;
+                let text = markdown_to_html(&text, &config)?;
                 let text = text.replace(
                     CLOZE_TAG,
                     &format!("<span class='cloze-reveal'>{}</span>", deleted_text),
