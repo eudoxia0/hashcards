@@ -541,10 +541,11 @@ impl Parser {
                     // immediately before a `[`. Otherwise, exclamation
                     // marks in other positions would trigger it.
                     let nextopt = text.as_bytes().get(bytepos + 1).copied();
-                    if let Some(next) = nextopt {
-                        if next == b'[' {
+                    match nextopt {
+                        Some(b'[') => {
                             image_mode = true;
                         }
+                        _ => {}
                     }
                 }
                 index += 1;
