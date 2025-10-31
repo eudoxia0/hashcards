@@ -37,4 +37,7 @@ codegen-units = 1
 panic = "abort"
 
 [lints.clippy]
+# Allow using `if a { if b { ... } }` instead of `if a && b { ... }`.
 collapsible_if = "allow"
+# Allow using `match` instead of `if let`.
+single_match = "allow"
