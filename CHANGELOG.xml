@@ -1,5 +1,5 @@
 <changelog>
-        <unreleased>
+    <unreleased>
         <added>
             <change author="eudoxia0">
                 KaTeX is now bundled with the executable, allowing hashcards to work entirely offline.
