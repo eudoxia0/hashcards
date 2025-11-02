@@ -37,6 +37,9 @@ use tokio::sync::oneshot::channel;
 
 use crate::cmd::drill::cache::Cache;
 use crate::cmd::drill::get::get_handler;
+use crate::cmd::drill::katex::KATEX_AUTO_RENDER_JS_URL;
+use crate::cmd::drill::katex::KATEX_CSS_URL;
+use crate::cmd::drill::katex::KATEX_JS_URL;
 use crate::cmd::drill::post::post_handler;
 use crate::cmd::drill::state::MutableState;
 use crate::cmd::drill::state::ServerState;
@@ -144,12 +147,9 @@ pub async fn start_server(config: ServerConfig) -> Fallible<()> {
     let app = app.route("/", post(post_handler));
     let app = app.route("/script.js", get(script_handler));
     let app = app.route("/style.css", get(style_handler));
-    let app = app.route("/katex/katex.css", get(katex_css_handler));
-    let app = app.route("/katex/katex.js", get(katex_js_handler));
-    let app = app.route(
-        "/katex/katex-auto-render.js",
-        get(katex_auto_render_handler),
-    );
+    let app = app.route(KATEX_CSS_URL, get(katex_css_handler));
+    let app = app.route(KATEX_JS_URL, get(katex_js_handler));
+    let app = app.route(KATEX_AUTO_RENDER_JS_URL, get(katex_auto_render_handler));
     let app = app.route("/katex/fonts/{*path}", get(katex_font_handler));
     let app = app.route("/file/{*path}", get(file_handler));
     let app = app.fallback(not_found_handler);
