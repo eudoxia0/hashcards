@@ -22,6 +22,8 @@ use pulldown_cmark::Tag;
 
 use crate::error::ErrorReport;
 use crate::error::Fallible;
+use crate::media::resolve::MediaResolver;
+use crate::media::resolve::ResolveError;
 use crate::types::card::Card;
 use crate::types::card::CardContent;
 
@@ -50,6 +52,9 @@ fn extract_media_paths(markdown: &str) -> Vec<String> {
 /// Validate that all media files referenced in cards exist.
 pub fn validate_media_files(cards: &[Card], base_dir: &Path) -> Fallible<()> {
     let mut missing = HashSet::new();
+    let resolver = MediaResolver {
+        root: base_dir.to_path_buf(),
+    };
 
     for card in cards {
         // Extract markdown content from the card.
@@ -63,19 +68,22 @@ pub fn validate_media_files(cards: &[Card], base_dir: &Path) -> Fallible<()> {
 
         for markdown in markdown_texts {
             for path in extract_media_paths(markdown) {
-                // Skip URLs (http://, https://, etc.)
-                if path.contains("://") {
-                    continue;
-                }
-
-                // Check if file exists.
-                let full_path = base_dir.join(&path);
-                if !full_path.exists() {
-                    missing.insert(MissingMedia {
-                        file_path: path,
-                        card_file: card.file_path().clone(),
-                        card_lines: card.range(),
-                    });
+                // Try to resolve the path using MediaResolver.
+                match resolver.resolve(&path) {
+                    Ok(_) => {
+                        // File exists and is valid.
+                    }
+                    Err(ResolveError::ExternalUrl) => {
+                        // Skip external URLs (same behavior as before).
+                    }
+                    Err(_) => {
+                        // All other errors (NotFound, InvalidPath, etc.) are reported.
+                        missing.insert(MissingMedia {
+                            file_path: path,
+                            card_file: card.file_path().clone(),
+                            card_lines: card.range(),
+                        });
+                    }
                 }
             }
         }
