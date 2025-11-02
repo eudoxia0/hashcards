@@ -112,7 +112,12 @@ fn render_session_page(state: &ServerState, mutable: &MutableState) -> Fallible<
     Ok(html)
 }
 
-fn render_card(card: &Card, reveal: bool, port: u16, collection_root: &std::path::Path) -> Fallible<Markup> {
+fn render_card(
+    card: &Card,
+    reveal: bool,
+    port: u16,
+    collection_root: &std::path::Path,
+) -> Fallible<Markup> {
     let html = match card.card_type() {
         CardType::Basic => {
             if reveal {

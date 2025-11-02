@@ -82,7 +82,8 @@ impl MediaResolver {
 
             // Make deck_dir relative to collection root if it's absolute
             let deck_dir_relative = if deck_dir.starts_with(&self.root) {
-                deck_dir.strip_prefix(&self.root)
+                deck_dir
+                    .strip_prefix(&self.root)
                     .map_err(|_| ResolveError::InvalidPath)?
             } else {
                 deck_dir

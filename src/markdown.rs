@@ -109,8 +109,9 @@ fn modify_url(url: &str, port: u16, resolver: &MediaResolver, deck_path: &Path) 
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::path::PathBuf;
+
+    use super::*;
 
     #[test]
     fn test_markdown_to_html() {

@@ -114,11 +114,13 @@ impl Card {
     }
 
     pub fn html_front(&self, port: u16, collection_root: &Path) -> Fallible<Markup> {
-        self.content.html_front(port, collection_root, &self.file_path)
+        self.content
+            .html_front(port, collection_root, &self.file_path)
     }
 
     pub fn html_back(&self, port: u16, collection_root: &Path) -> Fallible<Markup> {
-        self.content.html_back(port, collection_root, &self.file_path)
+        self.content
+            .html_back(port, collection_root, &self.file_path)
     }
 }
 
