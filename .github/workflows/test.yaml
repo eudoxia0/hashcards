@@ -77,6 +77,9 @@ jobs:
         with:
           tool: cargo-llvm-cov
 
+      - name: fetch katex deps
+        run: make vendor/katex
+
       - name: fetch deps
         run: cargo fetch
 
