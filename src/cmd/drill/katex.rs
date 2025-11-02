@@ -24,17 +24,15 @@ pub const KATEX_JS_URL: &str = "/katex/katex.js";
 pub const KATEX_CSS_URL: &str = "/katex/katex.css";
 pub const KATEX_AUTO_RENDER_JS_URL: &str = "/katex/katex-auto-render.js";
 
-pub async fn katex_css_handler() -> (StatusCode, [(HeaderName, &'static str); 2], String) {
-    let css = include_str!("../../../vendor/katex/katex.min.css");
-    // Rewrite font URLs from "fonts/" to "/katex/fonts/".
-    let css = css.replace("fonts/", "/katex/fonts/");
+pub async fn katex_css_handler() -> (StatusCode, [(HeaderName, &'static str); 2], &'static [u8]) {
+    let bytes = include_bytes!("../../../vendor/katex/katex.min.css");
     (
         StatusCode::OK,
         [
             (CONTENT_TYPE, "text/css"),
             (CACHE_CONTROL, CACHE_CONTROL_IMMUTABLE),
         ],
-        css,
+        bytes,
     )
 }
 

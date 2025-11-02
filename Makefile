@@ -14,6 +14,9 @@ vendor/katex:
 	@echo "Extracting KaTeX..."
 	@tar -xzf vendor/katex.tar.gz -C vendor
 	@rm vendor/katex.tar.gz
+	@echo "Rewriting font paths in CSS..."
+	@sed -i.bak 's|fonts/|/katex/fonts/|g' vendor/katex/katex.min.css
+	@rm vendor/katex/katex.min.css.bak
 	@echo "KaTeX extracted to vendor/katex"
 
 hashcards: vendor/katex $(SRC) Cargo.toml Cargo.lock
