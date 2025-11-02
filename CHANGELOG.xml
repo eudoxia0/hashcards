@@ -4,6 +4,9 @@
             <change author="eudoxia0">
                 Cards are shuffled randomly at the start of a session.
             </change>
+            <change author="eudoxia0">
+                Update dependencies.
+            </change>
         </changed>
     </unreleased>
     <releases>
