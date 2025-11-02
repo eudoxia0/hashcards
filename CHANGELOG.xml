@@ -12,6 +12,9 @@
             <change author="eudoxia0">
                 Update dependencies.
             </change>
+            <change author="claude">
+                BREAKING: Media file paths are now deck-relative by default instead of collection-relative. Use @/ prefix for collection-relative paths.
+            </change>
         </changed>
     </unreleased>
     <releases>

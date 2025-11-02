@@ -60,7 +60,7 @@ fn render_session_page(state: &ServerState, mutable: &MutableState) -> Fallible<
     };
     let progress_bar_style = format!("width: {}%;", percent_done);
     let card = mutable.cards[0].clone();
-    let card_content = render_card(&card, mutable.reveal, state.port)?;
+    let card_content = render_card(&card, mutable.reveal, state.port, &state.directory)?;
     let card_controls = if mutable.reveal {
         html! {
             form action="/" method="post" {
@@ -112,22 +112,22 @@ fn render_session_page(state: &ServerState, mutable: &MutableState) -> Fallible<
     Ok(html)
 }
 
-fn render_card(card: &Card, reveal: bool, port: u16) -> Fallible<Markup> {
+fn render_card(card: &Card, reveal: bool, port: u16, collection_root: &std::path::Path) -> Fallible<Markup> {
     let html = match card.card_type() {
         CardType::Basic => {
             if reveal {
                 html! {
                     div .question .rich-text {
-                        (card.html_front(port)?)
+                        (card.html_front(port, collection_root)?)
                     }
                     div .answer .rich-text {
-                        (card.html_back(port)?)
+                        (card.html_back(port, collection_root)?)
                     }
                 }
             } else {
                 html! {
                     div .question .rich-text {
-                        (card.html_front(port)?)
+                        (card.html_front(port, collection_root)?)
                     }
                     div .answer .rich-text {}
                 }
@@ -137,13 +137,13 @@ fn render_card(card: &Card, reveal: bool, port: u16) -> Fallible<Markup> {
             if reveal {
                 html! {
                     div .prompt .rich-text {
-                        (card.html_back(port)?)
+                        (card.html_back(port, collection_root)?)
                     }
                 }
             } else {
                 html! {
                     div .prompt .rich-text {
-                        (card.html_front(port)?)
+                        (card.html_front(port, collection_root)?)
                     }
                 }
             }
