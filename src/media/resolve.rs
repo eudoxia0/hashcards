@@ -226,7 +226,7 @@ mod tests {
 
         // Deck at foo/bar/deck.md with image at img/test.jpg
         let deck_path = dir.join("foo/bar/deck.md");
-        let result = resolver.normalize_path("img/test.jpg", &deck_path)?;
+        let result = resolver.normalize_path("img/test.jpg", &deck_path).unwrap();
         assert_eq!(result, "foo/bar/img/test.jpg");
         Ok(())
     }
@@ -239,7 +239,9 @@ mod tests {
 
         // Deck at foo/bar/deck.md with image at @/img/test.jpg
         let deck_path = dir.join("foo/bar/deck.md");
-        let result = resolver.normalize_path("@/img/test.jpg", &deck_path)?;
+        let result = resolver
+            .normalize_path("@/img/test.jpg", &deck_path)
+            .unwrap();
         assert_eq!(result, "img/test.jpg");
         Ok(())
     }
@@ -252,7 +254,9 @@ mod tests {
 
         // Deck at foo/bar/deck.md with image at ../img/test.jpg
         let deck_path = dir.join("foo/bar/deck.md");
-        let result = resolver.normalize_path("../img/test.jpg", &deck_path)?;
+        let result = resolver
+            .normalize_path("../img/test.jpg", &deck_path)
+            .unwrap();
         assert_eq!(result, "foo/img/test.jpg");
         Ok(())
     }
@@ -283,7 +287,9 @@ mod tests {
 
         let resolver = MediaResolver { root: dir.clone() };
         let deck_path = sub_dir.join("deck.md");
-        let result = resolver.resolve_for_deck("img/test.jpg", &deck_path)?;
+        let result = resolver
+            .resolve_for_deck("img/test.jpg", &deck_path)
+            .unwrap();
         assert_eq!(result, image_path.canonicalize()?);
         Ok(())
     }
@@ -301,7 +307,9 @@ mod tests {
 
         let resolver = MediaResolver { root: dir.clone() };
         let deck_path = deck_dir.join("deck.md");
-        let result = resolver.resolve_for_deck("@/img/test.jpg", &deck_path)?;
+        let result = resolver
+            .resolve_for_deck("@/img/test.jpg", &deck_path)
+            .unwrap();
         assert_eq!(result, image_path.canonicalize()?);
         Ok(())
     }
