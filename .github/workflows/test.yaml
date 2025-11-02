@@ -31,6 +31,9 @@ jobs:
       - name: cache rust deps
         uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2.8.1
 
+      - name: fetch katex deps
+        run: make vendor/katex
+
       - name: cargo clippy
         run: cargo clippy --all-targets -- -D warnings
 
