@@ -68,7 +68,6 @@ pub fn validate_media_files(cards: &[Card], base_dir: &Path) -> Fallible<()> {
 
         for markdown in markdown_texts {
             for path in extract_media_paths(markdown) {
-                // Try to resolve the path using MediaResolver with deck-relative resolution.
                 match resolver.resolve_for_deck(&path, card.file_path()) {
                     Ok(_) => {
                         // File exists and is valid.
