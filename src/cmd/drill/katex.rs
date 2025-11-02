@@ -26,7 +26,7 @@ pub const KATEX_AUTO_RENDER_JS_URL: &str = "/katex/katex-auto-render.js";
 
 pub async fn katex_css_handler() -> (StatusCode, [(HeaderName, &'static str); 2], String) {
     let css = include_str!("../../../vendor/katex/katex.min.css");
-    // Rewrite font URLs from "fonts/" to "/katex/fonts/"
+    // Rewrite font URLs from "fonts/" to "/katex/fonts/".
     let css = css.replace("fonts/", "/katex/fonts/");
     (
         StatusCode::OK,
