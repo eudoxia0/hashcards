@@ -58,6 +58,7 @@ use crate::types::card::Card;
 use crate::types::card_hash::CardHash;
 use crate::types::date::Date;
 use crate::types::timestamp::Timestamp;
+use crate::utils::CACHE_CONTROL_IMMUTABLE;
 
 pub struct ServerConfig {
     pub directory: Option<String>,
@@ -199,7 +200,7 @@ async fn style_handler() -> (StatusCode, [(HeaderName, &'static str); 2], &'stat
         StatusCode::OK,
         [
             (CONTENT_TYPE, "text/css"),
-            (CACHE_CONTROL, "public, max-age=604800, immutable"),
+            (CACHE_CONTROL, CACHE_CONTROL_IMMUTABLE),
         ],
         bytes,
     )

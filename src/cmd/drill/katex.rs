@@ -18,6 +18,8 @@ use axum::http::StatusCode;
 use axum::http::header::CACHE_CONTROL;
 use axum::http::header::CONTENT_TYPE;
 
+use crate::utils::CACHE_CONTROL_IMMUTABLE;
+
 pub const KATEX_JS_URL: &str = "/katex/katex.js";
 pub const KATEX_CSS_URL: &str = "/katex/katex.css";
 pub const KATEX_AUTO_RENDER_JS_URL: &str = "/katex/katex-auto-render.js";
@@ -30,7 +32,7 @@ pub async fn katex_css_handler() -> (StatusCode, [(HeaderName, &'static str); 2]
         StatusCode::OK,
         [
             (CONTENT_TYPE, "text/css"),
-            (CACHE_CONTROL, "public, max-age=604800, immutable"),
+            (CACHE_CONTROL, CACHE_CONTROL_IMMUTABLE),
         ],
         css,
     )
@@ -42,7 +44,7 @@ pub async fn katex_js_handler() -> (StatusCode, [(HeaderName, &'static str); 2],
         StatusCode::OK,
         [
             (CONTENT_TYPE, "text/javascript"),
-            (CACHE_CONTROL, "public, max-age=604800, immutable"),
+            (CACHE_CONTROL, CACHE_CONTROL_IMMUTABLE),
         ],
         bytes,
     )
@@ -55,7 +57,7 @@ pub async fn katex_auto_render_handler()
         StatusCode::OK,
         [
             (CONTENT_TYPE, "text/javascript"),
-            (CACHE_CONTROL, "public, max-age=604800, immutable"),
+            (CACHE_CONTROL, CACHE_CONTROL_IMMUTABLE),
         ],
         bytes,
     )
@@ -272,7 +274,7 @@ pub async fn katex_font_handler(
         StatusCode::OK,
         [
             (CONTENT_TYPE, content_type),
-            (CACHE_CONTROL, "public, max-age=604800, immutable"),
+            (CACHE_CONTROL, CACHE_CONTROL_IMMUTABLE),
         ],
         bytes,
     )
