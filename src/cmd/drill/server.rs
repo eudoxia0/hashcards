@@ -144,9 +144,12 @@ pub async fn start_server(config: ServerConfig) -> Fallible<()> {
     let app = app.route("/", post(post_handler));
     let app = app.route("/script.js", get(script_handler));
     let app = app.route("/style.css", get(style_handler));
-    let app = app.route("/katex.css", get(katex_css_handler));
-    let app = app.route("/katex.js", get(katex_js_handler));
-    let app = app.route("/katex-auto-render.js", get(katex_auto_render_handler));
+    let app = app.route("/katex/katex.css", get(katex_css_handler));
+    let app = app.route("/katex/katex.js", get(katex_js_handler));
+    let app = app.route(
+        "/katex/katex-auto-render.js",
+        get(katex_auto_render_handler),
+    );
     let app = app.route("/katex/fonts/{*path}", get(katex_font_handler));
     let app = app.route("/file/{*path}", get(file_handler));
     let app = app.fallback(not_found_handler);

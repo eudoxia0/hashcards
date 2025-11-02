@@ -24,9 +24,9 @@ pub fn page_template(body: Markup) -> Markup {
                 meta charset="utf-8";
                 meta name="viewport" content="width=device-width, initial-scale=1";
                 title { "hashcards" }
-                link rel="stylesheet" href="/katex.css";
-                script defer src="/katex.js" {};
-                script defer src="/katex-auto-render.js" {};
+                link rel="stylesheet" href="/katex/katex.css";
+                script defer src="/katex/katex.js" {};
+                script defer src="/katex/katex-auto-render.js" {};
                 link rel="stylesheet" href="/style.css";
             }
             body {
