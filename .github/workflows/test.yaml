@@ -31,6 +31,9 @@ jobs:
       - name: cache rust deps
         uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2.8.1
 
+      - name: fetch katex deps
+        run: make vendor/katex
+
       - name: cargo clippy
         run: cargo clippy --all-targets -- -D warnings
 
@@ -73,6 +76,9 @@ jobs:
         uses: taiki-e/install-action@7ec692fc37da04f8da31c22ba9f3b71ef267e650 # v2.62.24
         with:
           tool: cargo-llvm-cov
+
+      - name: fetch katex deps
+        run: make vendor/katex
 
       - name: fetch deps
         run: cargo fetch

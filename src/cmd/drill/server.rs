@@ -37,6 +37,13 @@ use tokio::sync::oneshot::channel;
 
 use crate::cmd::drill::cache::Cache;
 use crate::cmd::drill::get::get_handler;
+use crate::cmd::drill::katex::KATEX_AUTO_RENDER_JS_URL;
+use crate::cmd::drill::katex::KATEX_CSS_URL;
+use crate::cmd::drill::katex::KATEX_JS_URL;
+use crate::cmd::drill::katex::katex_auto_render_handler;
+use crate::cmd::drill::katex::katex_css_handler;
+use crate::cmd::drill::katex::katex_font_handler;
+use crate::cmd::drill::katex::katex_js_handler;
 use crate::cmd::drill::post::post_handler;
 use crate::cmd::drill::state::MutableState;
 use crate::cmd::drill::state::ServerState;
@@ -51,6 +58,7 @@ use crate::types::card::Card;
 use crate::types::card_hash::CardHash;
 use crate::types::date::Date;
 use crate::types::timestamp::Timestamp;
+use crate::utils::CACHE_CONTROL_IMMUTABLE;
 
 pub struct ServerConfig {
     pub directory: Option<String>,
@@ -144,6 +152,10 @@ pub async fn start_server(config: ServerConfig) -> Fallible<()> {
     let app = app.route("/", post(post_handler));
     let app = app.route("/script.js", get(script_handler));
     let app = app.route("/style.css", get(style_handler));
+    let app = app.route(KATEX_CSS_URL, get(katex_css_handler));
+    let app = app.route(KATEX_JS_URL, get(katex_js_handler));
+    let app = app.route(KATEX_AUTO_RENDER_JS_URL, get(katex_auto_render_handler));
+    let app = app.route("/katex/fonts/{*path}", get(katex_font_handler));
     let app = app.route("/file/{*path}", get(file_handler));
     let app = app.fallback(not_found_handler);
     let app = app.with_state(state.clone());
@@ -188,7 +200,7 @@ async fn style_handler() -> (StatusCode, [(HeaderName, &'static str); 2], &'stat
         StatusCode::OK,
         [
             (CONTENT_TYPE, "text/css"),
-            (CACHE_CONTROL, "public, max-age=604800, immutable"),
+            (CACHE_CONTROL, CACHE_CONTROL_IMMUTABLE),
         ],
         bytes,
     )
