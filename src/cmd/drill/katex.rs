@@ -66,200 +66,76 @@ pub async fn katex_auto_render_handler()
 pub async fn katex_font_handler(
     Path(path): Path<String>,
 ) -> (StatusCode, [(HeaderName, &'static str); 2], &'static [u8]) {
-    // Determine content type based on file extension
-    let content_type = if path.ends_with(".woff2") {
-        "font/woff2"
-    } else if path.ends_with(".woff") {
-        "font/woff"
-    } else if path.ends_with(".ttf") {
-        "font/ttf"
-    } else {
+    // Only serve WOFF2 fonts (modern format with best compression and 95%+ browser support)
+    if !path.ends_with(".woff2") {
         return (
             StatusCode::NOT_FOUND,
             [(CONTENT_TYPE, "text/plain"), (CACHE_CONTROL, "no-cache")],
             b"Not Found",
         );
-    };
+    }
 
-    // Match font files
+    // Match font files (WOFF2 only)
     let bytes: &'static [u8] = match path.as_str() {
         "KaTeX_AMS-Regular.woff2" => {
             include_bytes!("../../../vendor/katex/fonts/KaTeX_AMS-Regular.woff2")
         }
-        "KaTeX_AMS-Regular.woff" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_AMS-Regular.woff")
-        }
-        "KaTeX_AMS-Regular.ttf" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_AMS-Regular.ttf")
-        }
         "KaTeX_Caligraphic-Bold.woff2" => {
             include_bytes!("../../../vendor/katex/fonts/KaTeX_Caligraphic-Bold.woff2")
-        }
-        "KaTeX_Caligraphic-Bold.woff" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_Caligraphic-Bold.woff")
-        }
-        "KaTeX_Caligraphic-Bold.ttf" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_Caligraphic-Bold.ttf")
         }
         "KaTeX_Caligraphic-Regular.woff2" => {
             include_bytes!("../../../vendor/katex/fonts/KaTeX_Caligraphic-Regular.woff2")
         }
-        "KaTeX_Caligraphic-Regular.woff" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_Caligraphic-Regular.woff")
-        }
-        "KaTeX_Caligraphic-Regular.ttf" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_Caligraphic-Regular.ttf")
-        }
         "KaTeX_Fraktur-Bold.woff2" => {
             include_bytes!("../../../vendor/katex/fonts/KaTeX_Fraktur-Bold.woff2")
-        }
-        "KaTeX_Fraktur-Bold.woff" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_Fraktur-Bold.woff")
-        }
-        "KaTeX_Fraktur-Bold.ttf" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_Fraktur-Bold.ttf")
         }
         "KaTeX_Fraktur-Regular.woff2" => {
             include_bytes!("../../../vendor/katex/fonts/KaTeX_Fraktur-Regular.woff2")
         }
-        "KaTeX_Fraktur-Regular.woff" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_Fraktur-Regular.woff")
-        }
-        "KaTeX_Fraktur-Regular.ttf" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_Fraktur-Regular.ttf")
-        }
         "KaTeX_Main-Bold.woff2" => {
             include_bytes!("../../../vendor/katex/fonts/KaTeX_Main-Bold.woff2")
         }
-        "KaTeX_Main-Bold.woff" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_Main-Bold.woff")
-        }
-        "KaTeX_Main-Bold.ttf" => include_bytes!("../../../vendor/katex/fonts/KaTeX_Main-Bold.ttf"),
         "KaTeX_Main-BoldItalic.woff2" => {
             include_bytes!("../../../vendor/katex/fonts/KaTeX_Main-BoldItalic.woff2")
-        }
-        "KaTeX_Main-BoldItalic.woff" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_Main-BoldItalic.woff")
-        }
-        "KaTeX_Main-BoldItalic.ttf" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_Main-BoldItalic.ttf")
         }
         "KaTeX_Main-Italic.woff2" => {
             include_bytes!("../../../vendor/katex/fonts/KaTeX_Main-Italic.woff2")
         }
-        "KaTeX_Main-Italic.woff" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_Main-Italic.woff")
-        }
-        "KaTeX_Main-Italic.ttf" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_Main-Italic.ttf")
-        }
         "KaTeX_Main-Regular.woff2" => {
             include_bytes!("../../../vendor/katex/fonts/KaTeX_Main-Regular.woff2")
-        }
-        "KaTeX_Main-Regular.woff" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_Main-Regular.woff")
-        }
-        "KaTeX_Main-Regular.ttf" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_Main-Regular.ttf")
         }
         "KaTeX_Math-BoldItalic.woff2" => {
             include_bytes!("../../../vendor/katex/fonts/KaTeX_Math-BoldItalic.woff2")
         }
-        "KaTeX_Math-BoldItalic.woff" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_Math-BoldItalic.woff")
-        }
-        "KaTeX_Math-BoldItalic.ttf" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_Math-BoldItalic.ttf")
-        }
         "KaTeX_Math-Italic.woff2" => {
             include_bytes!("../../../vendor/katex/fonts/KaTeX_Math-Italic.woff2")
-        }
-        "KaTeX_Math-Italic.woff" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_Math-Italic.woff")
-        }
-        "KaTeX_Math-Italic.ttf" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_Math-Italic.ttf")
         }
         "KaTeX_SansSerif-Bold.woff2" => {
             include_bytes!("../../../vendor/katex/fonts/KaTeX_SansSerif-Bold.woff2")
         }
-        "KaTeX_SansSerif-Bold.woff" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_SansSerif-Bold.woff")
-        }
-        "KaTeX_SansSerif-Bold.ttf" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_SansSerif-Bold.ttf")
-        }
         "KaTeX_SansSerif-Italic.woff2" => {
             include_bytes!("../../../vendor/katex/fonts/KaTeX_SansSerif-Italic.woff2")
-        }
-        "KaTeX_SansSerif-Italic.woff" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_SansSerif-Italic.woff")
-        }
-        "KaTeX_SansSerif-Italic.ttf" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_SansSerif-Italic.ttf")
         }
         "KaTeX_SansSerif-Regular.woff2" => {
             include_bytes!("../../../vendor/katex/fonts/KaTeX_SansSerif-Regular.woff2")
         }
-        "KaTeX_SansSerif-Regular.woff" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_SansSerif-Regular.woff")
-        }
-        "KaTeX_SansSerif-Regular.ttf" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_SansSerif-Regular.ttf")
-        }
         "KaTeX_Script-Regular.woff2" => {
             include_bytes!("../../../vendor/katex/fonts/KaTeX_Script-Regular.woff2")
-        }
-        "KaTeX_Script-Regular.woff" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_Script-Regular.woff")
-        }
-        "KaTeX_Script-Regular.ttf" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_Script-Regular.ttf")
         }
         "KaTeX_Size1-Regular.woff2" => {
             include_bytes!("../../../vendor/katex/fonts/KaTeX_Size1-Regular.woff2")
         }
-        "KaTeX_Size1-Regular.woff" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_Size1-Regular.woff")
-        }
-        "KaTeX_Size1-Regular.ttf" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_Size1-Regular.ttf")
-        }
         "KaTeX_Size2-Regular.woff2" => {
             include_bytes!("../../../vendor/katex/fonts/KaTeX_Size2-Regular.woff2")
-        }
-        "KaTeX_Size2-Regular.woff" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_Size2-Regular.woff")
-        }
-        "KaTeX_Size2-Regular.ttf" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_Size2-Regular.ttf")
         }
         "KaTeX_Size3-Regular.woff2" => {
             include_bytes!("../../../vendor/katex/fonts/KaTeX_Size3-Regular.woff2")
         }
-        "KaTeX_Size3-Regular.woff" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_Size3-Regular.woff")
-        }
-        "KaTeX_Size3-Regular.ttf" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_Size3-Regular.ttf")
-        }
         "KaTeX_Size4-Regular.woff2" => {
             include_bytes!("../../../vendor/katex/fonts/KaTeX_Size4-Regular.woff2")
         }
-        "KaTeX_Size4-Regular.woff" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_Size4-Regular.woff")
-        }
-        "KaTeX_Size4-Regular.ttf" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_Size4-Regular.ttf")
-        }
         "KaTeX_Typewriter-Regular.woff2" => {
             include_bytes!("../../../vendor/katex/fonts/KaTeX_Typewriter-Regular.woff2")
-        }
-        "KaTeX_Typewriter-Regular.woff" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_Typewriter-Regular.woff")
-        }
-        "KaTeX_Typewriter-Regular.ttf" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_Typewriter-Regular.ttf")
         }
         _ => {
             return (
@@ -273,7 +149,7 @@ pub async fn katex_font_handler(
     (
         StatusCode::OK,
         [
-            (CONTENT_TYPE, content_type),
+            (CONTENT_TYPE, "font/woff2"),
             (CACHE_CONTROL, CACHE_CONTROL_IMMUTABLE),
         ],
         bytes,
