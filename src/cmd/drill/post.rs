@@ -129,7 +129,7 @@ async fn action_handler(state: ServerState, action: Action) -> Fallible<()> {
                     due_date: performance.due_date,
                 };
 
-                mutable.cache.update(hash, performance)?;
+                mutable.cache.update(hash, Performance::Reviewed(performance))?;
                 if review.should_repeat() {
                     mutable.cards.push(card.clone());
                 }
