@@ -59,11 +59,7 @@ impl Cache {
 
     /// Update's a card's performance information. If the hash is not in the
     /// cache, returns an error.
-    pub fn update(
-        &mut self,
-        card_hash: CardHash,
-        performance: Performance,
-    ) -> Fallible<()> {
+    pub fn update(&mut self, card_hash: CardHash, performance: Performance) -> Fallible<()> {
         match self.changes.get_mut(&card_hash) {
             Some(p) => {
                 *p = performance;
@@ -83,8 +79,8 @@ mod tests {
     use super::*;
     use crate::error::fail;
     use crate::types::date::Date;
-    use crate::types::timestamp::Timestamp;
     use crate::types::performance::ReviewedPerformance;
+    use crate::types::timestamp::Timestamp;
 
     #[test]
     fn test_cache_insert_and_get() -> Fallible<()> {
