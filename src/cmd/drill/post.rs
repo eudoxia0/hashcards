@@ -87,7 +87,13 @@ async fn action_handler(state: ServerState, action: Action) -> Fallible<()> {
                     // Remove the card from the back of the queue.
                     mutable.cards.pop();
                 }
-                mutable.cards.insert(0, last_review.card);
+                let card: Card = last_review.card;
+                let hash: CardHash = card.hash();
+                mutable.cards.insert(0, card);
+                // Restore the performance cache to the value in the database
+                // if it exists.
+                let performance = mutable.db.get_card_performance(hash)?;
+                mutable.cache.update(hash, performance)?;
                 mutable.finished_at = None;
                 mutable.reveal = false;
             }
@@ -129,7 +135,7 @@ async fn action_handler(state: ServerState, action: Action) -> Fallible<()> {
                     due_date: performance.due_date,
                 };
 
-                mutable.cache.update(hash, performance)?;
+                mutable.cache.update(hash, Performance::Reviewed(performance))?;
                 if review.should_repeat() {
                     mutable.cards.push(card.clone());
                 }
