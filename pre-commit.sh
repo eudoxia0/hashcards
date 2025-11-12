@@ -9,9 +9,9 @@ function check() {
     name=$1
     command=$2
     if sh -c "$command >/dev/null 2>&1"; then
-        echo "${GREEN}✅ $name${NC}"
+        echo -e "${GREEN}✅ $name${NC}"
     else
-        echo "${RED}❌ $name failed${NC}"
+        echo -e "${RED}❌ $name failed${NC}"
         exit 1
     fi
 }
@@ -25,4 +25,4 @@ check "test" "cargo test" &
 check "changelog syntax" "xmllint --noout CHANGELOG.xml" &
 check "changelog schema" "xmllint --noout --schema CHANGELOG.xsd CHANGELOG.xml" &
 wait
-echo "${GREEN}🎉 all done!${NC}"
+echo -e "${GREEN}🎉 all done!${NC}"
