@@ -13,6 +13,11 @@
         Update dependencies.
       </change>
     </changed>
+    <fixed>
+      <change author="spencer-e-jung">
+        Fix a bug where the card cache was not cleared on undo. See [PR #57](https://github.com/eudoxia0/hashcards/pull/57).
+      </change>
+    </fixed>
   </unreleased>
   <releases>
     <release version="0.1.2" date="2025-10-30">
