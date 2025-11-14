@@ -28,7 +28,12 @@ fn is_audio_file(url: &str) -> bool {
     }
 }
 
-pub fn markdown_to_html(markdown: &str, port: u16) -> String {
+/// Configuration for Markdown rendering.
+pub struct MarkdownRenderConfig {
+    pub port: u16,
+}
+
+pub fn markdown_to_html(config: &MarkdownRenderConfig, markdown: &str) -> String {
     let parser = Parser::new(markdown);
     let parser = parser.map(|event| match event {
         Event::Start(Tag::Image {
@@ -37,7 +42,7 @@ pub fn markdown_to_html(markdown: &str, port: u16) -> String {
             dest_url,
             id,
         }) => {
-            let url = modify_url(&dest_url, port);
+            let url = modify_url(&dest_url, config.port);
             // Does the URL point to an audio file?
             if is_audio_file(&url) {
                 // If so, render it as an HTML5 audio element.
@@ -65,8 +70,8 @@ pub fn markdown_to_html(markdown: &str, port: u16) -> String {
     html_output
 }
 
-pub fn markdown_to_html_inline(markdown: &str, port: u16) -> String {
-    let text = markdown_to_html(markdown, port);
+pub fn markdown_to_html_inline(config: &MarkdownRenderConfig, markdown: &str) -> String {
+    let text = markdown_to_html(config, markdown);
     if text.starts_with("<p>") && text.ends_with("</p>\n") {
         let len = text.len();
         text[3..len - 5].to_string()
@@ -91,7 +96,8 @@ mod tests {
     #[test]
     fn test_markdown_to_html() {
         let markdown = "![alt](image.png)";
-        let html = markdown_to_html(markdown, 1234);
+        let config = MarkdownRenderConfig { port: 1234 };
+        let html = markdown_to_html(&config, markdown);
         assert_eq!(
             html,
             "<p><img src=\"http://localhost:1234/file/image.png\" alt=\"alt\" /></p>\n"
@@ -101,14 +107,16 @@ mod tests {
     #[test]
     fn test_markdown_to_html_inline() {
         let markdown = "This is **bold** text.";
-        let html = markdown_to_html_inline(markdown, 0);
+        let config = MarkdownRenderConfig { port: 1234 };
+        let html = markdown_to_html_inline(&config, markdown);
         assert_eq!(html, "This is <strong>bold</strong> text.");
     }
 
     #[test]
     fn test_markdown_to_html_inline_heading() {
         let markdown = "# Foo";
-        let html = markdown_to_html_inline(markdown, 0);
+        let config = MarkdownRenderConfig { port: 1234 };
+        let html = markdown_to_html_inline(&config, markdown);
         assert_eq!(html, "<h1>Foo</h1>\n");
     }
 
@@ -116,7 +124,8 @@ mod tests {
     fn test_external_url_is_unchanged() {
         let url = "https://upload.wikimedia.org/wikipedia/commons/6/63/Circe_Invidiosa_-_John_William_Waterhouse.jpg";
         let markdown = format!("![alt]({url})");
-        let html = markdown_to_html(&markdown, 1234);
+        let config = MarkdownRenderConfig { port: 1234 };
+        let html = markdown_to_html(&config, &markdown);
         assert_eq!(html, format!("<p><img src=\"{url}\" alt=\"alt\" /></p>\n"));
     }
 }
