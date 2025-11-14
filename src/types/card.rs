@@ -98,8 +98,21 @@ impl Card {
         self.content.family_hash()
     }
 
+    /// Return the absolute path of the file this card was parsed from.
     pub fn file_path(&self) -> &PathBuf {
         &self.file_path
+    }
+
+    /// Return the path of the file this card was parsed from, relative to the
+    /// collection root directory.
+    ///
+    /// e.g., if the collection root is `/foo/bar/` and the file path is
+    /// `/foo/bar/baz/deck.md`, this returns `baz/deck.md`.
+    pub fn relative_file_path(&self, collection_root: PathBuf) -> Fallible<PathBuf> {
+        let canon_root: PathBuf = collection_root.canonicalize()?;
+        let canon_file: PathBuf = self.file_path.canonicalize()?;
+        let result: PathBuf = canon_file.strip_prefix(&canon_root)?.to_path_buf();
+        Ok(result)
     }
 
     pub fn range(&self) -> (usize, usize) {
