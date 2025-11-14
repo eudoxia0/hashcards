@@ -33,7 +33,7 @@ const CLOZE_TAG: &str = "CLOZE_DELETION";
 pub struct Card {
     /// The name of the deck this card belongs to.
     deck_name: DeckName,
-    /// The absolute path to the file this card was parsed from.
+    /// The absolute path of the file this card was parsed from.
     file_path: PathBuf,
     /// The line number range that contains the card.
     range: (usize, usize),
