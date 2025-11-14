@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::path::PathBuf;
+
 use pulldown_cmark::CowStr;
 use pulldown_cmark::Event;
 use pulldown_cmark::Parser;
@@ -30,6 +32,8 @@ fn is_audio_file(url: &str) -> bool {
 
 /// Configuration for Markdown rendering.
 pub struct MarkdownRenderConfig {
+    /// The collection root directory.
+    pub root: PathBuf,
     /// The port where the server is exposed.
     pub port: u16,
 }
@@ -95,10 +99,17 @@ fn modify_url(url: &str, config: &MarkdownRenderConfig) -> String {
 mod tests {
     use super::*;
 
+    fn make_test_config() -> MarkdownRenderConfig {
+        MarkdownRenderConfig {
+            root: PathBuf::new(),
+            port: 1234,
+        };
+    }
+
     #[test]
     fn test_markdown_to_html() {
         let markdown = "![alt](image.png)";
-        let config = MarkdownRenderConfig { port: 1234 };
+        let config = make_test_config();
         let html = markdown_to_html(&config, markdown);
         assert_eq!(
             html,
@@ -109,7 +120,7 @@ mod tests {
     #[test]
     fn test_markdown_to_html_inline() {
         let markdown = "This is **bold** text.";
-        let config = MarkdownRenderConfig { port: 1234 };
+        let config = make_test_config();
         let html = markdown_to_html_inline(&config, markdown);
         assert_eq!(html, "This is <strong>bold</strong> text.");
     }
@@ -117,7 +128,7 @@ mod tests {
     #[test]
     fn test_markdown_to_html_inline_heading() {
         let markdown = "# Foo";
-        let config = MarkdownRenderConfig { port: 1234 };
+        let config = make_test_config();
         let html = markdown_to_html_inline(&config, markdown);
         assert_eq!(html, "<h1>Foo</h1>\n");
     }
@@ -126,7 +137,7 @@ mod tests {
     fn test_external_url_is_unchanged() {
         let url = "https://upload.wikimedia.org/wikipedia/commons/6/63/Circe_Invidiosa_-_John_William_Waterhouse.jpg";
         let markdown = format!("![alt]({url})");
-        let config = MarkdownRenderConfig { port: 1234 };
+        let config = make_test_config();
         let html = markdown_to_html(&config, &markdown);
         assert_eq!(html, format!("<p><img src=\"{url}\" alt=\"alt\" /></p>\n"));
     }
