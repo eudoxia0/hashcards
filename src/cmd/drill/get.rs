@@ -22,6 +22,7 @@ use crate::cmd::drill::state::MutableState;
 use crate::cmd::drill::state::ServerState;
 use crate::cmd::drill::template::page_template;
 use crate::error::Fallible;
+use crate::markdown::MarkdownRenderConfig;
 use crate::types::card::Card;
 use crate::types::card::CardType;
 
@@ -60,7 +61,11 @@ fn render_session_page(state: &ServerState, mutable: &MutableState) -> Fallible<
     };
     let progress_bar_style = format!("width: {}%;", percent_done);
     let card = mutable.cards[0].clone();
-    let card_content = render_card(&card, mutable.reveal, state.port)?;
+    let config = MarkdownRenderConfig {
+        root: state.directory.clone(),
+        port: state.port,
+    };
+    let card_content = render_card(&card, mutable.reveal, &config)?;
     let card_controls = if mutable.reveal {
         html! {
             form action="/" method="post" {
@@ -112,22 +117,22 @@ fn render_session_page(state: &ServerState, mutable: &MutableState) -> Fallible<
     Ok(html)
 }
 
-fn render_card(card: &Card, reveal: bool, port: u16) -> Fallible<Markup> {
+fn render_card(card: &Card, reveal: bool, config: &MarkdownRenderConfig) -> Fallible<Markup> {
     let html = match card.card_type() {
         CardType::Basic => {
             if reveal {
                 html! {
                     div .question .rich-text {
-                        (card.html_front(port)?)
+                        (card.html_front(config)?)
                     }
                     div .answer .rich-text {
-                        (card.html_back(port)?)
+                        (card.html_back(config)?)
                     }
                 }
             } else {
                 html! {
                     div .question .rich-text {
-                        (card.html_front(port)?)
+                        (card.html_front(config)?)
                     }
                     div .answer .rich-text {}
                 }
@@ -137,13 +142,13 @@ fn render_card(card: &Card, reveal: bool, port: u16) -> Fallible<Markup> {
             if reveal {
                 html! {
                     div .prompt .rich-text {
-                        (card.html_back(port)?)
+                        (card.html_back(config)?)
                     }
                 }
             } else {
                 html! {
                     div .prompt .rich-text {
-                        (card.html_front(port)?)
+                        (card.html_front(config)?)
                     }
                 }
             }

@@ -113,14 +113,12 @@ impl Card {
         }
     }
 
-    pub fn html_front(&self, port: u16) -> Fallible<Markup> {
-        let config = MarkdownRenderConfig { port };
-        self.content.html_front(&config)
+    pub fn html_front(&self, config: &MarkdownRenderConfig) -> Fallible<Markup> {
+        self.content.html_front(config)
     }
 
-    pub fn html_back(&self, port: u16) -> Fallible<Markup> {
-        let config = MarkdownRenderConfig { port };
-        self.content.html_back(&config)
+    pub fn html_back(&self, config: &MarkdownRenderConfig) -> Fallible<Markup> {
+        self.content.html_back(config)
     }
 }
 
