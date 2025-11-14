@@ -30,6 +30,7 @@ fn is_audio_file(url: &str) -> bool {
 
 /// Configuration for Markdown rendering.
 pub struct MarkdownRenderConfig {
+    /// The port where the server is exposed.
     pub port: u16,
 }
 
