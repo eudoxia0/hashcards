@@ -93,8 +93,17 @@ fn modify_url(url: &str, config: &MarkdownRenderConfig) -> String {
         url.to_string()
     } else {
         let port = config.port;
-        format!("http://localhost:{port}/file/{url}")
+        let path = resolve_path(url, config);
+        format!("http://localhost:{port}/file/{path}")
     }
+}
+
+// If a path begins with `@/`, leave it as-is.
+//
+// Otherwise, if it's a deck-relative path, turn it into a collection-absolute
+// path.
+fn resolve_path(path: &str, config: &MarkdownRenderConfig) -> String {
+    todo!()
 }
 
 #[cfg(test)]
