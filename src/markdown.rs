@@ -34,6 +34,8 @@ fn is_audio_file(url: &str) -> bool {
 pub struct MarkdownRenderConfig {
     /// The collection root directory.
     pub root: PathBuf,
+    /// The path to the file where this card is defined.
+    pub deck_path: PathBuf,
     /// The port where the server is exposed.
     pub port: u16,
 }
@@ -102,6 +104,7 @@ mod tests {
     fn make_test_config() -> MarkdownRenderConfig {
         MarkdownRenderConfig {
             root: PathBuf::new(),
+            deck_path: PathBuf::new(),
             port: 1234,
         };
     }
