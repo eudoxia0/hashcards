@@ -42,7 +42,7 @@ pub fn markdown_to_html(config: &MarkdownRenderConfig, markdown: &str) -> String
             dest_url,
             id,
         }) => {
-            let url = modify_url(&dest_url, config.port);
+            let url = modify_url(&dest_url, config);
             // Does the URL point to an audio file?
             if is_audio_file(&url) {
                 // If so, render it as an HTML5 audio element.
@@ -80,11 +80,12 @@ pub fn markdown_to_html_inline(config: &MarkdownRenderConfig, markdown: &str) ->
     }
 }
 
-fn modify_url(url: &str, port: u16) -> String {
+fn modify_url(url: &str, config: &MarkdownRenderConfig) -> String {
     if url.contains("://") {
         // Leave external URLs alone.
         url.to_string()
     } else {
+        let port = config.port;
         format!("http://localhost:{port}/file/{url}")
     }
 }
