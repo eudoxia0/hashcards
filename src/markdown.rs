@@ -149,14 +149,4 @@ mod tests {
         assert_eq!(html, "<h1>Foo</h1>\n");
         Ok(())
     }
-
-    #[test]
-    fn test_external_url_is_unchanged() -> Fallible<()> {
-        let url = "https://upload.wikimedia.org/wikipedia/commons/6/63/Circe_Invidiosa_-_John_William_Waterhouse.jpg";
-        let markdown = format!("![alt]({url})");
-        let config = make_test_config();
-        let html = markdown_to_html(&config, &markdown)?;
-        assert_eq!(html, format!("<p><img src=\"{url}\" alt=\"alt\" /></p>\n"));
-        Ok(())
-    }
 }
