@@ -25,4 +25,43 @@ pub struct MediaResolver {
 }
 
 /// Builder to construct a [`MediaResolver`].
-pub struct MediaResolverBuilder {}
+pub struct MediaResolverBuilder {
+    collection_path: Option<PathBuf>,
+    deck_path: Option<PathBuf>,
+}
+
+impl MediaResolverBuilder {
+    pub fn new() -> Self {
+        Self {
+            collection_path: None,
+            deck_path: None,
+        }
+    }
+
+    pub fn with_collection_path(self, collection_path: PathBuf) -> Self {
+        assert!(collection_path.is_dir());
+        assert!(collection_path.is_absolute());
+        Self {
+            collection_path: Some(collection_path),
+            deck_path: self.deck_path,
+        }
+    }
+
+    pub fn with_deck_path(self, deck_path: PathBuf) -> Self {
+        assert!(deck_path.is_dir());
+        assert!(deck_path.is_relative());
+        Self {
+            collection_path: self.collection_path,
+            deck_path: Some(deck_path),
+        }
+    }
+
+    pub fn build(self) -> MediaResolver {
+        let collection_path = self.collection_path.unwrap();
+        let deck_path = self.deck_path.unwrap();
+        MediaResolver {
+            collection_path,
+            deck_path,
+        }
+    }
+}
