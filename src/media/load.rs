@@ -63,11 +63,11 @@ impl MediaLoader {
         if !path.exists() {
             return Err(MediaLoaderError::NotFound);
         }
-        if !path.is_file() {
-            return Err(MediaLoaderError::NotFile);
-        }
         if path.is_symlink() {
             return Err(MediaLoaderError::SymbolicLink);
+        }
+        if !path.is_file() {
+            return Err(MediaLoaderError::NotFile);
         }
         Ok(path)
     }
