@@ -92,7 +92,7 @@ impl MediaResolver {
             }
             // Join the collection path and the deck path to get the absolute
             // path to the deck file.
-            let deck: PathBuf = self.collection_path.join(self.deck_path.clone());
+            let deck: PathBuf = self.collection_path.join(&self.deck_path);
             // Get the path of the directory that contains the deck.
             let deck_dir: &Path = match deck.parent() {
                 Some(p) => p,
