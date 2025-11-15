@@ -130,6 +130,7 @@ mod tests {
             deck_path: PathBuf::new(),
             port: 1234,
         };
+        std::fs::write(coll_path.join("image.png"), "")?;
         let html = markdown_to_html(&config, markdown)?;
         assert_eq!(
             html,
