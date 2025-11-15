@@ -16,6 +16,9 @@ use std::path::Component;
 use std::path::Path;
 use std::path::PathBuf;
 
+use crate::error::ErrorReport;
+use crate::error::Fallible;
+
 /// The media resolver takes media paths as entered in the Markdown text of the
 /// flashcards, and resolves them to collection-relative paths.
 pub struct MediaResolver {
@@ -129,32 +132,42 @@ impl MediaResolverBuilder {
     }
 
     /// Set a value for `collection_path`.
-    pub fn with_collection_path(self, collection_path: PathBuf) -> Self {
-        assert!(collection_path.is_absolute());
-        assert!(collection_path.is_dir());
-        Self {
+    pub fn with_collection_path(self, collection_path: PathBuf) -> Fallible<Self> {
+        if !collection_path.is_absolute() {
+            return Err(ErrorReport::new("Collection path is relative."));
+        }
+        if !collection_path.is_dir() {
+            return Err(ErrorReport::new("Collection path is not a directory."));
+        }
+        Ok(Self {
             collection_path: Some(collection_path),
             deck_path: self.deck_path,
-        }
+        })
     }
 
     /// Set a value for `deck_path`.
-    pub fn with_deck_path(self, deck_path: PathBuf) -> Self {
-        assert!(deck_path.is_relative());
-        Self {
+    pub fn with_deck_path(self, deck_path: PathBuf) -> Fallible<Self> {
+        if !deck_path.is_relative() {
+            return Err(ErrorReport::new("Deck path is not relative."));
+        }
+        Ok(Self {
             collection_path: self.collection_path,
             deck_path: Some(deck_path),
-        }
+        })
     }
 
     /// Consume the builder and return a [`MediaResolver`].
-    pub fn build(self) -> MediaResolver {
-        let collection_path = self.collection_path.unwrap();
-        let deck_path = self.deck_path.unwrap();
-        MediaResolver {
+    pub fn build(self) -> Fallible<MediaResolver> {
+        let collection_path = self
+            .collection_path
+            .ok_or(ErrorReport::new("Missing collection_path."))?;
+        let deck_path = self
+            .deck_path
+            .ok_or(ErrorReport::new("Missing deck_path."))?;
+        Ok(MediaResolver {
             collection_path,
             deck_path,
-        }
+        })
     }
 }
 
@@ -170,9 +183,9 @@ mod tests {
         let coll_path: PathBuf = create_tmp_directory()?;
         let deck_path: PathBuf = PathBuf::from("deck.md");
         let r: MediaResolver = MediaResolverBuilder::new()
-            .with_collection_path(coll_path)
-            .with_deck_path(deck_path)
-            .build();
+            .with_collection_path(coll_path)?
+            .with_deck_path(deck_path)?
+            .build()?;
         assert_eq!(r.resolve(""), Err(ResolveError::Empty));
         assert_eq!(r.resolve(" "), Err(ResolveError::Empty));
         Ok(())
@@ -184,9 +197,9 @@ mod tests {
         let coll_path: PathBuf = create_tmp_directory()?;
         let deck_path: PathBuf = PathBuf::from("deck.md");
         let r: MediaResolver = MediaResolverBuilder::new()
-            .with_collection_path(coll_path)
-            .with_deck_path(deck_path)
-            .build();
+            .with_collection_path(coll_path)?
+            .with_deck_path(deck_path)?
+            .build()?;
         assert_eq!(r.resolve("/etc/passwd"), Err(ResolveError::AbsolutePath));
         Ok(())
     }
@@ -197,9 +210,9 @@ mod tests {
         let coll_path: PathBuf = create_tmp_directory()?;
         let deck_path: PathBuf = PathBuf::from("deck.md");
         let r: MediaResolver = MediaResolverBuilder::new()
-            .with_collection_path(coll_path)
-            .with_deck_path(deck_path)
-            .build();
+            .with_collection_path(coll_path)?
+            .with_deck_path(deck_path)?
+            .build()?;
         assert_eq!(r.resolve("http://"), Err(ResolveError::ExternalUrl));
         Ok(())
     }
@@ -215,9 +228,9 @@ mod tests {
         let deck_path: PathBuf = PathBuf::from("deck.md");
         std::fs::write(coll_path.join("deck.md"), "")?;
         let r: MediaResolver = MediaResolverBuilder::new()
-            .with_collection_path(coll_path)
-            .with_deck_path(deck_path)
-            .build();
+            .with_collection_path(coll_path)?
+            .with_deck_path(deck_path)?
+            .build()?;
         assert_eq!(r.resolve("@/foo.jpg"), Ok(PathBuf::from("foo.jpg")));
         assert_eq!(r.resolve("@/a/foo.jpg"), Ok(PathBuf::from("a/foo.jpg")));
         assert_eq!(r.resolve("@/a/b/foo.jpg"), Ok(PathBuf::from("a/b/foo.jpg")));
@@ -230,9 +243,9 @@ mod tests {
         let coll_path: PathBuf = create_tmp_directory()?;
         let deck_path: PathBuf = PathBuf::from("deck.md");
         let r: MediaResolver = MediaResolverBuilder::new()
-            .with_collection_path(coll_path)
-            .with_deck_path(deck_path)
-            .build();
+            .with_collection_path(coll_path)?
+            .with_deck_path(deck_path)?
+            .build()?;
         assert_eq!(r.resolve("@//foo.jpg"), Err(ResolveError::AbsolutePath));
         Ok(())
     }
@@ -243,9 +256,9 @@ mod tests {
         let coll_path: PathBuf = create_tmp_directory()?;
         let deck_path: PathBuf = PathBuf::from("deck.md");
         let r: MediaResolver = MediaResolverBuilder::new()
-            .with_collection_path(coll_path)
-            .with_deck_path(deck_path)
-            .build();
+            .with_collection_path(coll_path)?
+            .with_deck_path(deck_path)?
+            .build()?;
         assert_eq!(
             r.resolve("@/a/b/../foo.jpg"),
             Err(ResolveError::ParentComponent)
@@ -261,9 +274,9 @@ mod tests {
         std::fs::create_dir_all(coll_path.join("a/b/c"))?;
         std::fs::write(coll_path.join("a/b/c/foo.jpg"), "")?;
         let r: MediaResolver = MediaResolverBuilder::new()
-            .with_collection_path(coll_path)
-            .with_deck_path(deck_path)
-            .build();
+            .with_collection_path(coll_path)?
+            .with_deck_path(deck_path)?
+            .build()?;
         assert_eq!(r.resolve("foo.jpg"), Ok(PathBuf::from("a/b/c/foo.jpg")));
         assert_eq!(r.resolve("./foo.jpg"), Ok(PathBuf::from("a/b/c/foo.jpg")));
         assert_eq!(
@@ -291,9 +304,9 @@ mod tests {
         let coll_path: PathBuf = create_tmp_directory()?;
         let deck_path: PathBuf = PathBuf::from("deck.md");
         let r: MediaResolver = MediaResolverBuilder::new()
-            .with_collection_path(coll_path)
-            .with_deck_path(deck_path)
-            .build();
+            .with_collection_path(coll_path)?
+            .with_deck_path(deck_path)?
+            .build()?;
         assert_eq!(
             r.resolve("../../../../../../../../etc/passwd"),
             Err(ResolveError::InvalidPath)

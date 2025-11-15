@@ -97,9 +97,9 @@ pub fn markdown_to_html_inline(config: &MarkdownRenderConfig, markdown: &str) ->
 fn modify_url(url: &str, config: &MarkdownRenderConfig) -> Fallible<String> {
     let port = config.port;
     let resolver = MediaResolverBuilder::new()
-        .with_collection_path(config.root.clone())
-        .with_deck_path(config.deck_path.clone())
-        .build();
+        .with_collection_path(config.root.clone())?
+        .with_deck_path(config.deck_path.clone())?
+        .build()?;
     let path: String = resolver
         .resolve(url)
         .map_err(|err| {

@@ -56,9 +56,9 @@ pub fn validate_media_files(cards: &[Card], base_dir: &Path) -> Fallible<()> {
 
     for card in cards {
         let resolver: MediaResolver = MediaResolverBuilder::new()
-            .with_collection_path(base_dir.clone())
-            .with_deck_path(card.relative_file_path(base_dir.clone())?)
-            .build();
+            .with_collection_path(base_dir.clone())?
+            .with_deck_path(card.relative_file_path(base_dir.clone())?)?
+            .build()?;
 
         // Extract markdown content from the card.
         //
