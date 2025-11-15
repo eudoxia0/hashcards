@@ -96,6 +96,7 @@ impl MediaResolver {
 }
 
 impl MediaResolverBuilder {
+    /// Construct a new [`MediaResolverBuilder`].
     pub fn new() -> Self {
         Self {
             collection_path: None,
@@ -103,6 +104,7 @@ impl MediaResolverBuilder {
         }
     }
 
+    /// Set a value for `collection_path`.
     pub fn with_collection_path(self, collection_path: PathBuf) -> Self {
         assert!(collection_path.is_dir());
         assert!(collection_path.is_absolute());
@@ -112,6 +114,7 @@ impl MediaResolverBuilder {
         }
     }
 
+    /// Set a value for `deck_path`.
     pub fn with_deck_path(self, deck_path: PathBuf) -> Self {
         assert!(deck_path.is_dir());
         assert!(deck_path.is_relative());
@@ -121,6 +124,7 @@ impl MediaResolverBuilder {
         }
     }
 
+    /// Consume the builder and return a [`MediaResolver`].
     pub fn build(self) -> MediaResolver {
         let collection_path = self.collection_path.unwrap();
         let deck_path = self.deck_path.unwrap();
