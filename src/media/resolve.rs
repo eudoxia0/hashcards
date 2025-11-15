@@ -16,8 +16,6 @@ use std::path::Component;
 use std::path::Path;
 use std::path::PathBuf;
 
-use crate::error::ErrorReport;
-
 /// The media resolver takes media paths as entered in the Markdown text of the
 /// flashcards, and resolves them to collection-relative paths.
 pub struct MediaResolver {
