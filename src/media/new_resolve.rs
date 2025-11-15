@@ -134,3 +134,21 @@ impl MediaResolverBuilder {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_empty_strings_are_rejected() -> Fallible<()> {
+        let coll_path: PathBuf = create_tmp_directory()?;
+        let deck_path: PathBuf = coll_path.join("deck.md");
+        let r: MediaResolver = MediaResolverBuilder::new()
+            .with_collection_path(root)
+            .with_deck_path(deck_path)
+            .build()?;
+        assert_eq!(r.resolve(""), Err(ResolveError::Empty));
+        assert_eq!(r.resolve(" "), Err(ResolveError::Empty));
+        Ok(())
+    }
+}
