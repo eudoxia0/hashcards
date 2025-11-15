@@ -239,6 +239,22 @@ mod tests {
             .build();
         assert_eq!(r.resolve("foo.jpg"), Ok(PathBuf::from("a/b/c/foo.jpg")));
         assert_eq!(r.resolve("./foo.jpg"), Ok(PathBuf::from("a/b/c/foo.jpg")));
+        assert_eq!(
+            r.resolve("../c/foo.jpg"),
+            Ok(PathBuf::from("a/b/c/foo.jpg"))
+        );
+        assert_eq!(
+            r.resolve("../../b/c/foo.jpg"),
+            Ok(PathBuf::from("a/b/c/foo.jpg"))
+        );
+        assert_eq!(
+            r.resolve("../c/../c/foo.jpg"),
+            Ok(PathBuf::from("a/b/c/foo.jpg"))
+        );
+        assert_eq!(
+            r.resolve("../../../a/b/c/foo.jpg"),
+            Ok(PathBuf::from("a/b/c/foo.jpg"))
+        );
         Ok(())
     }
 }
