@@ -22,7 +22,8 @@ use pulldown_cmark::Tag;
 
 use crate::error::ErrorReport;
 use crate::error::Fallible;
-use crate::media::resolve::MediaResolver;
+use crate::media::new_resolve::MediaResolver;
+use crate::media::new_resolve::MediaResolverBuilder;
 use crate::media::resolve::ResolveError;
 use crate::types::card::Card;
 use crate::types::card::CardContent;
@@ -51,12 +52,15 @@ fn extract_media_paths(markdown: &str) -> Vec<String> {
 
 /// Validate that all media files referenced in cards exist.
 pub fn validate_media_files(cards: &[Card], base_dir: &Path) -> Fallible<()> {
+    let base_dir = base_dir.to_path_buf();
     let mut missing = HashSet::new();
-    let resolver = MediaResolver {
-        root: base_dir.to_path_buf(),
-    };
 
     for card in cards {
+        let resolver: MediaResolver = MediaResolverBuilder::new()
+            .with_collection_path(base_dir.clone())
+            .with_deck_path(card.relative_file_path(base_dir.clone())?)
+            .build();
+
         // Extract markdown content from the card.
         //
         // TODO: perhaps this should be lifted to a method of the `CardContent`
@@ -72,9 +76,6 @@ pub fn validate_media_files(cards: &[Card], base_dir: &Path) -> Fallible<()> {
                 match resolver.resolve(&path) {
                     Ok(_) => {
                         // File exists and is valid.
-                    }
-                    Err(ResolveError::ExternalUrl) => {
-                        // Skip external URLs (same behavior as before).
                     }
                     Err(_) => {
                         // All other errors (NotFound, InvalidPath, etc.) are reported.
@@ -121,16 +122,16 @@ mod tests {
 
     #[test]
     fn test_extract_media_paths() {
-        let markdown = "Here is an image: ![alt](foo.jpg)\nAnd another: ![](bar.png)";
+        let markdown = "Here is an image: ![alt](@/foo.jpg)\nAnd another: ![](@/bar.png)";
         let paths = extract_media_paths(markdown);
-        assert_eq!(paths, vec!["foo.jpg", "bar.png"]);
+        assert_eq!(paths, vec!["@/foo.jpg", "@/bar.png"]);
     }
 
     #[test]
     fn test_extract_media_paths_with_audio() {
-        let markdown = "Audio file: ![](sound.mp3)";
+        let markdown = "Audio file: ![](@/sound.mp3)";
         let paths = extract_media_paths(markdown);
-        assert_eq!(paths, vec!["sound.mp3"]);
+        assert_eq!(paths, vec!["@/sound.mp3"]);
     }
 
     #[test]
@@ -225,19 +226,19 @@ mod tests {
 
     #[test]
     fn test_validate_media_files_with_cloze_cards() {
-        // Create a temporary directory for the test
+        // Create a temporary directory for the test.
         let test_dir = temp_dir().join("hashcards_media_test_cloze");
         create_dir_all(&test_dir).expect("Failed to create test directory");
 
-        // Create a markdown file path
+        // Create a markdown file path.
         let card_file = test_dir.join("test_deck.md");
 
-        // Parse cloze card with missing media reference
+        // Parse cloze card with missing media reference.
         let markdown = "C: The capital of [France] is ![](paris.jpg)";
         let parser = CardParser::new("test_deck".to_string(), card_file.clone());
         let cards = parser.parse(markdown).expect("Failed to parse cards");
 
-        // Validate media files - should fail
+        // Validate media files - should fail.
         let result = validate_media_files(&cards, &test_dir);
 
         assert!(result.is_err());
