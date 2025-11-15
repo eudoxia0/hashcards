@@ -48,11 +48,12 @@ impl MediaLoader {
     /// location within the collection root directory.
     ///
     /// Symbolic links and absolute paths are rejected.
-    pub fn validate(path: &str) -> Result<PathBuf, MediaLoaderError> {
+    pub fn validate(&self, path: &str) -> Result<PathBuf, MediaLoaderError> {
         let path: PathBuf = PathBuf::from(path);
         if path.is_absolute() {
             return Err(MediaLoaderError::Absolute);
         }
+        let path: PathBuf = self.root.join(path);
         if !path.exists() {
             return Err(MediaLoaderError::NotFound);
         }
