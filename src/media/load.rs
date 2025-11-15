@@ -66,3 +66,21 @@ impl MediaLoader {
         Ok(path)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::error::Fallible;
+
+    /// Absolute paths are rejected.
+    #[test]
+    fn test_abs_rejected() -> Fallible<()> {
+        let root = PathBuf::new();
+        let loader = MediaLoader::new(root);
+        assert_eq!(
+            loader.validate("/etc/passwd"),
+            Err(MediaLoaderError::Absolute)
+        );
+        Ok(())
+    }
+}
