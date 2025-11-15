@@ -301,7 +301,7 @@ mod tests {
             .with_deck_path(deck_path)
             .build();
         assert_eq!(
-            r.resolve("@../../../../../../../../etc/passwd"),
+            r.resolve("../../../../../../../../etc/passwd"),
             Err(ResolveError::InvalidPath)
         );
         Ok(())
