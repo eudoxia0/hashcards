@@ -176,7 +176,6 @@ mod tests {
     #[test]
     fn test_collection_relative() -> Fallible<()> {
         let coll_path: PathBuf = create_tmp_directory()?;
-        std::fs::create_dir_all(coll_path.join("a/b/c"))?;
         let deck_path: PathBuf = PathBuf::from("a/b/c/deck.md");
         let r: MediaResolver = MediaResolverBuilder::new()
             .with_collection_path(coll_path)
@@ -198,7 +197,6 @@ mod tests {
     #[test]
     fn test_collection_relative_absolute_are_rejected() -> Fallible<()> {
         let coll_path: PathBuf = create_tmp_directory()?;
-        std::fs::create_dir_all(coll_path.join("a/b/c"))?;
         let deck_path: PathBuf = PathBuf::from("a/b/c/deck.md");
         let r: MediaResolver = MediaResolverBuilder::new()
             .with_collection_path(coll_path)
