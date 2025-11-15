@@ -154,18 +154,19 @@ mod tests {
     }
 
     #[test]
-    fn test_validate_media_files_with_missing_files() {
+    fn test_validate_media_files_with_missing_files() -> Fallible<()> {
         // Create a temporary directory for the test
         let test_dir = temp_dir().join("hashcards_media_test");
-        create_dir_all(&test_dir).expect("Failed to create test directory");
+        create_dir_all(&test_dir)?;
 
         // Create a markdown file path (doesn't need to exist for this test)
         let card_file = test_dir.join("test_deck.md");
+        std::fs::write(&card_file, b"fake deck data")?;
 
         // Parse cards from markdown with missing media references
         let markdown = "Q: What is this image?\n\n![](missing_image.jpg)\n\nA: Unknown\n\nQ: What is this audio?\nA: ![](missing_audio.mp3)";
         let parser = CardParser::new("test_deck".to_string(), card_file.clone());
-        let cards = parser.parse(markdown).expect("Failed to parse cards");
+        let cards = parser.parse(markdown)?;
 
         // Validate media files - should return an error
         let result = validate_media_files(&cards, &test_dir);
@@ -181,6 +182,8 @@ mod tests {
         assert!(err_msg.contains("missing_image.jpg"));
         assert!(err_msg.contains("missing_audio.mp3"));
         assert!(err_msg.contains("test_deck.md"));
+
+        Ok(())
     }
 
     #[test]
