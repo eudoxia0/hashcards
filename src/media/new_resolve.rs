@@ -177,9 +177,7 @@ mod tests {
             .with_collection_path(coll_path)
             .with_deck_path(deck_path)
             .build();
-        let res = r.resolve("@/foo.jpg");
-        assert!(res.is_ok());
-        assert_eq!(res.unwrap(), PathBuf::from("foo.jpg"));
+        assert_eq!(r.resolve("@/foo.jpg").unwrap(), PathBuf::from("foo.jpg"));
         Ok(())
     }
 }
