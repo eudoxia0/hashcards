@@ -30,6 +30,12 @@ pub struct MediaResolverBuilder {
     deck_path: Option<PathBuf>,
 }
 
+impl MediaResolver {
+    pub fn resolve(self, path: &str) -> Result<PathBuf, ResolveError> {
+        todo!()
+    }
+}
+
 impl MediaResolverBuilder {
     pub fn new() -> Self {
         Self {
