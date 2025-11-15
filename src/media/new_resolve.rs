@@ -67,9 +67,9 @@ impl MediaResolver {
             return Err(ResolveError::ExternalUrl);
         }
 
-        if path.starts_with("@/") {
+        if let Some(stripped) = path.strip_prefix("@/") {
             // Path is collection-relative, leave it as-is.
-            let path: PathBuf = PathBuf::from(&path[2..]);
+            let path: PathBuf = PathBuf::from(&stripped);
             // Reject absolute paths.
             if path.is_absolute() {
                 return Err(ResolveError::AbsolutePath);
