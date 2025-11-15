@@ -73,11 +73,16 @@ pub fn validate_media_files(cards: &[Card], base_dir: &Path) -> Fallible<()> {
             for path in extract_media_paths(markdown) {
                 // Try to resolve the path using MediaResolver.
                 match resolver.resolve(&path) {
-                    Ok(_) => {
-                        // File exists and is valid.
+                    Ok(abspath) => {
+                        if !abspath.exists() {
+                            missing.insert(MissingMedia {
+                                file_path: path,
+                                card_file: card.file_path().clone(),
+                                card_lines: card.range(),
+                            });
+                        }
                     }
                     Err(_) => {
-                        // All other errors (NotFound, InvalidPath, etc.) are reported.
                         missing.insert(MissingMedia {
                             file_path: path,
                             card_file: card.file_path().clone(),
@@ -203,18 +208,19 @@ mod tests {
     }
 
     #[test]
-    fn test_validate_media_files_with_cloze_cards() {
+    fn test_validate_media_files_with_cloze_cards() -> Fallible<()> {
         // Create a temporary directory for the test.
         let test_dir = temp_dir().join("hashcards_media_test_cloze");
-        create_dir_all(&test_dir).expect("Failed to create test directory");
+        create_dir_all(&test_dir)?;
 
         // Create a markdown file path.
         let card_file = test_dir.join("test_deck.md");
+        std::fs::write(&card_file, "")?;
 
         // Parse cloze card with missing media reference.
-        let markdown = "C: The capital of [France] is ![](paris.jpg)";
+        let markdown = "C: The capital of [France] is ![](@/paris.jpg)";
         let parser = CardParser::new("test_deck".to_string(), card_file.clone());
-        let cards = parser.parse(markdown).expect("Failed to parse cards");
+        let cards: Vec<Card> = parser.parse(markdown)?;
 
         // Validate media files - should fail.
         let result = validate_media_files(&cards, &test_dir);
@@ -222,5 +228,7 @@ mod tests {
         assert!(result.is_err());
         let err_msg = result.err().unwrap().to_string();
         assert!(err_msg.contains("paris.jpg"));
+
+        Ok(())
     }
 }
