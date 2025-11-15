@@ -30,8 +30,34 @@ pub struct MediaResolverBuilder {
     deck_path: Option<PathBuf>,
 }
 
+/// Errors that can occur when resolving a file path.
+#[derive(Debug, PartialEq)]
+pub enum ResolveError {
+    /// Path is the empty string.
+    Empty,
+    /// Path is an external URL.
+    ExternalUrl,
+    /// Path is absolute.
+    AbsolutePath,
+    /// Path resolves outside the collection directory.
+    OutsideDirectory,
+}
+
 impl MediaResolver {
+    /// Resolve a path string to a collection-relative file path.
+    ///
+    /// If the path string starts with `@/`, it will be resolved relative to
+    /// the collection root directory.
+    ///
+    /// If the path string is a relative path, it will be resolved relative to
+    /// the deck path.
     pub fn resolve(self, path: &str) -> Result<PathBuf, ResolveError> {
+        // Trim the path.
+        let path: &str = path.trim();
+        // Is the path empty?
+        if path.is_empty() {
+            return Err(ResolveError::Empty);
+        }
         todo!()
     }
 }
