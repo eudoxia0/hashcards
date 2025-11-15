@@ -81,6 +81,8 @@ impl MediaResolver {
             if path.components().any(|c| c == Component::ParentDir) {
                 return Err(ResolveError::ParentComponent);
             }
+            // Canonicalize for symmetry with the other branch.
+            let path: PathBuf = path.canonicalize().map_err(|_| ResolveError::InvalidPath)?;
             Ok(path)
         } else {
             // Path is deck-relative.
