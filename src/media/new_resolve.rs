@@ -42,8 +42,6 @@ pub enum ResolveError {
     AbsolutePath,
     /// Path is invalid.
     InvalidPath,
-    /// Path resolves outside the collection directory.
-    OutsideDirectory,
 }
 
 impl MediaResolver {
@@ -53,7 +51,8 @@ impl MediaResolver {
     /// the collection root directory.
     ///
     /// If the path string is a relative path, it will be resolved relative to
-    /// the deck path.
+    /// the deck path. For deck-relative paths, parent (`..`) components are
+    /// permitted.
     pub fn resolve(&self, path: &str) -> Result<PathBuf, ResolveError> {
         // Trim the path.
         let path: &str = path.trim();
@@ -176,7 +175,7 @@ mod tests {
     #[test]
     fn test_collection_relative() -> Fallible<()> {
         let coll_path: PathBuf = create_tmp_directory()?;
-        let deck_path: PathBuf = PathBuf::from("a/b/c/deck.md");
+        let deck_path: PathBuf = PathBuf::from("deck.md");
         let r: MediaResolver = MediaResolverBuilder::new()
             .with_collection_path(coll_path)
             .with_deck_path(deck_path)
@@ -197,12 +196,28 @@ mod tests {
     #[test]
     fn test_collection_relative_absolute_are_rejected() -> Fallible<()> {
         let coll_path: PathBuf = create_tmp_directory()?;
-        let deck_path: PathBuf = PathBuf::from("a/b/c/deck.md");
+        let deck_path: PathBuf = PathBuf::from("deck.md");
         let r: MediaResolver = MediaResolverBuilder::new()
             .with_collection_path(coll_path)
             .with_deck_path(deck_path)
             .build();
         assert_eq!(r.resolve("@//foo.jpg"), Err(ResolveError::AbsolutePath));
+        Ok(())
+    }
+
+    /// Collection-relative paths with `..` components are rejected.
+    #[test]
+    fn test_collection_relative_parent_are_rejected() -> Fallible<()> {
+        let coll_path: PathBuf = create_tmp_directory()?;
+        let deck_path: PathBuf = PathBuf::from("deck.md");
+        let r: MediaResolver = MediaResolverBuilder::new()
+            .with_collection_path(coll_path)
+            .with_deck_path(deck_path)
+            .build();
+        assert_eq!(
+            r.resolve("@/a/b/../foo.jpg"),
+            Err(ResolveError::InvalidPath)
+        );
         Ok(())
     }
 }
