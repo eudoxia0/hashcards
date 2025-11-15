@@ -138,6 +138,7 @@ impl MediaResolverBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::helper::create_tmp_directory;
 
     /// Empty strings are rejected.
     #[test]
