@@ -16,6 +16,8 @@ use std::path::Component;
 use std::path::Path;
 use std::path::PathBuf;
 
+use crate::error::ErrorReport;
+
 /// The media resolver takes media paths as entered in the Markdown text of the
 /// flashcards, and resolves them to collection-relative paths.
 pub struct MediaResolver {
@@ -92,7 +94,13 @@ impl MediaResolver {
             // path to the deck file.
             let deck: PathBuf = self.collection_path.join(self.deck_path.clone());
             // Get the path of the directory that contains the deck.
-            let deck_dir: &Path = deck.parent().unwrap();
+            let deck_dir: &Path = match deck.parent() {
+                Some(p) => p,
+                None => {
+                    // Should not happen.
+                    return Err(ResolveError::InvalidPath);
+                }
+            };
             // Join the deck directory path with the file path, to get an
             // absolute path to the deck-relative file.
             let path: PathBuf = deck_dir.join(path);
