@@ -105,6 +105,8 @@ fn modify_url(url: &str, config: &MarkdownRenderConfig) -> Fallible<String> {
 
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
+
     use super::*;
     use crate::helper::create_tmp_directory;
 
