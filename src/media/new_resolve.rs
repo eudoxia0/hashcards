@@ -273,4 +273,20 @@ mod tests {
         );
         Ok(())
     }
+
+    /// Ensure deck-relative paths cannot leave the collection root directory.
+    #[test]
+    fn test_relative_paths_cant_leave_collection_root() -> Fallible<()> {
+        let coll_path: PathBuf = create_tmp_directory()?;
+        let deck_path: PathBuf = PathBuf::from("deck.md");
+        let r: MediaResolver = MediaResolverBuilder::new()
+            .with_collection_path(coll_path)
+            .with_deck_path(deck_path)
+            .build();
+        assert_eq!(
+            r.resolve("@../../../../../../../../etc/passwd"),
+            Err(ResolveError::InvalidPath)
+        );
+        Ok(())
+    }
 }
