@@ -116,7 +116,7 @@ impl MediaResolverBuilder {
 
     /// Set a value for `deck_path`.
     pub fn with_deck_path(self, deck_path: PathBuf) -> Self {
-        assert!(deck_path.is_dir());
+        assert!(deck_path.is_file());
         assert!(deck_path.is_relative());
         Self {
             collection_path: self.collection_path,
