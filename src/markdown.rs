@@ -96,7 +96,7 @@ fn modify_url(url: &str, config: &MarkdownRenderConfig) -> Fallible<String> {
         .resolver
         .resolve(url)
         .map_err(|err| {
-            ErrorReport::new(format!("Failed to resolve media path '{}': {:?}", url, err))
+            ErrorReport::new(format!("Failed to resolve media path '{}': {}", url, err))
         })?
         .display()
         .to_string();
