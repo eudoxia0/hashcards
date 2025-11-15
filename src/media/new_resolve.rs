@@ -85,6 +85,9 @@ impl MediaResolver {
         } else {
             // Path is deck-relative.
             let path: PathBuf = PathBuf::from(&path);
+            if path.is_absolute() {
+                return Err(ResolveError::AbsolutePath);
+            }
             // Join the collection path and the deck path to get the absolute
             // path to the deck file.
             let deck: PathBuf = self.collection_path.join(self.deck_path.clone());
@@ -166,6 +169,19 @@ mod tests {
             .build();
         assert_eq!(r.resolve(""), Err(ResolveError::Empty));
         assert_eq!(r.resolve(" "), Err(ResolveError::Empty));
+        Ok(())
+    }
+
+    /// Absolute strings are rejected.
+    #[test]
+    fn test_absolute_paths_are_rejected() -> Fallible<()> {
+        let coll_path: PathBuf = create_tmp_directory()?;
+        let deck_path: PathBuf = PathBuf::from("deck.md");
+        let r: MediaResolver = MediaResolverBuilder::new()
+            .with_collection_path(coll_path)
+            .with_deck_path(deck_path)
+            .build();
+        assert_eq!(r.resolve("/etc/passwd"), Err(ResolveError::AbsolutePath));
         Ok(())
     }
 
