@@ -102,7 +102,9 @@ fn modify_url(url: &str, config: &MarkdownRenderConfig) -> Fallible<String> {
         .build();
     let path: String = resolver
         .resolve(url)
-        .map_err(|err| ErrorReport::new(format!("Failed to resolve media path '{}': {:?}", url, err)))?
+        .map_err(|err| {
+            ErrorReport::new(format!("Failed to resolve media path '{}': {:?}", url, err))
+        })?
         .display()
         .to_string();
     Ok(format!("http://localhost:{port}/file/{path}"))
