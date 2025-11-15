@@ -166,4 +166,19 @@ mod tests {
         assert_eq!(r.resolve("http://"), Err(ResolveError::ExternalUrl));
         Ok(())
     }
+
+    /// Test collection-relative paths.
+    #[test]
+    fn test_external_urls_are_rejected() -> Fallible<()> {
+        let coll_path: PathBuf = create_tmp_directory()?;
+        std::fs::create_dir_all(coll_path.join("a/b/c"));
+        let deck_path: PathBuf = PathBuf::from("a/b/c/deck.md");
+        let r: MediaResolver = MediaResolverBuilder::new()
+            .with_collection_path(coll_path)
+            .with_deck_path(deck_path)
+            .build();
+        let res = r.resolve("@/foo.jpg");
+        assert!(res.is_ok());
+        Ok(())
+    }
 }
