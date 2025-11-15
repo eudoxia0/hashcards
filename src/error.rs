@@ -20,7 +20,7 @@ use std::string::FromUtf8Error;
 
 use crate::parser::ParserError;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct ErrorReport {
     message: String,
 }

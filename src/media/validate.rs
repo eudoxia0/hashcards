@@ -183,28 +183,31 @@ mod tests {
     }
 
     #[test]
-    fn test_validate_media_files_with_existing_files() {
+    fn test_validate_media_files_with_existing_files() -> Fallible<()> {
         // Create a temporary directory for the test.
         let test_dir = temp_dir().join("hashcards_media_test_existing");
-        create_dir_all(&test_dir).expect("Failed to create test directory");
+        create_dir_all(&test_dir)?;
 
         // Create actual media files.
         let image_path = test_dir.join("existing_image.jpg");
-        std::fs::write(&image_path, b"fake image data").expect("Failed to create test image");
+        std::fs::write(&image_path, b"fake image data")?;
 
         // Create a markdown file path.
         let card_file = test_dir.join("test_deck.md");
+        std::fs::write(&card_file, b"fake deck data")?;
 
         // Parse cards from markdown with existing media reference.
         let markdown = "Q: What is this image?\n\n![](existing_image.jpg)\n\nA: A test image";
         let parser = CardParser::new("test_deck".to_string(), card_file.clone());
-        let cards = parser.parse(markdown).expect("Failed to parse cards");
+        let cards = parser.parse(markdown)?;
 
         // Validate media files - should succeed.
         let result = validate_media_files(&cards, &test_dir);
 
         // Assert that validation succeeded.
-        assert!(result.is_ok());
+        assert_eq!(result, Ok(()));
+
+        Ok(())
     }
 
     #[test]
