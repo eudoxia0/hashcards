@@ -136,8 +136,8 @@ mod tests {
     fn test_markdown_to_html_inline() -> Fallible<()> {
         let markdown = "This is **bold** text.";
         let config = make_test_config();
-        let html = markdown_to_html_inline(&config, markdown);
-        assert_eq!(html, "This is <strong>bold</strong> text.")?;
+        let html = markdown_to_html_inline(&config, markdown)?;
+        assert_eq!(html, "This is <strong>bold</strong> text.");
         Ok(())
     }
 
