@@ -23,6 +23,7 @@ use crate::cmd::drill::state::ServerState;
 use crate::cmd::drill::template::page_template;
 use crate::error::Fallible;
 use crate::markdown::MarkdownRenderConfig;
+use crate::media::resolve::MediaResolverBuilder;
 use crate::types::card::Card;
 use crate::types::card::CardType;
 
@@ -61,9 +62,13 @@ fn render_session_page(state: &ServerState, mutable: &MutableState) -> Fallible<
     };
     let progress_bar_style = format!("width: {}%;", percent_done);
     let card = mutable.cards[0].clone();
+    let coll_path = state.directory.clone();
+    let deck_path = card.relative_file_path(coll_path.clone())?;
     let config = MarkdownRenderConfig {
-        root: state.directory.clone(),
-        deck_path: card.relative_file_path(state.directory.clone())?,
+        resolver: MediaResolverBuilder::new()
+            .with_collection_path(coll_path)?
+            .with_deck_path(deck_path)?
+            .build()?,
         port: state.port,
     };
     let card_content = render_card(&card, mutable.reveal, &config)?;

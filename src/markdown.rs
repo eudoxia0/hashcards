@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::path::PathBuf;
-
 use pulldown_cmark::CowStr;
 use pulldown_cmark::Event;
 use pulldown_cmark::Parser;
@@ -22,7 +20,7 @@ use pulldown_cmark::html::push_html;
 
 use crate::error::ErrorReport;
 use crate::error::Fallible;
-use crate::media::resolve::MediaResolverBuilder;
+use crate::media::resolve::MediaResolver;
 
 const AUDIO_EXTENSIONS: [&str; 3] = ["mp3", "wav", "ogg"];
 
@@ -36,10 +34,8 @@ fn is_audio_file(url: &str) -> bool {
 
 /// Configuration for Markdown rendering.
 pub struct MarkdownRenderConfig {
-    /// The collection root directory.
-    pub root: PathBuf,
-    /// The collection-relative path to the file where this card is defined.
-    pub deck_path: PathBuf,
+    /// A media resolver.
+    pub resolver: MediaResolver,
     /// The port where the server is exposed.
     pub port: u16,
 }
@@ -96,11 +92,8 @@ pub fn markdown_to_html_inline(config: &MarkdownRenderConfig, markdown: &str) ->
 
 fn modify_url(url: &str, config: &MarkdownRenderConfig) -> Fallible<String> {
     let port = config.port;
-    let resolver = MediaResolverBuilder::new()
-        .with_collection_path(config.root.clone())?
-        .with_deck_path(config.deck_path.clone())?
-        .build()?;
-    let path: String = resolver
+    let path: String = config
+        .resolver
         .resolve(url)
         .map_err(|err| {
             ErrorReport::new(format!("Failed to resolve media path '{}': {:?}", url, err))
@@ -115,24 +108,26 @@ mod tests {
     use super::*;
     use crate::helper::create_tmp_directory;
 
-    fn make_test_config() -> MarkdownRenderConfig {
-        MarkdownRenderConfig {
-            root: PathBuf::new(),
-            deck_path: PathBuf::new(),
+    fn make_test_config() -> Fallible<MarkdownRenderConfig> {
+        let coll_path: PathBuf = create_tmp_directory()?;
+        let deck_path: PathBuf = coll_path.join("deck.md");
+        let image_path: PathBuf = coll_path.join("image.png");
+        std::fs::write(&deck_path, "")?;
+        std::fs::write(&image_path, "")?;
+        let config = MarkdownRenderConfig {
+            resolver: MediaResolverBuilder::new()
+                .with_collection_path(coll_path)?
+                .with_deck_path(deck_path)?
+                .build()?,
             port: 1234,
-        }
+        };
+        Ok(config)
     }
 
     #[test]
     fn test_markdown_to_html() -> Fallible<()> {
         let markdown = "![alt](@/image.png)";
-        let coll_path: PathBuf = create_tmp_directory()?;
-        std::fs::write(coll_path.join("image.png"), "")?;
-        let config = MarkdownRenderConfig {
-            root: coll_path,
-            deck_path: PathBuf::new(),
-            port: 1234,
-        };
+        let config = make_test_config()?;
         let html = markdown_to_html(&config, markdown)?;
         assert_eq!(
             html,
@@ -144,7 +139,7 @@ mod tests {
     #[test]
     fn test_markdown_to_html_inline() -> Fallible<()> {
         let markdown = "This is **bold** text.";
-        let config = make_test_config();
+        let config = make_test_config()?;
         let html = markdown_to_html_inline(&config, markdown)?;
         assert_eq!(html, "This is <strong>bold</strong> text.");
         Ok(())
@@ -153,7 +148,7 @@ mod tests {
     #[test]
     fn test_markdown_to_html_inline_heading() -> Fallible<()> {
         let markdown = "# Foo";
-        let config = make_test_config();
+        let config = make_test_config()?;
         let html = markdown_to_html_inline(&config, markdown)?;
         assert_eq!(html, "<h1>Foo</h1>\n");
         Ok(())
