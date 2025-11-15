@@ -58,6 +58,10 @@ impl MediaResolver {
         if path.is_empty() {
             return Err(ResolveError::Empty);
         }
+        // Is the path an external URL?
+        if path.contains("://") {
+            return Err(ResolveError::ExternalUrl);
+        }
         todo!()
     }
 }
