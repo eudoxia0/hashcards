@@ -73,16 +73,7 @@ pub fn validate_media_files(cards: &[Card], base_dir: &Path) -> Fallible<()> {
             for path in extract_media_paths(markdown) {
                 // Try to resolve the path using MediaResolver.
                 match resolver.resolve(&path) {
-                    Ok(relpath) => {
-                        let abspath = base_dir.join(relpath);
-                        if !abspath.exists() {
-                            missing.insert(MissingMedia {
-                                file_path: path,
-                                card_file: card.file_path().clone(),
-                                card_lines: card.range(),
-                            });
-                        }
-                    }
+                    Ok(_) => {}
                     Err(_) => {
                         missing.insert(MissingMedia {
                             file_path: path,
