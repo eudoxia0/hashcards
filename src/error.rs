@@ -44,7 +44,7 @@ impl From<std::io::Error> for ErrorReport {
 impl From<StripPrefixError> for ErrorReport {
     fn from(value: StripPrefixError) -> Self {
         ErrorReport {
-            message: format!("I/O error: {value:#?}"),
+            message: format!("Strip prefix error: {value:#?}"),
         }
     }
 }
