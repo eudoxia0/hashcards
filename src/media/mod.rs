@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+pub mod load;
 pub mod new_resolve;
 pub mod resolve;
 pub mod validate;
