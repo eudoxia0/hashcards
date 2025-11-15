@@ -13,6 +13,7 @@
 // limitations under the License.
 
 use std::path::Component;
+use std::path::Path;
 use std::path::PathBuf;
 
 /// The media resolver takes media paths as entered in the Markdown text of the
@@ -40,6 +41,8 @@ pub enum ResolveError {
     ExternalUrl,
     /// Path is absolute.
     AbsolutePath,
+    /// Path has parent (`..`) components.
+    ParentComponent,
     /// Path is invalid.
     InvalidPath,
 }
@@ -76,20 +79,24 @@ impl MediaResolver {
             }
             // Reject paths with `..` components.
             if path.components().any(|c| c == Component::ParentDir) {
-                return Err(ResolveError::InvalidPath);
+                return Err(ResolveError::ParentComponent);
             }
             Ok(path)
         } else {
             // Path is deck-relative.
             let path: PathBuf = PathBuf::from(&path);
-            // Join the deck path and the file path, and canonicalize them to
-            // eliminate `..` components.
-            let path: PathBuf = self
-                .deck_path
-                .join(path)
-                .canonicalize()
-                .map_err(|_| ResolveError::InvalidPath)?;
-            // Relativize the path by subtracting the collection directory.
+            // Join the collection path and the deck path to get the absolute
+            // path to the deck file.
+            let deck: PathBuf = self.collection_path.join(self.deck_path.clone());
+            // Get the path of the directory that contains the deck.
+            let deck_dir: &Path = deck.parent().unwrap();
+            // Join the deck directory path with the file path, to get an
+            // absolute path to the deck-relative file.
+            let path: PathBuf = deck_dir.join(path);
+            // Canonicalize the path to resolve `..` components and symbolic
+            // links.
+            let path: PathBuf = path.canonicalize().map_err(|_| ResolveError::InvalidPath)?;
+            // Relativize the path by subtracting the collection root.
             let path: PathBuf = path
                 .strip_prefix(&self.collection_path)
                 .map_err(|_| ResolveError::InvalidPath)?
@@ -180,15 +187,9 @@ mod tests {
             .with_collection_path(coll_path)
             .with_deck_path(deck_path)
             .build();
-        assert_eq!(r.resolve("@/foo.jpg").unwrap(), PathBuf::from("foo.jpg"));
-        assert_eq!(
-            r.resolve("@/a/foo.jpg").unwrap(),
-            PathBuf::from("a/foo.jpg")
-        );
-        assert_eq!(
-            r.resolve("@/a/b/foo.jpg").unwrap(),
-            PathBuf::from("a/b/foo.jpg")
-        );
+        assert_eq!(r.resolve("@/foo.jpg"), Ok(PathBuf::from("foo.jpg")));
+        assert_eq!(r.resolve("@/a/foo.jpg"), Ok(PathBuf::from("a/foo.jpg")));
+        assert_eq!(r.resolve("@/a/b/foo.jpg"), Ok(PathBuf::from("a/b/foo.jpg")));
         Ok(())
     }
 
@@ -216,8 +217,22 @@ mod tests {
             .build();
         assert_eq!(
             r.resolve("@/a/b/../foo.jpg"),
-            Err(ResolveError::InvalidPath)
+            Err(ResolveError::ParentComponent)
         );
+        Ok(())
+    }
+
+    /// Test deck-relative paths.
+    #[test]
+    fn test_deck_relative() -> Fallible<()> {
+        let coll_path: PathBuf = create_tmp_directory()?;
+        let deck_path: PathBuf = PathBuf::from("a/b/c/deck.md");
+        std::fs::create_dir_all(coll_path.join("a/b/c"))?;
+        let r: MediaResolver = MediaResolverBuilder::new()
+            .with_collection_path(coll_path)
+            .with_deck_path(deck_path)
+            .build();
+        assert_eq!(r.resolve("foo.jpg"), Ok(PathBuf::from("a/b/c/foo.jpg")));
         Ok(())
     }
 }
