@@ -238,6 +238,7 @@ mod tests {
             .with_deck_path(deck_path)
             .build();
         assert_eq!(r.resolve("foo.jpg"), Ok(PathBuf::from("a/b/c/foo.jpg")));
+        assert_eq!(r.resolve("./foo.jpg"), Ok(PathBuf::from("a/b/c/foo.jpg")));
         Ok(())
     }
 }
