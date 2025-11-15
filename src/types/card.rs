@@ -188,14 +188,14 @@ impl CardContent {
         let html = match self {
             CardContent::Basic { question, .. } => {
                 html! {
-                    (PreEscaped(markdown_to_html(config, question)))
+                    (PreEscaped(markdown_to_html(config, question)?))
                 }
             }
             CardContent::Cloze { text, start, end } => {
                 let mut text_bytes: Vec<u8> = text.as_bytes().to_owned();
                 text_bytes.splice(*start..*end + 1, CLOZE_TAG_BYTES.iter().copied());
                 let text: String = String::from_utf8(text_bytes)?;
-                let text: String = markdown_to_html(config, &text);
+                let text: String = markdown_to_html(config, &text)?;
                 let text: String =
                     text.replace(CLOZE_TAG, "<span class='cloze'>.............</span>");
                 html! {
@@ -210,17 +210,17 @@ impl CardContent {
         let html = match self {
             CardContent::Basic { answer, .. } => {
                 html! {
-                    (PreEscaped(markdown_to_html(config, answer)))
+                    (PreEscaped(markdown_to_html(config, answer)?))
                 }
             }
             CardContent::Cloze { text, start, end } => {
                 let mut text_bytes: Vec<u8> = text.as_bytes().to_owned();
                 let deleted_text: Vec<u8> = text_bytes[*start..*end + 1].to_owned();
                 let deleted_text: String = String::from_utf8(deleted_text)?;
-                let deleted_text: String = markdown_to_html_inline(config, &deleted_text);
+                let deleted_text: String = markdown_to_html_inline(config, &deleted_text)?;
                 text_bytes.splice(*start..*end + 1, CLOZE_TAG_BYTES.iter().copied());
                 let text: String = String::from_utf8(text_bytes)?;
-                let text = markdown_to_html(config, &text);
+                let text = markdown_to_html(config, &text)?;
                 let text = text.replace(
                     CLOZE_TAG,
                     &format!("<span class='cloze-reveal'>{}</span>", deleted_text),

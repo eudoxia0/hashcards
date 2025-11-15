@@ -20,6 +20,10 @@ use pulldown_cmark::Parser;
 use pulldown_cmark::Tag;
 use pulldown_cmark::html::push_html;
 
+use crate::error::ErrorReport;
+use crate::error::Fallible;
+use crate::media::new_resolve::MediaResolverBuilder;
+
 const AUDIO_EXTENSIONS: [&str; 3] = ["mp3", "wav", "ogg"];
 
 fn is_audio_file(url: &str) -> bool {
@@ -34,24 +38,24 @@ fn is_audio_file(url: &str) -> bool {
 pub struct MarkdownRenderConfig {
     /// The collection root directory.
     pub root: PathBuf,
-    /// The path to the file where this card is defined.
+    /// The collection-relative path to the file where this card is defined.
     pub deck_path: PathBuf,
     /// The port where the server is exposed.
     pub port: u16,
 }
 
-pub fn markdown_to_html(config: &MarkdownRenderConfig, markdown: &str) -> String {
+pub fn markdown_to_html(config: &MarkdownRenderConfig, markdown: &str) -> Fallible<String> {
     let parser = Parser::new(markdown);
-    let parser = parser.map(|event| match event {
+    let events = parser.map(|event| match event {
         Event::Start(Tag::Image {
             link_type,
             title,
             dest_url,
             id,
         }) => {
-            let url = modify_url(&dest_url, config);
+            let url = modify_url(&dest_url, config)?;
             // Does the URL point to an audio file?
-            if is_audio_file(&url) {
+            let ev = if is_audio_file(&url) {
                 // If so, render it as an HTML5 audio element.
                 Event::Html(CowStr::Boxed(
                     format!(
@@ -68,42 +72,39 @@ pub fn markdown_to_html(config: &MarkdownRenderConfig, markdown: &str) -> String
                     dest_url: CowStr::Boxed(url.into_boxed_str()),
                     id,
                 })
-            }
+            };
+            Ok(ev)
         }
-        _ => event,
+        _ => Ok(event),
     });
+    let events = events.collect::<Fallible<Vec<_>>>()?;
     let mut html_output = String::new();
-    push_html(&mut html_output, parser);
-    html_output
+    push_html(&mut html_output, events.into_iter());
+    Ok(html_output)
 }
 
-pub fn markdown_to_html_inline(config: &MarkdownRenderConfig, markdown: &str) -> String {
-    let text = markdown_to_html(config, markdown);
+pub fn markdown_to_html_inline(config: &MarkdownRenderConfig, markdown: &str) -> Fallible<String> {
+    let text = markdown_to_html(config, markdown)?;
     if text.starts_with("<p>") && text.ends_with("</p>\n") {
         let len = text.len();
-        text[3..len - 5].to_string()
+        Ok(text[3..len - 5].to_string())
     } else {
-        text
+        Ok(text)
     }
 }
 
-fn modify_url(url: &str, config: &MarkdownRenderConfig) -> String {
-    if url.contains("://") {
-        // Leave external URLs alone.
-        url.to_string()
-    } else {
-        let port = config.port;
-        let path = resolve_path(url, config);
-        format!("http://localhost:{port}/file/{path}")
-    }
-}
-
-// If a path begins with `@/`, leave it as-is.
-//
-// Otherwise, if it's a deck-relative path, turn it into a collection-absolute
-// path.
-fn resolve_path(path: &str, config: &MarkdownRenderConfig) -> String {
-    String::from(path)
+fn modify_url(url: &str, config: &MarkdownRenderConfig) -> Fallible<String> {
+    let port = config.port;
+    let resolver = MediaResolverBuilder::new()
+        .with_collection_path(config.root.clone())
+        .with_deck_path(config.deck_path.clone())
+        .build();
+    let path: String = resolver
+        .resolve(url)
+        .map_err(|_| ErrorReport::new("Failed to resolve path."))?
+        .display()
+        .to_string();
+    Ok(format!("http://localhost:{port}/file/{path}"))
 }
 
 #[cfg(test)]
@@ -119,38 +120,42 @@ mod tests {
     }
 
     #[test]
-    fn test_markdown_to_html() {
+    fn test_markdown_to_html() -> Fallible<()> {
         let markdown = "![alt](image.png)";
         let config = make_test_config();
-        let html = markdown_to_html(&config, markdown);
+        let html = markdown_to_html(&config, markdown)?;
         assert_eq!(
             html,
             "<p><img src=\"http://localhost:1234/file/image.png\" alt=\"alt\" /></p>\n"
         );
+        Ok(())
     }
 
     #[test]
-    fn test_markdown_to_html_inline() {
+    fn test_markdown_to_html_inline() -> Fallible<()> {
         let markdown = "This is **bold** text.";
         let config = make_test_config();
         let html = markdown_to_html_inline(&config, markdown);
-        assert_eq!(html, "This is <strong>bold</strong> text.");
+        assert_eq!(html, "This is <strong>bold</strong> text.")?;
+        Ok(())
     }
 
     #[test]
-    fn test_markdown_to_html_inline_heading() {
+    fn test_markdown_to_html_inline_heading() -> Fallible<()> {
         let markdown = "# Foo";
         let config = make_test_config();
-        let html = markdown_to_html_inline(&config, markdown);
+        let html = markdown_to_html_inline(&config, markdown)?;
         assert_eq!(html, "<h1>Foo</h1>\n");
+        Ok(())
     }
 
     #[test]
-    fn test_external_url_is_unchanged() {
+    fn test_external_url_is_unchanged() -> Fallible<()> {
         let url = "https://upload.wikimedia.org/wikipedia/commons/6/63/Circe_Invidiosa_-_John_William_Waterhouse.jpg";
         let markdown = format!("![alt]({url})");
         let config = make_test_config();
-        let html = markdown_to_html(&config, &markdown);
+        let html = markdown_to_html(&config, &markdown)?;
         assert_eq!(html, format!("<p><img src=\"{url}\" alt=\"alt\" /></p>\n"));
+        Ok(())
     }
 }

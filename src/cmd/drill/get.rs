@@ -63,7 +63,7 @@ fn render_session_page(state: &ServerState, mutable: &MutableState) -> Fallible<
     let card = mutable.cards[0].clone();
     let config = MarkdownRenderConfig {
         root: state.directory.clone(),
-        deck_path: card.file_path().clone(),
+        deck_path: card.relative_file_path(state.directory.clone())?,
         port: state.port,
     };
     let card_content = render_card(&card, mutable.reveal, &config)?;
