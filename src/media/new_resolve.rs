@@ -139,6 +139,7 @@ impl MediaResolverBuilder {
 mod tests {
     use super::*;
 
+    /// Empty strings are rejected.
     #[test]
     fn test_empty_strings_are_rejected() -> Fallible<()> {
         let coll_path: PathBuf = create_tmp_directory()?;
