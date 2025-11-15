@@ -81,8 +81,12 @@ impl MediaResolver {
             if path.components().any(|c| c == Component::ParentDir) {
                 return Err(ResolveError::ParentComponent);
             }
-            // Canonicalize for symmetry with the other branch.
-            let path: PathBuf = path.canonicalize().map_err(|_| ResolveError::InvalidPath)?;
+            // Check: does it exist? This is done for symmetry with the other
+            // branch.
+            let abspath: PathBuf = self.collection_path.join(&path);
+            if !abspath.exists() {
+                return Err(ResolveError::InvalidPath);
+            }
             Ok(path)
         } else {
             // Path is deck-relative.
@@ -210,7 +214,12 @@ mod tests {
     #[test]
     fn test_collection_relative() -> Fallible<()> {
         let coll_path: PathBuf = create_tmp_directory()?;
+        std::fs::create_dir_all(coll_path.join("a/b/"))?;
+        std::fs::write(coll_path.join("foo.jpg"), "")?;
+        std::fs::write(coll_path.join("a/foo.jpg"), "")?;
+        std::fs::write(coll_path.join("a/b/foo.jpg"), "")?;
         let deck_path: PathBuf = PathBuf::from("deck.md");
+        std::fs::write(coll_path.join("deck.md"), "")?;
         let r: MediaResolver = MediaResolverBuilder::new()
             .with_collection_path(coll_path)
             .with_deck_path(deck_path)
