@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::path::Component;
 use std::path::PathBuf;
 
 /// The media resolver takes media paths as entered in the Markdown text of the
@@ -73,6 +74,10 @@ impl MediaResolver {
             // Reject absolute paths.
             if path.is_absolute() {
                 return Err(ResolveError::AbsolutePath);
+            }
+            // Reject paths with `..` components.
+            if path.components().any(|c| c == Component::ParentDir) {
+                return Err(ResolveError::InvalidPath);
             }
             Ok(path)
         } else {
@@ -178,6 +183,28 @@ mod tests {
             .with_deck_path(deck_path)
             .build();
         assert_eq!(r.resolve("@/foo.jpg").unwrap(), PathBuf::from("foo.jpg"));
+        assert_eq!(
+            r.resolve("@/a/foo.jpg").unwrap(),
+            PathBuf::from("a/foo.jpg")
+        );
+        assert_eq!(
+            r.resolve("@/a/b/foo.jpg").unwrap(),
+            PathBuf::from("a/b/foo.jpg")
+        );
+        Ok(())
+    }
+
+    /// Collection-relative absolute paths are rejected.
+    #[test]
+    fn test_collection_relative_absolute_are_rejected() -> Fallible<()> {
+        let coll_path: PathBuf = create_tmp_directory()?;
+        std::fs::create_dir_all(coll_path.join("a/b/c"))?;
+        let deck_path: PathBuf = PathBuf::from("a/b/c/deck.md");
+        let r: MediaResolver = MediaResolverBuilder::new()
+            .with_collection_path(coll_path)
+            .with_deck_path(deck_path)
+            .build();
+        assert_eq!(r.resolve("@//foo.jpg"), Err(ResolveError::AbsolutePath));
         Ok(())
     }
 }
