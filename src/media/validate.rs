@@ -24,7 +24,6 @@ use crate::error::ErrorReport;
 use crate::error::Fallible;
 use crate::media::new_resolve::MediaResolver;
 use crate::media::new_resolve::MediaResolverBuilder;
-use crate::media::resolve::ResolveError;
 use crate::types::card::Card;
 use crate::types::card::CardContent;
 
