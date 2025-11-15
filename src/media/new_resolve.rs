@@ -144,7 +144,6 @@ mod tests {
     fn test_empty_strings_are_rejected() -> Fallible<()> {
         let coll_path: PathBuf = create_tmp_directory()?;
         let deck_path: PathBuf = PathBuf::from("deck.md");
-        std::fs::write(&coll_path.join(&deck_path), "test")?;
         let r: MediaResolver = MediaResolverBuilder::new()
             .with_collection_path(coll_path)
             .with_deck_path(deck_path)
