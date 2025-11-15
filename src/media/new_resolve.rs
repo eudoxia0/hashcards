@@ -83,17 +83,13 @@ impl MediaResolver {
             }
             Ok(path)
         } else {
-            println!("collection_path={:#?}", self.collection_path);
             // Path is deck-relative.
             let path: PathBuf = PathBuf::from(&path);
             // Join the collection path and the deck path to get the absolute
             // path to the deck file.
-            println!("path={path:#?}");
             let deck: PathBuf = self.collection_path.join(self.deck_path.clone());
-            println!("deck={deck:#?}");
             // Get the path of the directory that contains the deck.
             let deck_dir: &Path = deck.parent().unwrap();
-            println!("deck_dir={deck_dir:#?}");
             // Join the deck directory path with the file path, to get an
             // absolute path to the deck-relative file.
             let path: PathBuf = deck_dir.join(path);
@@ -101,17 +97,14 @@ impl MediaResolver {
             if !path.exists() {
                 return Err(ResolveError::InvalidPath);
             }
-            println!("path={path:#?}");
             // Canonicalize the path to resolve `..` components and symbolic
             // links.
             let path: PathBuf = path.canonicalize().map_err(|_| ResolveError::InvalidPath)?;
-            println!("canon={path:#?}");
             // Relativize the path by subtracting the collection root.
             let path: PathBuf = path
                 .strip_prefix(&self.collection_path)
                 .map_err(|_| ResolveError::InvalidPath)?
                 .to_path_buf();
-            println!("stripped={path:#?}");
             Ok(path)
         }
     }
