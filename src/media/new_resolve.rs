@@ -11,3 +11,18 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+use std::path::PathBuf;
+
+/// The media resolver takes media paths as entered in the Markdown text of the
+/// flashcards, and resolves them to collection-relative paths.
+pub struct MediaResolver {
+    /// Absolute path to the collection root directory.
+    collection_path: PathBuf,
+    /// Collection-relative path to the deck. The resolver must only be used
+    /// with flashcards parsed from this deck.
+    deck_path: PathBuf,
+}
+
+/// Builder to construct a [`MediaResolver`].
+pub struct MediaResolverBuilder {}
