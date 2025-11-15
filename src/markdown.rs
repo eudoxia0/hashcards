@@ -115,7 +115,7 @@ mod tests {
             root: PathBuf::new(),
             deck_path: PathBuf::new(),
             port: 1234,
-        };
+        }
     }
 
     #[test]

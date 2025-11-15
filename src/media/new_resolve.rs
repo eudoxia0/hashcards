@@ -53,7 +53,7 @@ impl MediaResolver {
     ///
     /// If the path string is a relative path, it will be resolved relative to
     /// the deck path.
-    pub fn resolve(self, path: &str) -> Result<PathBuf, ResolveError> {
+    pub fn resolve(&self, path: &str) -> Result<PathBuf, ResolveError> {
         // Trim the path.
         let path: &str = path.trim();
 
@@ -138,6 +138,7 @@ impl MediaResolverBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::error::Fallible;
     use crate::helper::create_tmp_directory;
 
     /// Empty strings are rejected.
@@ -146,9 +147,9 @@ mod tests {
         let coll_path: PathBuf = create_tmp_directory()?;
         let deck_path: PathBuf = coll_path.join("deck.md");
         let r: MediaResolver = MediaResolverBuilder::new()
-            .with_collection_path(root)
+            .with_collection_path(coll_path)
             .with_deck_path(deck_path)
-            .build()?;
+            .build();
         assert_eq!(r.resolve(""), Err(ResolveError::Empty));
         assert_eq!(r.resolve(" "), Err(ResolveError::Empty));
         Ok(())
