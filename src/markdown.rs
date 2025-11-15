@@ -125,12 +125,12 @@ mod tests {
     fn test_markdown_to_html() -> Fallible<()> {
         let markdown = "![alt](@/image.png)";
         let coll_path: PathBuf = create_tmp_directory()?;
+        std::fs::write(coll_path.join("image.png"), "")?;
         let config = MarkdownRenderConfig {
             root: coll_path,
             deck_path: PathBuf::new(),
             port: 1234,
         };
-        std::fs::write(coll_path.join("image.png"), "")?;
         let html = markdown_to_html(&config, markdown)?;
         assert_eq!(
             html,
