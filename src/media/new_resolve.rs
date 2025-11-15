@@ -107,6 +107,7 @@ impl MediaResolverBuilder {
     /// Set a value for `collection_path`.
     pub fn with_collection_path(self, collection_path: PathBuf) -> Self {
         assert!(collection_path.is_absolute());
+        assert!(collection_path.is_dir());
         Self {
             collection_path: Some(collection_path),
             deck_path: self.deck_path,
