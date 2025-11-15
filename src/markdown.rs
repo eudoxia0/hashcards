@@ -109,6 +109,7 @@ mod tests {
 
     use super::*;
     use crate::helper::create_tmp_directory;
+    use crate::media::resolve::MediaResolverBuilder;
 
     fn make_test_config() -> Fallible<MarkdownRenderConfig> {
         let coll_path: PathBuf = create_tmp_directory()?;
