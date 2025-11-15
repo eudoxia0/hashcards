@@ -39,6 +39,8 @@ pub enum ResolveError {
     ExternalUrl,
     /// Path is absolute.
     AbsolutePath,
+    /// Path is invalid.
+    InvalidPath,
     /// Path resolves outside the collection directory.
     OutsideDirectory,
 }
@@ -54,15 +56,42 @@ impl MediaResolver {
     pub fn resolve(self, path: &str) -> Result<PathBuf, ResolveError> {
         // Trim the path.
         let path: &str = path.trim();
-        // Is the path empty?
+
+        // Reject the empty string.
         if path.is_empty() {
             return Err(ResolveError::Empty);
         }
-        // Is the path an external URL?
+
+        // Reject external URLs.
         if path.contains("://") {
             return Err(ResolveError::ExternalUrl);
         }
-        todo!()
+
+        if path.starts_with("@/") {
+            // Path is collection-relative, leave it as-is.
+            let path: PathBuf = PathBuf::from(&path[2..]);
+            // Reject absolute paths.
+            if path.is_absolute() {
+                return Err(ResolveError::AbsolutePath);
+            }
+            Ok(path)
+        } else {
+            // Path is deck-relative.
+            let path: PathBuf = PathBuf::from(&path);
+            // Join the deck path and the file path, and canonicalize them to
+            // eliminate `..` components.
+            let path: PathBuf = self
+                .deck_path
+                .join(path)
+                .canonicalize()
+                .map_err(|_| ResolveError::InvalidPath)?;
+            // Relativize the path by subtracting the collection directory.
+            let path: PathBuf = path
+                .strip_prefix(&self.collection_path)
+                .map_err(|_| ResolveError::InvalidPath)?
+                .to_path_buf();
+            Ok(path)
+        }
     }
 }
 
