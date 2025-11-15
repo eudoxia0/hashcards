@@ -152,4 +152,17 @@ mod tests {
         assert_eq!(r.resolve(" "), Err(ResolveError::Empty));
         Ok(())
     }
+
+    /// External URLs are rejected.
+    #[test]
+    fn test_external_urls_are_rejected() -> Fallible<()> {
+        let coll_path: PathBuf = create_tmp_directory()?;
+        let deck_path: PathBuf = PathBuf::from("deck.md");
+        let r: MediaResolver = MediaResolverBuilder::new()
+            .with_collection_path(coll_path)
+            .with_deck_path(deck_path)
+            .build();
+        assert_eq!(r.resolve("http://"), Err(ResolveError::ExternalUrl));
+        Ok(())
+    }
 }
