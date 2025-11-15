@@ -22,7 +22,7 @@ use pulldown_cmark::html::push_html;
 
 use crate::error::ErrorReport;
 use crate::error::Fallible;
-use crate::media::new_resolve::MediaResolverBuilder;
+use crate::media::resolve::MediaResolverBuilder;
 
 const AUDIO_EXTENSIONS: [&str; 3] = ["mp3", "wav", "ogg"];
 

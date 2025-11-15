@@ -22,8 +22,8 @@ use pulldown_cmark::Tag;
 
 use crate::error::ErrorReport;
 use crate::error::Fallible;
-use crate::media::new_resolve::MediaResolver;
-use crate::media::new_resolve::MediaResolverBuilder;
+use crate::media::resolve::MediaResolver;
+use crate::media::resolve::MediaResolverBuilder;
 use crate::types::card::Card;
 use crate::types::card::CardContent;
 

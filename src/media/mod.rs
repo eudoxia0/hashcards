@@ -13,5 +13,5 @@
 // limitations under the License.
 
 pub mod load;
-pub mod new_resolve;
+pub mod resolve;
 pub mod validate;
