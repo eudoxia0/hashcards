@@ -46,39 +46,40 @@ pub struct MarkdownRenderConfig {
 
 pub fn markdown_to_html(config: &MarkdownRenderConfig, markdown: &str) -> Fallible<String> {
     let parser = Parser::new(markdown);
-    let events = parser.map(|event| match event {
-        Event::Start(Tag::Image {
-            link_type,
-            title,
-            dest_url,
-            id,
-        }) => {
-            let url = modify_url(&dest_url, config)?;
-            // Does the URL point to an audio file?
-            let ev = if is_audio_file(&url) {
-                // If so, render it as an HTML5 audio element.
-                Event::Html(CowStr::Boxed(
-                    format!(
-                        r#"<audio controls src="{}" title="{}"></audio>"#,
-                        url, title
-                    )
-                    .into_boxed_str(),
-                ))
-            } else {
-                // Treat it as a normal image.
-                Event::Start(Tag::Image {
-                    link_type,
-                    title,
-                    dest_url: CowStr::Boxed(url.into_boxed_str()),
-                    id,
-                })
-            };
-            Ok(ev)
-        }
-        _ => Ok(event),
-    });
-    let events = events.collect::<Fallible<Vec<_>>>()?;
-    let mut html_output = String::new();
+    let events: Vec<Event<'_>> = parser
+        .map(|event| match event {
+            Event::Start(Tag::Image {
+                link_type,
+                title,
+                dest_url,
+                id,
+            }) => {
+                let url = modify_url(&dest_url, config)?;
+                // Does the URL point to an audio file?
+                let ev = if is_audio_file(&url) {
+                    // If so, render it as an HTML5 audio element.
+                    Event::Html(CowStr::Boxed(
+                        format!(
+                            r#"<audio controls src="{}" title="{}"></audio>"#,
+                            url, title
+                        )
+                        .into_boxed_str(),
+                    ))
+                } else {
+                    // Treat it as a normal image.
+                    Event::Start(Tag::Image {
+                        link_type,
+                        title,
+                        dest_url: CowStr::Boxed(url.into_boxed_str()),
+                        id,
+                    })
+                };
+                Ok(ev)
+            }
+            _ => Ok(event),
+        })
+        .collect::<Fallible<Vec<_>>>()?;
+    let mut html_output: String = String::new();
     push_html(&mut html_output, events.into_iter());
     Ok(html_output)
 }
