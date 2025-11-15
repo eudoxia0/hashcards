@@ -103,7 +103,7 @@ fn modify_url(url: &str, config: &MarkdownRenderConfig) -> String {
 // Otherwise, if it's a deck-relative path, turn it into a collection-absolute
 // path.
 fn resolve_path(path: &str, config: &MarkdownRenderConfig) -> String {
-    String::from("")
+    String::from(path)
 }
 
 #[cfg(test)]

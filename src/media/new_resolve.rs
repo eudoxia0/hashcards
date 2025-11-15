@@ -106,7 +106,6 @@ impl MediaResolverBuilder {
 
     /// Set a value for `collection_path`.
     pub fn with_collection_path(self, collection_path: PathBuf) -> Self {
-        assert!(collection_path.is_dir());
         assert!(collection_path.is_absolute());
         Self {
             collection_path: Some(collection_path),
@@ -116,7 +115,6 @@ impl MediaResolverBuilder {
 
     /// Set a value for `deck_path`.
     pub fn with_deck_path(self, deck_path: PathBuf) -> Self {
-        assert!(deck_path.is_file());
         assert!(deck_path.is_relative());
         Self {
             collection_path: self.collection_path,
@@ -145,7 +143,8 @@ mod tests {
     #[test]
     fn test_empty_strings_are_rejected() -> Fallible<()> {
         let coll_path: PathBuf = create_tmp_directory()?;
-        let deck_path: PathBuf = coll_path.join("deck.md");
+        let deck_path: PathBuf = PathBuf::from("deck.md");
+        std::fs::write(&coll_path.join(&deck_path), "test")?;
         let r: MediaResolver = MediaResolverBuilder::new()
             .with_collection_path(coll_path)
             .with_deck_path(deck_path)
