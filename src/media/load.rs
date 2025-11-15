@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::path::Component;
 use std::path::PathBuf;
 
 /// The media loader takes collection-relative file paths and returns the
@@ -35,6 +36,8 @@ pub enum MediaLoaderError {
     NotFile,
     /// Path points to a symbolic link.
     SymbolicLink,
+    /// Path contains parent (`..`) components.
+    ParentComponent,
 }
 
 impl MediaLoader {
@@ -50,6 +53,9 @@ impl MediaLoader {
     /// Symbolic links and absolute paths are rejected.
     pub fn validate(&self, path: &str) -> Result<PathBuf, MediaLoaderError> {
         let path: PathBuf = PathBuf::from(path);
+        if path.components().any(|c| c == Component::ParentDir) {
+            return Err(MediaLoaderError::ParentComponent);
+        }
         if path.is_absolute() {
             return Err(MediaLoaderError::Absolute);
         }
@@ -71,15 +77,28 @@ impl MediaLoader {
 mod tests {
     use super::*;
     use crate::error::Fallible;
+    use crate::helper::create_tmp_directory;
 
     /// Absolute paths are rejected.
     #[test]
     fn test_abs_rejected() -> Fallible<()> {
-        let root = PathBuf::new();
+        let root = create_tmp_directory()?;
         let loader = MediaLoader::new(root);
         assert_eq!(
             loader.validate("/etc/passwd"),
             Err(MediaLoaderError::Absolute)
+        );
+        Ok(())
+    }
+
+    /// Paths with parent components are rejected.
+    #[test]
+    fn test_parent() -> Fallible<()> {
+        let root = create_tmp_directory()?;
+        let loader = MediaLoader::new(root);
+        assert_eq!(
+            loader.validate("../../../../../../../../../../etc/passwd"),
+            Err(MediaLoaderError::ParentComponent)
         );
         Ok(())
     }
