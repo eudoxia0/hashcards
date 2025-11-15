@@ -113,14 +113,14 @@ mod tests {
 
     fn make_test_config() -> Fallible<MarkdownRenderConfig> {
         let coll_path: PathBuf = create_tmp_directory()?;
-        let deck_path: PathBuf = coll_path.join("deck.md");
+        let abs_deck_path: PathBuf = coll_path.join("deck.md");
         let image_path: PathBuf = coll_path.join("image.png");
-        std::fs::write(&deck_path, "")?;
+        std::fs::write(&abs_deck_path, "")?;
         std::fs::write(&image_path, "")?;
         let config = MarkdownRenderConfig {
             resolver: MediaResolverBuilder::new()
                 .with_collection_path(coll_path)?
-                .with_deck_path(deck_path)?
+                .with_deck_path(PathBuf::from("deck.md"))?
                 .build()?,
             port: 1234,
         };
