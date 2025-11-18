@@ -146,6 +146,9 @@ impl MediaResolverBuilder {
 
     /// Set a value for `collection_path`.
     pub fn with_collection_path(self, collection_path: PathBuf) -> Fallible<Self> {
+        if !collection_path.exists() {
+            return Err(ErrorReport::new("Collection path does not exist."));
+        }
         if !collection_path.is_absolute() {
             return Err(ErrorReport::new("Collection path is relative."));
         }
