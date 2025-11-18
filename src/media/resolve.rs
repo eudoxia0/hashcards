@@ -50,6 +50,19 @@ pub enum ResolveError {
     InvalidPath,
 }
 
+impl std::fmt::Display for ResolveError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let msg = match self {
+            ResolveError::Empty => "path is the empty string.",
+            ResolveError::ExternalUrl => "external URLs are not allowed as media paths",
+            ResolveError::AbsolutePath => "absolute paths are not allowed as media paths",
+            ResolveError::ParentComponent => "path has a parent component",
+            ResolveError::InvalidPath => "path is invalid",
+        };
+        write!(f, "{msg}")
+    }
+}
+
 impl MediaResolver {
     /// Resolve a path string to a collection-relative file path.
     ///
