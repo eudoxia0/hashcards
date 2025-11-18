@@ -13,6 +13,8 @@
 // limitations under the License.
 
 use std::collections::HashSet;
+use std::fmt::Display;
+use std::fmt::Formatter;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -20,6 +22,7 @@ use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
 
 use axum::Router;
+use clap::ValueEnum;
 use axum::extract::Path;
 use axum::extract::State;
 use axum::http::HeaderName;
@@ -60,6 +63,23 @@ use crate::types::date::Date;
 use crate::types::timestamp::Timestamp;
 use crate::utils::CACHE_CONTROL_IMMUTABLE;
 
+#[derive(ValueEnum, Clone, Copy, PartialEq)]
+pub enum AnswerControls {
+    /// Show all four rating buttons (Forgot/Hard/Good/Easy).
+    Full,
+    /// Show only two rating buttons (Forgot/Good).
+    Binary,
+}
+
+impl Display for AnswerControls {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            AnswerControls::Full => write!(f, "full"),
+            AnswerControls::Binary => write!(f, "binary"),
+        }
+    }
+}
+
 pub struct ServerConfig {
     pub directory: Option<String>,
     pub port: u16,
@@ -68,6 +88,7 @@ pub struct ServerConfig {
     pub new_card_limit: Option<usize>,
     pub deck_filter: Option<String>,
     pub shuffle: bool,
+    pub answer_controls: AnswerControls,
 }
 
 pub async fn start_server(config: ServerConfig) -> Fallible<()> {
@@ -146,6 +167,7 @@ pub async fn start_server(config: ServerConfig) -> Fallible<()> {
             finished_at: None,
         })),
         shutdown_tx: Arc::new(Mutex::new(Some(shutdown_tx))),
+        answer_controls: config.answer_controls,
     };
     let app = Router::new();
     let app = app.route("/", get(get_handler));

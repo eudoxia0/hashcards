@@ -18,6 +18,7 @@ use axum::response::Html;
 use maud::Markup;
 use maud::html;
 
+use crate::cmd::drill::server::AnswerControls;
 use crate::cmd::drill::state::MutableState;
 use crate::cmd::drill::state::ServerState;
 use crate::cmd::drill::template::page_template;
@@ -62,15 +63,24 @@ fn render_session_page(state: &ServerState, mutable: &MutableState) -> Fallible<
     let card = mutable.cards[0].clone();
     let card_content = render_card(&card, mutable.reveal, state.port)?;
     let card_controls = if mutable.reveal {
+        let grades = match state.answer_controls {
+            AnswerControls::Binary => html! {
+                input id="forgot" type="submit" name="action" value="Forgot";
+                input id="good" type="submit" name="action" value="Good";
+            },
+            AnswerControls::Full => html! {
+                input id="forgot" type="submit" name="action" value="Forgot";
+                input id="hard" type="submit" name="action" value="Hard";
+                input id="good" type="submit" name="action" value="Good";
+                input id="easy" type="submit" name="action" value="Easy";
+            },
+        };
         html! {
             form action="/" method="post" {
                 (undo_button(undo_disabled))
                 div.spacer {}
                 div.grades {
-                    input id="forgot" type="submit" name="action" value="Forgot";
-                    input id="hard" type="submit" name="action" value="Hard";
-                    input id="good" type="submit" name="action" value="Good";
-                    input id="easy" type="submit" name="action" value="Easy";
+                    (grades)
                 }
                 div.spacer {}
                 (end_button())

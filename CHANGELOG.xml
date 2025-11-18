@@ -4,6 +4,9 @@
       <change author="eudoxia0">
         KaTeX is now bundled with the executable, allowing hashcards to work entirely offline.
       </change>
+      <change author="cmf">
+        Added `--answer-controls` flag to the drill command with values "full" (default) or "binary". Binary shows only "Forgot" and "Good" buttons, mapping to FSRS Again and Good ratings.
+      </change>
     </added>
     <changed>
       <change author="eudoxia0">
