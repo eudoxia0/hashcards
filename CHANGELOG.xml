@@ -22,6 +22,9 @@
       <change author="eudoxia0">
         BREAKING: Media file paths are now deck-relative instead of collection-relative by default. Use the `@/` prefix for collection-relative paths.
       </change>
+      <change author="eudoxia0">
+        BREAKING: Flashcards can no longer reference external URLs (e.g., <code>https://...</code>) in media file paths. This feature was added in version 0.1.2 and has now been removed.
+      </change>
     </breaking>
   </unreleased>
   <releases>
