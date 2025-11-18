@@ -38,7 +38,7 @@ impl Collection {
             Some(dir) => PathBuf::from(dir),
             None => current_dir()?,
         };
-        let directory = if directory.exists() {
+        let directory: PathBuf = if directory.exists() {
             directory.canonicalize()?
         } else {
             return fail("directory does not exist.");
@@ -50,7 +50,7 @@ impl Collection {
             .ok_or_else(|| ErrorReport::new("invalid path"))?;
         let db: Database = Database::new(db_path)?;
 
-        let macros = {
+        let macros: Vec<(String, String)> = {
             let mut macros = Vec::new();
             let macros_path = directory.join("macros.tex");
             if macros_path.exists() {
@@ -71,7 +71,7 @@ impl Collection {
             macros
         };
 
-        let cards = {
+        let cards: Vec<Card> = {
             log::debug!("Loading deck...");
             let start = Instant::now();
             let cards = parse_deck(&directory)?;
