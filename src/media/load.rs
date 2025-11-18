@@ -153,10 +153,7 @@ mod tests {
         create_dir(&subdir)?;
 
         // Try to validate the directory path
-        assert_eq!(
-            loader.validate("subdir"),
-            Err(MediaLoaderError::NotFile)
-        );
+        assert_eq!(loader.validate("subdir"), Err(MediaLoaderError::NotFile));
         Ok(())
     }
 }
