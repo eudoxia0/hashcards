@@ -102,4 +102,61 @@ mod tests {
         );
         Ok(())
     }
+
+    /// Paths to non-existent files are rejected.
+    #[test]
+    fn test_non_existent() -> Fallible<()> {
+        let root = create_tmp_directory()?;
+        let loader = MediaLoader::new(root);
+        assert_eq!(
+            loader.validate("does_not_exist.txt"),
+            Err(MediaLoaderError::NotFound)
+        );
+        Ok(())
+    }
+
+    /// Paths to symlinks are rejected.
+    #[test]
+    fn test_symlink() -> Fallible<()> {
+        use std::fs::File;
+        use std::os::unix::fs::symlink;
+
+        let root = create_tmp_directory()?;
+        let loader = MediaLoader::new(root.clone());
+
+        // Create a real file
+        let real_file = root.join("real.txt");
+        File::create(&real_file)?;
+
+        // Create a symlink to it
+        let link_path = root.join("link.txt");
+        symlink(&real_file, &link_path)?;
+
+        // Try to validate the symlink path
+        assert_eq!(
+            loader.validate("link.txt"),
+            Err(MediaLoaderError::SymbolicLink)
+        );
+        Ok(())
+    }
+
+    /// Paths to directories.
+    #[test]
+    fn test_dir() -> Fallible<()> {
+        use std::fs::create_dir;
+
+        let root = create_tmp_directory()?;
+        let loader = MediaLoader::new(root.clone());
+
+        // Create a subdirectory
+        let subdir = root.join("subdir");
+        create_dir(&subdir)?;
+
+        // Try to validate the directory path
+        assert_eq!(
+            loader.validate("subdir"),
+            Err(MediaLoaderError::NotFile)
+        );
+        Ok(())
+    }
 }
