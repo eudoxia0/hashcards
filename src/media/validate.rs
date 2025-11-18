@@ -23,7 +23,7 @@ use pulldown_cmark::Tag;
 use crate::error::ErrorReport;
 use crate::error::Fallible;
 use crate::media::resolve::MediaResolver;
-use crate::media::resolve::ResolveError;
+use crate::media::resolve::MediaResolverBuilder;
 use crate::types::card::Card;
 use crate::types::card::CardContent;
 
@@ -51,12 +51,15 @@ fn extract_media_paths(markdown: &str) -> Vec<String> {
 
 /// Validate that all media files referenced in cards exist.
 pub fn validate_media_files(cards: &[Card], base_dir: &Path) -> Fallible<()> {
+    let base_dir = base_dir.to_path_buf();
     let mut missing = HashSet::new();
-    let resolver = MediaResolver {
-        root: base_dir.to_path_buf(),
-    };
 
     for card in cards {
+        let resolver: MediaResolver = MediaResolverBuilder::new()
+            .with_collection_path(base_dir.clone())?
+            .with_deck_path(card.relative_file_path(&base_dir)?)?
+            .build()?;
+
         // Extract markdown content from the card.
         //
         // TODO: perhaps this should be lifted to a method of the `CardContent`
@@ -70,14 +73,8 @@ pub fn validate_media_files(cards: &[Card], base_dir: &Path) -> Fallible<()> {
             for path in extract_media_paths(markdown) {
                 // Try to resolve the path using MediaResolver.
                 match resolver.resolve(&path) {
-                    Ok(_) => {
-                        // File exists and is valid.
-                    }
-                    Err(ResolveError::ExternalUrl) => {
-                        // Skip external URLs (same behavior as before).
-                    }
+                    Ok(_) => {}
                     Err(_) => {
-                        // All other errors (NotFound, InvalidPath, etc.) are reported.
                         missing.insert(MissingMedia {
                             file_path: path,
                             card_file: card.file_path().clone(),
@@ -121,16 +118,16 @@ mod tests {
 
     #[test]
     fn test_extract_media_paths() {
-        let markdown = "Here is an image: ![alt](foo.jpg)\nAnd another: ![](bar.png)";
+        let markdown = "Here is an image: ![alt](@/foo.jpg)\nAnd another: ![](@/bar.png)";
         let paths = extract_media_paths(markdown);
-        assert_eq!(paths, vec!["foo.jpg", "bar.png"]);
+        assert_eq!(paths, vec!["@/foo.jpg", "@/bar.png"]);
     }
 
     #[test]
     fn test_extract_media_paths_with_audio() {
-        let markdown = "Audio file: ![](sound.mp3)";
+        let markdown = "Audio file: ![](@/sound.mp3)";
         let paths = extract_media_paths(markdown);
-        assert_eq!(paths, vec!["sound.mp3"]);
+        assert_eq!(paths, vec!["@/sound.mp3"]);
     }
 
     #[test]
@@ -148,18 +145,19 @@ mod tests {
     }
 
     #[test]
-    fn test_validate_media_files_with_missing_files() {
+    fn test_validate_media_files_with_missing_files() -> Fallible<()> {
         // Create a temporary directory for the test
         let test_dir = temp_dir().join("hashcards_media_test");
-        create_dir_all(&test_dir).expect("Failed to create test directory");
+        create_dir_all(&test_dir)?;
 
         // Create a markdown file path (doesn't need to exist for this test)
         let card_file = test_dir.join("test_deck.md");
+        std::fs::write(&card_file, b"fake deck data")?;
 
         // Parse cards from markdown with missing media references
         let markdown = "Q: What is this image?\n\n![](missing_image.jpg)\n\nA: Unknown\n\nQ: What is this audio?\nA: ![](missing_audio.mp3)";
         let parser = CardParser::new("test_deck".to_string(), card_file.clone());
-        let cards = parser.parse(markdown).expect("Failed to parse cards");
+        let cards = parser.parse(markdown)?;
 
         // Validate media files - should return an error
         let result = validate_media_files(&cards, &test_dir);
@@ -175,73 +173,60 @@ mod tests {
         assert!(err_msg.contains("missing_image.jpg"));
         assert!(err_msg.contains("missing_audio.mp3"));
         assert!(err_msg.contains("test_deck.md"));
+
+        Ok(())
     }
 
     #[test]
-    fn test_validate_media_files_with_existing_files() {
-        // Create a temporary directory for the test
+    fn test_validate_media_files_with_existing_files() -> Fallible<()> {
+        // Create a temporary directory for the test.
         let test_dir = temp_dir().join("hashcards_media_test_existing");
-        create_dir_all(&test_dir).expect("Failed to create test directory");
+        create_dir_all(&test_dir)?;
 
-        // Create actual media files
+        // Create actual media files.
         let image_path = test_dir.join("existing_image.jpg");
-        std::fs::write(&image_path, b"fake image data").expect("Failed to create test image");
+        std::fs::write(&image_path, b"fake image data")?;
 
-        // Create a markdown file path
+        // Create a markdown file path.
         let card_file = test_dir.join("test_deck.md");
+        std::fs::write(&card_file, b"fake deck data")?;
 
-        // Parse cards from markdown with existing media reference
+        // Parse cards from markdown with existing media reference.
         let markdown = "Q: What is this image?\n\n![](existing_image.jpg)\n\nA: A test image";
         let parser = CardParser::new("test_deck".to_string(), card_file.clone());
-        let cards = parser.parse(markdown).expect("Failed to parse cards");
+        let cards = parser.parse(markdown)?;
 
-        // Validate media files - should succeed
+        // Validate media files - should succeed.
         let result = validate_media_files(&cards, &test_dir);
 
-        // Assert that validation succeeded
-        assert!(result.is_ok());
+        // Assert that validation succeeded.
+        assert_eq!(result, Ok(()));
+
+        Ok(())
     }
 
     #[test]
-    fn test_validate_media_files_skips_urls() {
-        // Create a temporary directory for the test
-        let test_dir = temp_dir().join("hashcards_media_test_urls");
-        create_dir_all(&test_dir).expect("Failed to create test directory");
-
-        // Create a markdown file path
-        let card_file = test_dir.join("test_deck.md");
-
-        // Parse cards from markdown with external URL (should be skipped)
-        let markdown = "Q: What is this?\nA: ![](https://example.com/image.jpg)";
-        let parser = CardParser::new("test_deck".to_string(), card_file.clone());
-        let cards = parser.parse(markdown).expect("Failed to parse cards");
-
-        // Validate media files - should succeed because URLs are skipped
-        let result = validate_media_files(&cards, &test_dir);
-
-        // Assert that validation succeeded
-        assert!(result.is_ok());
-    }
-
-    #[test]
-    fn test_validate_media_files_with_cloze_cards() {
-        // Create a temporary directory for the test
+    fn test_validate_media_files_with_cloze_cards() -> Fallible<()> {
+        // Create a temporary directory for the test.
         let test_dir = temp_dir().join("hashcards_media_test_cloze");
-        create_dir_all(&test_dir).expect("Failed to create test directory");
+        create_dir_all(&test_dir)?;
 
-        // Create a markdown file path
+        // Create a markdown file path.
         let card_file = test_dir.join("test_deck.md");
+        std::fs::write(&card_file, "")?;
 
-        // Parse cloze card with missing media reference
-        let markdown = "C: The capital of [France] is ![](paris.jpg)";
+        // Parse cloze card with missing media reference.
+        let markdown = "C: The capital of [France] is ![](@/paris.jpg)";
         let parser = CardParser::new("test_deck".to_string(), card_file.clone());
-        let cards = parser.parse(markdown).expect("Failed to parse cards");
+        let cards: Vec<Card> = parser.parse(markdown)?;
 
-        // Validate media files - should fail
+        // Validate media files - should fail.
         let result = validate_media_files(&cards, &test_dir);
 
         assert!(result.is_err());
         let err_msg = result.err().unwrap().to_string();
         assert!(err_msg.contains("paris.jpg"));
+
+        Ok(())
     }
 }
