@@ -331,7 +331,7 @@ mod tests {
             .build()?;
         assert_eq!(
             r.resolve("../../../../../../../../etc/passwd"),
-            Err(ResolveError::InvalidPath)
+            Err(ResolveError::OutsideCollection)
         );
         Ok(())
     }
