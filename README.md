@@ -282,9 +282,26 @@ Q: Identify this painting:
 A: _The Siren_, by John William Waterhouse.
 ```
 
-Image paths are resolved relative to the collection root (i.e., the directory
-passed to the `drill` command), _not_ the current file. Image paths cannot be
-symbolic links or point (via `..` components) to files outside the collection.
+By default, image paths are resolved relative to the deck (the Markdown file)
+that contains the flashcard. For example, if you have:
+
+```
+cards/
+  Art Theory/
+    Art.md
+    Images/
+      TheMermaid.jpg
+      Circe.jpg
+      Odysseus.jpg
+```
+
+Then flashcards in `Art.md` can reference images with paths like
+`Images/Circe.jpg`.
+
+By prefixing a path with `@/`, you can point to images relative to the
+collection root directory, e.g., a path like `@/Art Theory/Images/Circe.jpg`
+will always resolve to the same path, even if the deck is moved around within
+the collection.
 
 ### Audio
 

@@ -110,6 +110,9 @@ jobs:
       - name: cargo fetch
         run: cargo fetch --target ${{ matrix.target }}
 
+      - name: download katex fonts
+        run: make
+
       - name: cargo build
         run: cargo build --release --target ${{ matrix.target }}
 

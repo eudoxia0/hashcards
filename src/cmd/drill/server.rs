@@ -54,7 +54,7 @@ use crate::collection::Collection;
 use crate::db::Database;
 use crate::error::Fallible;
 use crate::error::fail;
-use crate::media::resolve::MediaResolver;
+use crate::media::load::MediaLoader;
 use crate::rng::TinyRng;
 use crate::rng::shuffle;
 use crate::types::card::Card;
@@ -111,13 +111,13 @@ pub async fn start_server(config: ServerConfig) -> Fallible<()> {
     }
 
     // Find cards due today.
-    let due_today = db.due_today(today)?;
+    let due_today: HashSet<CardHash> = db.due_today(today)?;
     let due_today: Vec<Card> = cards
         .into_iter()
         .filter(|card| due_today.contains(&card.hash()))
         .collect::<Vec<_>>();
 
-    let due_today = filter_deck(
+    let due_today: Vec<Card> = filter_deck(
         &db,
         due_today,
         config.card_limit,
@@ -236,10 +236,8 @@ async fn file_handler(
     State(state): State<ServerState>,
     Path(path): Path<String>,
 ) -> (StatusCode, [(HeaderName, &'static str); 1], Vec<u8>) {
-    let resolve = MediaResolver {
-        root: state.directory.clone(),
-    };
-    let validated_path: PathBuf = match resolve.resolve(&path) {
+    let loader = MediaLoader::new(state.directory.clone());
+    let validated_path: PathBuf = match loader.validate(&path) {
         Ok(p) => p,
         Err(_) => {
             return (

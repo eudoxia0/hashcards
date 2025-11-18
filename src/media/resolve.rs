@@ -12,287 +12,328 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::path::Component;
+use std::path::Path;
 use std::path::PathBuf;
 
+use crate::error::ErrorReport;
+use crate::error::Fallible;
+
 /// The media resolver takes media paths as entered in the Markdown text of the
-/// flashcards, and resolves them to absolute file paths on disk, based on the
-/// resolution rules.
+/// flashcards, and resolves them to collection-relative paths.
 pub struct MediaResolver {
-    /// Path to the collection root directory.
-    pub root: PathBuf,
+    /// Absolute path to the collection root directory.
+    collection_path: PathBuf,
+    /// Collection-relative path to the deck. The resolver must only be used
+    /// with flashcards parsed from this deck.
+    deck_path: PathBuf,
 }
 
-/// Errors that can occur when resolve a file path.
+/// Builder to construct a [`MediaResolver`].
+pub struct MediaResolverBuilder {
+    collection_path: Option<PathBuf>,
+    deck_path: Option<PathBuf>,
+}
+
+/// Errors that can occur when resolving a file path.
 #[derive(Debug, PartialEq)]
 pub enum ResolveError {
     /// Path is the empty string.
     Empty,
     /// Path is an external URL.
     ExternalUrl,
-    /// Path is a symbolic link.
-    Symlink,
-    /// Path contains invalid components (e.g., "..").
-    InvalidPath,
     /// Path is absolute.
     AbsolutePath,
-    /// File does not exist or cannot be accessed
-    NotFound,
-    /// Path resolves outside the collection directory
-    OutsideDirectory,
+    /// Path has parent (`..`) components.
+    ParentComponent,
+    /// Path is outside the collection directory.
+    OutsideCollection,
+    /// Path is invalid.
+    InvalidPath,
+}
+
+impl std::fmt::Display for ResolveError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let msg = match self {
+            ResolveError::Empty => "path is the empty string.",
+            ResolveError::ExternalUrl => "external URLs are not allowed as media paths.",
+            ResolveError::AbsolutePath => "absolute paths are not allowed as media paths.",
+            ResolveError::ParentComponent => "path has a parent component.",
+            ResolveError::OutsideCollection => "path is outside the collection directory.",
+            ResolveError::InvalidPath => "path is invalid.",
+        };
+        write!(f, "{msg}")
+    }
 }
 
 impl MediaResolver {
-    /// Resolve the given media path to an absolute file path on disk.
+    /// Resolve a path string to a collection-relative file path.
     ///
-    /// Rules:
+    /// If the path string starts with `@/`, it will be resolved relative to
+    /// the collection root directory.
     ///
-    /// 1. Absolute paths are forbidden.
-    /// 2. Relative paths are resolved relative to the collection root
-    ///    directory.
-    /// 3. Paths containing ".." segments are forbidden.
+    /// If the path string is a relative path, it will be resolved relative to
+    /// the deck path. For deck-relative paths, parent (`..`) components are
+    /// permitted.
     pub fn resolve(&self, path: &str) -> Result<PathBuf, ResolveError> {
-        // The empty string is an invalid path.
-        if path.trim().is_empty() {
+        // Trim the path.
+        let path: &str = path.trim();
+
+        // Reject the empty string.
+        if path.is_empty() {
             return Err(ResolveError::Empty);
         }
 
-        // External URLs (e.g. `http`, `https`) cannot be resolved.
+        // Reject external URLs.
         if path.contains("://") {
             return Err(ResolveError::ExternalUrl);
         }
 
-        // Reject paths containing "..".
-        if path.contains("..") {
-            return Err(ResolveError::InvalidPath);
+        if let Some(stripped) = path.strip_prefix("@/") {
+            // Path is collection-relative, leave it as-is.
+            let path: PathBuf = PathBuf::from(&stripped);
+            // Reject absolute paths.
+            if path.is_absolute() {
+                return Err(ResolveError::AbsolutePath);
+            }
+            // Reject paths with `..` components.
+            if path.components().any(|c| c == Component::ParentDir) {
+                return Err(ResolveError::ParentComponent);
+            }
+            // Check: does it exist? This is done for symmetry with the other
+            // branch.
+            let abspath: PathBuf = self.collection_path.join(&path);
+            if !abspath.exists() {
+                return Err(ResolveError::InvalidPath);
+            }
+            Ok(path)
+        } else {
+            // Path is deck-relative.
+            let path: PathBuf = PathBuf::from(&path);
+            if path.is_absolute() {
+                return Err(ResolveError::AbsolutePath);
+            }
+            // Join the collection path and the deck path to get the absolute
+            // path to the deck file.
+            let deck: PathBuf = self.collection_path.join(&self.deck_path);
+            // Get the path of the directory that contains the deck.
+            let deck_dir: &Path = deck.parent().ok_or(ResolveError::InvalidPath)?;
+            // Join the deck directory path with the file path, to get an
+            // absolute path to the deck-relative file.
+            let path: PathBuf = deck_dir.join(path);
+            // Check: does the file exist?
+            if !path.exists() {
+                return Err(ResolveError::InvalidPath);
+            }
+            // Canonicalize the path to resolve `..` components and symbolic
+            // links.
+            let path: PathBuf = path.canonicalize().map_err(|_| ResolveError::InvalidPath)?;
+            // Relativize the path by subtracting the collection root.
+            let path: PathBuf = path
+                .strip_prefix(&self.collection_path)
+                // The only case where `strip_prefix` can fail is where the path
+                // does not start with the prefix, i.e., `path` points outside the
+                // collection directory.
+                .map_err(|_| ResolveError::OutsideCollection)?
+                .to_path_buf();
+            Ok(path)
         }
+    }
+}
 
-        // Parse the string as a PathBuf.
-        let requested_path = PathBuf::from(&path);
-
-        // Absolute paths are forbidden.
-        if requested_path.is_absolute() {
-            return Err(ResolveError::AbsolutePath);
+impl MediaResolverBuilder {
+    /// Construct a new [`MediaResolverBuilder`].
+    pub fn new() -> Self {
+        Self {
+            collection_path: None,
+            deck_path: None,
         }
+    }
 
-        // Join the path with the base directory.
-        let full_path = self.root.join(&requested_path);
-
-        // Is the path a symbolic link? Reject it.
-        if full_path.is_symlink() {
-            return Err(ResolveError::Symlink);
+    /// Set a value for `collection_path`.
+    pub fn with_collection_path(self, collection_path: PathBuf) -> Fallible<Self> {
+        let collection_path: PathBuf = collection_path.canonicalize()?;
+        if !collection_path.exists() {
+            return Err(ErrorReport::new("Collection path does not exist."));
         }
-
-        // Canonicalize the full path (validates existence).
-        let canonical_full = full_path
-            .canonicalize()
-            .map_err(|_| ResolveError::NotFound)?;
-
-        // Canonicalize the base directory (should always succeed since it was
-        // validated at startup).
-        let canonical_dir = self
-            .root
-            .canonicalize()
-            .map_err(|_| ResolveError::NotFound)?;
-
-        // Ensure the resolved path is within the base directory. This should be
-        // caught by the symlink check, but nevertheless.
-        if !canonical_full.starts_with(&canonical_dir) {
-            return Err(ResolveError::OutsideDirectory);
+        if !collection_path.is_absolute() {
+            return Err(ErrorReport::new("Collection path is relative."));
         }
+        if !collection_path.is_dir() {
+            return Err(ErrorReport::new("Collection path is not a directory."));
+        }
+        Ok(Self {
+            collection_path: Some(collection_path),
+            deck_path: self.deck_path,
+        })
+    }
 
-        Ok(canonical_full)
+    /// Set a value for `deck_path`.
+    pub fn with_deck_path(self, deck_path: PathBuf) -> Fallible<Self> {
+        if !deck_path.is_relative() {
+            return Err(ErrorReport::new("Deck path is not relative."));
+        }
+        Ok(Self {
+            collection_path: self.collection_path,
+            deck_path: Some(deck_path),
+        })
+    }
+
+    /// Consume the builder and return a [`MediaResolver`].
+    pub fn build(self) -> Fallible<MediaResolver> {
+        let collection_path = self
+            .collection_path
+            .ok_or(ErrorReport::new("Missing collection_path."))?;
+        let deck_path = self
+            .deck_path
+            .ok_or(ErrorReport::new("Missing deck_path."))?;
+        Ok(MediaResolver {
+            collection_path,
+            deck_path,
+        })
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use std::fs::File;
-    use std::fs::create_dir;
-    use std::fs::create_dir_all;
-    use std::os::unix::fs::symlink;
-
     use super::*;
     use crate::error::Fallible;
     use crate::helper::create_tmp_directory;
 
-    /// Create a directory, and an image in it, and test the "normal" path to
-    /// the image works.
+    /// Empty strings are rejected.
     #[test]
-    fn test_validate_file_path_valid() -> Fallible<()> {
-        // Test data.
-        let dir: PathBuf = create_tmp_directory()?;
-        let image = dir.join("test.jpg");
-        File::create(&image)?;
-
-        // Assertions.
-        let resolver = MediaResolver { root: dir.clone() };
-        let result = resolver.resolve("test.jpg");
-        assert!(result.is_ok());
-        assert_eq!(result.unwrap(), image.canonicalize().unwrap());
+    fn test_empty_strings_are_rejected() -> Fallible<()> {
+        let coll_path: PathBuf = create_tmp_directory()?;
+        let deck_path: PathBuf = PathBuf::from("deck.md");
+        let r: MediaResolver = MediaResolverBuilder::new()
+            .with_collection_path(coll_path)?
+            .with_deck_path(deck_path)?
+            .build()?;
+        assert_eq!(r.resolve(""), Err(ResolveError::Empty));
+        assert_eq!(r.resolve(" "), Err(ResolveError::Empty));
         Ok(())
     }
 
-    /// Create a directory, a subdirectory, and an image in the subdirectory,
-    /// and test that the path to the image works.
+    /// Absolute strings are rejected.
     #[test]
-    fn test_validate_file_path_in_subdirectory() -> Fallible<()> {
-        // Test data.
-        let dir: PathBuf = create_tmp_directory()?;
-        let sub_dir: PathBuf = dir.join("images");
-        create_dir(&sub_dir)?;
-        let image_path = sub_dir.join("photo.png");
-        File::create(&image_path).unwrap();
-
-        // Assertions.
-        let resolver = MediaResolver { root: dir.clone() };
-        let result = resolver.resolve("images/photo.png");
-        assert!(result.is_ok());
-        assert_eq!(result.unwrap(), image_path.canonicalize().unwrap());
+    fn test_absolute_paths_are_rejected() -> Fallible<()> {
+        let coll_path: PathBuf = create_tmp_directory()?;
+        let deck_path: PathBuf = PathBuf::from("deck.md");
+        let r: MediaResolver = MediaResolverBuilder::new()
+            .with_collection_path(coll_path)?
+            .with_deck_path(deck_path)?
+            .build()?;
+        assert_eq!(r.resolve("/etc/passwd"), Err(ResolveError::AbsolutePath));
         Ok(())
     }
 
-    /// Requesting a nonexistent image should return NotFound.
+    /// External URLs are rejected.
     #[test]
-    fn test_validate_file_path_not_found() -> Fallible<()> {
-        // Test data.
-        let dir = create_tmp_directory()?;
-
-        // Assertions.
-        let resolver = MediaResolver { root: dir.clone() };
-        let result = resolver.resolve("nonexistent.jpg");
-        assert_eq!(result, Err(ResolveError::NotFound));
+    fn test_external_urls_are_rejected() -> Fallible<()> {
+        let coll_path: PathBuf = create_tmp_directory()?;
+        let deck_path: PathBuf = PathBuf::from("deck.md");
+        let r: MediaResolver = MediaResolverBuilder::new()
+            .with_collection_path(coll_path)?
+            .with_deck_path(deck_path)?
+            .build()?;
+        assert_eq!(r.resolve("http://"), Err(ResolveError::ExternalUrl));
         Ok(())
     }
 
-    /// Paths starting with ".." should be rejected.
+    /// Test collection-relative paths.
     #[test]
-    fn test_validate_file_path_with_dot_dot() -> Fallible<()> {
-        // Test data.
-        let dir = create_tmp_directory()?;
-
-        // Assertions.
-        let resolver = MediaResolver { root: dir.clone() };
-        let result = resolver.resolve("../etc/passwd");
-        assert_eq!(result, Err(ResolveError::InvalidPath));
+    fn test_collection_relative() -> Fallible<()> {
+        let coll_path: PathBuf = create_tmp_directory()?;
+        std::fs::create_dir_all(coll_path.join("a/b/"))?;
+        std::fs::write(coll_path.join("foo.jpg"), "")?;
+        std::fs::write(coll_path.join("a/foo.jpg"), "")?;
+        std::fs::write(coll_path.join("a/b/foo.jpg"), "")?;
+        let deck_path: PathBuf = PathBuf::from("deck.md");
+        std::fs::write(coll_path.join("deck.md"), "")?;
+        let r: MediaResolver = MediaResolverBuilder::new()
+            .with_collection_path(coll_path)?
+            .with_deck_path(deck_path)?
+            .build()?;
+        assert_eq!(r.resolve("@/foo.jpg"), Ok(PathBuf::from("foo.jpg")));
+        assert_eq!(r.resolve("@/a/foo.jpg"), Ok(PathBuf::from("a/foo.jpg")));
+        assert_eq!(r.resolve("@/a/b/foo.jpg"), Ok(PathBuf::from("a/b/foo.jpg")));
         Ok(())
     }
 
-    /// Paths with ".." in the middle should be rejected.
+    /// Collection-relative absolute paths are rejected.
     #[test]
-    fn test_validate_file_path_with_dot_dot_middle() -> Fallible<()> {
-        // Test data.
-        let dir = create_tmp_directory()?;
-
-        // Assertions.
-        let resolver = MediaResolver { root: dir.clone() };
-        let result = resolver.resolve("images/../../../etc/passwd");
-        assert_eq!(result, Err(ResolveError::InvalidPath));
+    fn test_collection_relative_absolute_are_rejected() -> Fallible<()> {
+        let coll_path: PathBuf = create_tmp_directory()?;
+        let deck_path: PathBuf = PathBuf::from("deck.md");
+        let r: MediaResolver = MediaResolverBuilder::new()
+            .with_collection_path(coll_path)?
+            .with_deck_path(deck_path)?
+            .build()?;
+        assert_eq!(r.resolve("@//foo.jpg"), Err(ResolveError::AbsolutePath));
         Ok(())
     }
 
-    /// Absolute paths should be rejected.
+    /// Collection-relative paths with `..` components are rejected.
     #[test]
-    fn test_validate_file_path_absolute() -> Fallible<()> {
-        // Test data.
-        let dir = create_tmp_directory()?;
-
-        // Assertions.
-        let resolver = MediaResolver { root: dir.clone() };
-        let result = resolver.resolve("/etc/passwd");
-        assert_eq!(result, Err(ResolveError::AbsolutePath));
+    fn test_collection_relative_parent_are_rejected() -> Fallible<()> {
+        let coll_path: PathBuf = create_tmp_directory()?;
+        let deck_path: PathBuf = PathBuf::from("deck.md");
+        let r: MediaResolver = MediaResolverBuilder::new()
+            .with_collection_path(coll_path)?
+            .with_deck_path(deck_path)?
+            .build()?;
+        assert_eq!(
+            r.resolve("@/a/b/../foo.jpg"),
+            Err(ResolveError::ParentComponent)
+        );
         Ok(())
     }
 
-    /// Symlinks pointing to files within the base directory should be rejected.
+    /// Test deck-relative paths.
     #[test]
-    fn test_validate_file_path_symlink_inside() -> Fallible<()> {
-        // Test data.
-        let dir = create_tmp_directory()?;
-        let target = dir.join("target.jpg");
-        File::create(&target)?;
-        let link = dir.join("link.jpg");
-        symlink(&target, &link)?;
-
-        // Assertions.
-        let resolver = MediaResolver { root: dir.clone() };
-        let result = resolver.resolve("link.jpg");
-        assert_eq!(result, Err(ResolveError::Symlink));
+    fn test_deck_relative() -> Fallible<()> {
+        let coll_path: PathBuf = create_tmp_directory()?;
+        let deck_path: PathBuf = PathBuf::from("a/b/c/deck.md");
+        std::fs::create_dir_all(coll_path.join("a/b/c"))?;
+        std::fs::write(coll_path.join("a/b/c/foo.jpg"), "")?;
+        let r: MediaResolver = MediaResolverBuilder::new()
+            .with_collection_path(coll_path)?
+            .with_deck_path(deck_path)?
+            .build()?;
+        assert_eq!(r.resolve("foo.jpg"), Ok(PathBuf::from("a/b/c/foo.jpg")));
+        assert_eq!(r.resolve("./foo.jpg"), Ok(PathBuf::from("a/b/c/foo.jpg")));
+        assert_eq!(
+            r.resolve("../c/foo.jpg"),
+            Ok(PathBuf::from("a/b/c/foo.jpg"))
+        );
+        assert_eq!(
+            r.resolve("../../b/c/foo.jpg"),
+            Ok(PathBuf::from("a/b/c/foo.jpg"))
+        );
+        assert_eq!(
+            r.resolve("../c/../c/foo.jpg"),
+            Ok(PathBuf::from("a/b/c/foo.jpg"))
+        );
+        assert_eq!(
+            r.resolve("../../../a/b/c/foo.jpg"),
+            Ok(PathBuf::from("a/b/c/foo.jpg"))
+        );
         Ok(())
     }
 
-    /// Symlinks pointing outside the base directory should be rejected.
+    /// Ensure deck-relative paths cannot leave the collection root directory.
     #[test]
-    fn test_validate_file_path_symlink_outside() -> Fallible<()> {
-        // Test data.
-        let dir1 = create_tmp_directory()?;
-        let dir2 = create_tmp_directory()?;
-        create_dir_all(&dir1)?;
-        create_dir_all(&dir2)?;
-        let outside_file = dir2.join("outside.txt");
-        File::create(&outside_file)?;
-        let link = dir1.join("evil_link.jpg");
-        symlink(&outside_file, &link)?;
-
-        // Assertions.
-        let resolver = MediaResolver { root: dir1.clone() };
-        let result = resolver.resolve("evil_link.jpg");
-        assert_eq!(result, Err(ResolveError::Symlink));
-        Ok(())
-    }
-
-    /// URL-encoded ".." sequences should still be caught by string check.
-    #[test]
-    fn test_validate_file_path_url_encoded_dot_dot() -> Fallible<()> {
-        // Test data.
-        let dir = create_tmp_directory()?;
-
-        // Assertions.
-        let resolver = MediaResolver { root: dir.clone() };
-        let result = resolver.resolve("..%2F..%2Fetc%2Fpasswd");
-        assert_eq!(result, Err(ResolveError::InvalidPath));
-        Ok(())
-    }
-
-    /// The empty string should be rejected.
-    #[test]
-    fn test_validate_file_path_empty_string() -> Fallible<()> {
-        // Test data.
-        let dir = create_tmp_directory()?;
-
-        // Assertions.
-        let resolver = MediaResolver { root: dir.clone() };
-        let result = resolver.resolve("");
-        assert_eq!(result, Err(ResolveError::Empty));
-        Ok(())
-    }
-
-    /// File names with spaces should be handled correctly.
-    #[test]
-    fn test_validate_file_path_with_spaces() -> Fallible<()> {
-        // Test data.
-        let dir = create_tmp_directory()?;
-        let image_path = dir.join("my image.jpg");
-        File::create(&image_path)?;
-
-        // Assertions.
-        let resolver = MediaResolver { root: dir.clone() };
-        let result = resolver.resolve("my image.jpg");
-        assert!(result.is_ok());
-        Ok(())
-    }
-
-    /// File names with Unicode characters should be handled correctly.
-    #[test]
-    fn test_validate_file_path_unicode() -> Fallible<()> {
-        // Test data.
-        let dir = create_tmp_directory()?;
-        let image_path = dir.join("画像.jpg");
-        File::create(&image_path)?;
-
-        // Assertions.
-        let resolver = MediaResolver { root: dir.clone() };
-        let result = resolver.resolve("画像.jpg");
-        assert!(result.is_ok());
+    fn test_relative_paths_cant_leave_collection_root() -> Fallible<()> {
+        let coll_path: PathBuf = create_tmp_directory()?;
+        let deck_path: PathBuf = PathBuf::from("deck.md");
+        let r: MediaResolver = MediaResolverBuilder::new()
+            .with_collection_path(coll_path)?
+            .with_deck_path(deck_path)?
+            .build()?;
+        assert_eq!(
+            r.resolve("../../../../../../../../etc/passwd"),
+            Err(ResolveError::OutsideCollection)
+        );
         Ok(())
     }
 }

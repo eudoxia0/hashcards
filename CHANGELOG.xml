@@ -1,100 +1,115 @@
 <changelog>
-  <unreleased>
-    <added>
-      <change author="eudoxia0">
-        KaTeX is now bundled with the executable, allowing hashcards to work entirely offline.
-      </change>
-      <change author="cmf">
-        Added `--answer-controls` flag to the drill command with values "full" (default) or "binary". Binary shows only "Forgot" and "Good" buttons, mapping to FSRS Again and Good ratings.
-      </change>
-    </added>
-    <changed>
-      <change author="eudoxia0">
-        Cards are shuffled randomly at the start of a session.
-      </change>
-      <change author="eudoxia0">
-        Update dependencies.
-      </change>
-    </changed>
-    <fixed>
-      <change author="spencer-e-jung">
-        Fix a bug where the card cache was not cleared on undo. See [PR #57](https://github.com/eudoxia0/hashcards/pull/57).
-      </change>
-    </fixed>
-  </unreleased>
-  <releases>
-    <release version="0.1.2" date="2025-10-30">
-      <added>
-        <change author="eudoxia0">
-          Deck files accept TOML frontmatter, so you can override the inferred deck name.
-        </change>
-        <change author="eudoxia0">
-          The session completed page shows a button to shut down the server.
-        </change>
-        <change author="claude">
-          Flashcards can be separated using `---` as an explicit separator.
-        </change>
-      </added>
-      <changed>
-        <change author="eudoxia0">
-          Killing the server with `ctrl+c` at the end of a session causes the server to die with exit code 0.
-        </change>
-        <change author="eudoxia0">
-          SQLite is once again bundled into the binary, increasing the executable size but reducing build problems especially on NixOS.
-        </change>
-      </changed>
-      <fixed>
-        <change author="eudoxia0">
-          Flashcards can reference external URLs.
-        </change>
-      </fixed>
-    </release>
-    <release version="0.1.1" date="2025-10-29">
-      <added>
-        <change author="eudoxia0">
-          Add extra metadata to `Cargo.toml`.
-        </change>
-        <change author="eudoxia0">
-          Add `pre-commit.sh` hook.
-        </change>
-        <change author="eudoxia0">
-          The `macros.tex` file now supports comments: lines starting with `%` are ignored.
-        </change>
-        <change author="eudoxia0">
-          Add CSS to render `blockquote` elements in a grey box.
-        </change>
-        <change author="eudoxia0">
-          The `drill` and `check` commands now validate that images/audio files referenced in flashcards actually exist.
-        </change>
-      </added>
-      <changed>
-        <change author="eudoxia0">
-          The UI now works on small and mobile viewports.
-        </change>
-        <change author="eudoxia0">
-          Update dependencies.
-        </change>
-        <change author="eudoxia0">
-          Update KaTeX to `0.16.25`.
-        </change>
-      </changed>
-      <fixed>
-        <change author="eudoxia0">
-          Fixed a bug where exclamation marks broke the parsing of Cloze deletions. See [issue 29](https://github.com/eudoxia0/hashcards/issues/29).
-        </change>
-      </fixed>
-    </release>
-    <release version="0.1.0" date="2025-10-21">
-      <added>
-        <change author="eudoxia0">
-          Added `CHANGELOG.xml`.
-        </change>
-      </added>
-      <changed>
-        <change author="eudoxia0">
-          SQLite is no longer bundled into the binary, reducing the executable size.
-        </change>
-      </changed>
-    </release>
-  </releases>
+    <unreleased>
+        <added>
+            <change author="cmf">
+                Added `--answer-controls` flag to the drill command with values "full" (default) or "binary". Binary shows only "Forgot" and "Good" buttons, mapping to FSRS Again and Good ratings.
+            </change>
+        </added>
+    </unreleased>
+    <releases>
+        <release version="0.2.0" date="2025-11-18">
+            <added>
+                <change author="eudoxia0">
+                    KaTeX is now bundled with the executable, allowing hashcards to work entirely offline.
+                </change>
+            </added>
+            <changed>
+                <change author="eudoxia0">
+                    Cards are shuffled randomly at the start of a session.
+                </change>
+                <change author="eudoxia0">
+                    Update dependencies.
+                </change>
+            </changed>
+            <fixed>
+                <change author="spencer-e-jung">
+                    Fix a bug where the card cache was not cleared on undo. See [PR #57](https://github.com/eudoxia0/hashcards/pull/57).
+                </change>
+                <change author="eudoxia0">
+                    Fix the initial flicker when rendering TeX math.
+                </change>
+            </fixed>
+            <breaking>
+                <change author="eudoxia0">
+                    BREAKING: Media file paths are now deck-relative instead of collection-relative by default. Use the `@/` prefix for collection-relative paths.
+                </change>
+                <change author="eudoxia0">
+                    BREAKING: Flashcards can no longer reference external URLs (e.g., `https://...`) in media file paths.
+                </change>
+            </breaking>
+        </release>
+        <release version="0.1.2" date="2025-10-30">
+            <added>
+                <change author="eudoxia0">
+                    Deck files accept TOML frontmatter, so you can override the inferred deck name.
+                </change>
+                <change author="eudoxia0">
+                    The session completed page shows a button to shut down the server.
+                </change>
+                <change author="claude">
+                    Flashcards can be separated using `---` as an explicit separator.
+                </change>
+            </added>
+            <changed>
+                <change author="eudoxia0">
+                    Killing the server with `ctrl+c` at the end of a session causes the server to die with exit code 0.
+                </change>
+                <change author="eudoxia0">
+                    SQLite is once again bundled into the binary, increasing the executable size but reducing build problems especially on NixOS.
+                </change>
+            </changed>
+            <fixed>
+                <change author="eudoxia0">
+                    Flashcards can reference external URLs.
+                </change>
+            </fixed>
+        </release>
+        <release version="0.1.1" date="2025-10-29">
+            <added>
+                <change author="eudoxia0">
+                    Add extra metadata to `Cargo.toml`.
+                </change>
+                <change author="eudoxia0">
+                    Add `pre-commit.sh` hook.
+                </change>
+                <change author="eudoxia0">
+                    The `macros.tex` file now supports comments: lines starting with `%` are ignored.
+                </change>
+                <change author="eudoxia0">
+                    Add CSS to render `blockquote` elements in a grey box.
+                </change>
+                <change author="eudoxia0">
+                    The `drill` and `check` commands now validate that images/audio files referenced in flashcards actually exist.
+                </change>
+            </added>
+            <changed>
+                <change author="eudoxia0">
+                    The UI now works on small and mobile viewports.
+                </change>
+                <change author="eudoxia0">
+                    Update dependencies.
+                </change>
+                <change author="eudoxia0">
+                    Update KaTeX to `0.16.25`.
+                </change>
+            </changed>
+            <fixed>
+                <change author="eudoxia0">
+                    Fixed a bug where exclamation marks broke the parsing of Cloze deletions. See [issue 29](https://github.com/eudoxia0/hashcards/issues/29).
+                </change>
+            </fixed>
+        </release>
+        <release version="0.1.0" date="2025-10-21">
+            <added>
+                <change author="eudoxia0">
+                    Added `CHANGELOG.xml`.
+                </change>
+            </added>
+            <changed>
+                <change author="eudoxia0">
+                    SQLite is no longer bundled into the binary, reducing the executable size.
+                </change>
+            </changed>
+        </release>
+    </releases>
 </changelog>

@@ -15,11 +15,12 @@
 use std::error::Error;
 use std::fmt::Display;
 use std::fmt::Formatter;
+use std::path::StripPrefixError;
 use std::string::FromUtf8Error;
 
 use crate::parser::ParserError;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct ErrorReport {
     message: String,
 }
@@ -36,6 +37,14 @@ impl From<std::io::Error> for ErrorReport {
     fn from(value: std::io::Error) -> Self {
         ErrorReport {
             message: format!("I/O error: {value:#?}"),
+        }
+    }
+}
+
+impl From<StripPrefixError> for ErrorReport {
+    fn from(value: StripPrefixError) -> Self {
+        ErrorReport {
+            message: format!("Strip prefix error: {value:#?}"),
         }
     }
 }

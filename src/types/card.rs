@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::path::Path;
 use std::path::PathBuf;
 
 use maud::Markup;
@@ -19,6 +20,7 @@ use maud::PreEscaped;
 use maud::html;
 
 use crate::error::Fallible;
+use crate::markdown::MarkdownRenderConfig;
 use crate::markdown::markdown_to_html;
 use crate::markdown::markdown_to_html_inline;
 use crate::types::aliases::DeckName;
@@ -32,7 +34,7 @@ const CLOZE_TAG: &str = "CLOZE_DELETION";
 pub struct Card {
     /// The name of the deck this card belongs to.
     deck_name: DeckName,
-    /// The absolute path to the file this card was parsed from.
+    /// The absolute path of the file this card was parsed from.
     file_path: PathBuf,
     /// The line number range that contains the card.
     range: (usize, usize),
@@ -97,8 +99,21 @@ impl Card {
         self.content.family_hash()
     }
 
+    /// Return the absolute path of the file this card was parsed from.
     pub fn file_path(&self) -> &PathBuf {
         &self.file_path
+    }
+
+    /// Return the path of the file this card was parsed from, relative to the
+    /// collection root directory.
+    ///
+    /// e.g., if the collection root is `/foo/bar/` and the file path is
+    /// `/foo/bar/baz/deck.md`, this returns `baz/deck.md`.
+    pub fn relative_file_path(&self, collection_root: &Path) -> Fallible<PathBuf> {
+        let canon_root: PathBuf = collection_root.canonicalize()?;
+        let canon_file: PathBuf = self.file_path.canonicalize()?;
+        let result: PathBuf = canon_file.strip_prefix(&canon_root)?.to_path_buf();
+        Ok(result)
     }
 
     pub fn range(&self) -> (usize, usize) {
@@ -112,12 +127,12 @@ impl Card {
         }
     }
 
-    pub fn html_front(&self, port: u16) -> Fallible<Markup> {
-        self.content.html_front(port)
+    pub fn html_front(&self, config: &MarkdownRenderConfig) -> Fallible<Markup> {
+        self.content.html_front(config)
     }
 
-    pub fn html_back(&self, port: u16) -> Fallible<Markup> {
-        self.content.html_back(port)
+    pub fn html_back(&self, config: &MarkdownRenderConfig) -> Fallible<Markup> {
+        self.content.html_back(config)
     }
 }
 
@@ -170,18 +185,18 @@ impl CardContent {
         }
     }
 
-    pub fn html_front(&self, port: u16) -> Fallible<Markup> {
+    pub fn html_front(&self, config: &MarkdownRenderConfig) -> Fallible<Markup> {
         let html = match self {
             CardContent::Basic { question, .. } => {
                 html! {
-                    (PreEscaped(markdown_to_html(question, port)))
+                    (PreEscaped(markdown_to_html(config, question)?))
                 }
             }
             CardContent::Cloze { text, start, end } => {
                 let mut text_bytes: Vec<u8> = text.as_bytes().to_owned();
                 text_bytes.splice(*start..*end + 1, CLOZE_TAG_BYTES.iter().copied());
                 let text: String = String::from_utf8(text_bytes)?;
-                let text: String = markdown_to_html(&text, port);
+                let text: String = markdown_to_html(config, &text)?;
                 let text: String =
                     text.replace(CLOZE_TAG, "<span class='cloze'>.............</span>");
                 html! {
@@ -192,21 +207,21 @@ impl CardContent {
         Ok(html)
     }
 
-    pub fn html_back(&self, port: u16) -> Fallible<Markup> {
+    pub fn html_back(&self, config: &MarkdownRenderConfig) -> Fallible<Markup> {
         let html = match self {
             CardContent::Basic { answer, .. } => {
                 html! {
-                    (PreEscaped(markdown_to_html(answer, port)))
+                    (PreEscaped(markdown_to_html(config, answer)?))
                 }
             }
             CardContent::Cloze { text, start, end } => {
                 let mut text_bytes: Vec<u8> = text.as_bytes().to_owned();
                 let deleted_text: Vec<u8> = text_bytes[*start..*end + 1].to_owned();
                 let deleted_text: String = String::from_utf8(deleted_text)?;
-                let deleted_text: String = markdown_to_html_inline(&deleted_text, port);
+                let deleted_text: String = markdown_to_html_inline(config, &deleted_text)?;
                 text_bytes.splice(*start..*end + 1, CLOZE_TAG_BYTES.iter().copied());
                 let text: String = String::from_utf8(text_bytes)?;
-                let text = markdown_to_html(&text, port);
+                let text = markdown_to_html(config, &text)?;
                 let text = text.replace(
                     CLOZE_TAG,
                     &format!("<span class='cloze-reveal'>{}</span>", deleted_text),
