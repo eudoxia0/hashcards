@@ -56,11 +56,11 @@ impl std::fmt::Display for ResolveError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let msg = match self {
             ResolveError::Empty => "path is the empty string.",
-            ResolveError::ExternalUrl => "external URLs are not allowed as media paths",
-            ResolveError::AbsolutePath => "absolute paths are not allowed as media paths",
-            ResolveError::ParentComponent => "path has a parent component",
-            ResolveError::OutsideCollection => "path is outside the collection directory",
-            ResolveError::InvalidPath => "path is invalid",
+            ResolveError::ExternalUrl => "external URLs are not allowed as media paths.",
+            ResolveError::AbsolutePath => "absolute paths are not allowed as media paths.",
+            ResolveError::ParentComponent => "path has a parent component.",
+            ResolveError::OutsideCollection => "path is outside the collection directory.",
+            ResolveError::InvalidPath => "path is invalid.",
         };
         write!(f, "{msg}")
     }
