@@ -17,6 +17,9 @@
       <change author="spencer-e-jung">
         Fix a bug where the card cache was not cleared on undo. See [PR #57](https://github.com/eudoxia0/hashcards/pull/57).
       </change>
+      <change author="eudoxia0">
+        Fix the initial flicker when rendering TeX math.
+      </change>
     </fixed>
     <breaking>
       <change author="eudoxia0">

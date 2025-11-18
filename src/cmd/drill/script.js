@@ -22,6 +22,10 @@ document.addEventListener("DOMContentLoaded", function () {
     ],
     macros: MACROS,
   });
+  const cardContent = document.querySelector(".card-content");
+  if (cardContent) {
+    cardContent.style.opacity = "1";
+  }
 });
 
 document.addEventListener("keydown", function (event) {
