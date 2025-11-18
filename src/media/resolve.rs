@@ -152,6 +152,7 @@ impl MediaResolverBuilder {
 
     /// Set a value for `collection_path`.
     pub fn with_collection_path(self, collection_path: PathBuf) -> Fallible<Self> {
+        let collection_path: PathBuf = collection_path.canonicalize()?;
         if !collection_path.exists() {
             return Err(ErrorReport::new("Collection path does not exist."));
         }
