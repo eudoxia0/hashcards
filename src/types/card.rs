@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::path::Path;
 use std::path::PathBuf;
 
 use maud::Markup;
@@ -108,7 +109,7 @@ impl Card {
     ///
     /// e.g., if the collection root is `/foo/bar/` and the file path is
     /// `/foo/bar/baz/deck.md`, this returns `baz/deck.md`.
-    pub fn relative_file_path(&self, collection_root: PathBuf) -> Fallible<PathBuf> {
+    pub fn relative_file_path(&self, collection_root: &Path) -> Fallible<PathBuf> {
         let canon_root: PathBuf = collection_root.canonicalize()?;
         let canon_file: PathBuf = self.file_path.canonicalize()?;
         let result: PathBuf = canon_file.strip_prefix(&canon_root)?.to_path_buf();

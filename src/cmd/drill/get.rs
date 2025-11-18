@@ -63,7 +63,7 @@ fn render_session_page(state: &ServerState, mutable: &MutableState) -> Fallible<
     let progress_bar_style = format!("width: {}%;", percent_done);
     let card = mutable.cards[0].clone();
     let coll_path = state.directory.clone();
-    let deck_path = card.relative_file_path(coll_path.clone())?;
+    let deck_path = card.relative_file_path(&coll_path)?;
     let config = MarkdownRenderConfig {
         resolver: MediaResolverBuilder::new()
             .with_collection_path(coll_path)?
