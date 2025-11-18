@@ -46,6 +46,8 @@ pub enum ResolveError {
     AbsolutePath,
     /// Path has parent (`..`) components.
     ParentComponent,
+    /// Path is outside the collection directory.
+    OutsideCollection,
     /// Path is invalid.
     InvalidPath,
 }
@@ -57,6 +59,7 @@ impl std::fmt::Display for ResolveError {
             ResolveError::ExternalUrl => "external URLs are not allowed as media paths",
             ResolveError::AbsolutePath => "absolute paths are not allowed as media paths",
             ResolveError::ParentComponent => "path has a parent component",
+            ResolveError::OutsideCollection => "path is outside the collection directory",
             ResolveError::InvalidPath => "path is invalid",
         };
         write!(f, "{msg}")
@@ -128,7 +131,10 @@ impl MediaResolver {
             // Relativize the path by subtracting the collection root.
             let path: PathBuf = path
                 .strip_prefix(&self.collection_path)
-                .map_err(|_| ResolveError::InvalidPath)?
+                // The only case where `strip_prefix` can fail is where the path
+                // does not start with the prefix, i.e., `path` points outside the
+                // collection directory.
+                .map_err(|_| ResolveError::OutsideCollection)?
                 .to_path_buf();
             Ok(path)
         }
