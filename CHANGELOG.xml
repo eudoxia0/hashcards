@@ -1,6 +1,10 @@
 <changelog>
     <unreleased>
-
+        <added>
+            <change author="cmf">
+                Added `--answer-controls` flag to the drill command with values "full" (default) or "binary". Binary shows only "Forgot" and "Good" buttons, mapping to FSRS Again and Good ratings.
+            </change>
+        </added>
     </unreleased>
     <releases>
         <release version="0.2.0" date="2025-11-18">

@@ -29,6 +29,7 @@ mod tests {
     use tempfile::tempdir;
     use tokio::spawn;
 
+    use crate::cmd::drill::server::AnswerControls;
     use crate::cmd::drill::server::ServerConfig;
     use crate::cmd::drill::server::start_server;
     use crate::error::Fallible;
@@ -48,6 +49,7 @@ mod tests {
             new_card_limit: None,
             deck_filter: None,
             shuffle: false,
+            answer_controls: AnswerControls::Full,
         };
         let result = start_server(config).await;
         assert!(result.is_err());
@@ -71,6 +73,7 @@ mod tests {
             new_card_limit: None,
             deck_filter: None,
             shuffle: false,
+            answer_controls: AnswerControls::Full,
         };
         start_server(config).await?;
         Ok(())
@@ -89,6 +92,7 @@ mod tests {
             new_card_limit: None,
             deck_filter: None,
             shuffle: false,
+            answer_controls: AnswerControls::Full,
         };
         spawn(async move { start_server(config).await });
         wait_for_server(port).await?;
@@ -188,6 +192,7 @@ mod tests {
             new_card_limit: None,
             deck_filter: None,
             shuffle: false,
+            answer_controls: AnswerControls::Full,
         };
         spawn(async move { start_server(config).await });
         wait_for_server(port).await?;
@@ -234,6 +239,7 @@ mod tests {
             new_card_limit: None,
             deck_filter: None,
             shuffle: false,
+            answer_controls: AnswerControls::Full,
         };
         spawn(async move { start_server(config).await });
         wait_for_server(port).await?;
@@ -262,6 +268,7 @@ mod tests {
             new_card_limit: None,
             deck_filter: None,
             shuffle: false,
+            answer_controls: AnswerControls::Full,
         };
         spawn(async move { start_server(config).await });
         wait_for_server(port).await?;
@@ -290,6 +297,7 @@ mod tests {
             new_card_limit: None,
             deck_filter: None,
             shuffle: false,
+            answer_controls: AnswerControls::Full,
         };
         spawn(async move { start_server(config).await });
         wait_for_server(port).await?;
@@ -336,6 +344,7 @@ mod tests {
             new_card_limit: None,
             deck_filter: None,
             shuffle: false,
+            answer_controls: AnswerControls::Full,
         };
         spawn(async move { start_server(config).await });
         wait_for_server(port).await?;

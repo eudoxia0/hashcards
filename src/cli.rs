@@ -19,6 +19,7 @@ use clap::Subcommand;
 use tokio::spawn;
 
 use crate::cmd::check::check_collection;
+use crate::cmd::drill::server::AnswerControls;
 use crate::cmd::drill::server::ServerConfig;
 use crate::cmd::drill::server::start_server;
 use crate::cmd::export::export_collection;
@@ -52,6 +53,9 @@ enum Command {
         /// Whether to open the browser automatically. Default is true.
         #[arg(long)]
         open_browser: Option<bool>,
+        /// Which answer controls to show:
+        #[arg(long, default_value_t = AnswerControls::Full)]
+        answer_controls: AnswerControls,
     },
     /// Check the integrity of a collection.
     Check {
@@ -105,6 +109,7 @@ pub async fn entrypoint() -> Fallible<()> {
             port,
             from_deck,
             open_browser,
+            answer_controls,
         } => {
             if open_browser.unwrap_or(true) {
                 // Start a separate task to open the browser once the server is up.
@@ -128,6 +133,7 @@ pub async fn entrypoint() -> Fallible<()> {
                 new_card_limit,
                 deck_filter: from_deck,
                 shuffle: true,
+                answer_controls,
             };
             start_server(config).await
         }
