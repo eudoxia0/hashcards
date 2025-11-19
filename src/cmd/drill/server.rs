@@ -89,6 +89,7 @@ pub struct ServerConfig {
     pub deck_filter: Option<String>,
     pub shuffle: bool,
     pub answer_controls: AnswerControls,
+    pub bury_siblings: bool,
 }
 
 pub async fn start_server(config: ServerConfig) -> Fallible<()> {
@@ -124,6 +125,12 @@ pub async fn start_server(config: ServerConfig) -> Fallible<()> {
         config.new_card_limit,
         config.deck_filter,
     )?;
+
+    let due_today: Vec<Card> = if config.bury_siblings {
+        bury_siblings(due_today)
+    } else {
+        due_today
+    };
 
     if due_today.is_empty() {
         println!("No cards due today.");
@@ -311,9 +318,6 @@ fn filter_deck(
             .collect(),
         None => deck,
     };
-
-    // Bury sibling cards.
-    let deck = bury_siblings(deck);
 
     // Apply the card limit.
     let deck = match card_limit {

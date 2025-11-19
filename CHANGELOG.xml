@@ -4,6 +4,9 @@
             <change author="cmf">
                 Added `--answer-controls` flag to the drill command with values "full" (default) or "binary". Binary shows only "Forgot" and "Good" buttons, mapping to FSRS Again and Good ratings.
             </change>
+            <change author="eudoxia0">
+                Added a flag to turn off sibling burial.
+            </change>
         </added>
         <fixed>
             <change author="eudoxia0">

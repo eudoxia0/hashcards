@@ -56,6 +56,9 @@ enum Command {
         /// Which answer controls to show:
         #[arg(long, default_value_t = AnswerControls::Full)]
         answer_controls: AnswerControls,
+        /// Whether or not to bury siblings. Default is true.
+        #[arg(long)]
+        bury_siblings: Option<bool>,
     },
     /// Check the integrity of a collection.
     Check {
@@ -110,6 +113,7 @@ pub async fn entrypoint() -> Fallible<()> {
             from_deck,
             open_browser,
             answer_controls,
+            bury_siblings,
         } => {
             if open_browser.unwrap_or(true) {
                 // Start a separate task to open the browser once the server is up.
@@ -134,6 +138,7 @@ pub async fn entrypoint() -> Fallible<()> {
                 deck_filter: from_deck,
                 shuffle: true,
                 answer_controls,
+                bury_siblings: bury_siblings.unwrap_or(true),
             };
             start_server(config).await
         }
