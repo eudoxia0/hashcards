@@ -1,23 +1,26 @@
 <changelog>
     <unreleased>
-        <added>
-            <change author="cmf">
-                Added `--answer-controls` flag to the drill command with values "full" (default) or "binary". Binary shows only "Forgot" and "Good" buttons, mapping to FSRS Again and Good ratings.
-            </change>
-            <change author="eudoxia0">
-                Added a flag to turn off sibling burial.
-            </change>
-        </added>
-        <fixed>
-            <change author="eudoxia0">
-                Improved the look of blockquote elements.
-            </change>
-            <change author="eudoxia0">
-                Improved font selection on Linux.
-            </change>
-        </fixed>
+
     </unreleased>
     <releases>
+        <release version="0.2.1" date="2025-11-19">
+            <added>
+                <change author="cmf">
+                    Added `--answer-controls` flag to the drill command with values "full" (default) or "binary". Binary shows only "Forgot" and "Good" buttons, mapping to FSRS Again and Good ratings.
+                </change>
+                <change author="eudoxia0">
+                    Added a flag to turn off sibling burial.
+                </change>
+            </added>
+            <fixed>
+                <change author="eudoxia0">
+                    Improved the look of blockquote elements.
+                </change>
+                <change author="eudoxia0">
+                    Improved font selection on Linux.
+                </change>
+            </fixed>
+        </release>
         <release version="0.2.0" date="2025-11-18">
             <added>
                 <change author="eudoxia0">
