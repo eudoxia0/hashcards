@@ -22,7 +22,6 @@ use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
 
 use axum::Router;
-use clap::ValueEnum;
 use axum::extract::Path;
 use axum::extract::State;
 use axum::http::HeaderName;
@@ -32,6 +31,7 @@ use axum::http::header::CONTENT_TYPE;
 use axum::response::Html;
 use axum::routing::get;
 use axum::routing::post;
+use clap::ValueEnum;
 use tokio::net::TcpListener;
 use tokio::select;
 use tokio::signal;
