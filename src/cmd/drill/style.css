@@ -140,12 +140,12 @@ body {
                     }
 
                     blockquote {
+                        background: #f7f7f7;
                         border-left: 4px solid #ccc;
+                        padding-bottom: 8px;
                         padding-left: 12px;
                         padding-right: 12px;
-                        background: #f7f7f7;
                         padding-top: 8px;
-                        padding-bottom: 8px;
                     }
 
                     audio {
