@@ -50,6 +50,7 @@ mod tests {
             deck_filter: None,
             shuffle: false,
             answer_controls: AnswerControls::Full,
+            bury_siblings: false,
         };
         let result = start_server(config).await;
         assert!(result.is_err());
@@ -74,6 +75,7 @@ mod tests {
             deck_filter: None,
             shuffle: false,
             answer_controls: AnswerControls::Full,
+            bury_siblings: false,
         };
         start_server(config).await?;
         Ok(())
@@ -93,6 +95,7 @@ mod tests {
             deck_filter: None,
             shuffle: false,
             answer_controls: AnswerControls::Full,
+            bury_siblings: false,
         };
         spawn(async move { start_server(config).await });
         wait_for_server(port).await?;
@@ -193,6 +196,7 @@ mod tests {
             deck_filter: None,
             shuffle: false,
             answer_controls: AnswerControls::Full,
+            bury_siblings: false,
         };
         spawn(async move { start_server(config).await });
         wait_for_server(port).await?;
@@ -240,6 +244,7 @@ mod tests {
             deck_filter: None,
             shuffle: false,
             answer_controls: AnswerControls::Full,
+            bury_siblings: false,
         };
         spawn(async move { start_server(config).await });
         wait_for_server(port).await?;
@@ -269,6 +274,7 @@ mod tests {
             deck_filter: None,
             shuffle: false,
             answer_controls: AnswerControls::Full,
+            bury_siblings: false,
         };
         spawn(async move { start_server(config).await });
         wait_for_server(port).await?;
@@ -298,6 +304,7 @@ mod tests {
             deck_filter: None,
             shuffle: false,
             answer_controls: AnswerControls::Full,
+            bury_siblings: false,
         };
         spawn(async move { start_server(config).await });
         wait_for_server(port).await?;
@@ -345,6 +352,7 @@ mod tests {
             deck_filter: None,
             shuffle: false,
             answer_controls: AnswerControls::Full,
+            bury_siblings: false,
         };
         spawn(async move { start_server(config).await });
         wait_for_server(port).await?;
