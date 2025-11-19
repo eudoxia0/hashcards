@@ -9,6 +9,9 @@
             <change author="eudoxia0">
                 Improved the look of blockquote elements.
             </change>
+            <change author="eudoxia0">
+                Improved font selection on Linux.
+            </change>
         </fixed>
     </unreleased>
     <releases>
