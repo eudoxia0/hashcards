@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Track whether the card is currently revealed
+let cardRevealed = false;
+
 document.addEventListener("DOMContentLoaded", function () {
   renderMathInElement(document.body, {
     delimiters: [
@@ -26,6 +29,10 @@ document.addEventListener("DOMContentLoaded", function () {
   if (cardContent) {
     cardContent.style.opacity = "1";
   }
+
+  // Check if the reveal button exists - if not, card is already revealed
+  const revealButton = document.getElementById("reveal");
+  cardRevealed = !revealButton;
 });
 
 document.addEventListener("keydown", function (event) {
@@ -34,8 +41,34 @@ document.addEventListener("keydown", function (event) {
     return;
   }
 
+  // Special handling for spacebar to implement Anki-like workflow
+  if (event.key === " ") {
+    // Ignore modifiers.
+    if (event.shiftKey || event.ctrlKey || event.altKey || event.metaKey) {
+      return;
+    }
+    event.preventDefault();
+
+    // If card is not revealed, reveal it
+    if (!cardRevealed) {
+      const revealButton = document.getElementById("reveal");
+      if (revealButton) {
+        revealButton.click();
+        cardRevealed = true;
+      }
+    } else {
+      // If card is revealed, submit "good" grade
+      const goodButton = document.getElementById("good");
+      if (goodButton) {
+        goodButton.click();
+        cardRevealed = false; // Reset for next card
+      }
+    }
+    return;
+  }
+
+  // Handle other keybindings
   const keybindings = {
-    " ": "reveal", // Space
     u: "undo",
     1: "forgot",
     2: "hard",
@@ -53,6 +86,10 @@ document.addEventListener("keydown", function (event) {
     const node = document.getElementById(id);
     if (node) {
       node.click();
+      // If user pressed a grade button (1-4), reset the revealed state
+      if (["forgot", "hard", "good", "easy"].includes(id)) {
+        cardRevealed = false;
+      }
     }
   }
 });
