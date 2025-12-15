@@ -164,6 +164,47 @@ body {
             display: flex;
             justify-content: space-between;
 
+            .grades {
+                display: flex;
+                flex-direction: row;
+                justify-content: space-between;
+            }
+
+            .control-with-shortcut {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                background: white;
+                border: 1px solid #999;
+                padding: 7px 12px;
+                border-radius: 6px;
+                box-shadow: #ccc 0px 1px 3px 0px;
+
+                input {
+                    background: none;
+                    border: none;
+                    padding: 0;
+                    font-size: 16px;
+                    font-family: system-ui, -apple-system, "Helvetica Neue", sans-serif;
+                    font-weight: 600;
+                    cursor: pointer;
+                    box-shadow: none;
+
+                    &:disabled {
+                        cursor: not-allowed;
+                    }
+                }
+
+                .shortcut {
+                    margin-top: 6px;
+                    font-size: 12px;
+                    font-family: system-ui, -apple-system, "Helvetica Neue", sans-serif;
+                    color: #666;
+                    opacity: 0.8;
+                    letter-spacing: 0.02em;
+                }
+            }
+
             .spacer {
                 flex: 1;
             }
@@ -289,12 +330,6 @@ body {
 
             input {
                 margin: 6px 0;
-            }
-
-            .grades {
-                display: flex;
-                flex-direction: row;
-                justify-content: space-between;
             }
         }
     }
