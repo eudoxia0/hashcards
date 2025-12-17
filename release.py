@@ -75,6 +75,13 @@ if __name__ == "__main__":
         sys.exit(1)
 
     command: str = sys.argv[1]
+    
+    # Validate command against allowlist to prevent command injection
+    allowed_commands = {"version", "markdown"}
+    if command not in allowed_commands:
+        print(f"Unknown command: {command}", file=sys.stderr)
+        sys.exit(1)
+    
     changelog_path = Path("CHANGELOG.xml")
     version, markdown = extract_latest_release(changelog_path)
 
@@ -82,6 +89,3 @@ if __name__ == "__main__":
         print(version)
     elif command == "markdown":
         print(markdown)
-    else:
-        print(f"Unknown command: {command}", file=sys.stderr)
-        sys.exit(1)
