@@ -188,7 +188,7 @@ pub async fn start_server(config: ServerConfig) -> Fallible<()> {
     let app = app.route("/file/{*path}", get(file_handler));
     let app = app.fallback(not_found_handler);
     let app = app.with_state(state.clone());
-    let bind = format!("0.0.0.0:{}", config.port);
+    let bind = format!("127.0.0.1:{}", config.port);
 
     // Start the server with graceful shutdown on Ctrl+C or shutdown button.
     log::debug!("Starting server on {bind}");
@@ -214,6 +214,8 @@ async fn script_handler(
     let mut content = String::new();
     content.push_str("let MACROS = {};\n");
     for (name, definition) in &state.macros {
+        let name = escape_js_string_literal(name);
+        let definition = escape_js_string_literal(definition);
         content.push_str(&format!(
             "MACROS[String.raw`{name}`] = String.raw`{definition}`;\n"
         ));
@@ -221,6 +223,12 @@ async fn script_handler(
     content.push('\n');
     content.push_str(include_str!("script.js"));
     (StatusCode::OK, [(CONTENT_TYPE, "text/javascript")], content)
+}
+
+fn escape_js_string_literal(s: &str) -> String {
+    s.replace('\\', "\\\\")
+        .replace('`', "\\`")
+        .replace('$', "\\$")
 }
 
 async fn style_handler() -> (StatusCode, [(HeaderName, &'static str); 2], &'static [u8]) {
