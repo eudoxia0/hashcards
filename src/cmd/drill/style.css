@@ -169,10 +169,13 @@ body {
             }
 
             input {
+                -webkit-appearance: none;
+                appearance: none;
                 background: white;
                 border: 1px solid #999;
                 padding: 7px 12px;
                 font-size: 16px;
+                color: black;
                 font-family:
                     system-ui,
                     -apple-system,
