@@ -80,10 +80,34 @@ fn render_session_page(state: &ServerState, mutable: &MutableState) -> Fallible<
                 input id="good" type="submit" name="action" value="Good";
             },
             AnswerControls::Full => html! {
-                input id="forgot" type="submit" name="action" value="Forgot";
-                input id="hard" type="submit" name="action" value="Hard";
-                input id="good" type="submit" name="action" value="Good";
-                input id="easy" type="submit" name="action" value="Easy";
+                div.control-with-shortcut {
+                    input
+                        id="forgot" type="submit" name="action" value="Forgot";
+                    div.shortcut {
+                        "1"
+                    }
+                }
+                div.control-with-shortcut {
+                    input
+                        id="hard" type="submit" name="action" value="Hard";
+                    div.shortcut {
+                        "2"
+                    }
+                }
+                div.control-with-shortcut {
+                    input
+                        id="good" type="submit" name="action" value="Good";
+                    div.shortcut {
+                        "3"
+                    }
+                }
+                div.control-with-shortcut {
+                    input
+                        id="easy" type="submit" name="action" value="Easy";
+                    div.shortcut {
+                        "4"
+                    }
+                }
             },
         };
         html! {
@@ -102,7 +126,17 @@ fn render_session_page(state: &ServerState, mutable: &MutableState) -> Fallible<
             form action="/" method="post" {
                 (undo_button(undo_disabled))
                 div.spacer {}
-                input id="reveal" type="submit" name="action" value="Reveal" title="Show the answer";
+                div.control-with-shortcut {
+                    input
+                        id="reveal"
+                        type="submit"
+                        name="action"
+                        value="Reveal"
+                        title="Show the answer";
+                    div.shortcut {
+                        "Space"
+                    }
+                }
                 div.spacer {}
                 (end_button())
             }
@@ -255,7 +289,12 @@ fn undo_button(disabled: bool) -> Markup {
         }
     } else {
         html! {
-            input id="undo" type="submit" name="action" value="Undo" title="Undo last action";
+            div.control-with-shortcut {
+                input id="undo" type="submit" name="action" value="Undo" title="Undo last action";
+                div.shortcut {
+                    "U"
+                }
+            }
         }
     }
 }
