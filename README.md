@@ -42,7 +42,7 @@ C: In the nervous system, [chemical] communication happens [between] neurons.
 
 For a larger example, see [my personal flashcards repo][fc].
 
-## Installing
+## Installation
 
 You can install it from the [Releases](https://github.com/eudoxia0/hashcards/releases/) section
 
