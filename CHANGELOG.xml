@@ -8,6 +8,11 @@
                 Update bind address to `127.0.0.1`.
             </change>
         </changed>
+        <fixed>
+            <change author="amnats">
+                Fixed button visibility bug on iOS Safari.
+            </change>
+        </fixed>
     </unreleased>
     <releases>
         <release version="0.2.1" date="2025-11-19">
