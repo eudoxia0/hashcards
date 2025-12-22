@@ -4,6 +4,9 @@
             <change author="asm0dey">
                 Added installation instructions to the README.
             </change>
+            <change author="eudoxia0">
+                Publish hashcards on `crates.io`.
+            </change>
         </added>
         <changed>
             <change author="eudoxia0">
