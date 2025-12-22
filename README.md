@@ -46,6 +46,12 @@ For a larger example, see [my personal flashcards repo][fc].
 
 You can download a binary from the the [releases](https://github.com/eudoxia0/hashcards/releases) page.
 
+If you have [cargo] installed, you can run:
+
+```
+$ cargo install hashcards
+```
+
 On Arch Linux, you can install it from [AUR](https://aur.archlinux.org/packages/hashcards-bin).
 
 ## Building
