@@ -42,6 +42,12 @@ C: In the nervous system, [chemical] communication happens [between] neurons.
 
 For a larger example, see [my personal flashcards repo][fc].
 
+## Installing
+
+You can install it from the [Releases](https://github.com/eudoxia0/hashcards/releases/) section
+
+On Arch you can install it from [AUR](https://aur.archlinux.org/packages/hashcards-bin)
+
 ## Building
 
 You need [cargo] installed. You can get it through [rustup]. Then:
