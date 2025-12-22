@@ -24,7 +24,7 @@ pub const CACHE_CONTROL_IMMUTABLE: &str = "public, max-age=604800, immutable";
 
 pub async fn wait_for_server(port: u16) -> Fallible<()> {
     loop {
-        if let Ok(stream) = TcpStream::connect(format!("0.0.0.0:{port}")).await {
+        if let Ok(stream) = TcpStream::connect(format!("127.0.0.1:{port}")).await {
             drop(stream);
             break;
         }
