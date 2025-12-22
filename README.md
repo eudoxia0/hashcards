@@ -44,7 +44,7 @@ For a larger example, see [my personal flashcards repo][fc].
 
 ## Installation
 
-You can download a binary from the the [Releases](https://github.com/eudoxia0/hashcards/releases/) page.
+You can download a binary from the the [releases](https://github.com/eudoxia0/hashcards/releases) page.
 
 On Arch you can install it from [AUR](https://aur.archlinux.org/packages/hashcards-bin)
 
