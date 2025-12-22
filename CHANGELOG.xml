@@ -4,6 +4,9 @@
             <change author="eudoxia0">
                 Update dependencies.
             </change>
+            <change author="purew">
+                Update bind address to `127.0.0.1`.
+            </change>
         </changed>
     </unreleased>
     <releases>
