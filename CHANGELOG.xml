@@ -12,6 +12,9 @@
             <change author="purew">
                 Update bind address to `127.0.0.1`.
             </change>
+            <change author="eudoxia0">
+                Put KaTeX into source control.
+            </change>
         </changed>
         <fixed>
             <change author="amnats">
