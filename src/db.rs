@@ -41,7 +41,7 @@ pub struct ReviewRecord {
     pub stability: f64,
     pub difficulty: f64,
     pub interval_raw: f64,
-    pub interval_days: usize,
+    pub interval_days: i64,
     pub due_date: Date,
 }
 
@@ -130,7 +130,7 @@ impl Database {
             let stability: Option<Stability> = row.get(1)?;
             let difficulty: Option<Difficulty> = row.get(2)?;
             let interval_raw: Option<f64> = row.get(3)?;
-            let interval_days: Option<usize> = row.get(4)?;
+            let interval_days: Option<i64> = row.get(4)?;
             let due_date: Option<Date> = row.get(5)?;
             let review_count: i32 = row.get(6)?;
             if let (

@@ -90,7 +90,7 @@ struct PerformanceExport {
     stability: Stability,
     difficulty: Difficulty,
     interval_raw: Interval,
-    interval_days: usize,
+    interval_days: i64,
     due_date: Date,
     review_count: usize,
 }
@@ -114,7 +114,7 @@ struct ReviewExport {
     stability: Stability,
     difficulty: Difficulty,
     interval_raw: Interval,
-    interval_days: usize,
+    interval_days: i64,
     due_date: Date,
 }
 

@@ -58,7 +58,7 @@ pub struct Review {
     pub stability: Stability,
     pub difficulty: Difficulty,
     pub interval_raw: f64,
-    pub interval_days: usize,
+    pub interval_days: i64,
     pub due_date: Date,
 }
 
