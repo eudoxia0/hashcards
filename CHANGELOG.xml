@@ -1,5 +1,10 @@
 <changelog>
     <unreleased>
+        <added>
+            <change author="asm0dey">
+                Added installation instructions to the README.
+            </change>
+        </added>
         <changed>
             <change author="eudoxia0">
                 Update dependencies.
