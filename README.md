@@ -244,6 +244,10 @@ desire: this is also vanity and vexation of spirit.
 — [Ecclesiastes] [6]:[9]
 ```
 
+Creating a cloze card with multiple deletions automatically creates a set of sibling cards, one for each deletion. Siblings are "buried" by default: within a session, you only see one of them. This is to prevent one card spoiling the answer for the other. This allows you to do multiple reviews per day.
+
+Alternatively, to show all the sibling cards in a session run `hashcards drill` with `--bury-siblings=false`.
+
 ## Features
 
 This section documents specific hashcards features.
