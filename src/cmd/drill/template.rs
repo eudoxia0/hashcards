@@ -20,6 +20,9 @@ use crate::cmd::drill::katex::KATEX_AUTO_RENDER_JS_URL;
 use crate::cmd::drill::katex::KATEX_CSS_URL;
 use crate::cmd::drill::katex::KATEX_JS_URL;
 
+const HIGHLIGHT_JS_URL: &str = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js";
+const HIGHLIGHT_CSS_URL: &str = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css";
+
 pub fn page_template(body: Markup) -> Markup {
     html! {
         (DOCTYPE)
@@ -29,8 +32,10 @@ pub fn page_template(body: Markup) -> Markup {
                 meta name="viewport" content="width=device-width, initial-scale=1";
                 title { "hashcards" }
                 link rel="stylesheet" href=(KATEX_CSS_URL);
+                link rel="stylesheet" href=(HIGHLIGHT_CSS_URL);
                 script defer src=(KATEX_JS_URL) {};
                 script defer src=(KATEX_AUTO_RENDER_JS_URL) {};
+                script defer src=(HIGHLIGHT_JS_URL) {};
                 link rel="stylesheet" href="/style.css";
             }
             body {
