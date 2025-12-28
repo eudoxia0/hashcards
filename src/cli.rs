@@ -47,6 +47,9 @@ enum Command {
         /// The port to use for the web server. Default is 8000.
         #[arg(long, default_value_t = 8000)]
         port: u16,
+        /// Expose the server to your local network (not just localhost).
+        #[arg(long, default_value_t = false)]
+        host: bool,
         /// Only drill cards from this deck.
         #[arg(long)]
         from_deck: Option<String>,
@@ -110,6 +113,7 @@ pub async fn entrypoint() -> Fallible<()> {
             card_limit,
             new_card_limit,
             port,
+            host,
             from_deck,
             open_browser,
             answer_controls,
@@ -132,6 +136,7 @@ pub async fn entrypoint() -> Fallible<()> {
             let config = ServerConfig {
                 directory,
                 port,
+                expose_to_network: host,
                 session_started_at: Timestamp::now(),
                 card_limit,
                 new_card_limit,

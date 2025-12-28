@@ -15,6 +15,7 @@
 use std::collections::HashSet;
 use std::fmt::Display;
 use std::fmt::Formatter;
+use std::net::UdpSocket;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -83,6 +84,7 @@ impl Display for AnswerControls {
 pub struct ServerConfig {
     pub directory: Option<String>,
     pub port: u16,
+    pub expose_to_network: bool,
     pub session_started_at: Timestamp,
     pub card_limit: Option<usize>,
     pub new_card_limit: Option<usize>,
@@ -188,7 +190,21 @@ pub async fn start_server(config: ServerConfig) -> Fallible<()> {
     let app = app.route("/file/{*path}", get(file_handler));
     let app = app.fallback(not_found_handler);
     let app = app.with_state(state.clone());
-    let bind = format!("127.0.0.1:{}", config.port);
+
+    let bind_address = if config.expose_to_network {
+        "0.0.0.0"
+    } else {
+        "127.0.0.1"
+    };
+    let bind = format!("{}:{}", bind_address, config.port);
+
+    // Print access information
+    println!("Local: 127.0.0.1:{}", config.port);
+    if config.expose_to_network {
+        if let Some(local_ip) = get_local_ip() {
+            println!("Network: {}:{}", local_ip, config.port);
+        }
+    }
 
     // Start the server with graceful shutdown on Ctrl+C or shutdown button.
     log::debug!("Starting server on {bind}");
@@ -369,4 +385,11 @@ fn bury_siblings(deck: Vec<Card>) -> Vec<Card> {
         result.push(card);
     }
     result
+}
+
+fn get_local_ip() -> Option<String> {
+    let socket = UdpSocket::bind("0.0.0.0:0").ok()?;
+    socket.connect("8.8.8.8:80").ok()?;
+    let addr = socket.local_addr().ok()?;
+    Some(addr.ip().to_string())
 }
