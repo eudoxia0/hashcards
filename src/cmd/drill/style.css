@@ -278,26 +278,61 @@ body {
 
 /* Mobile */
 @media (max-width: 768px) {
-    .card {
-        width: 100%;
-        height: 100%;
-        box-shadow: none;
-    }
+    .root {
+        .header {
+            padding: 16px;
 
-    .controls {
-        padding: 12px;
-
-        form {
-            flex-direction: column;
-
-            input {
-                margin: 6px 0;
+            .progress-bar {
+                width: 100%;
+                max-width: 300px;
+                height: 16px;
             }
+        }
 
-            .grades {
-                display: flex;
-                flex-direction: row;
-                justify-content: space-between;
+        .card-container {
+            .card {
+                width: 100%;
+                height: 100%;
+                box-shadow: none;
+
+                .card-header {
+                    padding: 16px;
+
+                    h1 {
+                        font-size: 20px;
+                    }
+                }
+
+                .card-content {
+                    .question,
+                    .answer,
+                    .prompt {
+                        padding: 16px;
+                    }
+
+                    .rich-text {
+                        font-size: 18px;
+                        line-height: 1.5;
+                    }
+                }
+            }
+        }
+
+        .controls {
+            padding: 12px;
+
+            form {
+                flex-direction: column;
+
+                input {
+                    margin: 6px 0;
+                }
+
+                .grades {
+                    display: flex;
+                    flex-direction: row;
+                    justify-content: space-between;
+                }
             }
         }
     }
@@ -306,13 +341,18 @@ body {
         padding: 24px;
 
         h1 {
-            font-size: 36px;
-            margin-bottom: 36px;
+            font-size: 28px;
+            margin-bottom: 24px;
         }
 
         h2 {
-            font-size: 30px;
+            font-size: 22px;
             margin-bottom: 16px;
+        }
+
+        .summary {
+            font-size: 18px;
+            margin-bottom: 32px;
         }
 
         .stats {
