@@ -28,7 +28,7 @@ walkdir = "2"
 [dev-dependencies]
 portpicker = "0.1.1"
 reqwest = "0.12.28"
-tempfile = "3.23.0"
+tempfile = "3.24.0"
 
 [profile.release]
 strip = "symbols"
