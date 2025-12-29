@@ -134,6 +134,7 @@ Options:
 - `--card-limit=<N>`: Limit the session to at most N cards.
 - `--new-card-limit=<N>`: Limit the number of new cards in the session.
 - `--port=<PORT>`: Use a specific port (default: 8000).
+- `--host`: Expose the server to your local network.
 - `--from-deck=<NAME>`: Only drill cards from a deck with the given name.
 - `--open-browser=<true|false>`: Whether or not to open the browser after the
   server starts (default: true).
