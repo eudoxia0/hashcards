@@ -26,7 +26,6 @@ use axum::extract::Path;
 use axum::extract::State;
 use axum::http::HeaderName;
 use axum::http::StatusCode;
-use axum::http::header::CACHE_CONTROL;
 use axum::http::header::CONTENT_TYPE;
 use axum::response::Html;
 use axum::routing::get;
@@ -61,7 +60,6 @@ use crate::types::card::Card;
 use crate::types::card_hash::CardHash;
 use crate::types::date::Date;
 use crate::types::timestamp::Timestamp;
-use crate::utils::CACHE_CONTROL_IMMUTABLE;
 
 #[derive(ValueEnum, Clone, Copy, PartialEq)]
 pub enum AnswerControls {
@@ -231,15 +229,21 @@ fn escape_js_string_literal(s: &str) -> String {
         .replace('$', "\\$")
 }
 
-async fn style_handler() -> (StatusCode, [(HeaderName, &'static str); 2], &'static [u8]) {
+async fn style_handler(
+    State(state): State<ServerState>,
+) -> (StatusCode, [(HeaderName, &'static str); 1], Vec<u8>) {
+    let external_path = state.directory.join("style.css");
+    if external_path.exists() {
+        if let Ok(bytes) = tokio::fs::read(external_path).await {
+            return (StatusCode::OK, [(CONTENT_TYPE, "text/css")], bytes);
+        }
+    }
+
     let bytes = include_bytes!("style.css");
     (
         StatusCode::OK,
-        [
-            (CONTENT_TYPE, "text/css"),
-            (CACHE_CONTROL, CACHE_CONTROL_IMMUTABLE),
-        ],
-        bytes,
+        [(CONTENT_TYPE, "text/css")],
+        bytes.to_vec(),
     )
 }
 
