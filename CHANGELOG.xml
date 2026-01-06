@@ -23,6 +23,9 @@
             <change author="amnats">
                 Fixed button visibility bug on iOS Safari.
             </change>
+            <change author="Theresa Schönhammer">
+                Fix card content being invisible with Javascript disabled.
+            </change>
         </fixed>
     </unreleased>
     <releases>

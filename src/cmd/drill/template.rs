@@ -32,6 +32,8 @@ pub fn page_template(body: Markup) -> Markup {
                 script defer src=(KATEX_JS_URL) {};
                 script defer src=(KATEX_AUTO_RENDER_JS_URL) {};
                 link rel="stylesheet" href="/style.css";
+                style { ".card-content { opacity: 0; }" }
+                noscript { style { ".card-content { opacity: 1; }" }}
             }
             body {
                 (body)

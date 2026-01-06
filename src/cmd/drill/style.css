@@ -18,7 +18,9 @@ body,
 }
 
 body {
-    font-family: "TeX Gyre Termes", "Nimbus Roman No9 L", "Times New Roman", "Times", serif;
+    font-family:
+        "TeX Gyre Termes", "Nimbus Roman No9 L", "Times New Roman", "Times",
+        serif;
 }
 
 .root {
@@ -82,7 +84,6 @@ body {
                 flex-direction: column;
                 overflow-x: hidden;
                 overflow-y: auto;
-                opacity: 0;
 
                 .question,
                 .answer,
@@ -261,7 +262,9 @@ body {
             border-radius: 6px;
             cursor: pointer;
             box-shadow: rgba(220, 53, 69, 0.3) 0px 2px 8px 0px;
-            transition: background-color 0.2s, box-shadow 0.2s;
+            transition:
+                background-color 0.2s,
+                box-shadow 0.2s;
 
             &:hover {
                 background: #c82333;
