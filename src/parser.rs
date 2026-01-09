@@ -752,8 +752,6 @@ mod tests {
         let parser = make_test_parser();
         let cards = parser.parse(input)?;
 
-        println!("{:?}", cards[0].content());
-
         assert_cloze(&cards, "Key: `[`", &[(5, 7)]);
         Ok(())
     }
@@ -763,8 +761,6 @@ mod tests {
         let input = "C: \\[markdown\\] [`\\[cloze\\]`]";
         let parser = make_test_parser();
         let cards = parser.parse(input)?;
-
-        println!("{:?}", cards[0].content());
 
         assert_cloze(&cards, "[markdown] `[cloze]`", &[(11, 19)]);
         Ok(())
