@@ -19,7 +19,10 @@
                 Put KaTeX into source control.
             </change>
         </changed>
-        <fixed>
+        <fixed> chrisdoram
+            <change author="chrisdoram">
+                Added support for escaping square brackets in cloze deletions.
+            </change>
             <change author="amnats">
                 Fixed button visibility bug on iOS Safari.
             </change>
