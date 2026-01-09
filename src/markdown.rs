@@ -14,6 +14,7 @@
 
 use pulldown_cmark::CowStr;
 use pulldown_cmark::Event;
+use pulldown_cmark::Options;
 use pulldown_cmark::Parser;
 use pulldown_cmark::Tag;
 use pulldown_cmark::html::push_html;
@@ -41,7 +42,7 @@ pub struct MarkdownRenderConfig {
 }
 
 pub fn markdown_to_html(config: &MarkdownRenderConfig, markdown: &str) -> Fallible<String> {
-    let parser = Parser::new(markdown);
+    let parser = Parser::new_ext(markdown, Options::ENABLE_MATH);
     let events: Vec<Event<'_>> = parser
         .map(|event| match event {
             Event::Start(Tag::Image {
@@ -71,6 +72,24 @@ pub fn markdown_to_html(config: &MarkdownRenderConfig, markdown: &str) -> Fallib
                     })
                 };
                 Ok(ev)
+            }
+            Event::DisplayMath(text) => {
+                Ok(Event::Html(CowStr::Boxed(
+                    format!(
+                        r#"<span class="math math-display">$${}$$</span>"#,
+                        text
+                    )
+                    .into_boxed_str()
+                )))
+            }
+            Event::InlineMath(text) => {
+                Ok(Event::Html(CowStr::Boxed(
+                    format!(
+                        r#"<span class="math math-inline">${}$</span>"#,
+                        text
+                    )
+                    .into_boxed_str()
+                )))
             }
             _ => Ok(event),
         })
