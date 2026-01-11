@@ -20,8 +20,10 @@ use crate::cmd::drill::katex::KATEX_AUTO_RENDER_JS_URL;
 use crate::cmd::drill::katex::KATEX_CSS_URL;
 use crate::cmd::drill::katex::KATEX_JS_URL;
 
-const HIGHLIGHT_JS_URL: &str = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js";
-const HIGHLIGHT_CSS_URL: &str = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css";
+const HIGHLIGHT_JS_URL: &str =
+    "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js";
+const HIGHLIGHT_CSS_URL: &str =
+    "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css";
 
 pub fn page_template(body: Markup) -> Markup {
     html! {
