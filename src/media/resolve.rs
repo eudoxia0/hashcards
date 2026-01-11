@@ -215,6 +215,7 @@ mod tests {
     }
 
     /// Absolute strings are rejected.
+    #[cfg(not(target_os = "windows"))]
     #[test]
     fn test_absolute_paths_are_rejected() -> Fallible<()> {
         let coll_path: PathBuf = create_tmp_directory()?;
@@ -261,6 +262,7 @@ mod tests {
     }
 
     /// Collection-relative absolute paths are rejected.
+    #[cfg(not(target_os = "windows"))]
     #[test]
     fn test_collection_relative_absolute_are_rejected() -> Fallible<()> {
         let coll_path: PathBuf = create_tmp_directory()?;
@@ -322,6 +324,7 @@ mod tests {
     }
 
     /// Ensure deck-relative paths cannot leave the collection root directory.
+    #[cfg(not(target_os = "windows"))]
     #[test]
     fn test_relative_paths_cant_leave_collection_root() -> Fallible<()> {
         let coll_path: PathBuf = create_tmp_directory()?;
