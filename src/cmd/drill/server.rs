@@ -82,6 +82,7 @@ impl Display for AnswerControls {
 
 pub struct ServerConfig {
     pub directory: Option<String>,
+    pub host: String,
     pub port: u16,
     pub session_started_at: Timestamp,
     pub card_limit: Option<usize>,
@@ -188,7 +189,7 @@ pub async fn start_server(config: ServerConfig) -> Fallible<()> {
     let app = app.route("/file/{*path}", get(file_handler));
     let app = app.fallback(not_found_handler);
     let app = app.with_state(state.clone());
-    let bind = format!("127.0.0.1:{}", config.port);
+    let bind = format!("{}:{}", config.host, config.port);
 
     // Start the server with graceful shutdown on Ctrl+C or shutdown button.
     log::debug!("Starting server on {bind}");

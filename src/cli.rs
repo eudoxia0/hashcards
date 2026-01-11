@@ -44,6 +44,9 @@ enum Command {
         /// Maximum number of new cards to drill in a session.
         #[arg(long)]
         new_card_limit: Option<usize>,
+        /// The host address to bind to. Default is 127.0.0.1.
+        #[arg(long, default_value = "127.0.0.1")]
+        host: String,
         /// The port to use for the web server. Default is 8000.
         #[arg(long, default_value_t = 8000)]
         port: u16,
@@ -109,6 +112,7 @@ pub async fn entrypoint() -> Fallible<()> {
             directory,
             card_limit,
             new_card_limit,
+            host,
             port,
             from_deck,
             open_browser,
@@ -117,10 +121,11 @@ pub async fn entrypoint() -> Fallible<()> {
         } => {
             if open_browser.unwrap_or(true) {
                 // Start a separate task to open the browser once the server is up.
+                let browser_host = host.clone();
                 spawn(async move {
-                    match wait_for_server(port).await {
+                    match wait_for_server(&browser_host, port).await {
                         Ok(_) => {
-                            let _ = open::that(format!("http://127.0.0.1:{port}/"));
+                            let _ = open::that(format!("http://{browser_host}:{port}/"));
                         }
                         Err(e) => {
                             eprintln!("Failed to connect to server: {e}");
@@ -131,6 +136,7 @@ pub async fn entrypoint() -> Fallible<()> {
             }
             let config = ServerConfig {
                 directory,
+                host,
                 port,
                 session_started_at: Timestamp::now(),
                 card_limit,

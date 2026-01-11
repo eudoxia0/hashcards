@@ -37,12 +37,15 @@ mod tests {
     use crate::types::timestamp::Timestamp;
     use crate::utils::wait_for_server;
 
+    const TEST_HOST: &str = "127.0.0.1";
+
     #[tokio::test]
     async fn test_start_server_on_non_existent_directory() -> Fallible<()> {
         let port = pick_unused_port().unwrap();
         let session_started_at = Timestamp::now();
         let config = ServerConfig {
             directory: Some("./derpherp".to_string()),
+            host: TEST_HOST.to_string(),
             port,
             session_started_at,
             card_limit: None,
@@ -68,6 +71,7 @@ mod tests {
         let dir = dir.canonicalize().unwrap().display().to_string();
         let config = ServerConfig {
             directory: Some(dir),
+            host: TEST_HOST.to_string(),
             port,
             session_started_at,
             card_limit: None,
@@ -88,6 +92,7 @@ mod tests {
         let session_started_at = Timestamp::now();
         let config = ServerConfig {
             directory: Some(directory),
+            host: TEST_HOST.to_string(),
             port,
             session_started_at,
             card_limit: None,
@@ -98,15 +103,15 @@ mod tests {
             bury_siblings: false,
         };
         spawn(async move { start_server(config).await });
-        wait_for_server(port).await?;
+        wait_for_server(TEST_HOST, port).await?;
 
         // Hit the `style.css` endpoint.
-        let response = reqwest::get(format!("http://127.0.0.1:{port}/style.css")).await?;
+        let response = reqwest::get(format!("http://{TEST_HOST}:{port}/style.css")).await?;
         assert!(response.status().is_success());
         assert_eq!(response.headers().get("content-type").unwrap(), "text/css");
 
         // Hit the `script.js` endpoint.
-        let response = reqwest::get(format!("http://127.0.0.1:{port}/script.js")).await?;
+        let response = reqwest::get(format!("http://{TEST_HOST}:{port}/script.js")).await?;
         assert!(response.status().is_success());
         assert_eq!(
             response.headers().get("content-type").unwrap(),
@@ -114,11 +119,11 @@ mod tests {
         );
 
         // Hit the not found endpoint.
-        let response = reqwest::get(format!("http://127.0.0.1:{port}/herp-derp")).await?;
+        let response = reqwest::get(format!("http://{TEST_HOST}:{port}/herp-derp")).await?;
         assert_eq!(response.status(), StatusCode::NOT_FOUND);
 
         // Hit the file endpoint.
-        let response = reqwest::get(format!("http://127.0.0.1:{port}/file/foo.jpg")).await?;
+        let response = reqwest::get(format!("http://{TEST_HOST}:{port}/file/foo.jpg")).await?;
         assert!(response.status().is_success());
         assert_eq!(
             response.headers().get("content-type").unwrap(),
@@ -126,11 +131,11 @@ mod tests {
         );
 
         // Hit the file endpoint with a non-existent file.
-        let response = reqwest::get(format!("http://127.0.0.1:{port}/file/foo.png")).await?;
+        let response = reqwest::get(format!("http://{TEST_HOST}:{port}/file/foo.png")).await?;
         assert_eq!(response.status(), StatusCode::NOT_FOUND);
 
         // Hit the root endpoint.
-        let response = reqwest::get(format!("http://127.0.0.1:{port}/")).await?;
+        let response = reqwest::get(format!("http://{TEST_HOST}:{port}/")).await?;
         assert!(response.status().is_success());
         assert_eq!(
             response.headers().get("content-type").unwrap(),
@@ -141,7 +146,7 @@ mod tests {
 
         // Hit reveal.
         let response = reqwest::Client::new()
-            .post(format!("http://127.0.0.1:{port}/"))
+            .post(format!("http://{TEST_HOST}:{port}/"))
             .form(&[("action", "Reveal")])
             .send()
             .await?;
@@ -151,7 +156,7 @@ mod tests {
 
         // Hit 'Good'.
         let response = reqwest::Client::new()
-            .post(format!("http://127.0.0.1:{port}/"))
+            .post(format!("http://{TEST_HOST}:{port}/"))
             .form(&[("action", "Good")])
             .send()
             .await?;
@@ -161,7 +166,7 @@ mod tests {
 
         // Hit reveal.
         let response = reqwest::Client::new()
-            .post(format!("http://127.0.0.1:{port}/"))
+            .post(format!("http://{TEST_HOST}:{port}/"))
             .form(&[("action", "Reveal")])
             .send()
             .await?;
@@ -171,7 +176,7 @@ mod tests {
 
         // Hit 'Good'.
         let response = reqwest::Client::new()
-            .post(format!("http://127.0.0.1:{port}/"))
+            .post(format!("http://{TEST_HOST}:{port}/"))
             .form(&[("action", "Good")])
             .send()
             .await?;
@@ -189,6 +194,7 @@ mod tests {
         let session_started_at = Timestamp::now();
         let config = ServerConfig {
             directory: Some(directory),
+            host: TEST_HOST.to_string(),
             port,
             session_started_at,
             card_limit: None,
@@ -199,11 +205,11 @@ mod tests {
             bury_siblings: false,
         };
         spawn(async move { start_server(config).await });
-        wait_for_server(port).await?;
+        wait_for_server(TEST_HOST, port).await?;
 
         // Hit reveal.
         let response = reqwest::Client::new()
-            .post(format!("http://127.0.0.1:{port}/"))
+            .post(format!("http://{TEST_HOST}:{port}/"))
             .form(&[("action", "Reveal")])
             .send()
             .await?;
@@ -211,7 +217,7 @@ mod tests {
 
         // Hit 'Good'.
         let response = reqwest::Client::new()
-            .post(format!("http://127.0.0.1:{port}/"))
+            .post(format!("http://{TEST_HOST}:{port}/"))
             .form(&[("action", "Good")])
             .send()
             .await?;
@@ -219,7 +225,7 @@ mod tests {
 
         // Hit undo.
         let response = reqwest::Client::new()
-            .post(format!("http://127.0.0.1:{port}/"))
+            .post(format!("http://{TEST_HOST}:{port}/"))
             .form(&[("action", "Undo")])
             .send()
             .await?;
@@ -237,6 +243,7 @@ mod tests {
         let session_started_at = Timestamp::now();
         let config = ServerConfig {
             directory: Some(directory),
+            host: TEST_HOST.to_string(),
             port,
             session_started_at,
             card_limit: None,
@@ -247,11 +254,11 @@ mod tests {
             bury_siblings: false,
         };
         spawn(async move { start_server(config).await });
-        wait_for_server(port).await?;
+        wait_for_server(TEST_HOST, port).await?;
 
         // Hit undo.
         let response = reqwest::Client::new()
-            .post(format!("http://127.0.0.1:{port}/"))
+            .post(format!("http://{TEST_HOST}:{port}/"))
             .form(&[("action", "Undo")])
             .send()
             .await?;
@@ -267,6 +274,7 @@ mod tests {
         let session_started_at = Timestamp::now();
         let config = ServerConfig {
             directory: Some(directory),
+            host: TEST_HOST.to_string(),
             port,
             session_started_at,
             card_limit: None,
@@ -277,11 +285,11 @@ mod tests {
             bury_siblings: false,
         };
         spawn(async move { start_server(config).await });
-        wait_for_server(port).await?;
+        wait_for_server(TEST_HOST, port).await?;
 
         // Hit 'Hard'.
         let response = reqwest::Client::new()
-            .post(format!("http://127.0.0.1:{port}/"))
+            .post(format!("http://{TEST_HOST}:{port}/"))
             .form(&[("action", "Hard")])
             .send()
             .await?;
@@ -297,6 +305,7 @@ mod tests {
         let session_started_at = Timestamp::now();
         let config = ServerConfig {
             directory: Some(directory),
+            host: TEST_HOST.to_string(),
             port,
             session_started_at,
             card_limit: None,
@@ -307,11 +316,11 @@ mod tests {
             bury_siblings: false,
         };
         spawn(async move { start_server(config).await });
-        wait_for_server(port).await?;
+        wait_for_server(TEST_HOST, port).await?;
 
         // Hit reveal.
         let response = reqwest::Client::new()
-            .post(format!("http://127.0.0.1:{port}/"))
+            .post(format!("http://{TEST_HOST}:{port}/"))
             .form(&[("action", "Reveal")])
             .send()
             .await?;
@@ -319,7 +328,7 @@ mod tests {
 
         // Hit 'Forgot'.
         let response = reqwest::Client::new()
-            .post(format!("http://127.0.0.1:{port}/"))
+            .post(format!("http://{TEST_HOST}:{port}/"))
             .form(&[("action", "Forgot")])
             .send()
             .await?;
@@ -327,7 +336,7 @@ mod tests {
 
         // Hit undo.
         let response = reqwest::Client::new()
-            .post(format!("http://127.0.0.1:{port}/"))
+            .post(format!("http://{TEST_HOST}:{port}/"))
             .form(&[("action", "Undo")])
             .send()
             .await?;
@@ -345,6 +354,7 @@ mod tests {
         let session_started_at = Timestamp::now();
         let config = ServerConfig {
             directory: Some(directory),
+            host: TEST_HOST.to_string(),
             port,
             session_started_at,
             card_limit: None,
@@ -355,11 +365,11 @@ mod tests {
             bury_siblings: false,
         };
         spawn(async move { start_server(config).await });
-        wait_for_server(port).await?;
+        wait_for_server(TEST_HOST, port).await?;
 
         // Hit end.
         let response = reqwest::Client::new()
-            .post(format!("http://127.0.0.1:{port}/"))
+            .post(format!("http://{TEST_HOST}:{port}/"))
             .form(&[("action", "End")])
             .send()
             .await?;

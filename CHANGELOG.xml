@@ -13,6 +13,9 @@
             <change author="eudoxia0">
                 Added button tooltips.
             </change>
+            <change author="eudoxia0">
+                Added a `--host` flag.
+            </change>
         </added>
         <changed>
             <change author="eudoxia0">
