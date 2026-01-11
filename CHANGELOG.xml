@@ -23,6 +23,9 @@
             </change>
         </changed>
         <fixed>
+            <change author="hktonylee">
+                Fixed TeX rendering of matrices.
+            </change>
             <change author="eudoxia0">
                 Fixed TeX math rendering.
             </change>
