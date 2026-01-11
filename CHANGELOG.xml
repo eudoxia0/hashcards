@@ -32,6 +32,9 @@
             </change>
         </changed>
         <fixed>
+            <change author="eudoxia0">
+                Fix a bug in the parser that broke TeX math in cloze deletions.
+            </change>
             <change author="hktonylee">
                 Fixed TeX rendering of matrices.
             </change>
