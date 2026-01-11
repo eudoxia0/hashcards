@@ -122,6 +122,29 @@ jobs:
         env:
           RUST_LOG: debug
 
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: use rust stable
+        uses: dtolnay/rust-toolchain@5d458579430fc14a04a08a1e7d3694f545e91ce6 # stable
+        with:
+          toolchain: stable
+
+      - name: cache rust deps
+        uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2.8.1
+
+      - name: fetch deps
+        run: cargo fetch
+
+      - name: build
+        run: cargo build --release
+
   validate-changelog:
     runs-on: ubuntu-latest
     steps:
