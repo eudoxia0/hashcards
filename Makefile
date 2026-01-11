@@ -41,15 +41,6 @@ example:
 coverage:
 	cargo llvm-cov --html --open --ignore-filename-regex '(main|error|cli).rs'
 
-.PHONY: install-hooks
-install-hooks: pre-commit.sh
-	@mkdir -p .git/hooks
-	@ln -sf ../../pre-commit.sh .git/hooks/pre-commit
-
-.PHONY: uninstall-hooks
-uninstall-hooks:
-	@rm -f .git/hooks/pre-commit
-
 .PHONY: clean
 clean:
 	rm -f hashcards
