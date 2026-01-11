@@ -1,58 +1,61 @@
 <changelog>
     <unreleased>
-        <added>
-            <change author="asm0dey">
-                Added installation instructions to the README.
-            </change>
-            <change author="eudoxia0">
-                Publish hashcards on `crates.io`.
-            </change>
-            <change author="Many5900">
-                Added support for Markdown tables and syntax highlighting of code blocks.
-            </change>
-            <change author="eudoxia0">
-                Added button tooltips.
-            </change>
-            <change author="eudoxia0">
-                Added a `--host` flag.
-            </change>
-            <change author="eudoxia0">
-                Start testing on macOS and Windows.
-            </change>
-        </added>
-        <changed>
-            <change author="eudoxia0">
-                Update dependencies.
-            </change>
-            <change author="purew">
-                Update bind address to `127.0.0.1`.
-            </change>
-            <change author="eudoxia0">
-                Put KaTeX into source control.
-            </change>
-        </changed>
-        <fixed>
-            <change author="eudoxia0">
-                Fix a bug in the parser that broke TeX math in cloze deletions.
-            </change>
-            <change author="hktonylee">
-                Fixed TeX rendering of matrices.
-            </change>
-            <change author="eudoxia0">
-                Fixed TeX math rendering.
-            </change>
-            <change author="chrisdoram">
-                Added support for escaping square brackets in cloze deletions.
-            </change>
-            <change author="amnats">
-                Fixed button visibility bug on iOS Safari.
-            </change>
-            <change author="Theresa Schönhammer">
-                Fix card content being invisible with Javascript disabled.
-            </change>
-        </fixed>
+
     </unreleased>
     <releases>
+        <release version="0.3.0" date="2025-01-11">
+            <added>
+                <change author="asm0dey">
+                    Added installation instructions to the README.
+                </change>
+                <change author="eudoxia0">
+                    Publish hashcards on `crates.io`.
+                </change>
+                <change author="Many5900">
+                    Added support for Markdown tables and syntax highlighting of code blocks.
+                </change>
+                <change author="eudoxia0">
+                    Added button tooltips.
+                </change>
+                <change author="eudoxia0">
+                    Added a `--host` flag.
+                </change>
+                <change author="eudoxia0">
+                    Start testing on macOS and Windows.
+                </change>
+            </added>
+            <changed>
+                <change author="eudoxia0">
+                    Update dependencies.
+                </change>
+                <change author="purew">
+                    Update bind address to `127.0.0.1`.
+                </change>
+                <change author="eudoxia0">
+                    Put KaTeX into source control.
+                </change>
+            </changed>
+            <fixed>
+                <change author="eudoxia0">
+                    Fix a bug in the parser that broke TeX math in cloze deletions.
+                </change>
+                <change author="hktonylee">
+                    Fixed TeX rendering of matrices.
+                </change>
+                <change author="eudoxia0">
+                    Fixed TeX math rendering.
+                </change>
+                <change author="chrisdoram">
+                    Added support for escaping square brackets in cloze deletions.
+                </change>
+                <change author="amnats">
+                    Fixed button visibility bug on iOS Safari.
+                </change>
+                <change author="Theresa Schönhammer">
+                    Fix card content being invisible with Javascript disabled.
+                </change>
+            </fixed>
+        </release>
         <release version="0.2.1" date="2025-11-19">
             <added>
                 <change author="cmf">
