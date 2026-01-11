@@ -515,7 +515,9 @@ impl Parser {
                             Some(b'[') | Some(b']') => {
                                 escape_mode = true;
                             }
-                            _ => {}
+                            _ => {
+                                clean_text.push(c);
+                            }
                         }
                     }
                 } else {
@@ -595,7 +597,9 @@ impl Parser {
                         Some(b'[') | Some(b']') => {
                             escape_mode = true;
                         }
-                        _ => {}
+                        _ => {
+                            index += 1;
+                        }
                     }
                 }
             } else {
@@ -969,6 +973,23 @@ mod tests {
         match &card.content() {
             CardContent::Cloze { text, .. } => {
                 assert_eq!(text, "The notation $n!$ means 'n factorial'.");
+            }
+            _ => panic!("Expected cloze card."),
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn test_cloze_deletion_with_math() -> Result<(), ParserError> {
+        let input = "C: The string `\\alpha` renders as [$\\alpha$].";
+        let parser = make_test_parser();
+        let result = parser.parse(input);
+        let cards = result.unwrap();
+        assert_eq!(cards.len(), 1);
+        let card: Card = cards[0].clone();
+        match &card.content() {
+            CardContent::Cloze { text, .. } => {
+                assert_eq!(text, "The string `\\alpha` renders as $\\alpha$.");
             }
             _ => panic!("Expected cloze card."),
         }
