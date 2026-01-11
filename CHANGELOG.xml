@@ -7,6 +7,9 @@
             <change author="eudoxia0">
                 Publish hashcards on `crates.io`.
             </change>
+            <change author="Many5900">
+                Added support for Markdown tables and syntax highlighting of code blocks.
+            </change>
         </added>
         <changed>
             <change author="eudoxia0">
@@ -20,8 +23,17 @@
             </change>
         </changed>
         <fixed>
+            <change author="eudoxia0">
+                Fixed TeX math rendering.
+            </change>
+            <change author="chrisdoram">
+                Added support for escaping square brackets in cloze deletions.
+            </change>
             <change author="amnats">
                 Fixed button visibility bug on iOS Safari.
+            </change>
+            <change author="Theresa Schönhammer">
+                Fix card content being invisible with Javascript disabled.
             </change>
         </fixed>
     </unreleased>

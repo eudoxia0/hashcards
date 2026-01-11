@@ -22,6 +22,10 @@ document.addEventListener("DOMContentLoaded", function () {
     ],
     macros: MACROS,
   });
+  // Initialize syntax highlighting
+  if (typeof hljs !== "undefined") {
+    hljs.highlightAll();
+  }
   const cardContent = document.querySelector(".card-content");
   if (cardContent) {
     cardContent.style.opacity = "1";

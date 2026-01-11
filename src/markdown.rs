@@ -43,6 +43,10 @@ pub struct MarkdownRenderConfig {
 
 pub fn markdown_to_html(config: &MarkdownRenderConfig, markdown: &str) -> Fallible<String> {
     let parser = Parser::new_ext(markdown, Options::ENABLE_MATH);
+    let mut options = Options::empty();
+    options.insert(Options::ENABLE_TABLES);
+    options.insert(Options::ENABLE_MATH);
+    let parser = Parser::new_ext(markdown, options);
     let events: Vec<Event<'_>> = parser
         .map(|event| match event {
             Event::Start(Tag::Image {

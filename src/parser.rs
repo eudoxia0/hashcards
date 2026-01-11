@@ -461,7 +461,11 @@ impl Parser {
         // The full text of the card, without cloze deletion brackets.
         let clean_text: String = {
             let mut clean_text: Vec<u8> = Vec::new();
-            let mut image_mode = false;
+            // Flags to indicate should treat the next `[` or `]` differently.
+            // Set when the preceeding byte indicates it should be evaluated as
+            // markdown and not part of the cloze and therefore added to clean_text.
+            let mut image_mode = false; // ![
+            let mut escape_mode = false; // \[ and \]
             // We use `bytes` rather than `chars` because the cloze start/end
             // positions are byte positions, not character positions. This
             // keeps things tractable: bytes are well-understood, "characters"
@@ -471,11 +475,20 @@ impl Parser {
                     if image_mode {
                         clean_text.push(c);
                     }
+                    if escape_mode {
+                        escape_mode = false;
+                        clean_text.push(c);
+                    }
                 } else if c == b']' {
                     if image_mode {
                         // We are in image mode, so this closing bracket is
                         // part of a Markdown image.
                         image_mode = false;
+                        clean_text.push(c);
+                    } else if escape_mode {
+                        // We are in escape mode, so this closing bracket is
+                        // part of the markdown text.
+                        escape_mode = false;
                         clean_text.push(c);
                     }
                 } else if c == b'!' {
@@ -492,6 +505,19 @@ impl Parser {
                         }
                     }
                     clean_text.push(c);
+                } else if c == b'\\' {
+                    if !escape_mode {
+                        // escape_mode must be turned on *only* if the '\' is
+                        // immediately before a `[` or `]`. Otherwise, backslashes
+                        // in other positions would trigger it.
+                        let nextopt = text.as_bytes().get(bytepos + 1).copied();
+                        match nextopt {
+                            Some(b'[') | Some(b']') => {
+                                escape_mode = true;
+                            }
+                            _ => {}
+                        }
+                    }
                 } else {
                     clean_text.push(c);
                 }
@@ -511,10 +537,16 @@ impl Parser {
         let mut start = None;
         let mut index = 0;
         let mut image_mode = false;
+        let mut escape_mode = false;
         for (bytepos, c) in text.bytes().enumerate() {
             if c == b'[' {
                 if image_mode {
+                    // We are in image mode, so this closing bracket is part of a markdown image.
                     index += 1;
+                } else if escape_mode {
+                    // We are in escape mode, so this closing bracket is part of a markdown text.
+                    index += 1;
+                    escape_mode = false;
                 } else {
                     start = Some(index);
                 }
@@ -522,6 +554,10 @@ impl Parser {
                 if image_mode {
                     // We are in image mode, so this closing bracket is part of a markdown image.
                     image_mode = false;
+                    index += 1;
+                } else if escape_mode {
+                    // We are in escape mode, so this closing bracket is part of a markdown text.
+                    escape_mode = false;
                     index += 1;
                 } else if let Some(s) = start {
                     let end = index;
@@ -549,6 +585,19 @@ impl Parser {
                     }
                 }
                 index += 1;
+            } else if c == b'\\' {
+                if !escape_mode {
+                    // escape_mode must be turned on *only* if the '\' is
+                    // immediately before a `[` or `]`. Otherwise, backslashes
+                    // in other positions would trigger it.
+                    let nextopt = text.as_bytes().get(bytepos + 1).copied();
+                    match nextopt {
+                        Some(b'[') | Some(b']') => {
+                            escape_mode = true;
+                        }
+                        _ => {}
+                    }
+                }
             } else {
                 index += 1;
             }
@@ -694,6 +743,26 @@ mod tests {
         let cards = parser.parse(input)?;
 
         assert_cloze(&cards, "Foo bar ![](image.jpg) quux.", &[(4, 6), (23, 26)]);
+        Ok(())
+    }
+
+    #[test]
+    fn test_cloze_with_escaped_square_bracket() -> Result<(), ParserError> {
+        let input = "C: Key: [`\\[`]";
+        let parser = make_test_parser();
+        let cards = parser.parse(input)?;
+
+        assert_cloze(&cards, "Key: `[`", &[(5, 7)]);
+        Ok(())
+    }
+
+    #[test]
+    fn test_cloze_with_multiple_escaped_square_brackets() -> Result<(), ParserError> {
+        let input = "C: \\[markdown\\] [`\\[cloze\\]`]";
+        let parser = make_test_parser();
+        let cards = parser.parse(input)?;
+
+        assert_cloze(&cards, "[markdown] `[cloze]`", &[(11, 19)]);
         Ok(())
     }
 
