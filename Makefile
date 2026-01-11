@@ -18,6 +18,14 @@ vendor/katex:
 	@sed -i.bak 's|fonts/|/katex/fonts/|g' vendor/katex/katex.min.css
 	@rm vendor/katex/katex.min.css.bak
 	@echo "KaTeX extracted to vendor/katex"
+	@rm vendor/katex/katex.css
+	@rm vendor/katex/katex.js
+	@rm vendor/katex/katex.mjs
+	@rm vendor/katex/katex-swap.css
+	@rm vendor/katex/katex-swap.min.css
+	@rm -rf vendor/katex/contrib/
+	@rm vendor/katex/fonts/*.ttf
+	@rm vendor/katex/fonts/*.woff
 
 hashcards: vendor/katex $(SRC) Cargo.toml Cargo.lock
 	cargo build --release
