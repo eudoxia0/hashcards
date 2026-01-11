@@ -19,7 +19,7 @@
                 Put KaTeX into source control.
             </change>
         </changed>
-        <fixed> chrisdoram
+        <fixed>
             <change author="chrisdoram">
                 Added support for escaping square brackets in cloze deletions.
             </change>
