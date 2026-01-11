@@ -248,6 +248,24 @@ Creating a cloze card with multiple deletions automatically creates a set of sib
 
 Alternatively, to show all the sibling cards in a session run `hashcards drill` with `--bury-siblings=false`.
 
+### Separators
+
+Optionally, cards can be separated by horizontal rules, like so:
+
+```
+C: A semigroup with an identity element is called a [monoid].
+
+---
+
+C: A semigroup without associativity is called a [magma].
+
+---
+
+C: A magma where the operation is [associative] is called a [semigroup].
+```
+
+This can help visually separate the cards better.
+
 ## Features
 
 This section documents specific hashcards features.
