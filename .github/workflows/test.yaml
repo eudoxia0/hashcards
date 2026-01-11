@@ -58,7 +58,7 @@ jobs:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       - uses: EmbarkStudios/cargo-deny-action@76cd80eb775d7bbbd2d80292136d74d39e1b4918 # v2.0.14
 
-  test:
+  coverage:
     runs-on: ubuntu-latest
     steps:
       - name: checkout
@@ -99,6 +99,34 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: lcov.info
+
+  test:
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: use rust stable
+        uses: dtolnay/rust-toolchain@5d458579430fc14a04a08a1e7d3694f545e91ce6 # stable
+        with:
+          toolchain: stable
+
+      - name: cache rust deps
+        uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2.8.1
+
+      - name: fetch katex deps
+        run: make vendor/katex
+
+      - name: fetch deps
+        run: cargo fetch
+
+      - name: run tests
+        run: cargo test --all-features --workspace
+        env:
+          RUST_LOG: debug
 
   validate-changelog:
     runs-on: ubuntu-latest
