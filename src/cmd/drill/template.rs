@@ -16,7 +16,6 @@ use maud::DOCTYPE;
 use maud::Markup;
 use maud::html;
 
-use crate::cmd::drill::katex::KATEX_AUTO_RENDER_JS_URL;
 use crate::cmd::drill::katex::KATEX_CSS_URL;
 use crate::cmd::drill::katex::KATEX_JS_URL;
 
@@ -36,7 +35,6 @@ pub fn page_template(body: Markup) -> Markup {
                 link rel="stylesheet" href=(KATEX_CSS_URL);
                 link rel="stylesheet" href=(HIGHLIGHT_CSS_URL);
                 script defer src=(KATEX_JS_URL) {};
-                script defer src=(KATEX_AUTO_RENDER_JS_URL) {};
                 script defer src=(HIGHLIGHT_JS_URL) {};
                 link rel="stylesheet" href="/style.css";
                 style { ".card-content { opacity: 0; }" }

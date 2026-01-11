@@ -13,14 +13,21 @@
 // limitations under the License.
 
 document.addEventListener("DOMContentLoaded", function () {
-  renderMathInElement(document.body, {
-    delimiters: [
-      { left: "$$", right: "$$", display: true },
-      { left: "$", right: "$", display: false },
-      { left: "\\(", right: "\\)", display: false },
-      { left: "\\[", right: "\\]", display: true },
-    ],
-    macros: MACROS,
+  // Render inline math
+  document.querySelectorAll(".math-inline").forEach(function (element) {
+    katex.render(element.textContent, element, {
+      displayMode: false,
+      throwOnError: false,
+      macros: MACROS,
+    });
+  });
+  // Render display math
+  document.querySelectorAll(".math-display").forEach(function (element) {
+    katex.render(element.textContent, element, {
+      displayMode: true,
+      throwOnError: false,
+      macros: MACROS,
+    });
   });
   // Initialize syntax highlighting
   if (typeof hljs !== "undefined") {

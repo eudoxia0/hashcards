@@ -76,12 +76,6 @@ pub fn markdown_to_html(config: &MarkdownRenderConfig, markdown: &str) -> Fallib
                 };
                 Ok(ev)
             }
-            Event::DisplayMath(text) => Ok(Event::Html(CowStr::Boxed(
-                format!(r#"<span class="math math-display">$${}$$</span>"#, text).into_boxed_str(),
-            ))),
-            Event::InlineMath(text) => Ok(Event::Html(CowStr::Boxed(
-                format!(r#"<span class="math math-inline">${}$</span>"#, text).into_boxed_str(),
-            ))),
             _ => Ok(event),
         })
         .collect::<Fallible<Vec<_>>>()?;

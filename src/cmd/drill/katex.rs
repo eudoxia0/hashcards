@@ -22,7 +22,6 @@ use crate::utils::CACHE_CONTROL_IMMUTABLE;
 
 pub const KATEX_JS_URL: &str = "/katex/katex.js";
 pub const KATEX_CSS_URL: &str = "/katex/katex.css";
-pub const KATEX_AUTO_RENDER_JS_URL: &str = "/katex/katex-auto-render.js";
 
 pub async fn katex_css_handler() -> (StatusCode, [(HeaderName, &'static str); 2], &'static [u8]) {
     let bytes = include_bytes!("../../../vendor/katex/katex.min.css");
@@ -38,19 +37,6 @@ pub async fn katex_css_handler() -> (StatusCode, [(HeaderName, &'static str); 2]
 
 pub async fn katex_js_handler() -> (StatusCode, [(HeaderName, &'static str); 2], &'static [u8]) {
     let bytes = include_bytes!("../../../vendor/katex/katex.min.js");
-    (
-        StatusCode::OK,
-        [
-            (CONTENT_TYPE, "text/javascript"),
-            (CACHE_CONTROL, CACHE_CONTROL_IMMUTABLE),
-        ],
-        bytes,
-    )
-}
-
-pub async fn katex_auto_render_handler()
--> (StatusCode, [(HeaderName, &'static str); 2], &'static [u8]) {
-    let bytes = include_bytes!("../../../vendor/katex/contrib/auto-render.min.js");
     (
         StatusCode::OK,
         [

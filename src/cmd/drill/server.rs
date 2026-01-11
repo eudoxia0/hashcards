@@ -40,10 +40,8 @@ use tokio::sync::oneshot::channel;
 
 use crate::cmd::drill::cache::Cache;
 use crate::cmd::drill::get::get_handler;
-use crate::cmd::drill::katex::KATEX_AUTO_RENDER_JS_URL;
 use crate::cmd::drill::katex::KATEX_CSS_URL;
 use crate::cmd::drill::katex::KATEX_JS_URL;
-use crate::cmd::drill::katex::katex_auto_render_handler;
 use crate::cmd::drill::katex::katex_css_handler;
 use crate::cmd::drill::katex::katex_font_handler;
 use crate::cmd::drill::katex::katex_js_handler;
@@ -184,7 +182,6 @@ pub async fn start_server(config: ServerConfig) -> Fallible<()> {
     let app = app.route("/style.css", get(style_handler));
     let app = app.route(KATEX_CSS_URL, get(katex_css_handler));
     let app = app.route(KATEX_JS_URL, get(katex_js_handler));
-    let app = app.route(KATEX_AUTO_RENDER_JS_URL, get(katex_auto_render_handler));
     let app = app.route("/katex/fonts/{*path}", get(katex_font_handler));
     let app = app.route("/file/{*path}", get(file_handler));
     let app = app.fallback(not_found_handler);
