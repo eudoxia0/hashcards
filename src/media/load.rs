@@ -116,6 +116,7 @@ mod tests {
     }
 
     /// Paths to symlinks are rejected.
+    #[cfg(not(target_os = "windows"))]
     #[test]
     fn test_symlink() -> Fallible<()> {
         use std::fs::File;
