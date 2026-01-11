@@ -20,6 +20,9 @@
             </change>
         </changed>
         <fixed>
+            <change author="eudoxia0">
+                Fixed TeX math rendering.
+            </change>
             <change author="chrisdoram">
                 Added support for escaping square brackets in cloze deletions.
             </change>

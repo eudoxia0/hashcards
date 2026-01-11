@@ -216,9 +216,7 @@ async fn script_handler(
     for (name, definition) in &state.macros {
         let name = escape_js_string_literal(name);
         let definition = escape_js_string_literal(definition);
-        content.push_str(&format!(
-            "MACROS[String.raw`{name}`] = String.raw`{definition}`;\n"
-        ));
+        content.push_str(&format!("MACROS['{name}'] = '{definition}';\n"));
     }
     content.push('\n');
     content.push_str(include_str!("script.js"));
