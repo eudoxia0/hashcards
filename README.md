@@ -244,10 +244,6 @@ desire: this is also vanity and vexation of spirit.
 — [Ecclesiastes] [6]:[9]
 ```
 
-Creating a cloze card with multiple deletions automatically creates a set of sibling cards, one for each deletion. Siblings are "buried" by default: within a session, you only see one of them. This is to prevent one card spoiling the answer for the other. This allows you to do multiple reviews per day.
-
-Alternatively, to show all the sibling cards in a session run `hashcards drill` with `--bury-siblings=false`.
-
 ### Separators
 
 Optionally, cards can be separated by horizontal rules, like so:
@@ -375,6 +371,14 @@ Principles of Neural Science/
 But you don't want the cards in those Markdown files to have `Ch1`, `Ch2`, etc.
 as their deck name. TOML frontmatter allows you to give each chapter deck the same
 deck name.
+
+### Sibling Burial
+
+A single cloze card in the Markdown text with _n_ cloze deletions corresponds to _n_ distinct cloze cards in the database, one per deletion. These cards are called "siblings". 
+
+Hashcards supports "sibling burial": by default, within a session, only one sibling in a particular sibling group will be shown. This is to prevent the text of one card spoiling the answer of another card. The idea is you might do multiple sessions in a single day, and each session shows a different sibling, until you run out of siblings for all cards due today.
+
+You can turn this off by passing `--bury-siblings=false` to the `drill` command.
 
 ## Database
 
