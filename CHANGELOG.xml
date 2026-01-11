@@ -16,6 +16,9 @@
             <change author="eudoxia0">
                 Added a `--host` flag.
             </change>
+            <change author="eudoxia0">
+                Start testing on macOS and Windows.
+            </change>
         </added>
         <changed>
             <change author="eudoxia0">
