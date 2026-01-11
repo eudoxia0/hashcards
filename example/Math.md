@@ -21,3 +21,6 @@ d & -b \\
 -c & a
 \end{pmatrix}
 $$
+
+Q: What does `\theta` render?
+A: $\theta$
