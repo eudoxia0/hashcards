@@ -24,3 +24,5 @@ $$
 
 Q: What does `\theta` render?
 A: $\theta$
+
+C: The TeX command `\alpha` renders as [$\alpha$].
