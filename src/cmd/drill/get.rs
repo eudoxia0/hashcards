@@ -76,14 +76,14 @@ fn render_session_page(state: &ServerState, mutable: &MutableState) -> Fallible<
     let card_controls = if mutable.reveal {
         let grades = match state.answer_controls {
             AnswerControls::Binary => html! {
-                input id="forgot" type="submit" name="action" value="Forgot";
-                input id="good" type="submit" name="action" value="Good";
+                input id="forgot" type="submit" name="action" value="Forgot" title="Mark card as forgotten.";
+                input id="good" type="submit" name="action" value="Good" title="Mark card as remembered.";
             },
             AnswerControls::Full => html! {
-                input id="forgot" type="submit" name="action" value="Forgot";
-                input id="hard" type="submit" name="action" value="Hard";
-                input id="good" type="submit" name="action" value="Good";
-                input id="easy" type="submit" name="action" value="Easy";
+                input id="forgot" type="submit" name="action" value="Forgot" title="Mark card as forgotten. Shortcut: 1.";
+                input id="hard" type="submit" name="action" value="Hard" title="Mark card as difficult. Shortcut: 2.";
+                input id="good" type="submit" name="action" value="Good" title="Mark card as remembered well. Shortcut: 3.";
+                input id="easy" type="submit" name="action" value="Easy" title="Mark card as very easy. Shortcut: 4.";
             },
         };
         html! {
@@ -102,7 +102,7 @@ fn render_session_page(state: &ServerState, mutable: &MutableState) -> Fallible<
             form action="/" method="post" {
                 (undo_button(undo_disabled))
                 div.spacer {}
-                input id="reveal" type="submit" name="action" value="Reveal" title="Show the answer";
+                input id="reveal" type="submit" name="action" value="Reveal" title="Show the answer. Shortcut: space.";
                 div.spacer {}
                 (end_button())
             }
@@ -255,7 +255,7 @@ fn undo_button(disabled: bool) -> Markup {
         }
     } else {
         html! {
-            input id="undo" type="submit" name="action" value="Undo" title="Undo last action";
+            input id="undo" type="submit" name="action" value="Undo" title="Undo last action. Shortcut: u.";
         }
     }
 }

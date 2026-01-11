@@ -10,6 +10,9 @@
             <change author="Many5900">
                 Added support for Markdown tables and syntax highlighting of code blocks.
             </change>
+            <change author="eudoxia0">
+                Added button tooltips.
+            </change>
         </added>
         <changed>
             <change author="eudoxia0">
