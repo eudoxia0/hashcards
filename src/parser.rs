@@ -166,8 +166,8 @@ impl Display for ParserError {
 impl Error for ParserError {}
 
 enum State {
-    /// Initial state.
-    Initial,
+    /// Start state.
+    Start,
     /// Reading a question (Q:)
     ReadingQuestion { question: String, start_line: usize },
     /// Reading an answer (A:)
@@ -178,6 +178,8 @@ enum State {
     },
     /// Reading a cloze card (C:)
     ReadingCloze { text: String, start_line: usize },
+    /// End state.
+    End,
 }
 
 enum Line {
@@ -191,6 +193,8 @@ enum Line {
     Separator,
     /// Any other line.
     Text(String),
+    /// End of file
+    EOF,
 }
 
 impl Line {
@@ -240,14 +244,14 @@ impl Parser {
     /// Parse all the cards in the given text.
     pub fn parse(&self, text: &str) -> Result<Vec<Card>, ParserError> {
         let mut cards = Vec::new();
-        let mut state = State::Initial;
+        let mut state = State::Start;
         let lines: Vec<&str> = text.lines().collect();
         let last_line = if lines.is_empty() { 0 } else { lines.len() - 1 };
         for (line_num, line) in lines.iter().enumerate() {
             let line = Line::read(line);
             state = self.parse_line(state, line, line_num, &mut cards)?;
         }
-        self.finalize(state, last_line, &mut cards)?;
+        self.parse_line(state, Line::EOF, last_line, &mut cards)?;
 
         let mut seen = HashSet::new();
         let mut unique_cards = Vec::new();
@@ -267,7 +271,7 @@ impl Parser {
         cards: &mut Vec<Card>,
     ) -> Result<State, ParserError> {
         match state {
-            State::Initial => match line {
+            State::Start => match line {
                 Line::StartQuestion(text) => Ok(State::ReadingQuestion {
                     question: text,
                     start_line: line_num,
@@ -281,8 +285,9 @@ impl Parser {
                     text,
                     start_line: line_num,
                 }),
-                Line::Separator => Ok(State::Initial),
-                Line::Text(_) => Ok(State::Initial),
+                Line::Separator => Ok(State::Start),
+                Line::Text(_) => Ok(State::Start),
+                Line::EOF => Ok(State::End),
             },
             State::ReadingQuestion {
                 question,
@@ -312,6 +317,11 @@ impl Parser {
                     question: format!("{question}\n{text}"),
                     start_line,
                 }),
+                Line::EOF => Err(ParserError::new(
+                    "File ended while reading a question without an answer.",
+                    self.file_path.clone(),
+                    line_num,
+                )),
             },
             State::ReadingAnswer {
                 question,
@@ -363,14 +373,25 @@ impl Parser {
                             CardContent::new_basic(question, answer),
                         );
                         cards.push(card);
-                        // Return to initial state.
-                        Ok(State::Initial)
+                        // Return to start state.
+                        Ok(State::Start)
                     }
                     Line::Text(text) => Ok(State::ReadingAnswer {
                         question,
                         answer: format!("{answer}\n{text}"),
                         start_line,
                     }),
+                    Line::EOF => {
+                        // Finalize the current card.
+                        let card = Card::new(
+                            self.deck_name.clone(),
+                            self.file_path.clone(),
+                            (start_line, line_num),
+                            CardContent::new_basic(question, answer),
+                        );
+                        cards.push(card);
+                        Ok(State::End)
+                    }
                 }
             }
             State::ReadingCloze { text, start_line } => {
@@ -401,51 +422,21 @@ impl Parser {
                     Line::Separator => {
                         // Finalize the current cloze card.
                         cards.extend(self.parse_cloze_cards(text, start_line, line_num)?);
-                        // Return to initial state.
-                        Ok(State::Initial)
+                        // Return to start state.
+                        Ok(State::Start)
                     }
                     Line::Text(new_text) => Ok(State::ReadingCloze {
                         text: format!("{text}\n{new_text}"),
                         start_line,
                     }),
+                    Line::EOF => {
+                        // Finalize the current cloze card.
+                        cards.extend(self.parse_cloze_cards(text, start_line, line_num)?);
+                        Ok(State::End)
+                    }
                 }
             }
-        }
-    }
-
-    fn finalize(
-        &self,
-        state: State,
-        last_line: usize,
-        cards: &mut Vec<Card>,
-    ) -> Result<(), ParserError> {
-        match state {
-            State::Initial => Ok(()),
-            State::ReadingQuestion { .. } => Err(ParserError::new(
-                "File ended while reading a question without answer.",
-                self.file_path.clone(),
-                last_line,
-            )),
-            State::ReadingAnswer {
-                question,
-                answer,
-                start_line,
-            } => {
-                // Finalize the last card.
-                let card = Card::new(
-                    self.deck_name.clone(),
-                    self.file_path.clone(),
-                    (start_line, last_line),
-                    CardContent::new_basic(question, answer),
-                );
-                cards.push(card);
-                Ok(())
-            }
-            State::ReadingCloze { text, start_line } => {
-                // Finalize the last cloze card.
-                cards.extend(self.parse_cloze_cards(text, start_line, last_line)?);
-                Ok(())
-            }
+            State::End => unreachable!("Parsed a line after the end of the file."),
         }
     }
 
