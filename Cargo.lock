@@ -510,6 +510,7 @@ dependencies = [
  "log",
  "maud",
  "open",
+ "percent-encoding",
  "portpicker",
  "pulldown-cmark",
  "reqwest",
