@@ -21,6 +21,7 @@ use axum::http::header::CONTENT_TYPE;
 use crate::utils::CACHE_CONTROL_IMMUTABLE;
 
 pub const KATEX_JS_URL: &str = "/katex/katex.js";
+pub const KATEX_MHCHEM_JS_URL: &str = "/katex/mhchem.js";
 pub const KATEX_CSS_URL: &str = "/katex/katex.css";
 
 pub async fn katex_css_handler() -> (StatusCode, [(HeaderName, &'static str); 2], &'static [u8]) {
@@ -37,6 +38,18 @@ pub async fn katex_css_handler() -> (StatusCode, [(HeaderName, &'static str); 2]
 
 pub async fn katex_js_handler() -> (StatusCode, [(HeaderName, &'static str); 2], &'static [u8]) {
     let bytes = include_bytes!("../../../vendor/katex/katex.min.js");
+    (
+        StatusCode::OK,
+        [
+            (CONTENT_TYPE, "text/javascript"),
+            (CACHE_CONTROL, CACHE_CONTROL_IMMUTABLE),
+        ],
+        bytes,
+    )
+}
+
+pub async fn katex_mhchem_js_handler() -> (StatusCode, [(HeaderName, &'static str); 2], &'static [u8]) {
+    let bytes = include_bytes!("../../../vendor/katex/mhchem.min.js");
     (
         StatusCode::OK,
         [
