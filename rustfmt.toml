@@ -1,3 +1,4 @@
 imports_granularity = "Item"
 newline_style = "Unix"
 group_imports = "StdExternalCrate"
+edition = "2024"
