@@ -1,6 +1,10 @@
 <changelog>
     <unreleased>
-
+        <changed>
+            <change author="eudoxia0">
+                Update dependencies.
+            </change>
+        </changed>
     </unreleased>
     <releases>
         <release version="0.3.0" date="2026-01-11">
