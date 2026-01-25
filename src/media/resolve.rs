@@ -16,6 +16,8 @@ use std::path::Component;
 use std::path::Path;
 use std::path::PathBuf;
 
+use percent_encoding::percent_decode_str;
+
 use crate::error::ErrorReport;
 use crate::error::Fallible;
 
@@ -33,6 +35,14 @@ pub struct MediaResolver {
 pub struct MediaResolverBuilder {
     collection_path: Option<PathBuf>,
     deck_path: Option<PathBuf>,
+}
+
+/// Decode percent-encoded characters in a URL path (e.g., %20 to space).
+fn percent_decode(s: &str) -> Option<String> {
+    percent_decode_str(s)
+        .decode_utf8()
+        .ok()
+        .map(|s| s.into_owned())
 }
 
 /// Errors that can occur when resolving a file path.
@@ -75,7 +85,28 @@ impl MediaResolver {
     /// If the path string is a relative path, it will be resolved relative to
     /// the deck path. For deck-relative paths, parent (`..`) components are
     /// permitted.
+    ///
+    /// If the path is not found, the resolver will attempt to decode
+    /// percent-encoded characters (e.g., %20 to space) and try again.
     pub fn resolve(&self, path: &str) -> Result<PathBuf, ResolveError> {
+        // Try with original path first.
+        match self.resolve_inner(path) {
+            Ok(result) => Ok(result),
+            Err(ResolveError::InvalidPath) => {
+                // If not found, try with percent-decoded path as fallback.
+                if let Some(decoded) = percent_decode(path) {
+                    if decoded != path {
+                        return self.resolve_inner(&decoded);
+                    }
+                }
+                Err(ResolveError::InvalidPath)
+            }
+            Err(e) => Err(e),
+        }
+    }
+
+    /// Internal resolution logic.
+    fn resolve_inner(&self, path: &str) -> Result<PathBuf, ResolveError> {
         // Trim the path.
         let path: &str = path.trim();
 

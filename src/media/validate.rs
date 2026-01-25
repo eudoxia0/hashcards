@@ -12,10 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::borrow::Cow;
 use std::collections::HashSet;
 use std::path::Path;
 use std::path::PathBuf;
 
+use percent_encoding::percent_decode_str;
 use pulldown_cmark::Event;
 use pulldown_cmark::Parser;
 use pulldown_cmark::Tag;
@@ -75,8 +77,10 @@ pub fn validate_media_files(cards: &[Card], base_dir: &Path) -> Fallible<()> {
                 match resolver.resolve(&path) {
                     Ok(_) => {}
                     Err(_) => {
+                        // Decode percent-encoded characters for better error display.
+                        let decoded_path: Cow<str> = percent_decode_str(&path).decode_utf8_lossy();
                         missing.insert(MissingMedia {
-                            file_path: path,
+                            file_path: decoded_path.into_owned(),
                             card_file: card.file_path().clone(),
                             card_lines: card.range(),
                         });
