@@ -9,22 +9,22 @@ license = "Apache-2.0"
 categories = ["command-line-utilities"]
 
 [dependencies]
-axum = "0.8.4"
-blake3 = "1.8.2"
+axum = "0.8.8"
+blake3 = "1.8.3"
 chrono = "0.4.43"
 clap = { version = "4.5.54", features = ["derive"] }
 env_logger = "0.11.8"
-log = "0.4.28"
+log = "0.4.29"
 maud = "0.27.0"
-open = "5.3.2"
-percent-encoding = "2.3"
+open = "5.3.3"
+percent-encoding = "2.3.2"
 pulldown-cmark = "0.13.0"
 rusqlite = { version = "0.38.0", features = ["bundled"] }
-serde = { version = "1.0.224", features = ["derive"] }
-serde_json = "1.0.148"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
 tokio = { version = "1.49.0", features = ["rt-multi-thread", "fs", "signal"] }
 toml = "0.9.8"
-walkdir = "2"
+walkdir = "2.5.0"
 
 [dev-dependencies]
 portpicker = "0.1.1"
