@@ -194,7 +194,7 @@ enum Line {
     /// Any other line.
     Text(String),
     /// End of file
-    EOF,
+    Eof,
 }
 
 impl Line {
@@ -251,7 +251,7 @@ impl Parser {
             let line = Line::read(line);
             state = self.parse_line(state, line, line_num, &mut cards)?;
         }
-        self.parse_line(state, Line::EOF, last_line, &mut cards)?;
+        self.parse_line(state, Line::Eof, last_line, &mut cards)?;
 
         let mut seen = HashSet::new();
         let mut unique_cards = Vec::new();
@@ -287,7 +287,7 @@ impl Parser {
                 }),
                 Line::Separator => Ok(State::Start),
                 Line::Text(_) => Ok(State::Start),
-                Line::EOF => Ok(State::End),
+                Line::Eof => Ok(State::End),
             },
             State::ReadingQuestion {
                 question,
@@ -317,7 +317,7 @@ impl Parser {
                     question: format!("{question}\n{text}"),
                     start_line,
                 }),
-                Line::EOF => Err(ParserError::new(
+                Line::Eof => Err(ParserError::new(
                     "File ended while reading a question without an answer.",
                     self.file_path.clone(),
                     line_num,
@@ -381,7 +381,7 @@ impl Parser {
                         answer: format!("{answer}\n{text}"),
                         start_line,
                     }),
-                    Line::EOF => {
+                    Line::Eof => {
                         // Finalize the current card.
                         let card = Card::new(
                             self.deck_name.clone(),
@@ -429,7 +429,7 @@ impl Parser {
                         text: format!("{text}\n{new_text}"),
                         start_line,
                     }),
-                    Line::EOF => {
+                    Line::Eof => {
                         // Finalize the current cloze card.
                         cards.extend(self.parse_cloze_cards(text, start_line, line_num)?);
                         Ok(State::End)
