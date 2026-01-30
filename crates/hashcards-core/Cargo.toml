@@ -1,0 +1,24 @@
+[package]
+name = "hashcards-core"
+description = "Core library for hashcards - a plain text spaced repetition system"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[features]
+default = []
+clock = ["chrono/clock"]
+
+[dependencies]
+blake3 = { workspace = true }
+chrono = { workspace = true, features = ["alloc"] }
+pulldown-cmark = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+toml = { workspace = true }
+
+[dev-dependencies]
+
+[lints]
+workspace = true

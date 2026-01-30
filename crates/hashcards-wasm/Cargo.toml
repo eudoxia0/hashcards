@@ -1,0 +1,43 @@
+[package]
+name = "hashcards-wasm"
+description = "WASM bindings for hashcards - a plain text spaced repetition system"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+hashcards-core = { path = "../hashcards-core" }
+wasm-bindgen = { workspace = true }
+js-sys = { workspace = true }
+web-sys = { workspace = true, features = [
+    "console",
+    "Window",
+    "Document",
+    "Element",
+    "HtmlElement",
+    "HtmlInputElement",
+    "HtmlButtonElement",
+    "Event",
+    "KeyboardEvent",
+    "Storage",
+    "File",
+    "FileList",
+    "FileReader",
+    "ProgressEvent",
+    "Blob",
+    "Url",
+    "DragEvent",
+    "DataTransfer",
+] }
+console_error_panic_hook = { workspace = true }
+serde_json = { workspace = true }
+
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = false
+
+[lints]
+workspace = true

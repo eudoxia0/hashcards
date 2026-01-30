@@ -1,5 +1,10 @@
 <changelog>
     <unreleased>
+        <added>
+            <change author="longregen">
+                Added static website mode: hashcards can now run entirely in the browser using WebAssembly, without needing a server. The project is now a Cargo workspace with three crates: hashcards-core (shared logic), hashcards-cli (CLI), and hashcards-wasm (browser). Build with `./web/build.sh` and serve the `web` directory.
+            </change>
+        </added>
         <changed>
             <change author="eudoxia0">
                 Update dependencies.
