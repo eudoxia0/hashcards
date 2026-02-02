@@ -12,7 +12,7 @@ categories = ["command-line-utilities"]
 axum = "0.8.8"
 blake3 = "1.8.3"
 chrono = "0.4.43"
-clap = { version = "4.5.54", features = ["derive"] }
+clap = { version = "4.5.56", features = ["derive"] }
 env_logger = "0.11.8"
 log = "0.4.29"
 maud = "0.27.0"
