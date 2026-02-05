@@ -1,0 +1,709 @@
+// Copyright 2025 Fernando Borretti
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+use std::collections::HashSet;
+use std::error::Error;
+use std::fmt::Display;
+use std::fmt::Formatter;
+
+use serde::Deserialize;
+
+use crate::error::ErrorReport;
+use crate::error::Fallible;
+use crate::types::aliases::DeckName;
+use crate::types::card::Card;
+use crate::types::card::CardContent;
+
+/// Metadata that can be specified at the top of a deck file.
+#[derive(Debug, Deserialize)]
+struct DeckMetadata {
+    name: Option<String>,
+}
+
+/// Extract TOML frontmatter from markdown text.
+/// Returns (frontmatter_metadata, content_without_frontmatter)
+pub fn extract_frontmatter(text: &str) -> Fallible<(Option<String>, &str)> {
+    let mut lines = text.lines().enumerate().peekable();
+
+    // Check if the file starts with frontmatter delimiter
+    match lines.peek() {
+        Some((_, line)) if line.trim() == "---" => {}
+        _ => return Ok((None, text)),
+    };
+    lines.next(); // consume the opening delimiter
+
+    // Collect frontmatter lines and find closing delimiter
+    let mut frontmatter_lines = Vec::new();
+    let mut closing_line_idx = None;
+
+    for (idx, line) in lines {
+        if line.trim() == "---" {
+            closing_line_idx = Some(idx);
+            break;
+        }
+        frontmatter_lines.push(line);
+    }
+
+    let closing_line_idx = closing_line_idx
+        .ok_or_else(|| ErrorReport::new("Frontmatter opening '---' found but no closing '---'"))?;
+
+    // Parse TOML from frontmatter
+    let frontmatter_str = frontmatter_lines.join("\n");
+    let metadata: DeckMetadata = toml::from_str(&frontmatter_str)
+        .map_err(|e| ErrorReport::new(format!("Failed to parse TOML frontmatter: {}", e)))?;
+
+    // Find byte offset where content starts (line after closing delimiter)
+    let content_start_line = closing_line_idx + 1;
+    let mut current_line = 0;
+    let mut byte_pos = None;
+
+    for (pos, ch) in text.char_indices() {
+        if ch == '\n' {
+            current_line += 1;
+            if current_line == content_start_line {
+                byte_pos = Some(pos + 1); // Start after the newline
+                break;
+            }
+        }
+    }
+
+    // If byte_pos was never set, content starts at end of text (empty content)
+    let content = match byte_pos {
+        Some(pos) if pos < text.len() => &text[pos..],
+        _ => "",
+    };
+
+    Ok((metadata.name, content))
+}
+
+/// Parse a single deck file's content into cards.
+///
+/// # Arguments
+/// * `deck_name` - The name of the deck
+/// * `source_path` - A reference path for error messages
+/// * `text` - The markdown content to parse
+pub fn parse_deck_content(
+    deck_name: &str,
+    source_path: &str,
+    text: &str,
+) -> Result<Vec<Card>, ParserError> {
+    let parser = Parser::new(deck_name.to_string(), source_path.to_string());
+    parser.parse(text)
+}
+
+/// Parse multiple deck files into a combined list of cards.
+///
+/// # Arguments
+/// * `files` - Iterator of (filename, content) pairs
+pub fn parse_decks<'a>(files: impl Iterator<Item = (&'a str, &'a str)>) -> Fallible<Vec<Card>> {
+    let mut all_cards = Vec::new();
+
+    for (filename, text) in files {
+        // Extract frontmatter and get custom deck name if specified
+        let (custom_name, content) = extract_frontmatter(text)?;
+
+        let deck_name: DeckName = custom_name.unwrap_or_else(|| {
+            // Use filename without extension as deck name
+            filename.strip_suffix(".md").unwrap_or(filename).to_string()
+        });
+
+        let parser = Parser::new(deck_name, filename.to_string());
+        let cards = parser.parse(content)?;
+        all_cards.extend(cards);
+    }
+
+    // Cards are sorted by their hash to make subsequent code more deterministic.
+    all_cards.sort_by_key(|c| c.hash());
+
+    // Remove duplicates.
+    all_cards.dedup_by_key(|c| c.hash());
+
+    Ok(all_cards)
+}
+
+pub struct Parser {
+    deck_name: DeckName,
+    source_path: String,
+}
+
+#[derive(Debug)]
+pub struct ParserError {
+    pub message: String,
+    pub source_path: String,
+    pub line_num: usize,
+}
+
+impl ParserError {
+    fn new(message: impl Into<String>, source_path: String, line_num: usize) -> Self {
+        ParserError {
+            message: message.into(),
+            source_path,
+            line_num,
+        }
+    }
+}
+
+impl Display for ParserError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{} Location: {}:{}",
+            self.message,
+            self.source_path,
+            self.line_num + 1
+        )
+    }
+}
+
+impl Error for ParserError {}
+
+enum State {
+    /// Initial state.
+    Initial,
+    /// Reading a question (Q:)
+    ReadingQuestion { question: String, start_line: usize },
+    /// Reading an answer (A:)
+    ReadingAnswer {
+        question: String,
+        answer: String,
+        start_line: usize,
+    },
+    /// Reading a cloze card (C:)
+    ReadingCloze { text: String, start_line: usize },
+}
+
+enum Line {
+    /// A line like `Q: <text>`.
+    StartQuestion(String),
+    /// A line like `A: <text>`.
+    StartAnswer(String),
+    /// A line like `C: <text>`.
+    StartCloze(String),
+    /// A line that's just `---` (flashcard separator).
+    Separator,
+    /// Any other line.
+    Text(String),
+}
+
+impl Line {
+    fn read(line: &str) -> Self {
+        if is_question(line) {
+            Line::StartQuestion(trim(line))
+        } else if is_answer(line) {
+            Line::StartAnswer(trim(line))
+        } else if is_cloze(line) {
+            Line::StartCloze(trim(line))
+        } else if is_separator(line) {
+            Line::Separator
+        } else {
+            Line::Text(line.to_string())
+        }
+    }
+}
+
+fn is_question(line: &str) -> bool {
+    line.starts_with("Q:")
+}
+
+fn is_answer(line: &str) -> bool {
+    line.starts_with("A:")
+}
+
+fn is_cloze(line: &str) -> bool {
+    line.starts_with("C:")
+}
+
+fn is_separator(line: &str) -> bool {
+    line.trim() == "---"
+}
+
+fn trim(line: &str) -> String {
+    line[2..].trim().to_string()
+}
+
+impl Parser {
+    pub fn new(deck_name: DeckName, source_path: String) -> Self {
+        Parser {
+            deck_name,
+            source_path,
+        }
+    }
+
+    /// Parse all the cards in the given text.
+    pub fn parse(&self, text: &str) -> Result<Vec<Card>, ParserError> {
+        let mut cards = Vec::new();
+        let mut state = State::Initial;
+        let lines: Vec<&str> = text.lines().collect();
+        let last_line = if lines.is_empty() { 0 } else { lines.len() - 1 };
+        for (line_num, line) in lines.iter().enumerate() {
+            let line = Line::read(line);
+            state = self.parse_line(state, line, line_num, &mut cards)?;
+        }
+        self.finalize(state, last_line, &mut cards)?;
+
+        let mut seen = HashSet::new();
+        let mut unique_cards = Vec::new();
+        for card in cards {
+            if seen.insert(card.hash()) {
+                unique_cards.push(card);
+            }
+        }
+        Ok(unique_cards)
+    }
+
+    fn parse_line(
+        &self,
+        state: State,
+        line: Line,
+        line_num: usize,
+        cards: &mut Vec<Card>,
+    ) -> Result<State, ParserError> {
+        match state {
+            State::Initial => match line {
+                Line::StartQuestion(text) => Ok(State::ReadingQuestion {
+                    question: text,
+                    start_line: line_num,
+                }),
+                Line::StartAnswer(_) => Err(ParserError::new(
+                    "Found answer tag without a question.",
+                    self.source_path.clone(),
+                    line_num,
+                )),
+                Line::StartCloze(text) => Ok(State::ReadingCloze {
+                    text,
+                    start_line: line_num,
+                }),
+                Line::Separator => Ok(State::Initial),
+                Line::Text(_) => Ok(State::Initial),
+            },
+            State::ReadingQuestion {
+                question,
+                start_line,
+            } => match line {
+                Line::StartQuestion(_) => Err(ParserError::new(
+                    "New question without answer.",
+                    self.source_path.clone(),
+                    line_num,
+                )),
+                Line::StartAnswer(text) => Ok(State::ReadingAnswer {
+                    question,
+                    answer: text,
+                    start_line,
+                }),
+                Line::StartCloze(_) => Err(ParserError::new(
+                    "Found cloze tag while reading a question.",
+                    self.source_path.clone(),
+                    line_num,
+                )),
+                Line::Separator => Err(ParserError::new(
+                    "Found flashcard separator while reading a question.",
+                    self.source_path.clone(),
+                    line_num,
+                )),
+                Line::Text(text) => Ok(State::ReadingQuestion {
+                    question: format!("{question}\n{text}"),
+                    start_line,
+                }),
+            },
+            State::ReadingAnswer {
+                question,
+                answer,
+                start_line,
+            } => {
+                match line {
+                    Line::StartQuestion(text) => {
+                        // Finalize the previous card.
+                        let card = Card::new(
+                            self.deck_name.clone(),
+                            self.source_path.clone(),
+                            (start_line, line_num),
+                            CardContent::new_basic(question, answer),
+                        );
+                        cards.push(card);
+                        // Start a new question.
+                        Ok(State::ReadingQuestion {
+                            question: text,
+                            start_line: line_num,
+                        })
+                    }
+                    Line::StartAnswer(_) => Err(ParserError::new(
+                        "Found answer tag while reading an answer.",
+                        self.source_path.clone(),
+                        line_num,
+                    )),
+                    Line::StartCloze(text) => {
+                        // Finalize the previous card.
+                        let card = Card::new(
+                            self.deck_name.clone(),
+                            self.source_path.clone(),
+                            (start_line, line_num),
+                            CardContent::new_basic(question, answer),
+                        );
+                        cards.push(card);
+                        // Start reading a new cloze card.
+                        Ok(State::ReadingCloze {
+                            text,
+                            start_line: line_num,
+                        })
+                    }
+                    Line::Separator => {
+                        // Finalize the current card.
+                        let card = Card::new(
+                            self.deck_name.clone(),
+                            self.source_path.clone(),
+                            (start_line, line_num),
+                            CardContent::new_basic(question, answer),
+                        );
+                        cards.push(card);
+                        // Return to initial state.
+                        Ok(State::Initial)
+                    }
+                    Line::Text(text) => Ok(State::ReadingAnswer {
+                        question,
+                        answer: format!("{answer}\n{text}"),
+                        start_line,
+                    }),
+                }
+            }
+            State::ReadingCloze { text, start_line } => {
+                match line {
+                    Line::StartQuestion(new_text) => {
+                        // Finalize the previous cloze card.
+                        cards.extend(self.parse_cloze_cards(text, start_line, line_num)?);
+                        // Start a new question card
+                        Ok(State::ReadingQuestion {
+                            question: new_text,
+                            start_line: line_num,
+                        })
+                    }
+                    Line::StartAnswer(_) => Err(ParserError::new(
+                        "Found answer tag while reading a cloze card.",
+                        self.source_path.clone(),
+                        line_num,
+                    )),
+                    Line::StartCloze(new_text) => {
+                        // Finalize the previous card.
+                        cards.extend(self.parse_cloze_cards(text, start_line, line_num)?);
+                        // Start reading a new cloze card.
+                        Ok(State::ReadingCloze {
+                            text: new_text,
+                            start_line: line_num,
+                        })
+                    }
+                    Line::Separator => {
+                        // Finalize the current cloze card.
+                        cards.extend(self.parse_cloze_cards(text, start_line, line_num)?);
+                        // Return to initial state.
+                        Ok(State::Initial)
+                    }
+                    Line::Text(new_text) => Ok(State::ReadingCloze {
+                        text: format!("{text}\n{new_text}"),
+                        start_line,
+                    }),
+                }
+            }
+        }
+    }
+
+    fn finalize(
+        &self,
+        state: State,
+        last_line: usize,
+        cards: &mut Vec<Card>,
+    ) -> Result<(), ParserError> {
+        match state {
+            State::Initial => Ok(()),
+            State::ReadingQuestion { .. } => Err(ParserError::new(
+                "File ended while reading a question without answer.",
+                self.source_path.clone(),
+                last_line,
+            )),
+            State::ReadingAnswer {
+                question,
+                answer,
+                start_line,
+            } => {
+                // Finalize the last card.
+                let card = Card::new(
+                    self.deck_name.clone(),
+                    self.source_path.clone(),
+                    (start_line, last_line),
+                    CardContent::new_basic(question, answer),
+                );
+                cards.push(card);
+                Ok(())
+            }
+            State::ReadingCloze { text, start_line } => {
+                // Finalize the last cloze card.
+                cards.extend(self.parse_cloze_cards(text, start_line, last_line)?);
+                Ok(())
+            }
+        }
+    }
+
+    fn parse_cloze_cards(
+        &self,
+        text: String,
+        start_line: usize,
+        end_line: usize,
+    ) -> Result<Vec<Card>, ParserError> {
+        let text = text.trim();
+        let mut cards = Vec::new();
+
+        // The full text of the card, without cloze deletion brackets.
+        let clean_text: String = {
+            let mut clean_text: Vec<u8> = Vec::new();
+            let mut image_mode = false;
+            // We use `bytes` rather than `chars` because the cloze start/end
+            // positions are byte positions, not character positions. This
+            // keeps things tractable: bytes are well-understood, "characters"
+            // are a vague abstract concept.
+            for (bytepos, c) in text.bytes().enumerate() {
+                if c == b'[' {
+                    if image_mode {
+                        clean_text.push(c);
+                    }
+                } else if c == b']' {
+                    if image_mode {
+                        // We are in image mode, so this closing bracket is
+                        // part of a Markdown image.
+                        image_mode = false;
+                        clean_text.push(c);
+                    }
+                } else if c == b'!' {
+                    if !image_mode {
+                        // image_mode must be turned on *only* if the '!' is
+                        // immediately before a `[`. Otherwise, exclamation
+                        // marks in other positions would trigger it.
+                        let nextopt = text.as_bytes().get(bytepos + 1).copied();
+                        match nextopt {
+                            Some(b'[') => {
+                                image_mode = true;
+                            }
+                            _ => {}
+                        }
+                    }
+                    clean_text.push(c);
+                } else {
+                    clean_text.push(c);
+                }
+            }
+            match String::from_utf8(clean_text) {
+                Ok(s) => s,
+                Err(_) => {
+                    return Err(ParserError::new(
+                        "Cloze card contains invalid UTF-8.",
+                        self.source_path.clone(),
+                        start_line,
+                    ));
+                }
+            }
+        };
+
+        let mut start = None;
+        let mut index = 0;
+        let mut image_mode = false;
+        for (bytepos, c) in text.bytes().enumerate() {
+            if c == b'[' {
+                if image_mode {
+                    index += 1;
+                } else {
+                    start = Some(index);
+                }
+            } else if c == b']' {
+                if image_mode {
+                    // We are in image mode, so this closing bracket is part of a markdown image.
+                    image_mode = false;
+                    index += 1;
+                } else if let Some(s) = start {
+                    let end = index;
+                    let content = CardContent::new_cloze(clean_text.clone(), s, end - 1);
+                    let card = Card::new(
+                        self.deck_name.clone(),
+                        self.source_path.clone(),
+                        (start_line, end_line),
+                        content,
+                    );
+                    cards.push(card);
+                    start = None;
+                }
+            } else if c == b'!' {
+                if !image_mode {
+                    // image_mode must be turned on *only* if the '!' is
+                    // immediately before a `[`. Otherwise, exclamation
+                    // marks in other positions would trigger it.
+                    let nextopt = text.as_bytes().get(bytepos + 1).copied();
+                    match nextopt {
+                        Some(b'[') => {
+                            image_mode = true;
+                        }
+                        _ => {}
+                    }
+                }
+                index += 1;
+            } else {
+                index += 1;
+            }
+        }
+
+        if cards.is_empty() {
+            Err(ParserError::new(
+                "Cloze card must contain at least one cloze deletion.",
+                self.source_path.clone(),
+                start_line,
+            ))
+        } else {
+            Ok(cards)
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_empty_string() -> Result<(), ParserError> {
+        let input = "";
+        let parser = make_test_parser();
+        let cards = parser.parse(input)?;
+        assert_eq!(cards.len(), 0);
+        Ok(())
+    }
+
+    #[test]
+    fn test_whitespace_string() -> Result<(), ParserError> {
+        let input = "\n\n\n";
+        let parser = make_test_parser();
+        let cards = parser.parse(input)?;
+        assert_eq!(cards.len(), 0);
+        Ok(())
+    }
+
+    #[test]
+    fn test_basic_card() -> Result<(), ParserError> {
+        let input = "Q: What is Rust?\nA: A systems programming language.";
+        let parser = make_test_parser();
+        let cards = parser.parse(input)?;
+
+        assert_eq!(cards.len(), 1);
+        assert!(matches!(
+            &cards[0].content(),
+            CardContent::Basic {
+                question,
+                answer,
+            } if question == "What is Rust?" && answer == "A systems programming language."
+        ));
+        Ok(())
+    }
+
+    #[test]
+    fn test_multiline_qa() -> Result<(), ParserError> {
+        let input = "Q: foo\nbaz\nbaz\nA: FOO\nBAR\nBAZ";
+        let parser = make_test_parser();
+        let cards = parser.parse(input)?;
+
+        assert_eq!(cards.len(), 1);
+        assert!(matches!(
+            &cards[0].content(),
+            CardContent::Basic {
+                question,
+                answer,
+            } if question == "foo\nbaz\nbaz" && answer == "FOO\nBAR\nBAZ"
+        ));
+        Ok(())
+    }
+
+    #[test]
+    fn test_two_questions() -> Result<(), ParserError> {
+        let input = "Q: foo\nA: bar\n\nQ: baz\nA: quux\n\n";
+        let parser = make_test_parser();
+        let cards = parser.parse(input)?;
+
+        assert_eq!(cards.len(), 2);
+        assert!(matches!(
+            &cards[0].content(),
+            CardContent::Basic {
+                question,
+                answer,
+            } if question == "foo" && answer == "bar"
+        ));
+        assert!(matches!(
+            &cards[1].content(),
+            CardContent::Basic {
+                question,
+                answer,
+            } if question == "baz" && answer == "quux"
+        ));
+        Ok(())
+    }
+
+    #[test]
+    fn test_cloze_single() -> Result<(), ParserError> {
+        let input = "C: Foo [bar] baz.";
+        let parser = make_test_parser();
+        let cards = parser.parse(input)?;
+
+        assert_cloze(&cards, "Foo bar baz.", &[(4, 6)]);
+        Ok(())
+    }
+
+    #[test]
+    fn test_cloze_multiple() -> Result<(), ParserError> {
+        let input = "C: Foo [bar] baz [quux].";
+        let parser = make_test_parser();
+        let cards = parser.parse(input)?;
+
+        assert_cloze(&cards, "Foo bar baz quux.", &[(4, 6), (12, 15)]);
+        Ok(())
+    }
+
+    #[test]
+    fn test_question_without_answer() -> Result<(), ParserError> {
+        let input = "Q: Question without answer";
+        let parser = make_test_parser();
+        let result = parser.parse(input);
+
+        assert!(result.is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn test_cloze_without_deletions() -> Result<(), ParserError> {
+        let input = "C: Cloze";
+        let parser = make_test_parser();
+        let result = parser.parse(input);
+
+        assert!(result.is_err());
+        Ok(())
+    }
+
+    fn make_test_parser() -> Parser {
+        Parser::new("test_deck".to_string(), "test.md".to_string())
+    }
+
+    fn assert_cloze(cards: &[Card], clean_text: &str, deletions: &[(usize, usize)]) {
+        assert_eq!(cards.len(), deletions.len());
+        for (i, (start, end)) in deletions.iter().enumerate() {
+            assert!(matches!(
+                &cards[i].content(),
+                CardContent::Cloze {
+                    text,
+                    start: s,
+                    end: e,
+                } if text == clean_text && *s == *start && *e == *end
+            ));
+        }
+    }
+}

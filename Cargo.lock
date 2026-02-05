@@ -243,9 +243,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fac4744fb15ae8337dc853fee7fb3f4e48c0fbaa23d0afe49c447b4fab126118"
 dependencies = [
  "iana-time-zone",
- "js-sys",
  "num-traits",
- "wasm-bindgen",
  "windows-link",
 ]
 
@@ -312,6 +310,16 @@ checksum = "ba5a308b75df32fe02788e748662718f03fde005016435c444eea572398219fd"
 dependencies = [
  "bytes",
  "memchr",
+]
+
+[[package]]
+name = "console_error_panic_hook"
+version = "0.1.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a06aeb73f470f66dcdbf7223caeebb85984942f22f1adb2a088cf9668146bbbc"
+dependencies = [
+ "cfg-if",
+ "wasm-bindgen",
 ]
 
 [[package]]
@@ -584,10 +592,10 @@ dependencies = [
  "chrono",
  "clap",
  "env_logger",
+ "hashcards-core",
  "log",
  "maud",
  "open",
- "percent-encoding",
  "portpicker",
  "pulldown-cmark",
  "reqwest",
@@ -598,6 +606,30 @@ dependencies = [
  "tokio",
  "toml",
  "walkdir",
+]
+
+[[package]]
+name = "hashcards-core"
+version = "0.3.0"
+dependencies = [
+ "blake3",
+ "chrono",
+ "pulldown-cmark",
+ "serde",
+ "serde_json",
+ "toml",
+]
+
+[[package]]
+name = "hashcards-wasm"
+version = "0.3.0"
+dependencies = [
+ "console_error_panic_hook",
+ "hashcards-core",
+ "js-sys",
+ "serde_json",
+ "wasm-bindgen",
+ "web-sys",
 ]
 
 [[package]]

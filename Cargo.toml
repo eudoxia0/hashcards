@@ -1,14 +1,16 @@
-[package]
+[workspace]
+members = ["crates/*"]
+exclude = ["tests/walkthrough/server"]
+resolver = "2"
+
+[workspace.package]
 name = "hashcards"
 version = "0.3.0"
 edition = "2024"
-description = "A plain text-based spaced repetition system."
-homepage = "https://github.com/eudoxia0/hashcards"
-repository = "https://github.com/eudoxia0/hashcards"
 license = "Apache-2.0"
-categories = ["command-line-utilities"]
+repository = "https://github.com/eudoxia0/hashcards"
 
-[dependencies]
+[workspace.dependencies]
 axum = "0.8.8"
 blake3 = "1.8.3"
 chrono = "0.4.43"
@@ -26,7 +28,15 @@ tokio = { version = "1.49.0", features = ["rt-multi-thread", "fs", "signal"] }
 toml = "0.9.8"
 walkdir = "2.5.0"
 
-[dev-dependencies]
+# WASM dependencies
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+js-sys = "0.3"
+web-sys = "0.3"
+console_error_panic_hook = "0.1"
+getrandom = { version = "0.2", features = ["js"] }
+
+# Dev dependencies
 portpicker = "0.1.1"
 reqwest = { version = "0.13.1", features = ["form"] }
 tempfile = "3.24.0"
@@ -37,8 +47,6 @@ lto = true
 codegen-units = 1
 panic = "abort"
 
-[lints.clippy]
-# Allow using `if a { if b { ... } }` instead of `if a && b { ... }`.
+[workspace.lints.clippy]
 collapsible_if = "allow"
-# Allow using `match` instead of `if let`.
 single_match = "allow"

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>hashcards</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Loading Screen -->
+        <div id="loading-screen" class="screen">
+            <div class="loading-content">
+                <h1>hashcards</h1>
+                <p>A plain-text spaced repetition system</p>
+                <div class="loading-spinner"></div>
+                <p id="loading-status">Loading WASM module...</p>
+            </div>
+        </div>
+
+        <!-- Setup Screen -->
+        <div id="setup-screen" class="screen" style="display: none;">
+            <div class="setup-content">
+                <h1>hashcards</h1>
+                <p class="subtitle">A plain-text spaced repetition system</p>
+
+                <div class="upload-area" id="upload-area">
+                    <div class="upload-icon">📁</div>
+                    <p>Drop your collection folder here</p>
+                    <p class="or">or</p>
+                    <input type="file" id="file-input" webkitdirectory directory multiple hidden>
+                    <button id="select-folder-btn" class="btn primary">Select Folder</button>
+                </div>
+
+                <div id="collection-info" style="display: none;">
+                    <h2>Collection Loaded</h2>
+                    <p><strong id="card-count">0</strong> cards in <strong id="deck-count">0</strong> decks</p>
+                    <p><strong id="due-count">0</strong> cards due today</p>
+
+                    <div class="session-options">
+                        <label>
+                            <input type="checkbox" id="shuffle-cards" checked>
+                            Shuffle cards
+                        </label>
+                        <label>
+                            Card limit:
+                            <input type="number" id="card-limit" min="1" placeholder="No limit">
+                        </label>
+                        <label>
+                            New card limit:
+                            <input type="number" id="new-card-limit" min="0" placeholder="No limit">
+                        </label>
+                    </div>
+
+                    <button id="start-session-btn" class="btn primary large">Start Drilling</button>
+                </div>
+
+                <div class="data-management">
+                    <h3>Data Management</h3>
+                    <button id="export-btn" class="btn secondary">Export Progress</button>
+                    <input type="file" id="import-input" accept=".json" hidden>
+                    <button id="import-btn" class="btn secondary">Import Progress</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Drill Screen -->
+        <div id="drill-screen" class="screen" style="display: none;">
+            <div class="root">
+                <div class="header">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-fill"></div>
+                    </div>
+                    <span class="progress-text" id="progress-text">0 / 0</span>
+                </div>
+
+                <div class="card-container">
+                    <div class="card">
+                        <div class="card-header">
+                            <h1 id="deck-name">Deck</h1>
+                        </div>
+                        <div class="card-content" id="card-content">
+                            <div class="question rich-text" id="question"></div>
+                            <div class="answer rich-text" id="answer" style="display: none;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <div id="reveal-controls">
+                        <button id="reveal-btn" class="btn primary large">Show Answer (Space)</button>
+                    </div>
+                    <div id="grade-controls" style="display: none;">
+                        <div class="grades">
+                            <button id="forgot-btn" class="btn grade forgot">Forgot (1)</button>
+                            <button id="hard-btn" class="btn grade hard">Hard (2)</button>
+                            <button id="good-btn" class="btn grade good">Good (3)</button>
+                            <button id="easy-btn" class="btn grade easy">Easy (4)</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Finished Screen -->
+        <div id="finished-screen" class="screen" style="display: none;">
+            <div class="finished">
+                <h1>Session Complete!</h1>
+                <div class="summary">
+                    <p>You reviewed <strong id="reviewed-count">0</strong> cards.</p>
+                </div>
+                <button id="new-session-btn" class="btn primary large">Start New Session</button>
+                <button id="back-to-setup-btn" class="btn secondary">Back to Setup</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="app.js"></script>
+</body>
+</html>

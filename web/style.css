@@ -1,0 +1,503 @@
+/* hashcards - Static Site Styles */
+
+* {
+    margin: 0;
+    padding: 0;
+    font-weight: normal;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+}
+
+body {
+    font-family: "TeX Gyre Termes", "Nimbus Roman No9 L", "Times New Roman", "Times", serif;
+    background: #f8f8f8;
+}
+
+/* Screen management */
+.screen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+/* Loading Screen */
+#loading-screen {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #f8f8f8;
+}
+
+.loading-content {
+    text-align: center;
+}
+
+.loading-content h1 {
+    font-size: 48px;
+    margin-bottom: 8px;
+}
+
+.loading-content p {
+    font-size: 18px;
+    color: #666;
+    margin-bottom: 24px;
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    margin: 24px auto;
+    border: 4px solid #ddd;
+    border-top-color: #333;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Setup Screen */
+#setup-screen {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #f8f8f8;
+    overflow-y: auto;
+}
+
+.setup-content {
+    max-width: 600px;
+    width: 90%;
+    padding: 48px 24px;
+    text-align: center;
+}
+
+.setup-content h1 {
+    font-size: 48px;
+    margin-bottom: 8px;
+}
+
+.setup-content .subtitle {
+    font-size: 18px;
+    color: #666;
+    margin-bottom: 48px;
+}
+
+.upload-area {
+    border: 3px dashed #ccc;
+    border-radius: 12px;
+    padding: 48px 24px;
+    margin-bottom: 32px;
+    background: white;
+    transition: border-color 0.2s, background-color 0.2s;
+}
+
+.upload-area.drag-over {
+    border-color: #4CAF50;
+    background: #f0fff0;
+}
+
+.upload-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+}
+
+.upload-area p {
+    font-size: 18px;
+    margin-bottom: 8px;
+}
+
+.upload-area .or {
+    color: #999;
+    margin: 16px 0;
+}
+
+#collection-info {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 24px;
+    margin-bottom: 32px;
+    text-align: left;
+}
+
+#collection-info h2 {
+    font-size: 24px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 8px;
+}
+
+#collection-info p {
+    font-size: 16px;
+    margin-bottom: 8px;
+}
+
+.session-options {
+    margin: 24px 0;
+    padding: 16px;
+    background: #f8f8f8;
+    border-radius: 8px;
+}
+
+.session-options label {
+    display: block;
+    margin-bottom: 12px;
+    font-size: 14px;
+    font-family: system-ui, sans-serif;
+}
+
+.session-options input[type="number"] {
+    width: 100px;
+    padding: 6px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.session-options input[type="checkbox"] {
+    margin-right: 8px;
+}
+
+.data-management {
+    margin-top: 48px;
+    padding-top: 24px;
+    border-top: 1px solid #ddd;
+}
+
+.data-management h3 {
+    font-size: 16px;
+    color: #666;
+    margin-bottom: 16px;
+    font-family: system-ui, sans-serif;
+}
+
+/* Buttons */
+.btn {
+    -webkit-appearance: none;
+    appearance: none;
+    border: 1px solid #999;
+    padding: 10px 20px;
+    font-size: 16px;
+    font-family: system-ui, -apple-system, "Helvetica Neue", sans-serif;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn.primary {
+    background: #4CAF50;
+    color: white;
+    border-color: #45a049;
+}
+
+.btn.primary:hover {
+    background: #45a049;
+}
+
+.btn.secondary {
+    background: white;
+    color: #333;
+}
+
+.btn.secondary:hover {
+    background: #f0f0f0;
+}
+
+.btn.large {
+    padding: 16px 32px;
+    font-size: 18px;
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Grade buttons */
+.btn.grade {
+    flex: 1;
+    margin: 0 6px;
+}
+
+.btn.grade.forgot {
+    background: #ffebee;
+    border-color: #ef5350;
+    color: #c62828;
+}
+
+.btn.grade.hard {
+    background: #fff3e0;
+    border-color: #ff9800;
+    color: #e65100;
+}
+
+.btn.grade.good {
+    background: #e8f5e9;
+    border-color: #4CAF50;
+    color: #2e7d32;
+}
+
+.btn.grade.easy {
+    background: #e3f2fd;
+    border-color: #2196F3;
+    color: #1565c0;
+}
+
+/* Drill Screen */
+.root {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.root .header {
+    background: #f8f8f8;
+    padding: 24px 32px;
+    border-bottom: 1px solid black;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+}
+
+.progress-bar {
+    width: 300px;
+    height: 24px;
+    border: 1px solid #999;
+    border-radius: 12px;
+    background: white;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: palegreen;
+    transition: width 0.3s ease;
+}
+
+.progress-text {
+    font-family: system-ui, sans-serif;
+    font-size: 14px;
+    color: #666;
+    min-width: 60px;
+}
+
+.card-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: #fcfcfc;
+    overflow: hidden;
+    padding: 24px;
+}
+
+.card {
+    background: white;
+    display: flex;
+    flex-direction: column;
+    width: 900px;
+    max-width: 100%;
+    min-height: 300px;
+    max-height: 90%;
+    box-shadow: 0px 0px 48px 16px #ddd;
+    border: 1px solid black;
+}
+
+.card-header {
+    border-bottom: 1px solid black;
+    padding: 24px;
+}
+
+.card-header h1 {
+    font-size: 24px;
+    font-family: system-ui, sans-serif;
+}
+
+.card-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+.question,
+.answer,
+.prompt {
+    padding: 24px;
+}
+
+.question {
+    border-bottom: 1px solid #eee;
+}
+
+.answer {
+    min-height: 30px;
+    background: #fafafa;
+}
+
+.rich-text {
+    font-size: 24px;
+    text-align: justify;
+    line-height: 1.5;
+}
+
+.rich-text .cloze {
+    background: #a0a0a0;
+    text-decoration: none;
+    border-radius: 4px;
+    color: transparent;
+    padding: 2px 4px;
+}
+
+.rich-text .cloze-reveal {
+    color: royalblue;
+    font-weight: bold;
+}
+
+.rich-text img {
+    display: block;
+    margin: 16px auto;
+    max-width: 100%;
+    height: auto;
+}
+
+.rich-text ul,
+.rich-text ol {
+    padding-left: 24px;
+}
+
+.rich-text p,
+.rich-text img,
+.rich-text ol,
+.rich-text ul,
+.rich-text blockquote,
+.rich-text table {
+    margin-bottom: 16px;
+}
+
+.rich-text p:last-child,
+.rich-text img:last-child,
+.rich-text ol:last-child,
+.rich-text ul:last-child {
+    margin-bottom: 0;
+}
+
+.rich-text blockquote {
+    background: #f7f7f7;
+    border-left: 4px solid #ccc;
+    padding: 8px 12px;
+}
+
+.rich-text audio {
+    width: 100%;
+    margin: 16px 0;
+}
+
+.rich-text .katex {
+    font-size: 1em;
+}
+
+.controls {
+    background: #f8f8f8;
+    border-top: 1px solid black;
+    padding: 24px 32px;
+}
+
+#reveal-controls,
+#grade-controls {
+    display: flex;
+    justify-content: center;
+}
+
+.grades {
+    display: flex;
+    width: 100%;
+    max-width: 600px;
+}
+
+/* Finished Screen */
+#finished-screen {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #f8f8f8;
+}
+
+.finished {
+    text-align: center;
+    padding: 48px;
+}
+
+.finished h1 {
+    font-size: 48px;
+    margin-bottom: 24px;
+}
+
+.finished .summary {
+    font-size: 24px;
+    margin-bottom: 48px;
+}
+
+.finished .btn {
+    margin: 8px;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+    .card {
+        width: 100%;
+        height: 100%;
+        box-shadow: none;
+        border: none;
+    }
+
+    .card-container {
+        padding: 0;
+    }
+
+    .controls {
+        padding: 16px;
+    }
+
+    .grades {
+        flex-direction: column;
+    }
+
+    .btn.grade {
+        margin: 4px 0;
+    }
+
+    .setup-content h1 {
+        font-size: 36px;
+    }
+
+    .finished h1 {
+        font-size: 36px;
+    }
+}
+
+/* Hide screens by default */
+.screen[style*="display: none"] {
+    display: none !important;
+}
