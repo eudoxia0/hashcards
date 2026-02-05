@@ -1,0 +1,389 @@
+/* ── Walkthrough stylesheet ──────────────────────────────────
+   High-contrast, Garamond-based design with light/dark themes.
+   ──────────────────────────────────────────────────────────── */
+
+/* ── Reset ─────────────────────────────────────────────────── */
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; font-weight: normal; }
+
+/* ── Custom properties ─────────────────────────────────────── */
+
+:root {
+    --bg:           #ffffff;
+    --bg-surface:   #fafafa;
+    --bg-card:      #ffffff;
+    --fg:           #111111;
+    --fg-muted:     #555555;
+    --border:       #111111;
+    --border-light: #d0d0d0;
+    --progress-bg:  #e8e8e8;
+    --progress-fill:#111111;
+    --btn-bg:       #ffffff;
+    --btn-fg:       #111111;
+    --btn-border:   #111111;
+    --btn-shadow:   rgba(0,0,0,0.08);
+    --code-bg:      #f4f4f4;
+    --code-border:  #ddd;
+    --cloze-bg:     #888;
+    --cloze-reveal: #111111;
+    --card-shadow:  0 1px 40px rgba(0,0,0,0.10);
+    --shutdown-bg:  #111111;
+    --shutdown-fg:  #ffffff;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg:           #0a0a0a;
+        --bg-surface:   #0a0a0a;
+        --bg-card:      #141414;
+        --fg:           #eeeeee;
+        --fg-muted:     #999999;
+        --border:       #eeeeee;
+        --border-light: #333333;
+        --progress-bg:  #222222;
+        --progress-fill:#eeeeee;
+        --btn-bg:       #1a1a1a;
+        --btn-fg:       #eeeeee;
+        --btn-border:   #eeeeee;
+        --btn-shadow:   rgba(0,0,0,0.3);
+        --code-bg:      #1a1a1a;
+        --code-border:  #333;
+        --cloze-bg:     #555;
+        --cloze-reveal: #ffffff;
+        --card-shadow:  0 1px 60px rgba(0,0,0,0.50);
+        --shutdown-bg:  #eeeeee;
+        --shutdown-fg:  #0a0a0a;
+    }
+}
+
+/* ── Typography ────────────────────────────────────────────── */
+
+html, body, .root { width: 100vw; height: 100vh; }
+
+body {
+    font-family: "EB Garamond", "Cormorant Garamond", "Garamond", "Georgia", "Times New Roman", serif;
+    background: var(--bg);
+    color: var(--fg);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Session layout ────────────────────────────────────────── */
+
+.root {
+    display: flex;
+    flex-direction: column;
+}
+
+.root .header {
+    padding: 36px 32px;
+    background: var(--bg-surface);
+    border-bottom: 2px solid var(--border);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.root .header .progress-bar {
+    width: 320px;
+    height: 10px;
+    border: 2px solid var(--border);
+    border-radius: 5px;
+    background: var(--progress-bg);
+    overflow: hidden;
+}
+
+.root .header .progress-bar .progress-fill {
+    height: 100%;
+    background: var(--progress-fill);
+}
+
+.root .card-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: var(--bg-surface);
+    overflow: hidden;
+}
+
+.root .card-container .card {
+    background: var(--bg-card);
+    display: flex;
+    flex-direction: column;
+    border: 2px solid var(--border);
+    box-shadow: var(--card-shadow);
+}
+
+.root .card-container .card .card-header {
+    border-bottom: 2px solid var(--border);
+    padding: 28px 32px;
+}
+
+.root .card-container .card .card-header h1 {
+    font-size: 42px;
+    letter-spacing: 0.02em;
+    font-style: italic;
+}
+
+.root .card-container .card .card-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+.root .card-container .card .card-content .question,
+.root .card-container .card .card-content .answer,
+.root .card-container .card .card-content .prompt {
+    padding: 28px 32px;
+}
+
+.root .card-container .card .card-content .question {
+    border-bottom: 1px solid var(--border-light);
+}
+
+.root .card-container .card .card-content .answer {
+    min-height: 30px;
+}
+
+/* ── Rich text ─────────────────────────────────────────────── */
+
+.rich-text {
+    font-size: 32px;
+    line-height: 1.5;
+    letter-spacing: 0.01em;
+    color: var(--fg);
+}
+
+.rich-text .cloze {
+    display: inline-block;
+    min-width: 40px;
+    background: var(--cloze-bg);
+    text-decoration: none;
+    border-radius: 6px;
+    color: transparent;
+}
+
+.rich-text .cloze-reveal {
+    color: var(--cloze-reveal);
+    font-weight: 600;
+}
+
+.rich-text img {
+    display: block;
+    margin: 0 auto;
+    max-width: 100%;
+    height: auto;
+}
+
+.rich-text ul, .rich-text ol { padding-left: 28px; }
+
+.rich-text p, .rich-text img, .rich-text ol, .rich-text ul,
+.rich-text blockquote, .rich-text table, .rich-text pre {
+    margin-bottom: 18px;
+}
+.rich-text p:last-child, .rich-text img:last-child, .rich-text ol:last-child,
+.rich-text ul:last-child, .rich-text blockquote:last-child,
+.rich-text table:last-child, .rich-text pre:last-child {
+    margin-bottom: 0;
+}
+
+.rich-text blockquote {
+    background: var(--code-bg);
+    border-left: 4px solid var(--border-light);
+    padding: 10px 16px;
+}
+
+.rich-text code {
+    background: var(--code-bg);
+    border: 1px solid var(--code-border);
+    padding: 2px 7px;
+    border-radius: 3px;
+    font-family: "Menlo", "Monaco", "Courier New", monospace;
+    font-size: 0.7em;
+    color: inherit;
+}
+
+.rich-text pre {
+    background: var(--code-bg);
+    border: 1px solid var(--code-border);
+    border-radius: 4px;
+    padding: 14px;
+    overflow-x: auto;
+    font-size: 0.7em;
+    line-height: 1.6;
+}
+
+.rich-text pre code {
+    background: transparent;
+    border: none;
+    padding: 0;
+    border-radius: 0;
+    font-size: 0.85em;
+}
+
+.rich-text table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 0.65em;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    border: 1px solid var(--border-light);
+}
+
+.rich-text table th, .rich-text table td {
+    border: 1px solid var(--border-light);
+    padding: 10px 14px;
+    text-align: left;
+}
+
+.rich-text table th { font-weight: 600; }
+
+.rich-text audio { width: 100%; }
+
+.rich-text .katex { font-size: 1em; }
+
+/* ── Controls ──────────────────────────────────────────────── */
+
+.root .controls {
+    background: var(--bg-surface);
+    border-top: 2px solid var(--border);
+}
+
+.root .controls form {
+    display: flex;
+    justify-content: space-between;
+}
+
+.root .controls form .spacer { flex: 1; }
+
+.root .controls form input {
+    -webkit-appearance: none;
+    appearance: none;
+    background: var(--btn-bg);
+    border: 2px solid var(--btn-border);
+    padding: 9px 18px;
+    font-size: 18px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    color: var(--btn-fg);
+    border-radius: 0;
+    cursor: pointer;
+    box-shadow: var(--btn-shadow) 0px 1px 3px 0px;
+    transition: opacity 0.15s;
+}
+
+.root .controls form input:disabled {
+    cursor: not-allowed;
+    opacity: 0.35;
+}
+
+.root .controls form input:hover:not(:disabled) {
+    opacity: 0.75;
+}
+
+/* ── Completion page ───────────────────────────────────────── */
+
+.finished {
+    color: var(--fg);
+}
+
+.finished h1 {
+    text-align: center;
+    font-size: 56px;
+    letter-spacing: 0.02em;
+}
+
+.finished .summary {
+    font-size: 26px;
+    margin-bottom: 48px;
+}
+
+.finished h2 {
+    font-size: 38px;
+    letter-spacing: 0.02em;
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 8px;
+}
+
+.finished .stats table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.finished .stats table tr {
+    border-bottom: 1px solid var(--border-light);
+}
+
+.finished .stats table td {
+    padding: 14px 0;
+}
+
+.finished .stats table td.key {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.finished .stats table td.val {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-feature-settings: "tnum";
+    font-variant-numeric: tabular-nums;
+    width: 100%;
+}
+
+.finished .shutdown-container {
+    margin-top: 56px;
+    text-align: center;
+}
+
+.finished .shutdown-container form { display: inline-block; }
+
+.finished .shutdown-container .shutdown-button {
+    background: var(--shutdown-bg);
+    color: var(--shutdown-fg);
+    border: 2px solid var(--shutdown-bg);
+    padding: 14px 32px;
+    font-size: 20px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    border-radius: 0;
+    cursor: pointer;
+    transition: opacity 0.15s;
+}
+
+.finished .shutdown-container .shutdown-button:hover {
+    opacity: 0.8;
+}
+
+/* ── Responsive ────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+    .card { width: 100%; height: 100%; box-shadow: none !important; }
+    .controls { padding: 12px; }
+    .controls form { flex-direction: column; }
+    .controls form input { margin: 6px 0; }
+    .controls form .grades { display: flex; flex-direction: row; justify-content: space-between; }
+    .finished { padding: 24px; }
+    .finished h1 { font-size: 40px; margin-bottom: 36px; }
+    .finished h2 { font-size: 32px; margin-bottom: 16px; }
+    .finished .stats { font-size: 16px; }
+    .finished .val { padding-left: 24px; }
+}
+
+@media (min-width: 769px) {
+    .card { width: 920px; min-height: 420px; max-height: 90%; }
+    .controls { padding: 32px; }
+    .controls form { flex-direction: row; }
+    .controls form input { margin: 0 12px; }
+    .finished { padding: 56px; }
+    .finished h1 { margin-bottom: 48px; }
+    .finished h2 { margin-bottom: 28px; }
+    .finished .stats { font-size: 24px; }
+    .finished .val { padding-left: 48px; }
+}

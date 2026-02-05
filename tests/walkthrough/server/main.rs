@@ -244,6 +244,7 @@ const KATEX_CSS: &str = "https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.m
 const KATEX_JS: &str = "https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js";
 const HIGHLIGHT_JS: &str = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js";
 const HIGHLIGHT_CSS: &str = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css";
+const GARAMOND_CSS: &str = "https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&display=swap";
 
 fn page_template(body: Markup) -> Markup {
     html! {
@@ -254,12 +255,14 @@ fn page_template(body: Markup) -> Markup {
                 meta name="viewport" content="width=device-width, initial-scale=1";
                 title { "hashcards" }
                 meta name="color-scheme" content="light dark";
+                link rel="preconnect" href="https://fonts.googleapis.com";
+                link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous";
+                link rel="stylesheet" href=(GARAMOND_CSS);
                 link rel="stylesheet" href=(KATEX_CSS);
                 link rel="stylesheet" href=(HIGHLIGHT_CSS);
                 script defer src=(KATEX_JS) {};
                 script defer src=(HIGHLIGHT_JS) {};
                 link rel="stylesheet" href="/style.css";
-                // Start visible — no JS opacity trick needed for screenshots
             }
             body {
                 (body)
@@ -271,55 +274,8 @@ fn page_template(body: Markup) -> Markup {
 
 // ── Static assets ──────────────────────────────────────────────
 
-const DARK_MODE_CSS: &str = r#"
-@media (prefers-color-scheme: dark) {
-    body { background: #1a1a2e; color: #e0e0e0; }
-
-    .root {
-        .header, .controls { background: #16213e; }
-        .header { border-bottom-color: #334; }
-        .header .progress-bar { background: #222; border-color: #555; }
-        .card-container { background: #1a1a2e; }
-        .card-container .card {
-            background: #16213e;
-            border-color: #334;
-            box-shadow: 0px 0px 48px 16px rgba(0,0,0,0.4);
-        }
-        .card-container .card .card-header { border-bottom-color: #334; }
-        .card-container .card .card-content .question { border-bottom-color: #334; }
-        .card-container .card .card-content .rich-text {
-            color: #e0e0e0;
-        }
-        .card-container .card .card-content .rich-text .cloze { background: #555; }
-        .card-container .card .card-content .rich-text .cloze-reveal { color: #6cb4ee; }
-        .card-container .card .card-content .rich-text code { background: #2a2a4a; border-color: #444; }
-        .card-container .card .card-content .rich-text pre { background: #2a2a4a; border-color: #444; }
-        .card-container .card .card-content .rich-text blockquote { background: #222244; border-left-color: #555; }
-        .card-container .card .card-content .rich-text table { border-color: #444; }
-        .card-container .card .card-content .rich-text table th { background: #2a2a4a; border-color: #444; }
-        .card-container .card .card-content .rich-text table td { border-color: #444; }
-        .card-container .card .card-content .rich-text table tbody tr:nth-child(odd) { background: #1a1a2e; }
-        .card-container .card .card-content .rich-text table tbody tr:nth-child(even) { background: #222244; }
-        .controls { border-top-color: #334; }
-        .controls form input {
-            background: #2a2a4a;
-            color: #e0e0e0;
-            border-color: #555;
-            box-shadow: rgba(0,0,0,0.3) 0px 1px 3px 0px;
-        }
-    }
-
-    .finished {
-        h2 { border-bottom-color: #444; }
-        .stats table tr { border-bottom-color: #333; }
-    }
-}
-"#;
-
-async fn style_handler() -> (StatusCode, [(HeaderName, &'static str); 1], String) {
-    let mut css = String::from_utf8_lossy(include_bytes!("../../../src/cmd/drill/style.css")).into_owned();
-    css.push_str(DARK_MODE_CSS);
-    (StatusCode::OK, [(CONTENT_TYPE, "text/css")], css)
+async fn style_handler() -> (StatusCode, [(HeaderName, &'static str); 1], &'static str) {
+    (StatusCode::OK, [(CONTENT_TYPE, "text/css")], include_str!("style.css"))
 }
 
 async fn script_handler() -> (StatusCode, [(HeaderName, &'static str); 1], String) {
