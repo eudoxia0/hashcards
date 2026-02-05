@@ -1,0 +1,16 @@
+[package]
+name = "walkthrough-server"
+version = "0.1.0"
+edition = "2024"
+
+[[bin]]
+name = "walkthrough-server"
+path = "main.rs"
+
+[dependencies]
+hashcards-core = { path = "../../../crates/hashcards-core" }
+axum = "0.8.8"
+serde = { version = "1", features = ["derive"] }
+tokio = { version = "1", features = ["rt-multi-thread", "signal", "fs"] }
+maud = "0.27.0"
+walkdir = "2.5.0"

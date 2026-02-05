@@ -1,0 +1,10 @@
+{
+  "name": "hashcards-walkthrough",
+  "private": true,
+  "scripts": {
+    "walkthrough": "npx playwright test --project=chromium"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.52.0"
+  }
+}
