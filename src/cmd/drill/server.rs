@@ -52,7 +52,7 @@ use crate::cmd::drill::state::MutableState;
 use crate::cmd::drill::state::ServerState;
 use crate::collection::Collection;
 use crate::db::Database;
-use crate::error::Fallible;
+use crate::error::{ErrorReport, Fallible};
 use crate::error::fail;
 use crate::media::load::MediaLoader;
 use crate::rng::TinyRng;
@@ -109,6 +109,23 @@ pub async fn start_server(config: ServerConfig) -> Fallible<()> {
     for card in cards.iter() {
         if !db_hashes.contains(&card.hash()) {
             db.insert_card(card.hash(), config.session_started_at)?;
+        }
+    }
+
+    // Make sure there are cards left after applying the filter.
+    match &config.deck_filter {
+        None => {},
+        Some(filter) => {
+            let filtered_deck = filter_deck(
+                &db,
+                cards.clone(),
+                None, None,
+                Some(filter.clone())
+            )?;
+
+            if filtered_deck.is_empty() {
+                return Err(ErrorReport::new(format!("Deck {filter} has no cards.")));
+            }
         }
     }
 

@@ -577,7 +577,7 @@ dependencies = [
 
 [[package]]
 name = "hashcards"
-version = "0.3.0"
+version = "0.3.0-multideck-cards"
 dependencies = [
  "axum",
  "blake3",
