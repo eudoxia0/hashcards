@@ -87,7 +87,7 @@ pub struct ServerConfig {
     pub session_started_at: Timestamp,
     pub card_limit: Option<usize>,
     pub new_card_limit: Option<usize>,
-    pub deck_filter: Option<String>,
+    pub deck_filters: Option<Vec<String>>,
     pub shuffle: bool,
     pub answer_controls: AnswerControls,
     pub bury_siblings: bool,
@@ -112,19 +112,20 @@ pub async fn start_server(config: ServerConfig) -> Fallible<()> {
         }
     }
 
-    // Make sure there are cards left after applying the filter.
-    match &config.deck_filter {
-        None => {},
-        Some(filter) => {
-            let filtered_deck = filter_deck(
+    // Make sure each filter leaves some cards to be reviewed.
+    if config.deck_filters.is_some() {
+        for filter in config.deck_filters.as_ref().unwrap() {
+            let num_filtered_cards = filter_deck(
                 &db,
                 cards.clone(),
                 None, None,
-                Some(filter.clone())
-            )?;
+                Some(vec![filter.clone()])
+            ).map(|deck| deck.len())?;
 
-            if filtered_deck.is_empty() {
-                return Err(ErrorReport::new(format!("Deck {filter} has no cards.")));
+            if num_filtered_cards == 0 {
+                return Err(ErrorReport::new(format!(
+                    "Filtering for {filter} resulted in no cards."
+                )));
             }
         }
     }
@@ -141,7 +142,7 @@ pub async fn start_server(config: ServerConfig) -> Fallible<()> {
         due_today,
         config.card_limit,
         config.new_card_limit,
-        config.deck_filter,
+        config.deck_filters,
     )?;
 
     let due_today: Vec<Card> = if config.bury_siblings {
@@ -332,13 +333,14 @@ fn filter_deck(
     deck: Vec<Card>,
     card_limit: Option<usize>,
     new_card_limit: Option<usize>,
-    deck_filter: Option<String>,
+    deck_filters: Option<Vec<String>>,
 ) -> Fallible<Vec<Card>> {
     // Apply the deck filter.
-    let deck = match deck_filter {
-        Some(filter) => deck
+    let deck = match deck_filters {
+        Some(filters) => deck
             .into_iter()
-            .filter(|card| card.deck_names().contains(&filter))
+            .filter(|card| card.deck_names().iter()
+                .any(|deck_name| filters.contains(deck_name)))
             .collect(),
         None => deck,
     };
