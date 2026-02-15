@@ -1,5 +1,10 @@
 <changelog>
     <unreleased>
+        <added>
+            <change author="eudoxia0">
+                MP4 audio files are now supported.
+            </change>
+        </added>
         <changed>
             <change author="eudoxia0">
                 Update dependencies.

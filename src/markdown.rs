@@ -23,7 +23,7 @@ use crate::error::ErrorReport;
 use crate::error::Fallible;
 use crate::media::resolve::MediaResolver;
 
-const AUDIO_EXTENSIONS: [&str; 3] = ["mp3", "wav", "ogg"];
+const AUDIO_EXTENSIONS: [&str; 4] = ["mp3", "wav", "ogg", "m4a"];
 
 fn is_audio_file(url: &str) -> bool {
     if let Some(ext) = url.split('.').next_back() {
