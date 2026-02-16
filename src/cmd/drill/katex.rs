@@ -50,7 +50,7 @@ pub async fn katex_js_handler() -> (StatusCode, [(HeaderName, &'static str); 2],
 
 pub async fn katex_mhchem_js_handler()
 -> (StatusCode, [(HeaderName, &'static str); 2], &'static [u8]) {
-    let bytes = include_bytes!("../../../vendor/katex/mhchem.min.js");
+    let bytes = include_bytes!("../../../vendor/katex/contrib/mhchem.min.js");
     (
         StatusCode::OK,
         [

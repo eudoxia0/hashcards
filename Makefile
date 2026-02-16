@@ -23,7 +23,16 @@ vendor/katex:
 	@rm vendor/katex/katex.mjs
 	@rm vendor/katex/katex-swap.css
 	@rm vendor/katex/katex-swap.min.css
-	@rm -rf vendor/katex/contrib/
+	@rm vendor/katex/contrib/*.mjs
+	@rm vendor/katex/contrib/auto-render.js
+	@rm vendor/katex/contrib/auto-render.min.js
+	@rm vendor/katex/contrib/copy-tex.js
+	@rm vendor/katex/contrib/copy-tex.min.js
+	@rm vendor/katex/contrib/mathtex-script-type.js
+	@rm vendor/katex/contrib/mathtex-script-type.min.js
+	@rm vendor/katex/contrib/mhchem.js
+	@rm vendor/katex/contrib/render-a11y-string.js
+	@rm vendor/katex/contrib/render-a11y-string.min.js
 	@rm vendor/katex/fonts/*.ttf
 	@rm vendor/katex/fonts/*.woff
 
