@@ -52,7 +52,7 @@ use crate::cmd::drill::state::MutableState;
 use crate::cmd::drill::state::ServerState;
 use crate::collection::Collection;
 use crate::db::Database;
-use crate::error::Fallible;
+use crate::error::{ErrorReport, Fallible};
 use crate::error::fail;
 use crate::media::load::MediaLoader;
 use crate::rng::TinyRng;
@@ -87,7 +87,7 @@ pub struct ServerConfig {
     pub session_started_at: Timestamp,
     pub card_limit: Option<usize>,
     pub new_card_limit: Option<usize>,
-    pub deck_filter: Option<String>,
+    pub deck_filters: Option<Vec<String>>,
     pub shuffle: bool,
     pub answer_controls: AnswerControls,
     pub bury_siblings: bool,
@@ -112,6 +112,24 @@ pub async fn start_server(config: ServerConfig) -> Fallible<()> {
         }
     }
 
+    // Make sure each filter leaves some cards to be reviewed.
+    if config.deck_filters.is_some() {
+        for filter in config.deck_filters.as_ref().unwrap() {
+            let num_filtered_cards = filter_deck(
+                &db,
+                cards.clone(),
+                None, None,
+                Some(vec![filter.clone()])
+            ).map(|deck| deck.len())?;
+
+            if num_filtered_cards == 0 {
+                return Err(ErrorReport::new(format!(
+                    "Filtering for {filter} resulted in no cards."
+                )));
+            }
+        }
+    }
+
     // Find cards due today.
     let due_today: HashSet<CardHash> = db.due_today(today)?;
     let due_today: Vec<Card> = cards
@@ -124,7 +142,7 @@ pub async fn start_server(config: ServerConfig) -> Fallible<()> {
         due_today,
         config.card_limit,
         config.new_card_limit,
-        config.deck_filter,
+        config.deck_filters,
     )?;
 
     let due_today: Vec<Card> = if config.bury_siblings {
@@ -315,13 +333,14 @@ fn filter_deck(
     deck: Vec<Card>,
     card_limit: Option<usize>,
     new_card_limit: Option<usize>,
-    deck_filter: Option<String>,
+    deck_filters: Option<Vec<String>>,
 ) -> Fallible<Vec<Card>> {
     // Apply the deck filter.
-    let deck = match deck_filter {
-        Some(filter) => deck
+    let deck = match deck_filters {
+        Some(filters) => deck
             .into_iter()
-            .filter(|card| card.deck_name() == &filter)
+            .filter(|card| card.deck_names().iter()
+                .any(|deck_name| filters.contains(deck_name)))
             .collect(),
         None => deck,
     };
