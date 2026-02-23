@@ -191,6 +191,8 @@ enum Line {
     StartCloze(String),
     /// A line that's just `---` (flashcard separator).
     Separator,
+    /// A line starting with `#`.
+    Comment,
     /// Any other line.
     Text(String),
     /// End of file
@@ -207,6 +209,8 @@ impl Line {
             Line::StartCloze(trim(line))
         } else if is_separator(line) {
             Line::Separator
+        } else if is_comment(line) {
+            Line::Comment
         } else {
             Line::Text(line.to_string())
         }
@@ -227,6 +231,10 @@ fn is_cloze(line: &str) -> bool {
 
 fn is_separator(line: &str) -> bool {
     line.trim() == "---"
+}
+
+fn is_comment(line: &str) -> bool {
+    line.trim_start().starts_with('#')
 }
 
 fn trim(line: &str) -> String {
@@ -285,6 +293,7 @@ impl Parser {
                     text,
                     start_line: line_num,
                 }),
+                Line::Comment => Ok(State::Start),
                 Line::Separator => Ok(State::Start),
                 Line::Text(_) => Ok(State::Start),
                 Line::Eof => Ok(State::End),
@@ -293,6 +302,10 @@ impl Parser {
                 question,
                 start_line,
             } => match line {
+                Line::Comment => Ok(State::ReadingQuestion {
+                    question,
+                    start_line,
+                }),
                 Line::StartQuestion(_) => Err(ParserError::new(
                     "New question without answer.",
                     self.file_path.clone(),
@@ -329,6 +342,11 @@ impl Parser {
                 start_line,
             } => {
                 match line {
+                    Line::Comment => Ok(State::ReadingAnswer {
+                        question,
+                        answer,
+                        start_line,
+                    }),
                     Line::StartQuestion(text) => {
                         // Finalize the previous card.
                         let card = Card::new(
@@ -396,6 +414,7 @@ impl Parser {
             }
             State::ReadingCloze { text, start_line } => {
                 match line {
+                    Line::Comment => Ok(State::ReadingCloze { text, start_line }),
                     Line::StartQuestion(new_text) => {
                         // Finalize the previous cloze card.
                         cards.extend(self.parse_cloze_cards(text, start_line, line_num)?);
@@ -648,6 +667,23 @@ mod tests {
                 question,
                 answer,
             } if question == "What is Rust?" && answer == "A systems programming language."
+        ));
+        Ok(())
+    }
+
+    #[test]
+    fn test_comments_ignored() -> Result<(), ParserError> {
+        let input = "# Start\nQ: What is a question?\n#Center\nA: Not an answer!\n# End";
+        let parser = make_test_parser();
+        let cards = parser.parse(input)?;
+
+        assert_eq!(cards.len(), 1);
+        assert!(matches!(
+            cards[0].content(),
+            CardContent::Basic {
+                question,
+                answer,
+            } if question == "What is a question?" && answer == "Not an answer!"
         ));
         Ok(())
     }
