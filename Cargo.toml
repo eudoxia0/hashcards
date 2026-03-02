@@ -18,7 +18,7 @@ log = "0.4.29"
 maud = "0.27.0"
 open = "5.3.3"
 percent-encoding = "2.3.2"
-pulldown-cmark = "0.13.0"
+pulldown-cmark = "0.13.1"
 rusqlite = { version = "0.38.0", features = ["bundled"] }
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
