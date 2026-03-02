@@ -252,9 +252,33 @@ body {
                 border-radius: 6px;
                 cursor: pointer;
                 box-shadow: #ccc 0px 1px 3px 0px;
+                transition:
+                    background-color 0.15s,
+                    border-color 0.15s,
+                    box-shadow 0.15s;
+
+                &:hover {
+                    background: #f0f0f0;
+                    border-color: #777;
+                    box-shadow: #bbb 0px 2px 5px 0px;
+                }
+
+                &:active {
+                    background: #e4e4e4;
+                    border-color: #666;
+                    box-shadow: #ddd 0px 0px 2px 0px;
+                }
 
                 &:disabled {
                     cursor: not-allowed;
+                    opacity: 0.4;
+                }
+
+                &:disabled:hover,
+                &:disabled:active {
+                    background: white;
+                    border-color: #999;
+                    box-shadow: #ccc 0px 1px 3px 0px;
                 }
             }
         }
