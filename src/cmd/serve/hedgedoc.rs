@@ -145,19 +145,21 @@ fn sanitize_deck_name(name: &str, fallback: &str) -> String {
 
 fn strip_leading_yaml_frontmatter(markdown: &str) -> &str {
     let content = markdown.trim_start();
-    if !content.starts_with("---") {
+    // Opening delimiter must be exactly "---\n" on its own line.
+    if !content.starts_with("---\n") {
         return markdown;
     }
-    let after = match content.get(3..) {
+    let after = match content.get(4..) {
         Some(s) => s,
         None => return markdown,
     };
-    let end = match after.find("\n---") {
+    // Closing delimiter must also be on its own line: "\n---\n".
+    let end = match after.find("\n---\n") {
         Some(idx) => idx,
         None => return markdown,
     };
 
-    let body_start_in_trimmed = 3 + end + 4;
+    let body_start_in_trimmed = 4 + end + 5;
     let body = match content.get(body_start_in_trimmed..) {
         Some(s) => s,
         None => return markdown,
@@ -181,11 +183,11 @@ fn wrap_with_deck_frontmatter(markdown: &str, deck_name: &str) -> Fallible<Strin
 /// Parse the `title:` field from YAML (`---`) frontmatter.
 fn frontmatter_title(markdown: &str) -> Option<String> {
     let content = markdown.trim_start();
-    if !content.starts_with("---") {
+    if !content.starts_with("---\n") {
         return None;
     }
-    let after = content.get(3..)?;
-    let end = after.find("\n---")?;
+    let after = content.get(4..)?;
+    let end = after.find("\n---\n")?;
     let frontmatter = &after[..end];
     for line in frontmatter.lines() {
         let line = line.trim();
@@ -303,7 +305,6 @@ pub fn spawn_hedgedoc_sync_task(
     collection_infos: Arc<RwLock<Vec<CollectionInfo>>>,
     hedgedoc_last_synced: Arc<Mutex<Option<Timestamp>>>,
     static_collections: Vec<ResolvedCollection>,
-    _data_dir: PathBuf,
     poll_interval_minutes: u64,
 ) {
     if poll_interval_minutes == 0 {

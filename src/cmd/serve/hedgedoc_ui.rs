@@ -17,8 +17,8 @@ pub fn render_manage_page(
 
             @if !config_available {
                 div.notice {
-                    p { "Note: HedgeDoc source changes will be kept in memory for this session. " }
-                    p { "To persist them permanently, start hashcards with " code { "--config hashcards.toml" } "." }
+                    p { "HedgeDoc sources cannot be managed without a configured data directory." }
+                    p { "To enable HedgeDoc source management, start hashcards with " code { "--config hashcards.toml" } "." }
                 }
             } @else {
                 div.sync-bar {

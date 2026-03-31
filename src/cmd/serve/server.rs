@@ -186,7 +186,6 @@ pub async fn start_serve(config: ResolvedServeConfig) -> Fallible<()> {
             state.collections.clone(),
             hedgedoc_last_synced,
             sync_collections,
-            dd,
             hedgedoc_poll_minutes,
         );
     }

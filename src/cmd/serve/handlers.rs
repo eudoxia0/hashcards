@@ -658,10 +658,18 @@ pub async fn hedgedoc_delete_handler(
         all_hedgedoc_entries(&sources)
     };
 
-    // Persist to TOML if config file is available
-    if let Some(config_path) = state.config_path.lock().unwrap().as_ref() {
-        if let Err(e) = persist_hedgedoc_entries(config_path, &remaining) {
-            log::error!("Failed to persist HedgeDoc entries after deletion: {e}");
+    // Persist to TOML if config file is available, via spawn_blocking to avoid
+    // blocking the async runtime with synchronous filesystem I/O.
+    // Extract the config path before any await so the MutexGuard is dropped first.
+    let maybe_config_path: Option<std::path::PathBuf> = state.config_path.lock().unwrap().clone();
+    if let Some(config_path) = maybe_config_path {
+        let remaining_for_persist = remaining.clone();
+        match tokio::task::spawn_blocking(move || persist_hedgedoc_entries(&config_path, &remaining_for_persist))
+            .await
+        {
+            Ok(Err(e)) => log::error!("Failed to persist HedgeDoc entries after deletion: {e}"),
+            Err(e) => log::error!("Persist task panicked after deletion: {e}"),
+            Ok(Ok(())) => {}
         }
     }
 
