@@ -307,13 +307,13 @@ fn collection_post_inner(state: &AppState, slug: &str, action: Action) -> Fallib
     // Home action: drop session without needing to hold lock during DB work
     if matches!(action, Action::Home) {
         state.sessions.lock().unwrap().remove(slug);
-        
-        // Snapshot sources under lock, release before doing FS/DB work.
+
+        // Snapshot inputs, then compute + update in background (don't block response).
         let sources_snapshot = state.hedgedoc_sources.lock().unwrap().clone();
-        let combined = build_combined_infos(&state.config.collections, &sources_snapshot);
-        // Update in background (don't block the response)
+        let static_collections = state.config.collections.clone();
         let collections_clone = state.collections.clone();
         tokio::spawn(async move {
+            let combined = build_combined_infos(&static_collections, &sources_snapshot);
             *collections_clone.write().await = combined;
         });
 
@@ -335,12 +335,12 @@ fn collection_post_inner(state: &AppState, slug: &str, action: Action) -> Fallib
 
     match result {
         ActionResult::Home => {
-            // Snapshot sources under lock, release before doing FS/DB work.
+            // Snapshot inputs, then compute + update in background (don't block response).
             let sources_snapshot = state.hedgedoc_sources.lock().unwrap().clone();
-            let combined = build_combined_infos(&state.config.collections, &sources_snapshot);
-            // Update in background (don't block the response)
+            let static_collections = state.config.collections.clone();
             let collections_clone = state.collections.clone();
             tokio::spawn(async move {
+                let combined = build_combined_infos(&static_collections, &sources_snapshot);
                 *collections_clone.write().await = combined;
             });
             Ok(Redirect::to("/"))
@@ -555,10 +555,11 @@ pub async fn hedgedoc_add_handler(
         }
     }
 
-    // Add to in-memory state
+    // Compute what the new entries list would be without mutating shared state yet.
+    // This lets us persist to disk first; we only update in-memory state after success.
     let new_entries: Vec<HedgedocEntry> = {
-        let mut sources = state.hedgedoc_sources.lock().unwrap();
-        if let Some(source) = new_source {
+        let sources = state.hedgedoc_sources.lock().unwrap();
+        if new_source.is_some() {
             if sources
                 .iter()
                 .flat_map(|s| s.notes.iter())
@@ -566,43 +567,68 @@ pub async fn hedgedoc_add_handler(
             {
                 return Redirect::to("/hedgedoc");
             }
-            sources.push(source);
-        } else if let Some(note) = new_note {
-            if let Some(src) = sources.iter_mut().find(|s| s.source_uri == source_uri) {
+        } else if new_note.is_some() {
+            if let Some(src) = sources.iter().find(|s| s.source_uri == source_uri) {
                 if src.notes.iter().any(|n| n.url == url) {
                     return Redirect::to("/hedgedoc");
                 }
+            }
+        }
+        let mut updated = sources.clone();
+        if let Some(ref source) = new_source {
+            updated.push(source.clone());
+        } else if let Some(ref note) = new_note {
+            if let Some(src) = updated.iter_mut().find(|s| s.source_uri == source_uri) {
+                src.notes.push(note.clone());
+            }
+        }
+        all_hedgedoc_entries(&updated)
+    };
+
+    // Get or create config path outside the lock, using spawn_blocking for the
+    // filesystem work so we don't block the async runtime.
+    let maybe_config_path = state.config_path.lock().unwrap().clone();
+    let config_path = match maybe_config_path {
+        Some(p) => p,
+        None => {
+            let data_dir_owned = data_dir.clone();
+            let p = match tokio::task::spawn_blocking(move || create_minimal_config(&data_dir_owned))
+                .await
+                .map_err(|e| crate::error::ErrorReport::new(format!("Config creation task panicked: {e}")))
+            {
+                Ok(Ok(p)) => p,
+                Ok(Err(e)) | Err(e) => {
+                    log::error!("Failed to create minimal config file: {e}");
+                    return Redirect::to("/hedgedoc");
+                }
+            };
+            *state.config_path.lock().unwrap() = Some(p.clone());
+            p
+        }
+    };
+
+    // Persist to TOML via spawn_blocking (atomic write).
+    let config_path_owned = config_path.clone();
+    let entries_owned = new_entries.clone();
+    if let Err(e) = tokio::task::spawn_blocking(move || persist_hedgedoc_entries(&config_path_owned, &entries_owned))
+        .await
+        .map_err(|e| crate::error::ErrorReport::new(format!("Persist task panicked: {e}")))
+        .and_then(|r| r)
+    {
+        log::error!("Failed to persist HedgeDoc entries to config: {e}");
+        return Redirect::to("/hedgedoc");
+    }
+
+    // Persist succeeded: now update in-memory state.
+    {
+        let mut sources = state.hedgedoc_sources.lock().unwrap();
+        if let Some(source) = new_source {
+            sources.push(source);
+        } else if let Some(note) = new_note {
+            if let Some(src) = sources.iter_mut().find(|s| s.source_uri == source_uri) {
                 src.notes.push(note);
             }
         }
-        all_hedgedoc_entries(&sources)
-    };
-
-    // Get or create config path (critical section before async operations)
-    let config_path = {
-        let mut config_path_guard = state.config_path.lock().unwrap();
-        match config_path_guard.as_ref() {
-            Some(p) => p.clone(),
-            None => {
-                // Create minimal config file on first add
-                match create_minimal_config(&data_dir) {
-                    Ok(p) => {
-                        *config_path_guard = Some(p.clone());
-                        p
-                    }
-                    Err(e) => {
-                        log::error!("Failed to create minimal config file: {e}");
-                        return Redirect::to("/hedgedoc");
-                    }
-                }
-            }
-        }
-    };
-
-    // Persist to TOML
-    if let Err(e) = persist_hedgedoc_entries(&config_path, &new_entries) {
-        log::error!("Failed to persist HedgeDoc entries to config: {e}");
-        return Redirect::to("/hedgedoc");
     }
 
     // Refresh combined collection infos.
@@ -693,10 +719,8 @@ pub async fn hedgedoc_sync_now_handler(State(state): State<AppState>) -> Redirec
         }
     }
 
-    let combined = {
-        let sources = state.hedgedoc_sources.lock().unwrap();
-        build_combined_infos(&state.config.collections, &sources)
-    };
+    let sources_snapshot = state.hedgedoc_sources.lock().unwrap().clone();
+    let combined = build_combined_infos(&state.config.collections, &sources_snapshot);
     *state.collections.write().await = combined;
     *state.hedgedoc_last_synced.lock().unwrap() = Some(Timestamp::now());
 

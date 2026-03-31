@@ -75,15 +75,30 @@ fn build_download_url(url: &str) -> Fallible<reqwest::Url> {
     Ok(parsed)
 }
 
+/// Return the shared HTTP client, initialising it on first use.
+/// The client is configured with a 30-second timeout.
+fn http_client() -> Fallible<&'static reqwest::Client> {
+    static CLIENT: std::sync::OnceLock<reqwest::Client> = std::sync::OnceLock::new();
+    // Fast path: already initialised.
+    if let Some(c) = CLIENT.get() {
+        return Ok(c);
+    }
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(30))
+        .build()
+        .map_err(crate::error::ErrorReport::from)?;
+    // get_or_init is stable; if another thread raced us, the already-stored
+    // client is returned and our freshly built one is dropped (harmless).
+    Ok(CLIENT.get_or_init(|| client))
+}
+
 /// Fetch raw markdown from a HedgeDoc note URL.
 /// Appends `/download` to the note URL path to get the raw markdown.
 /// Only HTTPS URLs are accepted. Requests time out after 30 seconds.
 pub async fn fetch_markdown(url: &str) -> Fallible<String> {
     validate_hedgedoc_url(url)?;
     let download_url = build_download_url(url)?;
-    let client = reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(30))
-        .build()?;
+    let client = http_client()?;
     let response = client.get(download_url.clone()).send().await?;
     if !response.status().is_success() {
         return fail(format!(
@@ -153,7 +168,12 @@ fn strip_leading_yaml_frontmatter(markdown: &str) -> &str {
 fn wrap_with_deck_frontmatter(markdown: &str, deck_name: &str) -> Fallible<String> {
     let mut table = toml::map::Map::new();
     table.insert("name".to_string(), toml::Value::String(deck_name.to_string()));
-    let frontmatter_toml = toml::to_string(&toml::Value::Table(table))?;
+    let mut frontmatter_toml = toml::to_string(&toml::Value::Table(table))?;
+    // Ensure the TOML block ends with a newline so the closing `---` stays on
+    // its own line and the frontmatter parser can find it.
+    if !frontmatter_toml.ends_with('\n') {
+        frontmatter_toml.push('\n');
+    }
     let body = strip_leading_yaml_frontmatter(markdown);
     Ok(format!("---\n{frontmatter_toml}---\n\n{body}"))
 }
@@ -342,11 +362,9 @@ pub fn spawn_hedgedoc_sync_task(
                 }
             }
 
-            // Refresh the unified collection info list.
-            let all_infos = build_combined_infos(
-                &static_collections,
-                &hedgedoc_sources.lock().unwrap(),
-            );
+            // Snapshot sources before releasing the lock, then do FS/DB work outside it.
+            let hedgedoc_snapshot = hedgedoc_sources.lock().unwrap().clone();
+            let all_infos = build_combined_infos(&static_collections, &hedgedoc_snapshot);
             *collection_infos.write().await = all_infos;
             *hedgedoc_last_synced.lock().unwrap() = Some(Timestamp::now());
             log::debug!("Periodic HedgeDoc sync complete");
@@ -423,7 +441,17 @@ pub fn persist_hedgedoc_entries(
     }
 
     let serialized = toml::to_string_pretty(&doc)?;
-    std::fs::write(config_path, serialized)?;
+    // Atomic write: write to a temp file in the same directory then rename,
+    // so a crash mid-write cannot corrupt the config.
+    static WRITE_COUNTER: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+    let n = WRITE_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    let dir = config_path.parent().unwrap_or(Path::new("."));
+    let tmp_path = dir.join(format!(".hashcards-config-{}-{}.tmp", std::process::id(), n));
+    std::fs::write(&tmp_path, serialized)?;
+    if let Err(e) = std::fs::rename(&tmp_path, config_path) {
+        let _ = std::fs::remove_file(&tmp_path);
+        return Err(e.into());
+    }
     Ok(())
 }
 
