@@ -65,11 +65,18 @@ impl From<rusqlite::Error> for ErrorReport {
     }
 }
 
-#[cfg(test)]
 impl From<reqwest::Error> for ErrorReport {
     fn from(value: reqwest::Error) -> Self {
         ErrorReport {
-            message: format!("reqwest: {value:#?}"),
+            message: format!("HTTP error: {value}"),
+        }
+    }
+}
+
+impl From<toml::ser::Error> for ErrorReport {
+    fn from(value: toml::ser::Error) -> Self {
+        ErrorReport {
+            message: format!("TOML serialization error: {value}"),
         }
     }
 }
