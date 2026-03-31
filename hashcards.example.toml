@@ -26,3 +26,14 @@ path = "japanese"
 [[collection]]
 name = "Anatomy"
 path = "medicine/anatomy"
+
+# Optional: HedgeDoc sources. Each entry is a publicly accessible HedgeDoc note
+# URL. hashcards fetches the raw markdown (via {url}/download), derives the
+# collection name from the document title, and syncs it on the same interval as
+# git. Sources can also be added/removed via the web interface.
+
+# [[hedgedoc]]
+# url = "https://notes.example.com/q1QcHIRvQFiTxzwnF-_L3g"
+
+# [[hedgedoc]]
+# url = "https://notes.example.com/anotherNoteId"

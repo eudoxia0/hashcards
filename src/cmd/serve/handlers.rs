@@ -27,9 +27,13 @@ use crate::cmd::drill::template::page_template;
 use crate::cmd::drill::template::page_template_with_script;
 use crate::cmd::serve::browse::build_deck_tree;
 use crate::cmd::serve::browse::render_browse_page;
+use crate::cmd::serve::config::HedgedocEntry;
 use crate::cmd::serve::config::ResolvedCollection;
 use crate::cmd::serve::git::clone_or_pull;
-use crate::cmd::serve::git::refresh_collection_info;
+use crate::cmd::serve::hedgedoc::build_combined_infos;
+use crate::cmd::serve::hedgedoc::build_source;
+use crate::cmd::serve::hedgedoc::persist_hedgedoc_entries;
+use crate::cmd::serve::hedgedoc::sync_source;
 use crate::cmd::serve::state::AppState;
 use crate::cmd::serve::state::DrillSession;
 use crate::collection::Collection;
@@ -107,8 +111,15 @@ fn collection_get_inner(state: &AppState, slug: &str) -> Fallible<String> {
     Ok(html.into_string())
 }
 
-fn find_collection<'a>(state: &'a AppState, slug: &str) -> Option<&'a ResolvedCollection> {
-    state.config.collections.iter().find(|c| c.slug == slug)
+fn find_collection(state: &AppState, slug: &str) -> Option<ResolvedCollection> {
+    if let Some(rc) = state.config.collections.iter().find(|c| c.slug == slug) {
+        return Some(rc.clone());
+    }
+    let sources = state.hedgedoc_sources.lock().unwrap();
+    sources
+        .iter()
+        .find(|s| s.collection.slug == slug)
+        .map(|s| s.collection.clone())
 }
 
 /// Form data for the start-drill endpoint.
@@ -404,8 +415,11 @@ pub async fn sync_handler(State(state): State<AppState>) -> Redirect {
 
     match clone_or_pull(&git.repo_url, &git.branch, &git.repo_dir).await {
         Ok(()) => {
-            let infos = refresh_collection_info(&state.config.collections);
-            *state.collections.write().await = infos;
+            let combined = {
+                let sources = state.hedgedoc_sources.lock().unwrap();
+                build_combined_infos(&state.config.collections, &sources)
+            };
+            *state.collections.write().await = combined;
             *state.last_synced.lock().unwrap() = Some(Timestamp::now());
             log::debug!("Manual sync completed successfully");
         }
@@ -414,4 +428,176 @@ pub async fn sync_handler(State(state): State<AppState>) -> Redirect {
         }
     }
     Redirect::to("/")
+}
+
+// ---- HedgeDoc management handlers ----
+
+/// Render the HedgeDoc source management page.
+pub async fn hedgedoc_manage_handler(
+    State(state): State<AppState>,
+) -> (StatusCode, Html<String>) {
+    use crate::cmd::serve::hedgedoc_ui::render_manage_page;
+    let sources = state.hedgedoc_sources.lock().unwrap();
+    let last_synced = *state.hedgedoc_last_synced.lock().unwrap();
+    let config_available = state.config_path.is_some();
+    let html = render_manage_page(&sources, last_synced, config_available);
+    (StatusCode::OK, Html(html.into_string()))
+}
+
+#[derive(serde::Deserialize)]
+pub struct AddHedgedocForm {
+    pub url: String,
+}
+
+/// Add a new HedgeDoc source URL.
+pub async fn hedgedoc_add_handler(
+    State(state): State<AppState>,
+    Form(form): Form<AddHedgedocForm>,
+) -> Redirect {
+    let url = form.url.trim().to_string();
+    if url.is_empty() {
+        return Redirect::to("/hedgedoc");
+    }
+
+    // Require a config file to persist the change.
+    let config_path = match &state.config_path {
+        Some(p) => p.as_ref().clone(),
+        None => {
+            log::error!("Cannot add HedgeDoc source: no config file available");
+            return Redirect::to("/hedgedoc");
+        }
+    };
+
+    let data_dir = match &state.config.data_dir {
+        Some(d) => d.clone(),
+        None => {
+            log::error!("Cannot add HedgeDoc source: no data_dir configured");
+            return Redirect::to("/hedgedoc");
+        }
+    };
+
+    // Check for duplicate URL.
+    {
+        let sources = state.hedgedoc_sources.lock().unwrap();
+        if sources.iter().any(|s| s.url == url) {
+            return Redirect::to("/hedgedoc");
+        }
+    }
+
+    let source = match build_source(&url, &data_dir).await {
+        Ok(s) => s,
+        Err(e) => {
+            log::error!("Failed to add HedgeDoc source {url}: {e}");
+            return Redirect::to("/hedgedoc");
+        }
+    };
+
+    // Persist to TOML then update in-memory state.
+    let new_entries: Vec<HedgedocEntry> = {
+        let mut sources = state.hedgedoc_sources.lock().unwrap();
+        sources.push(source);
+        sources.iter().map(|s| HedgedocEntry { url: s.url.clone() }).collect()
+    };
+
+    if let Err(e) = persist_hedgedoc_entries(&config_path, &new_entries) {
+        log::error!("Failed to persist HedgeDoc entries to config: {e}");
+    }
+
+    // Refresh combined collection infos.
+    let combined = {
+        let sources = state.hedgedoc_sources.lock().unwrap();
+        build_combined_infos(&state.config.collections, &sources)
+    };
+    *state.collections.write().await = combined;
+
+    Redirect::to("/hedgedoc")
+}
+
+#[derive(serde::Deserialize)]
+pub struct DeleteHedgedocForm {
+    pub url: String,
+}
+
+/// Remove a HedgeDoc source by URL.
+pub async fn hedgedoc_delete_handler(
+    State(state): State<AppState>,
+    Form(form): Form<DeleteHedgedocForm>,
+) -> Redirect {
+    let config_path = match &state.config_path {
+        Some(p) => p.as_ref().clone(),
+        None => return Redirect::to("/hedgedoc"),
+    };
+
+    let remaining: Vec<HedgedocEntry> = {
+        let mut sources = state.hedgedoc_sources.lock().unwrap();
+        sources.retain(|s| s.url != form.url);
+        sources.iter().map(|s| HedgedocEntry { url: s.url.clone() }).collect()
+    };
+
+    if let Err(e) = persist_hedgedoc_entries(&config_path, &remaining) {
+        log::error!("Failed to persist HedgeDoc entries after deletion: {e}");
+    }
+
+    // Refresh combined collection infos.
+    let combined = {
+        let sources = state.hedgedoc_sources.lock().unwrap();
+        build_combined_infos(&state.config.collections, &sources)
+    };
+    *state.collections.write().await = combined;
+
+    Redirect::to("/hedgedoc")
+}
+
+/// Manually re-sync all HedgeDoc sources.
+pub async fn hedgedoc_sync_now_handler(State(state): State<AppState>) -> Redirect {
+    let data_dir = match &state.config.data_dir {
+        Some(d) => d.clone(),
+        None => return Redirect::to("/hedgedoc"),
+    };
+
+    // Collect URLs to sync (release lock before awaiting).
+    let entries: Vec<(String, String)> = {
+        let sources = state.hedgedoc_sources.lock().unwrap();
+        sources
+            .iter()
+            .map(|s| (s.url.clone(), s.collection.slug.clone()))
+            .collect()
+    };
+
+    for (url, _slug) in &entries {
+        use crate::cmd::serve::hedgedoc::note_id_from_url;
+        use crate::cmd::serve::hedgedoc::resolved_collection;
+
+        let note_id = match note_id_from_url(url) {
+            Some(id) => id,
+            None => continue,
+        };
+        let rc_tmp = resolved_collection(&note_id, "", &data_dir);
+        match sync_source(url, &rc_tmp).await {
+            Ok(title) => {
+                let mut sources = state.hedgedoc_sources.lock().unwrap();
+                if let Some(src) = sources.iter_mut().find(|s| &s.url == url) {
+                    src.collection.name = title;
+                    src.last_error = None;
+                }
+            }
+            Err(e) => {
+                let msg = e.to_string();
+                log::error!("Manual HedgeDoc sync failed for {url}: {msg}");
+                let mut sources = state.hedgedoc_sources.lock().unwrap();
+                if let Some(src) = sources.iter_mut().find(|s| &s.url == url) {
+                    src.last_error = Some(msg);
+                }
+            }
+        }
+    }
+
+    let combined = {
+        let sources = state.hedgedoc_sources.lock().unwrap();
+        build_combined_infos(&state.config.collections, &sources)
+    };
+    *state.collections.write().await = combined;
+    *state.hedgedoc_last_synced.lock().unwrap() = Some(Timestamp::now());
+
+    Redirect::to("/hedgedoc")
 }

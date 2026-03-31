@@ -10,6 +10,7 @@ use tokio::time::interval;
 use crate::cmd::serve::config::ResolvedCollection;
 use crate::cmd::serve::config::ResolvedGit;
 use crate::cmd::serve::state::CollectionInfo;
+use crate::cmd::serve::state::HedgedocSource;
 use crate::error::Fallible;
 use crate::error::fail;
 use crate::types::timestamp::Timestamp;
@@ -75,7 +76,7 @@ pub fn refresh_collection_info(collections: &[ResolvedCollection]) -> Vec<Collec
     infos
 }
 
-fn compute_collection_counts(coll_dir: &Path, db_path: &Path) -> Fallible<(usize, usize)> {
+pub fn compute_collection_counts(coll_dir: &Path, db_path: &Path) -> Fallible<(usize, usize)> {
     use crate::collection::Collection;
     use crate::types::date::Date;
 
@@ -112,6 +113,7 @@ pub fn spawn_sync_task(
     collections: Vec<ResolvedCollection>,
     collection_infos: Arc<RwLock<Vec<CollectionInfo>>>,
     last_synced: Arc<Mutex<Option<Timestamp>>>,
+    hedgedoc_sources: Arc<Mutex<Vec<HedgedocSource>>>,
 ) {
     if git.poll_interval_minutes == 0 {
         log::debug!("Periodic git sync disabled (poll_interval_minutes = 0)");
@@ -133,8 +135,27 @@ pub fn spawn_sync_task(
                 log::error!("Periodic git sync failed: {e}");
                 continue;
             }
-            let infos = refresh_collection_info(&collections);
-            *collection_infos.write().await = infos;
+            let static_infos = refresh_collection_info(&collections);
+            let hedgedoc_infos: Vec<CollectionInfo> = {
+                let sources = hedgedoc_sources.lock().unwrap();
+                sources
+                    .iter()
+                    .map(|s| {
+                        let (total_cards, due_today) =
+                            compute_collection_counts(&s.collection.coll_dir, &s.collection.db_path)
+                                .unwrap_or((0, 0));
+                        CollectionInfo {
+                            name: s.collection.name.clone(),
+                            slug: s.collection.slug.clone(),
+                            total_cards,
+                            due_today,
+                        }
+                    })
+                    .collect()
+            };
+            let mut combined = static_infos;
+            combined.extend(hedgedoc_infos);
+            *collection_infos.write().await = combined;
             *last_synced.lock().unwrap() = Some(Timestamp::now());
             log::debug!("Periodic git sync complete");
         }

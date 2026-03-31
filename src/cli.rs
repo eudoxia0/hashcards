@@ -209,8 +209,10 @@ fn resolve_serve_config(
 ) -> Fallible<ResolvedServeConfig> {
     // Explicit --config: load that file
     if let Some(path) = config_path {
+        let canonical = std::fs::canonicalize(&path)
+            .map_err(|_| crate::error::ErrorReport::new(format!("Config file not found: {path}")))?;
         let config = load_config(Path::new(&path))?;
-        return ResolvedServeConfig::from_toml(config);
+        return Ok(ResolvedServeConfig::from_toml(config)?.with_config_path(canonical));
     }
 
     // No --config: if directories were given, serve them directly
@@ -221,8 +223,10 @@ fn resolve_serve_config(
     // No --config and no directories: try hashcards.toml in CWD
     let default_path = Path::new("hashcards.toml");
     if default_path.exists() {
+        let canonical = std::fs::canonicalize(default_path)
+            .map_err(|_| crate::error::ErrorReport::new("Failed to resolve hashcards.toml path"))?;
         let config = load_config(default_path)?;
-        return ResolvedServeConfig::from_toml(config);
+        return Ok(ResolvedServeConfig::from_toml(config)?.with_config_path(canonical));
     }
 
     fail(

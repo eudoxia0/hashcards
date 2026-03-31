@@ -2,6 +2,8 @@ mod browse;
 pub mod config;
 mod git;
 mod handlers;
+mod hedgedoc;
+mod hedgedoc_ui;
 mod landing;
 pub mod server;
 mod state;
@@ -53,6 +55,9 @@ mod tests {
                 coll_dir: coll_dir.clone(),
                 db_path: coll_dir.join("hashcards.db"),
             }],
+            data_dir: None,
+            config_path: None,
+            hedgedoc_entries: Vec::new(),
         };
 
         spawn(async move { start_serve(config).await });

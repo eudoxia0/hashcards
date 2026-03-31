@@ -7,6 +7,9 @@
             <change author="overcuriousity">
                 Added `serve` subcommand for running hashcards as a persistent web server with multiple collections synced from a git repository.
             </change>
+            <change author="mstoeck3">
+                Added HedgeDoc source support in serve mode: publicly accessible HedgeDoc notes can be used as collections. Sources are managed via a web interface at `/hedgedoc` and persisted to the TOML config file. Syncing follows the same polling interval as git.
+            </change>
         </added>
         <changed>
             <change author="eudoxia0">

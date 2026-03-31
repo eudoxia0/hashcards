@@ -4,6 +4,7 @@ use std::path::Path;
 use std::path::PathBuf;
 
 use serde::Deserialize;
+use serde::Serialize;
 
 use crate::cmd::drill::server::AnswerControls;
 use crate::error::Fallible;
@@ -20,6 +21,13 @@ pub struct ServeConfig {
     pub defaults: DefaultsSection,
     #[serde(rename = "collection")]
     pub collections: Vec<CollectionEntry>,
+    #[serde(rename = "hedgedoc", default)]
+    pub hedgedoc: Vec<HedgedocEntry>,
+}
+
+#[derive(Deserialize, Serialize, Clone)]
+pub struct HedgedocEntry {
+    pub url: String,
 }
 
 #[derive(Deserialize)]
@@ -97,7 +105,7 @@ impl From<AnswerControlsConfig> for AnswerControls {
     }
 }
 
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize, Serialize, Clone)]
 pub struct CollectionEntry {
     pub name: String,
     pub path: String,
@@ -109,7 +117,7 @@ impl CollectionEntry {
     }
 }
 
-fn slugify(s: &str) -> String {
+pub fn slugify(s: &str) -> String {
     s.chars()
         .map(|c| {
             if c.is_alphanumeric() || c == '-' || c == '_' || c == '.' {
@@ -137,6 +145,7 @@ pub struct ResolvedGit {
     pub db_dir: PathBuf,
 }
 
+#[derive(Clone)]
 pub struct ResolvedCollection {
     pub name: String,
     pub slug: String,
@@ -150,6 +159,12 @@ pub struct ResolvedServeConfig {
     pub git: Option<ResolvedGit>,
     pub defaults: DefaultsSection,
     pub collections: Vec<ResolvedCollection>,
+    /// Set when loaded from a TOML file; None when using directory arguments.
+    pub data_dir: Option<PathBuf>,
+    /// Config file path; needed to persist UI changes back to disk.
+    pub config_path: Option<PathBuf>,
+    /// HedgeDoc source URLs loaded from the config file.
+    pub hedgedoc_entries: Vec<HedgedocEntry>,
 }
 
 impl ResolvedServeConfig {
@@ -193,7 +208,15 @@ impl ResolvedServeConfig {
             git,
             defaults: config.defaults,
             collections,
+            data_dir: Some(data_dir),
+            config_path: None,
+            hedgedoc_entries: config.hedgedoc,
         })
+    }
+
+    pub fn with_config_path(mut self, path: PathBuf) -> Self {
+        self.config_path = Some(path);
+        self
     }
 
     pub fn from_directories(
@@ -233,6 +256,9 @@ impl ResolvedServeConfig {
             git: None,
             defaults: DefaultsSection::default(),
             collections,
+            data_dir: None,
+            config_path: None,
+            hedgedoc_entries: Vec::new(),
         })
     }
 }
