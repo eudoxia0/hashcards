@@ -37,7 +37,9 @@ use crate::cmd::serve::handlers::hedgedoc_manage_handler;
 use crate::cmd::serve::handlers::hedgedoc_sync_now_handler;
 use crate::cmd::serve::handlers::sync_handler;
 use crate::cmd::serve::hedgedoc::build_combined_infos;
+use crate::cmd::serve::hedgedoc::build_note;
 use crate::cmd::serve::hedgedoc::build_source;
+use crate::cmd::serve::hedgedoc::source_uri_from_url;
 use crate::cmd::serve::hedgedoc::spawn_hedgedoc_sync_task;
 use crate::cmd::serve::landing::landing_handler;
 use crate::cmd::serve::state::AppState;
@@ -79,6 +81,32 @@ pub async fn start_serve(config: ResolvedServeConfig) -> Fallible<()> {
     let hedgedoc_sources_init = if let Some(ref dd) = data_dir {
         let mut sources = Vec::new();
         for entry in &config.hedgedoc_entries {
+            let maybe_source_uri = source_uri_from_url(&entry.url);
+            let maybe_collection = maybe_source_uri.as_ref().and_then(|source_uri| {
+                sources
+                    .iter()
+                    .find(|s: &&crate::cmd::serve::state::HedgedocSource| &s.source_uri == source_uri)
+                    .map(|s| s.collection.clone())
+            });
+
+            if let Some(collection) = maybe_collection {
+                match build_note(&entry.url, &collection).await {
+                    Ok(note) => {
+                        if let Some(source_uri) = maybe_source_uri {
+                            if let Some(existing) =
+                                sources.iter_mut().find(|s| s.source_uri == source_uri)
+                            {
+                                existing.notes.push(note);
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        log::error!("Failed to initialize HedgeDoc source {}: {e}", entry.url)
+                    }
+                }
+                continue;
+            }
+
             match build_source(&entry.url, dd).await {
                 Ok(s) => sources.push(s),
                 Err(e) => log::error!("Failed to initialize HedgeDoc source {}: {e}", entry.url),
@@ -117,7 +145,7 @@ pub async fn start_serve(config: ResolvedServeConfig) -> Fallible<()> {
         .map(|g| g.poll_interval_minutes)
         .unwrap_or(30);
 
-    let config_path: Option<Arc<PathBuf>> = config.config_path.clone().map(Arc::new);
+    let config_path: Arc<Mutex<Option<PathBuf>>> = Arc::new(Mutex::new(config.config_path.clone()));
     let bind = format!("{}:{}", config.host, config.port);
 
     let config = Arc::new(config);

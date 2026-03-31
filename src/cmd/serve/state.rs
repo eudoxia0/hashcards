@@ -20,7 +20,7 @@ pub struct AppState {
     pub last_synced: Arc<Mutex<Option<Timestamp>>>,
     pub hedgedoc_sources: Arc<Mutex<Vec<HedgedocSource>>>,
     pub hedgedoc_last_synced: Arc<Mutex<Option<Timestamp>>>,
-    pub config_path: Option<Arc<PathBuf>>,
+    pub config_path: Arc<Mutex<Option<PathBuf>>>,
 }
 
 pub struct CollectionInfo {
@@ -32,8 +32,15 @@ pub struct CollectionInfo {
 
 /// A HedgeDoc markdown endpoint used as a collection source.
 pub struct HedgedocSource {
-    pub url: String,
+    pub source_uri: String,
     pub collection: ResolvedCollection,
+    pub notes: Vec<HedgedocNote>,
+}
+
+pub struct HedgedocNote {
+    pub url: String,
+    pub deck_name: String,
+    pub file_name: String,
     pub last_error: Option<String>,
 }
 
