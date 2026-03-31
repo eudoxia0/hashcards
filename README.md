@@ -185,6 +185,25 @@ $ hashcards orphans list Cards
 # no output
 ```
 
+### `serve`
+
+Run hashcards as a persistent web server, serving multiple collections at once.
+
+```bash
+$ hashcards serve [DIRECTORIES...]
+$ hashcards serve --config hashcards.toml
+```
+
+Options:
+
+- `--config=<PATH>`: Path to a TOML configuration file.
+- `--host=<HOST>`: Bind address (default: `0.0.0.0`).
+- `--port=<PORT>`: Port number (default: `8000`).
+
+**Priority:** if explicit `--config` is given, it is used. Otherwise, if one or more directories are passed as arguments, they are served directly without a config file. If neither is given and a `hashcards.toml` exists in the current directory, that is used. If none of these apply, an error is printed.
+
+The landing page lists all configured collections with their due-today count. Clicking a collection opens a deck browser where you can select which decks to drill. Drilling works the same as `drill` mode.
+
 ### `export`
 
 Export a collection to a JSON file.
@@ -379,6 +398,59 @@ A single cloze card in the Markdown text with _n_ cloze deletions corresponds to
 Hashcards supports "sibling burial": by default, within a session, only one sibling in a particular sibling group will be shown. This is to prevent the text of one card spoiling the answer of another card. The idea is you might do multiple sessions in a single day, and each session shows a different sibling, until you run out of siblings for all cards due today.
 
 You can turn this off by passing `--bury-siblings=false` to the `drill` command.
+
+## Serve Mode
+
+`hashcards serve` is designed for hosting your cards as a persistent server — for example on a home server or VPS — so you can review from any browser without running the CLI locally.
+
+### Local Use
+
+Pass one or more collection directories to serve them without any config file:
+
+```bash
+$ hashcards serve ./japanese ./math
+```
+
+Each directory becomes a collection. The database file (`hashcards.db`) is stored inside each collection directory, just as with `drill`.
+
+### Configuration File
+
+For more control, create a `hashcards.toml` (see `hashcards.example.toml` for the full format):
+
+```toml
+[server]
+host = "0.0.0.0"
+port = 8000
+data_dir = "/var/lib/hashcards"
+
+[git]
+repo_url = "https://github.com/user/flashcards.git"
+branch = "main"
+poll_interval_minutes = 30
+
+[defaults]
+answer_controls = "full"   # "full" (four grades) or "binary" (forgot/good)
+bury_siblings = true
+
+[[collection]]
+name = "Japanese"
+path = "japanese"
+
+[[collection]]
+name = "Mathematics"
+path = "math"
+```
+
+When a `[git]` section is present, the server clones the repository into `{data_dir}/repo` on startup and syncs it periodically. Databases are stored in `{data_dir}/db`. A "Sync Now" button on the landing page triggers an immediate sync.
+
+The `[git]` section is optional. Omitting it disables git syncing; collection paths are then resolved relative to `{data_dir}/repo` (or you can pass directories directly on the command line instead).
+
+### Defaults
+
+The `[defaults]` section configures behaviour for all collections:
+
+- `answer_controls`: `"full"` shows four grading buttons (Forgot / Hard / Good / Easy); `"binary"` shows only Forgot and Good.
+- `bury_siblings`: when `true` (the default), only one sibling card from each cloze group is shown per session.
 
 ## Database
 

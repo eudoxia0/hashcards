@@ -40,6 +40,10 @@ use tokio::sync::oneshot::channel;
 
 use crate::cmd::drill::cache::Cache;
 use crate::cmd::drill::get::get_handler;
+use crate::cmd::drill::hljs::HLJS_CSS_URL;
+use crate::cmd::drill::hljs::HLJS_JS_URL;
+use crate::cmd::drill::hljs::hljs_css_handler;
+use crate::cmd::drill::hljs::hljs_js_handler;
 use crate::cmd::drill::katex::KATEX_CSS_URL;
 use crate::cmd::drill::katex::KATEX_JS_URL;
 use crate::cmd::drill::katex::KATEX_MHCHEM_JS_URL;
@@ -186,6 +190,8 @@ pub async fn start_server(config: ServerConfig) -> Fallible<()> {
     let app = app.route(KATEX_JS_URL, get(katex_js_handler));
     let app = app.route(KATEX_MHCHEM_JS_URL, get(katex_mhchem_js_handler));
     let app = app.route("/katex/fonts/{*path}", get(katex_font_handler));
+    let app = app.route(HLJS_CSS_URL, get(hljs_css_handler));
+    let app = app.route(HLJS_JS_URL, get(hljs_js_handler));
     let app = app.route("/file/{*path}", get(file_handler));
     let app = app.fallback(not_found_handler);
     let app = app.with_state(state.clone());
@@ -224,7 +230,7 @@ async fn script_handler(
     (StatusCode::OK, [(CONTENT_TYPE, "text/javascript")], content)
 }
 
-fn escape_js_string_literal(s: &str) -> String {
+pub fn escape_js_string_literal(s: &str) -> String {
     s.replace('\\', "\\\\")
         .replace('`', "\\`")
         .replace('$', "\\$")

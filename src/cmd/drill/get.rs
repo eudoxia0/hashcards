@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::path::Path;
+
 use axum::extract::State;
 use axum::http::StatusCode;
 use axum::response::Html;
@@ -27,6 +29,26 @@ use crate::markdown::MarkdownRenderConfig;
 use crate::media::resolve::MediaResolverBuilder;
 use crate::types::card::Card;
 use crate::types::card::CardType;
+use crate::types::timestamp::Timestamp;
+
+/// What to show on the completion page.
+pub enum CompletionAction {
+    /// Show a "Shutdown" button (drill mode).
+    Shutdown,
+    /// Show a "Back to Collections" link (serve mode).
+    BackToCollections,
+}
+
+/// Everything the rendering functions need, decoupled from ServerState.
+pub struct RenderContext<'a> {
+    pub directory: &'a Path,
+    pub total_cards: usize,
+    pub session_started_at: Timestamp,
+    pub answer_controls: AnswerControls,
+    pub form_action: &'a str,
+    pub file_url_prefix: &'a str,
+    pub completion_action: CompletionAction,
+}
 
 pub async fn get_handler(State(state): State<ServerState>) -> (StatusCode, Html<String>) {
     let html = match inner(state).await {
@@ -43,19 +65,29 @@ pub async fn get_handler(State(state): State<ServerState>) -> (StatusCode, Html<
 
 async fn inner(state: ServerState) -> Fallible<Markup> {
     let mutable = state.mutable.lock().unwrap();
+    let file_url_prefix = format!("http://localhost:{}/file", state.port);
+    let ctx = RenderContext {
+        directory: &state.directory,
+        total_cards: state.total_cards,
+        session_started_at: state.session_started_at,
+        answer_controls: state.answer_controls,
+        form_action: "/",
+        file_url_prefix: &file_url_prefix,
+        completion_action: CompletionAction::Shutdown,
+    };
     let body = if mutable.finished_at.is_some() {
-        render_completion_page(&state, &mutable)?
+        render_completion_page(&ctx, &mutable)?
     } else {
-        render_session_page(&state, &mutable)?
+        render_session_page(&ctx, &mutable)?
     };
     let html = page_template(body);
     Ok(html)
 }
 
-fn render_session_page(state: &ServerState, mutable: &MutableState) -> Fallible<Markup> {
+pub fn render_session_page(ctx: &RenderContext, mutable: &MutableState) -> Fallible<Markup> {
     let undo_disabled = mutable.reviews.is_empty();
-    let total_cards = state.total_cards;
-    let cards_done = state.total_cards - mutable.cards.len();
+    let total_cards = ctx.total_cards;
+    let cards_done = ctx.total_cards - mutable.cards.len();
     let percent_done = if total_cards == 0 {
         100
     } else {
@@ -63,18 +95,19 @@ fn render_session_page(state: &ServerState, mutable: &MutableState) -> Fallible<
     };
     let progress_bar_style = format!("width: {}%;", percent_done);
     let card = mutable.cards[0].clone();
-    let coll_path = state.directory.clone();
+    let coll_path = ctx.directory.to_path_buf();
     let deck_path = card.relative_file_path(&coll_path)?;
     let config = MarkdownRenderConfig {
         resolver: MediaResolverBuilder::new()
             .with_collection_path(coll_path)?
             .with_deck_path(deck_path)?
             .build()?,
-        port: state.port,
+        file_url_prefix: ctx.file_url_prefix.to_string(),
     };
     let card_content = render_card(&card, mutable.reveal, &config)?;
+    let form_action = ctx.form_action;
     let card_controls = if mutable.reveal {
-        let grades = match state.answer_controls {
+        let grades = match ctx.answer_controls {
             AnswerControls::Binary => html! {
                 input id="forgot" type="submit" name="action" value="Forgot" title="Mark card as forgotten.";
                 input id="good" type="submit" name="action" value="Good" title="Mark card as remembered.";
@@ -87,7 +120,7 @@ fn render_session_page(state: &ServerState, mutable: &MutableState) -> Fallible<
             },
         };
         html! {
-            form action="/" method="post" {
+            form action=(form_action) method="post" {
                 (undo_button(undo_disabled))
                 div.spacer {}
                 div.grades {
@@ -99,7 +132,7 @@ fn render_session_page(state: &ServerState, mutable: &MutableState) -> Fallible<
         }
     } else {
         html! {
-            form action="/" method="post" {
+            form action=(form_action) method="post" {
                 (undo_button(undo_disabled))
                 div.spacer {}
                 input id="reveal" type="submit" name="action" value="Reveal" title="Show the answer. Shortcut: space.";
@@ -179,10 +212,10 @@ fn render_card(card: &Card, reveal: bool, config: &MarkdownRenderConfig) -> Fall
 
 const TS_FORMAT: &str = "%Y-%m-%d %H:%M:%S";
 
-fn render_completion_page(state: &ServerState, mutable: &MutableState) -> Fallible<Markup> {
-    let total_cards = state.total_cards;
-    let cards_reviewed = state.total_cards - mutable.cards.len();
-    let start = state.session_started_at.into_inner();
+pub fn render_completion_page(ctx: &RenderContext, mutable: &MutableState) -> Fallible<Markup> {
+    let total_cards = ctx.total_cards;
+    let cards_reviewed = ctx.total_cards - mutable.cards.len();
+    let start = ctx.session_started_at.into_inner();
     let end = mutable.finished_at.unwrap().into_inner();
     let duration_s = (end - start).num_seconds();
     let pace: f64 = if cards_reviewed == 0 {
@@ -193,6 +226,24 @@ fn render_completion_page(state: &ServerState, mutable: &MutableState) -> Fallib
     let pace = format!("{:.2}", pace);
     let start_ts = start.format(TS_FORMAT).to_string();
     let end_ts = end.format(TS_FORMAT).to_string();
+
+    let action_button = match &ctx.completion_action {
+        CompletionAction::Shutdown => html! {
+            div.shutdown-container {
+                form action=(ctx.form_action) method="post" {
+                    input #shutdown .shutdown-button type="submit" name="action" value="Shutdown" title="Shut down the server";
+                }
+            }
+        },
+        CompletionAction::BackToCollections => html! {
+            div.shutdown-container {
+                form action=(ctx.form_action) method="post" {
+                    input #home .home-button type="submit" name="action" value="Home" title="Back to collections";
+                }
+            }
+        },
+    };
+
     let html = html! {
         div.finished {
             h1 {
@@ -238,11 +289,7 @@ fn render_completion_page(state: &ServerState, mutable: &MutableState) -> Fallib
                     }
                 }
             }
-            div.shutdown-container {
-                form action="/" method="post" {
-                    input #shutdown .shutdown-button type="submit" name="action" value="Shutdown" title="Shut down the server";
-                }
-            }
+            (action_button)
         }
     };
     Ok(html)

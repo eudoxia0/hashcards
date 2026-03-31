@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::path::Path;
 use std::process::exit;
 
 use clap::Parser;
@@ -25,9 +26,13 @@ use crate::cmd::drill::server::start_server;
 use crate::cmd::export::export_collection;
 use crate::cmd::orphans::delete_orphans;
 use crate::cmd::orphans::list_orphans;
+use crate::cmd::serve::config::ResolvedServeConfig;
+use crate::cmd::serve::config::load_config;
+use crate::cmd::serve::server::start_serve;
 use crate::cmd::stats::StatsFormat;
 use crate::cmd::stats::print_stats;
 use crate::error::Fallible;
+use crate::error::fail;
 use crate::types::timestamp::Timestamp;
 use crate::utils::wait_for_server;
 
@@ -88,6 +93,35 @@ enum Command {
         /// Optional path to the output file. By default, the output is printed to stdout.
         #[arg(long)]
         output: Option<String>,
+    },
+    /// Run as a persistent web server with multiple collections.
+    #[command(after_help = "\
+Examples:
+  hashcards serve --config hashcards.toml
+  hashcards serve ./japanese ./math
+  hashcards serve --host 127.0.0.1 --port 9000 ./cards
+
+If neither --config nor directories are given, hashcards.toml in the
+current directory is used if it exists.
+
+When --config is provided, the bind address and port are taken from the
+config file ([server] host/port). Use --host/--port only when serving
+directories directly (without a config file).
+
+Without a config file, git syncing is disabled.
+See hashcards.example.toml for the configuration format.")]
+    Serve {
+        /// Path to the configuration file.
+        #[arg(long)]
+        config: Option<String>,
+        /// Collection directories to serve (used when no config file is provided).
+        directories: Vec<String>,
+        /// Bind address (used when no --config is given; default: 0.0.0.0).
+        #[arg(long, default_value = "0.0.0.0")]
+        host: String,
+        /// Port number (used when no --config is given; default: 8000).
+        #[arg(long, default_value_t = 8000)]
+        port: u16,
     },
 }
 
@@ -155,5 +189,46 @@ pub async fn entrypoint() -> Fallible<()> {
             OrphanCommand::Delete { directory } => delete_orphans(directory),
         },
         Command::Export { directory, output } => export_collection(directory, output),
+        Command::Serve {
+            config,
+            directories,
+            host,
+            port,
+        } => {
+            let resolved = resolve_serve_config(config, directories, host, port)?;
+            start_serve(resolved).await
+        }
     }
+}
+
+fn resolve_serve_config(
+    config_path: Option<String>,
+    directories: Vec<String>,
+    host: String,
+    port: u16,
+) -> Fallible<ResolvedServeConfig> {
+    // Explicit --config: load that file
+    if let Some(path) = config_path {
+        let config = load_config(Path::new(&path))?;
+        return ResolvedServeConfig::from_toml(config);
+    }
+
+    // No --config: if directories were given, serve them directly
+    if !directories.is_empty() {
+        return ResolvedServeConfig::from_directories(directories, host, port);
+    }
+
+    // No --config and no directories: try hashcards.toml in CWD
+    let default_path = Path::new("hashcards.toml");
+    if default_path.exists() {
+        let config = load_config(default_path)?;
+        return ResolvedServeConfig::from_toml(config);
+    }
+
+    fail(
+        "no configuration found. Either provide a hashcards.toml config file \
+         (see hashcards.example.toml) or pass collection directories as arguments:\n\n  \
+         hashcards serve ./my-cards\n  \
+         hashcards serve --config hashcards.toml",
+    )
 }

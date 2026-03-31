@@ -31,7 +31,7 @@ use crate::types::performance::update_performance;
 use crate::types::timestamp::Timestamp;
 
 #[derive(Debug, Deserialize)]
-enum Action {
+pub enum Action {
     Reveal,
     Undo,
     End,
@@ -40,6 +40,7 @@ enum Action {
     Good,
     Easy,
     Shutdown,
+    Home,
 }
 
 impl Action {
@@ -56,7 +57,19 @@ impl Action {
 
 #[derive(Deserialize)]
 pub struct FormData {
-    action: Action,
+    pub action: Action,
+}
+
+/// Result of handling an action on the drill session.
+pub enum ActionResult {
+    /// Continue drilling (redirect back to the same page).
+    Continue,
+    /// The session finished (all cards done or user pressed End).
+    SessionFinished,
+    /// The user requested server shutdown (drill mode only).
+    Shutdown,
+    /// The user requested to go back to the collection list (serve mode).
+    Home,
 }
 
 pub async fn post_handler(
@@ -74,11 +87,33 @@ pub async fn post_handler(
 
 async fn action_handler(state: ServerState, action: Action) -> Fallible<()> {
     let mut mutable = state.mutable.lock().unwrap();
+    let result = handle_action(&mut mutable, state.session_started_at, action)?;
+    match result {
+        ActionResult::Shutdown => {
+            // Release the lock before sending shutdown signal.
+            drop(mutable);
+            let mut shutdown_tx = state.shutdown_tx.lock().unwrap();
+            if let Some(tx) = shutdown_tx.take() {
+                let _ = tx.send(());
+            }
+        }
+        _ => {}
+    }
+    Ok(())
+}
+
+/// Core action handling logic, reusable by both drill and serve modes.
+pub fn handle_action(
+    mutable: &mut MutableState,
+    session_started_at: Timestamp,
+    action: Action,
+) -> Fallible<ActionResult> {
     match action {
         Action::Reveal => {
             if !mutable.reveal {
                 mutable.reveal = true;
             }
+            Ok(ActionResult::Continue)
         }
         Action::Undo => {
             if !mutable.reviews.is_empty() {
@@ -97,23 +132,21 @@ async fn action_handler(state: ServerState, action: Action) -> Fallible<()> {
                 mutable.finished_at = None;
                 mutable.reveal = false;
             }
+            Ok(ActionResult::Continue)
         }
         Action::End => {
-            finish_session(&mut mutable, &state)?;
+            finish_session(mutable, session_started_at)?;
+            Ok(ActionResult::SessionFinished)
         }
         Action::Shutdown => {
-            // Only allow shutdown if session is finished
             if mutable.finished_at.is_some() {
-                // Release the lock before sending shutdown signal.
-                drop(mutable);
-                let mut shutdown_tx = state.shutdown_tx.lock().unwrap();
-                // Since this is a one-shot channel, `send()` linearly consumes
-                // `tx`. Therefore we have to mutate the cell and put a `None`
-                // in its place using the `take()` method.
-                if let Some(tx) = shutdown_tx.take() {
-                    let _ = tx.send(());
-                }
+                Ok(ActionResult::Shutdown)
+            } else {
+                Ok(ActionResult::Continue)
             }
+        }
+        Action::Home => {
+            Ok(ActionResult::Home)
         }
         Action::Forgot | Action::Hard | Action::Good | Action::Easy => {
             if mutable.reveal {
@@ -146,22 +179,23 @@ async fn action_handler(state: ServerState, action: Action) -> Fallible<()> {
 
                 // Was this the last card?
                 if mutable.cards.is_empty() {
-                    finish_session(&mut mutable, &state)?;
+                    finish_session(mutable, session_started_at)?;
+                    return Ok(ActionResult::SessionFinished);
                 }
             }
+            Ok(ActionResult::Continue)
         }
     }
-    Ok(())
 }
 
-fn finish_session(mutable: &mut MutableState, state: &ServerState) -> Fallible<()> {
+fn finish_session(mutable: &mut MutableState, session_started_at: Timestamp) -> Fallible<()> {
     log::debug!("Session completed");
     let session_ended_at = Timestamp::now();
     let reviews: Vec<Review> = mutable.reviews.clone();
     let reviews: Vec<ReviewRecord> = reviews.into_iter().map(Review::into_record).collect();
     mutable
         .db
-        .save_session(state.session_started_at, session_ended_at, reviews)?;
+        .save_session(session_started_at, session_ended_at, reviews)?;
     mutable.finished_at = Some(session_ended_at);
     for (card_hash, performance) in mutable.cache.iter() {
         mutable
@@ -174,6 +208,20 @@ fn finish_session(mutable: &mut MutableState, state: &ServerState) -> Fallible<(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::cmd::drill::cache::Cache;
+    use crate::cmd::drill::state::MutableState;
+    use crate::db::Database;
+
+    fn make_mutable() -> MutableState {
+        MutableState {
+            reveal: false,
+            db: Database::new(":memory:").unwrap(),
+            cache: Cache::new(),
+            cards: Vec::new(),
+            reviews: Vec::new(),
+            finished_at: None,
+        }
+    }
 
     #[test]
     fn test_action_grade() {
@@ -181,5 +229,41 @@ mod tests {
         assert_eq!(Action::Hard.grade(), Grade::Hard);
         assert_eq!(Action::Good.grade(), Grade::Good);
         assert_eq!(Action::Easy.grade(), Grade::Easy);
+    }
+
+    #[test]
+    fn test_home_returns_home() {
+        let mut mutable = make_mutable();
+        let now = Timestamp::now();
+        let result = handle_action(&mut mutable, now, Action::Home).unwrap();
+        assert!(matches!(result, ActionResult::Home));
+    }
+
+    #[test]
+    fn test_shutdown_returns_continue_when_unfinished() {
+        let mut mutable = make_mutable();
+        assert!(mutable.finished_at.is_none());
+        let now = Timestamp::now();
+        let result = handle_action(&mut mutable, now, Action::Shutdown).unwrap();
+        assert!(matches!(result, ActionResult::Continue));
+    }
+
+    #[test]
+    fn test_reveal_sets_flag() {
+        let mut mutable = make_mutable();
+        let now = Timestamp::now();
+        assert!(!mutable.reveal);
+        let result = handle_action(&mut mutable, now, Action::Reveal).unwrap();
+        assert!(matches!(result, ActionResult::Continue));
+        assert!(mutable.reveal);
+    }
+
+    #[test]
+    fn test_end_finishes_session() {
+        let mut mutable = make_mutable();
+        let now = Timestamp::now();
+        let result = handle_action(&mut mutable, now, Action::End).unwrap();
+        assert!(matches!(result, ActionResult::SessionFinished));
+        assert!(mutable.finished_at.is_some());
     }
 }

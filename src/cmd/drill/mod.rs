@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-mod cache;
-mod get;
-mod katex;
-mod post;
+pub mod cache;
+pub mod get;
+pub mod hljs;
+pub mod katex;
+pub mod post;
 pub mod server;
-mod state;
-mod template;
+pub mod state;
+pub mod template;
 
 #[cfg(test)]
 mod tests {

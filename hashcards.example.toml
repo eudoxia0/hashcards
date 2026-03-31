@@ -1,0 +1,28 @@
+# hashcards server configuration
+#
+# Copy this file to hashcards.toml and edit to match your setup.
+# See also: hashcards serve --help
+
+[server]
+# host = "0.0.0.0"                    # Bind address (default: 0.0.0.0)
+# port = 8000                         # Port number (default: 8000)
+data_dir = "/var/lib/hashcards"       # Directory for repo clone and databases
+
+[git]
+repo_url = "https://github.com/user/flashcards.git"
+# branch = "main"                     # Branch to track (default: main)
+# poll_interval_minutes = 30          # Sync interval; 0 to disable (default: 30)
+
+[defaults]
+# answer_controls = "full"            # "full" or "binary" (default: full)
+# bury_siblings = true                # Hide sibling cards in same session (default: true)
+
+# Define one or more collections. Paths are relative to {data_dir}/repo.
+
+[[collection]]
+name = "Japanese"
+path = "japanese"
+
+[[collection]]
+name = "Anatomy"
+path = "medicine/anatomy"
