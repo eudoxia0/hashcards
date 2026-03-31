@@ -31,12 +31,14 @@ pub struct CollectionInfo {
 }
 
 /// A HedgeDoc markdown endpoint used as a collection source.
+#[derive(Clone)]
 pub struct HedgedocSource {
     pub source_uri: String,
     pub collection: ResolvedCollection,
     pub notes: Vec<HedgedocNote>,
 }
 
+#[derive(Clone)]
 pub struct HedgedocNote {
     pub url: String,
     pub deck_name: String,

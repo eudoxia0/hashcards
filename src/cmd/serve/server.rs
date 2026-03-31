@@ -149,8 +149,14 @@ pub async fn start_serve(config: ResolvedServeConfig) -> Fallible<()> {
     let bind = format!("{}:{}", config.host, config.port);
 
     let config = Arc::new(config);
+    // Mark initial sync time if any HedgeDoc sources were successfully loaded.
+    let hedgedoc_last_synced_init = if !hedgedoc_sources_init.is_empty() {
+        Some(Timestamp::now())
+    } else {
+        None
+    };
     let hedgedoc_sources = Arc::new(Mutex::new(hedgedoc_sources_init));
-    let hedgedoc_last_synced = Arc::new(Mutex::new(None::<Timestamp>));
+    let hedgedoc_last_synced = Arc::new(Mutex::new(hedgedoc_last_synced_init));
 
     let state = AppState {
         config: config.clone(),

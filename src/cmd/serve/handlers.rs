@@ -308,17 +308,15 @@ fn collection_post_inner(state: &AppState, slug: &str, action: Action) -> Fallib
     if matches!(action, Action::Home) {
         state.sessions.lock().unwrap().remove(slug);
         
-        // Refresh collection info to update due_today counts
-        let combined = {
-            let sources = state.hedgedoc_sources.lock().unwrap();
-            build_combined_infos(&state.config.collections, &sources)
-        };
+        // Snapshot sources under lock, release before doing FS/DB work.
+        let sources_snapshot = state.hedgedoc_sources.lock().unwrap().clone();
+        let combined = build_combined_infos(&state.config.collections, &sources_snapshot);
         // Update in background (don't block the response)
         let collections_clone = state.collections.clone();
         tokio::spawn(async move {
             *collections_clone.write().await = combined;
         });
-        
+
         return Ok(Redirect::to("/"));
     }
 
@@ -337,11 +335,9 @@ fn collection_post_inner(state: &AppState, slug: &str, action: Action) -> Fallib
 
     match result {
         ActionResult::Home => {
-            // Refresh collection info to update due_today counts
-            let combined = {
-                let sources = state.hedgedoc_sources.lock().unwrap();
-                build_combined_infos(&state.config.collections, &sources)
-            };
+            // Snapshot sources under lock, release before doing FS/DB work.
+            let sources_snapshot = state.hedgedoc_sources.lock().unwrap().clone();
+            let combined = build_combined_infos(&state.config.collections, &sources_snapshot);
             // Update in background (don't block the response)
             let collections_clone = state.collections.clone();
             tokio::spawn(async move {
@@ -443,10 +439,8 @@ pub async fn sync_handler(State(state): State<AppState>) -> Redirect {
 
     match clone_or_pull(&git.repo_url, &git.branch, &git.repo_dir).await {
         Ok(()) => {
-            let combined = {
-                let sources = state.hedgedoc_sources.lock().unwrap();
-                build_combined_infos(&state.config.collections, &sources)
-            };
+            let sources_snapshot = state.hedgedoc_sources.lock().unwrap().clone();
+            let combined = build_combined_infos(&state.config.collections, &sources_snapshot);
             *state.collections.write().await = combined;
             *state.last_synced.lock().unwrap() = Some(Timestamp::now());
             log::debug!("Manual sync completed successfully");
@@ -482,10 +476,27 @@ pub async fn hedgedoc_add_handler(
     State(state): State<AppState>,
     Form(form): Form<AddHedgedocForm>,
 ) -> Redirect {
-    let url = form.url.trim().to_string();
-    if url.is_empty() {
-        return Redirect::to("/hedgedoc");
-    }
+    // Normalize URL: strip trailing slashes and parse to remove query/fragment
+    // so that equivalent URLs (e.g. with/without trailing slash) are treated as
+    // the same note and don't map to different on-disk filenames.
+    let url = {
+        let trimmed = form.url.trim();
+        if trimmed.is_empty() {
+            return Redirect::to("/hedgedoc");
+        }
+        match reqwest::Url::parse(trimmed) {
+            Ok(mut parsed) => {
+                parsed.set_query(None);
+                parsed.set_fragment(None);
+                // Drop trailing empty path segment (trailing slash)
+                if let Ok(mut segs) = parsed.path_segments_mut() {
+                    segs.pop_if_empty();
+                }
+                parsed.to_string()
+            }
+            Err(_) => trimmed.to_string(),
+        }
+    };
 
     let data_dir = match &state.config.data_dir {
         Some(d) => d.clone(),
@@ -574,7 +585,7 @@ pub async fn hedgedoc_add_handler(
             Some(p) => p.clone(),
             None => {
                 // Create minimal config file on first add
-                match create_minimal_config() {
+                match create_minimal_config(&data_dir) {
                     Ok(p) => {
                         *config_path_guard = Some(p.clone());
                         p
@@ -595,10 +606,8 @@ pub async fn hedgedoc_add_handler(
     }
 
     // Refresh combined collection infos.
-    let combined = {
-        let sources = state.hedgedoc_sources.lock().unwrap();
-        build_combined_infos(&state.config.collections, &sources)
-    };
+    let sources_snapshot = state.hedgedoc_sources.lock().unwrap().clone();
+    let combined = build_combined_infos(&state.config.collections, &sources_snapshot);
     *state.collections.write().await = combined;
 
     Redirect::to("/hedgedoc")
@@ -631,10 +640,8 @@ pub async fn hedgedoc_delete_handler(
     }
 
     // Refresh combined collection infos.
-    let combined = {
-        let sources = state.hedgedoc_sources.lock().unwrap();
-        build_combined_infos(&state.config.collections, &sources)
-    };
+    let sources_snapshot = state.hedgedoc_sources.lock().unwrap().clone();
+    let combined = build_combined_infos(&state.config.collections, &sources_snapshot);
     *state.collections.write().await = combined;
 
     Redirect::to("/hedgedoc")

@@ -68,7 +68,7 @@ pub fn render_manage_page(
                                         td { (src.collection.name) }
                                         td { (note.deck_name) }
                                         td.source-url-cell {
-                                            a href=(note.url) target="_blank" { (note.url) }
+                                            a href=(note.url) target="_blank" rel="noopener noreferrer" { (note.url) }
                                         }
                                         td {
                                             @if let Some(ref err) = note.last_error {

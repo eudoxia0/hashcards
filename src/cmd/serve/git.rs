@@ -136,23 +136,28 @@ pub fn spawn_sync_task(
                 continue;
             }
             let static_infos = refresh_collection_info(&collections);
-            let hedgedoc_infos: Vec<CollectionInfo> = {
+            // Snapshot only the paths needed, then release the lock before
+            // doing filesystem/DB work to avoid blocking other handlers.
+            let source_paths: Vec<(String, String, std::path::PathBuf, std::path::PathBuf)> = {
                 let sources = hedgedoc_sources.lock().unwrap();
                 sources
                     .iter()
-                    .map(|s| {
-                        let (total_cards, due_today) =
-                            compute_collection_counts(&s.collection.coll_dir, &s.collection.db_path)
-                                .unwrap_or((0, 0));
-                        CollectionInfo {
-                            name: s.collection.name.clone(),
-                            slug: s.collection.slug.clone(),
-                            total_cards,
-                            due_today,
-                        }
-                    })
+                    .map(|s| (
+                        s.collection.name.clone(),
+                        s.collection.slug.clone(),
+                        s.collection.coll_dir.clone(),
+                        s.collection.db_path.clone(),
+                    ))
                     .collect()
             };
+            let hedgedoc_infos: Vec<CollectionInfo> = source_paths
+                .into_iter()
+                .map(|(name, slug, coll_dir, db_path)| {
+                    let (total_cards, due_today) =
+                        compute_collection_counts(&coll_dir, &db_path).unwrap_or((0, 0));
+                    CollectionInfo { name, slug, total_cards, due_today }
+                })
+                .collect();
             let mut combined = static_infos;
             combined.extend(hedgedoc_infos);
             *collection_infos.write().await = combined;

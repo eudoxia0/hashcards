@@ -228,10 +228,10 @@ fn resolve_serve_config(
         return Ok(ResolvedServeConfig::from_toml(config)?.with_config_path(canonical));
     }
 
-    // No config and no directories: create a minimal default config for HedgeDoc-only mode
-    // User can add HedgeDoc URLs via the web interface
-    let temp_dir = std::env::temp_dir().join("hashcards");
-    std::fs::create_dir_all(&temp_dir).ok();
+    // No config and no directories: start in HedgeDoc-only mode.
+    // Use a per-process temp dir to avoid collisions between concurrent instances.
+    let temp_dir = std::env::temp_dir().join(format!("hashcards-{}", std::process::id()));
+    std::fs::create_dir_all(&temp_dir)?;
     
     Ok(ResolvedServeConfig {
         host: host.clone(),
