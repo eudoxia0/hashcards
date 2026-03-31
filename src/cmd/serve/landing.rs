@@ -15,7 +15,7 @@ pub async fn landing_handler(State(state): State<AppState>) -> (StatusCode, Html
     let hedgedoc_last_synced = *state.hedgedoc_last_synced.lock().unwrap();
     let git_enabled = state.config.git.is_some();
     let hedgedoc_count = state.hedgedoc_sources.lock().unwrap().len();
-    let config_available = state.config_path.is_some();
+    let config_available = state.config.data_dir.is_some();
     let html = render_landing_page(
         &collections,
         last_synced,
@@ -65,8 +65,8 @@ fn render_landing_page(
                             "No HedgeDoc sources"
                         }
                     }
-                    a.sync-button href="/hedgedoc" style="text-decoration:none;padding:0.2rem 0.6rem" {
-                        "Manage HedgeDoc"
+                    form action="/hedgedoc" method="get" style="display:inline" {
+                        input .sync-button type="submit" value="Manage HedgeDoc";
                     }
                 }
             }

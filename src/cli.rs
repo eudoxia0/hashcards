@@ -32,7 +32,6 @@ use crate::cmd::serve::server::start_serve;
 use crate::cmd::stats::StatsFormat;
 use crate::cmd::stats::print_stats;
 use crate::error::Fallible;
-use crate::error::fail;
 use crate::types::timestamp::Timestamp;
 use crate::utils::wait_for_server;
 
@@ -229,10 +228,19 @@ fn resolve_serve_config(
         return Ok(ResolvedServeConfig::from_toml(config)?.with_config_path(canonical));
     }
 
-    fail(
-        "no configuration found. Either provide a hashcards.toml config file \
-         (see hashcards.example.toml) or pass collection directories as arguments:\n\n  \
-         hashcards serve ./my-cards\n  \
-         hashcards serve --config hashcards.toml",
-    )
+    // No config and no directories: create a minimal default config for HedgeDoc-only mode
+    // User can add HedgeDoc URLs via the web interface
+    let temp_dir = std::env::temp_dir().join("hashcards");
+    std::fs::create_dir_all(&temp_dir).ok();
+    
+    Ok(ResolvedServeConfig {
+        host: host.clone(),
+        port,
+        git: None,
+        defaults: crate::cmd::serve::config::DefaultsSection::default(),
+        collections: Vec::new(),
+        data_dir: Some(temp_dir),
+        config_path: None,
+        hedgedoc_entries: Vec::new(),
+    })
 }

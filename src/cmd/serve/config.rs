@@ -19,7 +19,7 @@ pub struct ServeConfig {
     pub git: Option<GitSection>,
     #[serde(default)]
     pub defaults: DefaultsSection,
-    #[serde(rename = "collection")]
+    #[serde(rename = "collection", default)]
     pub collections: Vec<CollectionEntry>,
     #[serde(rename = "hedgedoc", default)]
     pub hedgedoc: Vec<HedgedocEntry>,
@@ -49,7 +49,7 @@ fn default_port() -> u16 {
 
 #[derive(Deserialize)]
 pub struct GitSection {
-    pub repo_url: String,
+    pub repo_url: Option<String>,
     #[serde(default = "default_branch")]
     pub branch: String,
     #[serde(default = "default_poll_interval")]
@@ -194,12 +194,14 @@ impl ResolvedServeConfig {
             })
             .collect();
 
-        let git = config.git.map(|g| ResolvedGit {
-            repo_url: g.repo_url,
-            branch: g.branch,
-            poll_interval_minutes: g.poll_interval_minutes,
-            repo_dir,
-            db_dir,
+        let git = config.git.and_then(|g| {
+            g.repo_url.map(|repo_url| ResolvedGit {
+                repo_url,
+                branch: g.branch,
+                poll_interval_minutes: g.poll_interval_minutes,
+                repo_dir: repo_dir.clone(),
+                db_dir: db_dir.clone(),
+            })
         });
 
         Ok(Self {

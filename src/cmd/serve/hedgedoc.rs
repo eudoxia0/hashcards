@@ -12,6 +12,7 @@ use crate::cmd::serve::config::ResolvedCollection;
 use crate::cmd::serve::config::slugify;
 use crate::cmd::serve::git::compute_collection_counts;
 use crate::cmd::serve::state::CollectionInfo;
+use crate::cmd::serve::state::HedgedocNote;
 use crate::cmd::serve::state::HedgedocSource;
 use crate::error::Fallible;
 use crate::error::fail;
@@ -26,9 +27,23 @@ pub fn note_id_from_url(url: &str) -> Option<String> {
         .map(|s| s.to_string())
 }
 
-/// Build the collection slug for a HedgeDoc source.
-pub fn slug_for_note_id(note_id: &str) -> String {
-    format!("hedgedoc-{}", slugify(note_id))
+pub fn source_uri_from_url(url: &str) -> Option<String> {
+    let parsed = reqwest::Url::parse(url).ok()?;
+    let host = parsed.host_str()?;
+    let port = parsed.port();
+    Some(match port {
+        Some(p) => format!("{}://{}:{}", parsed.scheme(), host, p),
+        None => format!("{}://{}", parsed.scheme(), host),
+    })
+}
+
+pub fn source_display_name(source_uri: &str) -> String {
+    source_uri.to_string()
+}
+
+/// Build the collection slug for a HedgeDoc source URI.
+pub fn slug_for_source_uri(source_uri: &str) -> String {
+    format!("hedgedoc-{}", slugify(source_uri))
 }
 
 /// Fetch raw markdown from a HedgeDoc note URL.
@@ -65,6 +80,50 @@ pub fn extract_title(markdown: &str, fallback: &str) -> String {
     fallback.to_string()
 }
 
+fn sanitize_deck_name(name: &str, fallback: &str) -> String {
+    let candidate = if name.trim().is_empty() {
+        fallback.trim()
+    } else {
+        name.trim()
+    };
+    let normalized = candidate.replace('/', " - ");
+    if normalized.trim().is_empty() {
+        "Deck".to_string()
+    } else {
+        normalized.trim().to_string()
+    }
+}
+
+fn strip_leading_yaml_frontmatter(markdown: &str) -> &str {
+    let content = markdown.trim_start();
+    if !content.starts_with("---") {
+        return markdown;
+    }
+    let after = match content.get(3..) {
+        Some(s) => s,
+        None => return markdown,
+    };
+    let end = match after.find("\n---") {
+        Some(idx) => idx,
+        None => return markdown,
+    };
+
+    let body_start_in_trimmed = 3 + end + 4;
+    let body = match content.get(body_start_in_trimmed..) {
+        Some(s) => s,
+        None => return markdown,
+    };
+    body.trim_start_matches('\n')
+}
+
+fn wrap_with_deck_frontmatter(markdown: &str, deck_name: &str) -> Fallible<String> {
+    let mut table = toml::map::Map::new();
+    table.insert("name".to_string(), toml::Value::String(deck_name.to_string()));
+    let frontmatter_toml = toml::to_string(&toml::Value::Table(table))?;
+    let body = strip_leading_yaml_frontmatter(markdown);
+    Ok(format!("---\n{frontmatter_toml}---\n\n{body}"))
+}
+
 /// Parse the `title:` field from YAML (`---`) frontmatter.
 fn frontmatter_title(markdown: &str) -> Option<String> {
     let content = markdown.trim_start();
@@ -88,27 +147,37 @@ fn frontmatter_title(markdown: &str) -> Option<String> {
 
 /// Build a `ResolvedCollection` for a HedgeDoc source given its note ID and
 /// the resolved data directory.
-pub fn resolved_collection(note_id: &str, name: &str, data_dir: &Path) -> ResolvedCollection {
-    let slug = slug_for_note_id(note_id);
-    let coll_dir = data_dir.join("hedgedoc").join(note_id);
+pub fn resolved_collection(source_uri: &str, data_dir: &Path) -> ResolvedCollection {
+    let slug = slug_for_source_uri(source_uri);
+    let source_key = slugify(source_uri);
+    let coll_dir = data_dir.join("hedgedoc").join(source_key);
     let db_path = data_dir.join("db").join(format!("{slug}.db"));
     ResolvedCollection {
-        name: name.to_string(),
+        name: source_display_name(source_uri),
         slug,
         coll_dir,
         db_path,
     }
 }
 
-/// Fetch a HedgeDoc document, write it to `{rc.coll_dir}/content.md`, and
-/// return the extracted title.
-pub async fn sync_source(url: &str, rc: &ResolvedCollection) -> Fallible<String> {
+fn note_file_name(url: &str) -> String {
+    let note_id = note_id_from_url(url).unwrap_or_else(|| "note".to_string());
+    let stem = slugify(&note_id);
+    format!("{}.md", if stem.is_empty() { "note" } else { &stem })
+}
+
+/// Fetch a HedgeDoc document, write it to `{rc.coll_dir}/{note}.md`, and
+/// return the extracted deck title with file metadata.
+pub async fn sync_source(url: &str, rc: &ResolvedCollection) -> Fallible<(String, String)> {
     let markdown = fetch_markdown(url).await?;
     let note_id = note_id_from_url(url).unwrap_or_default();
     let title = extract_title(&markdown, &note_id);
+    let deck_name = sanitize_deck_name(&title, &note_id);
+    let sync_markdown = wrap_with_deck_frontmatter(&markdown, &deck_name)?;
+    let file_name = note_file_name(url);
     std::fs::create_dir_all(&rc.coll_dir)?;
-    std::fs::write(rc.coll_dir.join("content.md"), &markdown)?;
-    Ok(title)
+    std::fs::write(rc.coll_dir.join(&file_name), sync_markdown)?;
+    Ok((deck_name, file_name))
 }
 
 /// Compute `CollectionInfo` for a single HedgeDoc source.
@@ -119,7 +188,7 @@ pub fn collection_info_for_source(source: &HedgedocSource) -> CollectionInfo {
             Err(e) => {
                 log::warn!(
                     "Failed to count cards for HedgeDoc source '{}': {e}",
-                    source.url
+                    source.source_uri
                 );
                 (0, 0)
             }
@@ -132,38 +201,45 @@ pub fn collection_info_for_source(source: &HedgedocSource) -> CollectionInfo {
     }
 }
 
-/// Re-derive a `HedgedocSource` from a URL, performing an initial sync.
-/// Returns the source with a fresh name derived from the document title.
-pub async fn build_source(url: &str, data_dir: &Path) -> Fallible<HedgedocSource> {
-    let note_id = note_id_from_url(url)
-        .ok_or_else(|| crate::error::ErrorReport::new(format!("Cannot derive note ID from URL: {url}")))?;
-
-    // Temporary placeholder name for directory setup
-    let rc_temp = resolved_collection(&note_id, &note_id, data_dir);
-    std::fs::create_dir_all(&rc_temp.coll_dir)?;
-    if let Some(parent) = rc_temp.db_path.parent() {
-        std::fs::create_dir_all(parent)?;
-    }
-
-    let title = match sync_source(url, &rc_temp).await {
-        Ok(t) => t,
+pub async fn build_note(url: &str, collection: &ResolvedCollection) -> Fallible<HedgedocNote> {
+    let (deck_name, file_name) = match sync_source(url, collection).await {
+        Ok(info) => info,
         Err(e) => {
             let msg = e.to_string();
             log::error!("Initial HedgeDoc sync failed for {url}: {msg}");
-            // Return a source with the error recorded; cards will be 0.
-            return Ok(HedgedocSource {
+            return Ok(HedgedocNote {
                 url: url.to_string(),
-                collection: rc_temp,
+                deck_name: note_id_from_url(url).unwrap_or_else(|| "note".to_string()),
+                file_name: note_file_name(url),
                 last_error: Some(msg),
             });
         }
     };
 
-    let rc = resolved_collection(&note_id, &title, data_dir);
-    Ok(HedgedocSource {
+    Ok(HedgedocNote {
         url: url.to_string(),
-        collection: rc,
+        deck_name,
+        file_name,
         last_error: None,
+    })
+}
+
+/// Re-derive a `HedgedocSource` from a URL, performing an initial sync for the note.
+pub async fn build_source(url: &str, data_dir: &Path) -> Fallible<HedgedocSource> {
+    let source_uri = source_uri_from_url(url)
+        .ok_or_else(|| crate::error::ErrorReport::new(format!("Cannot derive source URI from URL: {url}")))?;
+
+    let rc = resolved_collection(&source_uri, data_dir);
+    std::fs::create_dir_all(&rc.coll_dir)?;
+    if let Some(parent) = rc.db_path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    let note = build_note(url, &rc).await?;
+
+    Ok(HedgedocSource {
+        source_uri,
+        collection: rc,
+        notes: vec![note],
     })
 }
 
@@ -173,7 +249,7 @@ pub fn spawn_hedgedoc_sync_task(
     collection_infos: Arc<RwLock<Vec<CollectionInfo>>>,
     hedgedoc_last_synced: Arc<Mutex<Option<Timestamp>>>,
     static_collections: Vec<ResolvedCollection>,
-    data_dir: PathBuf,
+    _data_dir: PathBuf,
     poll_interval_minutes: u64,
 ) {
     if poll_interval_minutes == 0 {
@@ -191,34 +267,42 @@ pub fn spawn_hedgedoc_sync_task(
             log::debug!("Periodic HedgeDoc sync triggered");
 
             // Collect the URLs we need to sync (without holding the lock during await).
-            let entries: Vec<(String, String)> = {
+            let entries: Vec<(String, ResolvedCollection)> = {
                 let sources = hedgedoc_sources.lock().unwrap();
                 sources
                     .iter()
-                    .map(|s| (s.url.clone(), s.collection.slug.clone()))
+                    .flat_map(|s| {
+                        s.notes
+                            .iter()
+                            .map(move |n| (n.url.clone(), s.collection.clone()))
+                    })
                     .collect()
             };
 
-            for (url, _slug) in &entries {
-                let note_id = match note_id_from_url(url) {
-                    Some(id) => id,
-                    None => continue,
-                };
-                let rc_tmp = resolved_collection(&note_id, "", &data_dir);
-                match sync_source(url, &rc_tmp).await {
-                    Ok(title) => {
+            for (url, rc) in &entries {
+                match sync_source(url, rc).await {
+                    Ok((deck_name, file_name)) => {
                         let mut sources = hedgedoc_sources.lock().unwrap();
-                        if let Some(src) = sources.iter_mut().find(|s| &s.url == url) {
-                            src.collection.name = title;
-                            src.last_error = None;
+                        if let Some(src) = sources
+                            .iter_mut()
+                            .find(|s| s.collection.slug == rc.slug)
+                        {
+                            if let Some(note) = src.notes.iter_mut().find(|n| &n.url == url) {
+                                note.deck_name = deck_name;
+                                note.file_name = file_name;
+                                note.last_error = None;
+                            }
                         }
                     }
                     Err(e) => {
                         let msg = e.to_string();
                         log::error!("Periodic HedgeDoc sync failed for {url}: {msg}");
                         let mut sources = hedgedoc_sources.lock().unwrap();
-                        if let Some(src) = sources.iter_mut().find(|s| &s.url == url) {
-                            src.last_error = Some(msg);
+                        for src in sources.iter_mut() {
+                            if let Some(note) = src.notes.iter_mut().find(|n| &n.url == url) {
+                                note.last_error = Some(msg.clone());
+                                break;
+                            }
                         }
                     }
                 }
@@ -248,6 +332,33 @@ pub fn build_combined_infos(
         infos.push(collection_info_for_source(src));
     }
     infos
+}
+
+pub fn all_hedgedoc_entries(hedgedoc_sources: &[HedgedocSource]) -> Vec<HedgedocEntry> {
+    hedgedoc_sources
+        .iter()
+        .flat_map(|s| s.notes.iter().map(|n| HedgedocEntry { url: n.url.clone() }))
+        .collect()
+}
+
+/// Create a minimal hashcards.toml config file in the current working directory
+/// if it doesn't already exist. This is used when adding the first HedgeDoc source
+/// in no-config mode.
+pub fn create_minimal_config() -> Fallible<PathBuf> {
+    let config_path = std::env::current_dir()?.join("hashcards.toml");
+    
+    if config_path.exists() {
+        return Ok(config_path);
+    }
+
+    let data_dir = std::env::current_dir()?.join(".hashcards");
+    let minimal_config = format!(
+        "# hashcards server configuration\n# Auto-generated on first HedgeDoc source add\n\n[server]\ndata_dir = {:?}\n",
+        data_dir.to_string_lossy()
+    );
+    
+    std::fs::write(&config_path, minimal_config)?;
+    Ok(config_path)
 }
 
 /// Write the current set of HedgeDoc URLs back to the TOML config file.
