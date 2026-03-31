@@ -58,6 +58,14 @@ pub async fn start_serve(config: ResolvedServeConfig) -> Fallible<()> {
         None => None,
     };
 
+    // Ensure DB parent directories exist for all collections (in git mode these
+    // are already created above; in non-git TOML mode they may not exist yet).
+    for rc in &config.collections {
+        if let Some(parent) = rc.db_path.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+    }
+
     // Build collection info
     let collection_infos = refresh_collection_info(&config.collections);
     log::debug!("Loaded {} collections", collection_infos.len());

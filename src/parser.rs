@@ -112,16 +112,15 @@ pub fn parse_deck(directory: &PathBuf) -> Fallible<Vec<Card>> {
                     .map(|rel| {
                         rel.with_extension("")
                             .components()
-                            .filter_map(|c| c.as_os_str().to_str())
+                            .map(|c| c.as_os_str().to_string_lossy().into_owned())
                             .collect::<Vec<_>>()
                             .join("/")
                     })
                     .filter(|s| !s.is_empty())
                     .unwrap_or_else(|| {
                         path.file_stem()
-                            .and_then(|os_str| os_str.to_str())
-                            .unwrap_or("None")
-                            .to_string()
+                            .map(|os_str| os_str.to_string_lossy().into_owned())
+                            .unwrap_or_else(|| "None".to_string())
                     })
             });
 

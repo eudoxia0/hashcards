@@ -6,7 +6,6 @@ use std::time::UNIX_EPOCH;
 use axum::Form;
 use axum::extract::Path;
 use axum::extract::State;
-use serde::Deserialize;
 use axum::http::HeaderName;
 use axum::http::StatusCode;
 use axum::http::header::CONTENT_TYPE;
@@ -102,47 +101,45 @@ fn find_collection<'a>(state: &'a AppState, slug: &str) -> Option<&'a ResolvedCo
 }
 
 /// Form data for the start-drill endpoint.
-#[derive(Deserialize)]
 pub struct StartDrillForm {
-    #[serde(default, deserialize_with = "deserialize_string_or_seq")]
     pub decks: Vec<String>,
 }
 
-/// Deserialize a field that may be a single string or a sequence of strings.
+/// Custom `Deserialize` for `StartDrillForm`.
 ///
-/// HTML forms submit a single `key=value` when one checkbox is checked, and
-/// repeated `key=value&key=value` when multiple are checked. `serde_urlencoded`
-/// sees the single-value case as a bare string, not a sequence, so we handle
-/// both shapes here.
-fn deserialize_string_or_seq<'de, D>(deserializer: D) -> Result<Vec<String>, D::Error>
-where
-    D: serde::Deserializer<'de>,
-{
-    use serde::de::{SeqAccess, Visitor};
+/// `serde_urlencoded` presents repeated keys (`decks=foo&decks=bar`) as
+/// separate map entries rather than grouping them into a sequence first.
+/// The derived `Deserialize` macro errors on "duplicate field" in that case,
+/// so we implement the visitor manually to accumulate all `decks` values.
+impl<'de> serde::Deserialize<'de> for StartDrillForm {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        use serde::de::{MapAccess, Visitor};
 
-    struct StringOrSeq;
+        struct FormVisitor;
 
-    impl<'de> Visitor<'de> for StringOrSeq {
-        type Value = Vec<String>;
+        impl<'de> Visitor<'de> for FormVisitor {
+            type Value = StartDrillForm;
 
-        fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-            f.write_str("string or sequence of strings")
-        }
-
-        fn visit_str<E: serde::de::Error>(self, v: &str) -> Result<Self::Value, E> {
-            Ok(vec![v.to_string()])
-        }
-
-        fn visit_seq<A: SeqAccess<'de>>(self, mut seq: A) -> Result<Self::Value, A::Error> {
-            let mut result = Vec::new();
-            while let Some(value) = seq.next_element()? {
-                result.push(value);
+            fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+                f.write_str("a form with optional decks fields")
             }
-            Ok(result)
-        }
-    }
 
-    deserializer.deserialize_any(StringOrSeq)
+            fn visit_map<A: MapAccess<'de>>(self, mut map: A) -> Result<Self::Value, A::Error> {
+                let mut decks = Vec::new();
+                while let Some(key) = map.next_key::<String>()? {
+                    match key.as_str() {
+                        "decks" => decks.push(map.next_value::<String>()?),
+                        _ => {
+                            let _ = map.next_value::<serde::de::IgnoredAny>()?;
+                        }
+                    }
+                }
+                Ok(StartDrillForm { decks })
+            }
+        }
+
+        deserializer.deserialize_map(FormVisitor)
+    }
 }
 
 pub async fn collection_start_handler(

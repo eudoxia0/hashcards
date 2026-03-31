@@ -117,8 +117,8 @@ fn modify_url(url: &str, config: &MarkdownRenderConfig) -> Fallible<String> {
     // Build a percent-encoded, forward-slash-separated URL path.
     let path: String = resolved
         .components()
-        .filter_map(|c| c.as_os_str().to_str())
-        .map(|seg| utf8_percent_encode(seg, PATH_SEGMENT).to_string())
+        .map(|c| c.as_os_str().to_string_lossy().into_owned())
+        .map(|seg| utf8_percent_encode(&seg, PATH_SEGMENT).to_string())
         .collect::<Vec<_>>()
         .join("/");
     Ok(format!("{prefix}/{path}"))
