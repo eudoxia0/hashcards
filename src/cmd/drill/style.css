@@ -337,7 +337,8 @@ body {
             display: inline-block;
         }
 
-        .shutdown-button {
+        .shutdown-button,
+        .home-button {
             background: #dc3545;
             color: white;
             border: 1px solid #c82333;
@@ -365,6 +366,280 @@ body {
                 background: #bd2130;
                 box-shadow: rgba(220, 53, 69, 0.2) 0px 1px 4px 0px;
             }
+        }
+
+        .home-button {
+            background: #0d6efd;
+            border-color: #0b5ed7;
+            box-shadow: rgba(13, 110, 253, 0.3) 0px 2px 8px 0px;
+
+            &:hover {
+                background: #0b5ed7;
+                box-shadow: rgba(13, 110, 253, 0.5) 0px 4px 12px 0px;
+            }
+
+            &:active {
+                background: #0a58ca;
+                box-shadow: rgba(13, 110, 253, 0.2) 0px 1px 4px 0px;
+            }
+        }
+    }
+}
+
+.browse {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 48px 24px;
+    font-family: system-ui, -apple-system, "Helvetica Neue", sans-serif;
+
+    .browse-header {
+        margin-bottom: 32px;
+
+        .back-link {
+            color: #666;
+            text-decoration: none;
+            font-size: 14px;
+
+            &:hover {
+                color: #333;
+            }
+        }
+
+        h1 {
+            font-size: 36px;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+    }
+
+    .deck-tree {
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        overflow: hidden;
+        margin-bottom: 24px;
+    }
+
+    .deck-node {
+        .deck-row {
+            display: flex;
+            align-items: center;
+            padding: 10px 16px;
+            border-bottom: 1px solid #eee;
+            gap: 8px;
+
+            &:hover {
+                background: #f8f8f8;
+            }
+
+            .toggle-children {
+                cursor: pointer;
+                width: 20px;
+                text-align: center;
+                user-select: none;
+                font-size: 12px;
+                color: #666;
+            }
+
+            .toggle-placeholder {
+                width: 20px;
+            }
+
+            .deck-label {
+                flex: 1;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                cursor: pointer;
+
+                input[type="checkbox"] {
+                    width: 16px;
+                    height: 16px;
+                    cursor: pointer;
+                }
+
+                .deck-name {
+                    font-size: 16px;
+                }
+            }
+
+            .deck-counts {
+                font-size: 14px;
+                font-feature-settings: "tnum";
+                font-variant-numeric: tabular-nums;
+                color: #666;
+                white-space: nowrap;
+
+                .deck-due {
+                    font-weight: 600;
+                    color: #333;
+                }
+
+                .deck-due.muted {
+                    color: #999;
+                    font-weight: normal;
+                }
+            }
+        }
+
+        &:last-child > .deck-row {
+            border-bottom: none;
+        }
+    }
+
+    .browse-controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        .select-controls {
+            font-size: 14px;
+
+            a {
+                color: #0d6efd;
+                text-decoration: none;
+
+                &:hover {
+                    text-decoration: underline;
+                }
+            }
+        }
+
+        .drill-button {
+            -webkit-appearance: none;
+            appearance: none;
+            background: #0d6efd;
+            color: white;
+            border: 1px solid #0b5ed7;
+            padding: 10px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            font-family: system-ui, -apple-system, "Helvetica Neue", sans-serif;
+            border-radius: 6px;
+            cursor: pointer;
+            box-shadow: rgba(13, 110, 253, 0.3) 0px 2px 8px 0px;
+
+            &:hover {
+                background: #0b5ed7;
+                box-shadow: rgba(13, 110, 253, 0.5) 0px 4px 12px 0px;
+            }
+
+            &:active {
+                background: #0a58ca;
+            }
+
+            &:disabled {
+                opacity: 0.4;
+                cursor: not-allowed;
+            }
+
+            &:disabled:hover {
+                background: #0d6efd;
+                box-shadow: rgba(13, 110, 253, 0.3) 0px 2px 8px 0px;
+            }
+        }
+    }
+
+    .empty {
+        color: #666;
+        font-size: 18px;
+    }
+}
+
+.landing {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 48px 24px;
+    font-family: system-ui, -apple-system, "Helvetica Neue", sans-serif;
+
+    h1 {
+        font-size: 36px;
+        font-weight: 600;
+        margin-bottom: 32px;
+    }
+
+    .sync-bar {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 32px;
+        padding: 12px 16px;
+        background: #f8f8f8;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+
+        .sync-status {
+            flex: 1;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .sync-button {
+            -webkit-appearance: none;
+            appearance: none;
+            background: white;
+            border: 1px solid #999;
+            padding: 6px 16px;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+
+            &:hover {
+                background: #f0f0f0;
+            }
+        }
+    }
+
+    .empty {
+        color: #666;
+        font-size: 18px;
+    }
+
+    .collection-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 18px;
+
+        th {
+            text-align: left;
+            font-weight: 600;
+            padding: 12px 16px;
+            border-bottom: 2px solid #333;
+        }
+
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .num {
+            text-align: right;
+            font-feature-settings: "tnum";
+            font-variant-numeric: tabular-nums;
+        }
+
+        .muted td {
+            color: #999;
+        }
+
+        .drill-link {
+            display: inline-block;
+            background: #0d6efd;
+            color: white;
+            text-decoration: none;
+            padding: 6px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+
+            &:hover {
+                background: #0b5ed7;
+            }
+        }
+
+        .no-cards {
+            font-size: 14px;
+            color: #999;
         }
     }
 }

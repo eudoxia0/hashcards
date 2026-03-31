@@ -45,6 +45,16 @@ impl Collection {
         };
 
         let db_path: PathBuf = directory.join("hashcards.db");
+        Self::with_db_path(directory, db_path)
+    }
+
+    pub fn with_db_path(directory: PathBuf, db_path: PathBuf) -> Fallible<Self> {
+        let directory: PathBuf = if directory.exists() {
+            directory.canonicalize()?
+        } else {
+            return fail("directory does not exist.");
+        };
+
         let db_path: &str = db_path
             .to_str()
             .ok_or_else(|| ErrorReport::new("invalid path"))?;

@@ -37,8 +37,8 @@ fn is_audio_file(url: &str) -> bool {
 pub struct MarkdownRenderConfig {
     /// A media resolver.
     pub resolver: MediaResolver,
-    /// The port where the server is exposed.
-    pub port: u16,
+    /// URL prefix for file serving (e.g. "http://localhost:8000/file" or "/collection/slug/file").
+    pub file_url_prefix: String,
 }
 
 pub fn markdown_to_html(config: &MarkdownRenderConfig, markdown: &str) -> Fallible<String> {
@@ -95,7 +95,7 @@ pub fn markdown_to_html_inline(config: &MarkdownRenderConfig, markdown: &str) ->
 }
 
 fn modify_url(url: &str, config: &MarkdownRenderConfig) -> Fallible<String> {
-    let port = config.port;
+    let prefix = &config.file_url_prefix;
     let path: String = config
         .resolver
         .resolve(url)
@@ -104,7 +104,7 @@ fn modify_url(url: &str, config: &MarkdownRenderConfig) -> Fallible<String> {
         })?
         .display()
         .to_string();
-    Ok(format!("http://localhost:{port}/file/{path}"))
+    Ok(format!("{prefix}/{path}"))
 }
 
 #[cfg(test)]
@@ -126,7 +126,7 @@ mod tests {
                 .with_collection_path(coll_path)?
                 .with_deck_path(PathBuf::from("deck.md"))?
                 .build()?,
-            port: 1234,
+            file_url_prefix: "http://localhost:1234/file".to_string(),
         };
         Ok(config)
     }

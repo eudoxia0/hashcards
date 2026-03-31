@@ -98,6 +98,14 @@ impl From<ParserError> for ErrorReport {
     }
 }
 
+impl From<toml::de::Error> for ErrorReport {
+    fn from(value: toml::de::Error) -> Self {
+        ErrorReport {
+            message: format!("TOML error: {value}"),
+        }
+    }
+}
+
 impl Display for ErrorReport {
     fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
         write!(f, "error: {}", self.message)

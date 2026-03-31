@@ -4,10 +4,16 @@
             <change author="eudoxia0">
                 MP4 audio files are now supported.
             </change>
+            <change author="overcuriousity">
+                Added `serve` subcommand for running hashcards as a persistent web server with multiple collections synced from a git repository.
+            </change>
         </added>
         <changed>
             <change author="eudoxia0">
                 Update dependencies.
+            </change>
+            <change author="overcuriousity">
+                The `serve` subcommand no longer requires a TOML config file. Collection directories can be passed as arguments for local use without git syncing. Added `hashcards.example.toml` documenting the config format.
             </change>
         </changed>
     </unreleased>
