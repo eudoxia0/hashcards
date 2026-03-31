@@ -649,34 +649,40 @@ pub async fn hedgedoc_delete_handler(
     State(state): State<AppState>,
     Form(form): Form<DeleteHedgedocForm>,
 ) -> Redirect {
-    let remaining: Vec<HedgedocEntry> = {
-        let mut sources = state.hedgedoc_sources.lock().unwrap();
-        for src in sources.iter_mut() {
+    // Phase 1: compute the post-deletion entries without mutating shared state.
+    let (remaining, new_sources) = {
+        let sources = state.hedgedoc_sources.lock().unwrap();
+        let mut working = sources.clone();
+        for src in working.iter_mut() {
             src.notes.retain(|n| n.url != form.url);
         }
-        sources.retain(|s| !s.notes.is_empty());
-        all_hedgedoc_entries(&sources)
+        working.retain(|s| !s.notes.is_empty());
+        let entries = all_hedgedoc_entries(&working);
+        (entries, working)
     };
 
-    // Persist to TOML if config file is available, via spawn_blocking to avoid
-    // blocking the async runtime with synchronous filesystem I/O.
-    // Extract the config path before any await so the MutexGuard is dropped first.
+    // Phase 2: persist to TOML if config file is available, via spawn_blocking.
+    // Extract config path before any await so the MutexGuard is dropped first.
     let maybe_config_path: Option<std::path::PathBuf> = state.config_path.lock().unwrap().clone();
-    if let Some(config_path) = maybe_config_path {
+    let persist_ok = if let Some(config_path) = maybe_config_path {
         let remaining_for_persist = remaining.clone();
         match tokio::task::spawn_blocking(move || persist_hedgedoc_entries(&config_path, &remaining_for_persist))
             .await
         {
-            Ok(Err(e)) => log::error!("Failed to persist HedgeDoc entries after deletion: {e}"),
-            Err(e) => log::error!("Persist task panicked after deletion: {e}"),
-            Ok(Ok(())) => {}
+            Ok(Ok(())) => true,
+            Ok(Err(e)) => { log::error!("Failed to persist HedgeDoc entries after deletion: {e}"); false }
+            Err(e) => { log::error!("Persist task panicked after deletion: {e}"); false }
         }
-    }
+    } else {
+        true // no config file to persist to, treat as success
+    };
 
-    // Refresh combined collection infos.
-    let sources_snapshot = state.hedgedoc_sources.lock().unwrap().clone();
-    let combined = build_combined_infos(&state.config.collections, &sources_snapshot);
-    *state.collections.write().await = combined;
+    // Phase 3: only update in-memory state if persist succeeded (or was not needed).
+    if persist_ok {
+        *state.hedgedoc_sources.lock().unwrap() = new_sources.clone();
+        let combined = build_combined_infos(&state.config.collections, &new_sources);
+        *state.collections.write().await = combined;
+    }
 
     Redirect::to("/hedgedoc")
 }

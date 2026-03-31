@@ -194,15 +194,19 @@ impl ResolvedServeConfig {
             })
             .collect();
 
-        let git = config.git.and_then(|g| {
-            g.repo_url.map(|repo_url| ResolvedGit {
-                repo_url,
-                branch: g.branch,
-                poll_interval_minutes: g.poll_interval_minutes,
-                repo_dir: repo_dir.clone(),
-                db_dir: db_dir.clone(),
-            })
-        });
+        let git = match config.git {
+            None => None,
+            Some(g) => match g.repo_url {
+                Some(repo_url) => Some(ResolvedGit {
+                    repo_url,
+                    branch: g.branch,
+                    poll_interval_minutes: g.poll_interval_minutes,
+                    repo_dir: repo_dir.clone(),
+                    db_dir: db_dir.clone(),
+                }),
+                None => return fail("configuration error: [git] section is present but `repo_url` is missing"),
+            },
+        };
 
         Ok(Self {
             host: config.server.host,

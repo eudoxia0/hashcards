@@ -180,7 +180,7 @@ pub async fn start_serve(config: ResolvedServeConfig) -> Fallible<()> {
     }
 
     // Spawn background HedgeDoc sync task (only when data_dir is available)
-    if let Some(dd) = data_dir {
+    if data_dir.is_some() {
         spawn_hedgedoc_sync_task(
             hedgedoc_sources,
             state.collections.clone(),

@@ -229,8 +229,13 @@ fn resolve_serve_config(
     }
 
     // No config and no directories: start in HedgeDoc-only mode.
-    // Use a per-process temp dir to avoid collisions between concurrent instances.
-    let temp_dir = std::env::temp_dir().join(format!("hashcards-{}", std::process::id()));
+    // Include both PID and a nanosecond timestamp to avoid stale-data reuse
+    // when PIDs are recycled across runs.
+    let nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .subsec_nanos();
+    let temp_dir = std::env::temp_dir().join(format!("hashcards-{}-{}", std::process::id(), nanos));
     std::fs::create_dir_all(&temp_dir)?;
     
     Ok(ResolvedServeConfig {
