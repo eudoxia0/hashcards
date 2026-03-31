@@ -208,16 +208,16 @@ fn resolve_serve_config(
         return Ok(ResolvedServeConfig::from_toml(config));
     }
 
-    // No --config: try hashcards.toml in CWD for backward compatibility
+    // No --config: if directories were given, serve them directly
+    if !directories.is_empty() {
+        return ResolvedServeConfig::from_directories(directories, host, port);
+    }
+
+    // No --config and no directories: try hashcards.toml in CWD
     let default_path = Path::new("hashcards.toml");
     if default_path.exists() {
         let config = load_config(default_path)?;
         return Ok(ResolvedServeConfig::from_toml(config));
-    }
-
-    // No config file: serve local directories
-    if !directories.is_empty() {
-        return ResolvedServeConfig::from_directories(directories, host, port);
     }
 
     fail(

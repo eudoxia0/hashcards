@@ -208,6 +208,20 @@ fn finish_session(mutable: &mut MutableState, session_started_at: Timestamp) -> 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::cmd::drill::cache::Cache;
+    use crate::cmd::drill::state::MutableState;
+    use crate::db::Database;
+
+    fn make_mutable() -> MutableState {
+        MutableState {
+            reveal: false,
+            db: Database::new(":memory:").unwrap(),
+            cache: Cache::new(),
+            cards: Vec::new(),
+            reviews: Vec::new(),
+            finished_at: None,
+        }
+    }
 
     #[test]
     fn test_action_grade() {
@@ -215,5 +229,41 @@ mod tests {
         assert_eq!(Action::Hard.grade(), Grade::Hard);
         assert_eq!(Action::Good.grade(), Grade::Good);
         assert_eq!(Action::Easy.grade(), Grade::Easy);
+    }
+
+    #[test]
+    fn test_home_returns_home() {
+        let mut mutable = make_mutable();
+        let now = Timestamp::now();
+        let result = handle_action(&mut mutable, now, Action::Home).unwrap();
+        assert!(matches!(result, ActionResult::Home));
+    }
+
+    #[test]
+    fn test_shutdown_returns_continue_when_unfinished() {
+        let mut mutable = make_mutable();
+        assert!(mutable.finished_at.is_none());
+        let now = Timestamp::now();
+        let result = handle_action(&mut mutable, now, Action::Shutdown).unwrap();
+        assert!(matches!(result, ActionResult::Continue));
+    }
+
+    #[test]
+    fn test_reveal_sets_flag() {
+        let mut mutable = make_mutable();
+        let now = Timestamp::now();
+        assert!(!mutable.reveal);
+        let result = handle_action(&mut mutable, now, Action::Reveal).unwrap();
+        assert!(matches!(result, ActionResult::Continue));
+        assert!(mutable.reveal);
+    }
+
+    #[test]
+    fn test_end_finishes_session() {
+        let mut mutable = make_mutable();
+        let now = Timestamp::now();
+        let result = handle_action(&mut mutable, now, Action::End).unwrap();
+        assert!(matches!(result, ActionResult::SessionFinished));
+        assert!(mutable.finished_at.is_some());
     }
 }

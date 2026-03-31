@@ -280,15 +280,15 @@ pub async fn collection_post_handler(
 }
 
 fn collection_post_inner(state: &AppState, slug: &str, action: Action) -> Fallible<Redirect> {
-    let mut sessions = state.sessions.lock().unwrap();
-
-    // Home action: drop session and go back
+    // Home action: drop session without needing to hold lock during DB work
     if matches!(action, Action::Home) {
-        sessions.remove(slug);
+        state.sessions.lock().unwrap().remove(slug);
         return Ok(Redirect::to("/"));
     }
 
-    let session = match sessions.get_mut(slug) {
+    // Take ownership of the session so we can release the global lock before
+    // handle_action does any DB work.
+    let mut session = match state.sessions.lock().unwrap().remove(slug) {
         Some(s) => s,
         None => return Ok(Redirect::to(&format!("/collection/{slug}"))),
     };
@@ -300,11 +300,11 @@ fn collection_post_inner(state: &AppState, slug: &str, action: Action) -> Fallib
     )?;
 
     match result {
-        ActionResult::Home => {
-            sessions.remove(slug);
-            Ok(Redirect::to("/"))
+        ActionResult::Home => Ok(Redirect::to("/")),
+        _ => {
+            state.sessions.lock().unwrap().insert(slug.to_owned(), session);
+            Ok(Redirect::to(&format!("/collection/{slug}")))
         }
-        _ => Ok(Redirect::to(&format!("/collection/{slug}"))),
     }
 }
 

@@ -95,15 +95,19 @@ pub fn markdown_to_html_inline(config: &MarkdownRenderConfig, markdown: &str) ->
 }
 
 fn modify_url(url: &str, config: &MarkdownRenderConfig) -> Fallible<String> {
-    let prefix = &config.file_url_prefix;
-    let path: String = config
+    let prefix = config.file_url_prefix.trim_end_matches('/');
+    let resolved = config
         .resolver
         .resolve(url)
         .map_err(|err| {
             ErrorReport::new(format!("Failed to resolve media path '{}': {}", url, err))
-        })?
-        .display()
-        .to_string();
+        })?;
+    // Build a forward-slash path regardless of the OS path separator.
+    let path: String = resolved
+        .components()
+        .filter_map(|c| c.as_os_str().to_str())
+        .collect::<Vec<_>>()
+        .join("/");
     Ok(format!("{prefix}/{path}"))
 }
 
