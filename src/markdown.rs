@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use percent_encoding::AsciiSet;
+use percent_encoding::CONTROLS;
+use percent_encoding::utf8_percent_encode;
 use pulldown_cmark::CowStr;
 use pulldown_cmark::Event;
 use pulldown_cmark::Options;
@@ -22,6 +25,15 @@ use pulldown_cmark::html::push_html;
 use crate::error::ErrorReport;
 use crate::error::Fallible;
 use crate::media::resolve::MediaResolver;
+
+/// Characters that must be percent-encoded in a URL path segment.
+/// Encodes control characters plus space, #, ?, %, and / (RFC 3986).
+const PATH_SEGMENT: &AsciiSet = &CONTROLS
+    .add(b' ')
+    .add(b'#')
+    .add(b'?')
+    .add(b'%')
+    .add(b'/');
 
 const AUDIO_EXTENSIONS: [&str; 4] = ["mp3", "wav", "ogg", "m4a"];
 
@@ -102,10 +114,11 @@ fn modify_url(url: &str, config: &MarkdownRenderConfig) -> Fallible<String> {
         .map_err(|err| {
             ErrorReport::new(format!("Failed to resolve media path '{}': {}", url, err))
         })?;
-    // Build a forward-slash path regardless of the OS path separator.
+    // Build a percent-encoded, forward-slash-separated URL path.
     let path: String = resolved
         .components()
         .filter_map(|c| c.as_os_str().to_str())
+        .map(|seg| utf8_percent_encode(seg, PATH_SEGMENT).to_string())
         .collect::<Vec<_>>()
         .join("/");
     Ok(format!("{prefix}/{path}"))

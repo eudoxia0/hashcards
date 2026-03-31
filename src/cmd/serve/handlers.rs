@@ -62,19 +62,18 @@ pub async fn collection_get_handler(
 }
 
 fn collection_get_inner(state: &AppState, slug: &str) -> Fallible<String> {
-    let sessions = state.sessions.lock().unwrap();
+    // Take the session out of the map so the lock is not held during rendering.
+    let session = state.sessions.lock().unwrap().remove(slug);
 
-    // If no active session, show the deck browser.
-    if !sessions.contains_key(slug) {
-        drop(sessions);
+    let Some(session) = session else {
+        // No active session: show the deck browser.
         let rc = find_collection(state, slug)
             .ok_or_else(|| crate::error::ErrorReport::new(format!("Unknown collection: {slug}")))?;
         let tree = build_deck_tree(&rc.coll_dir, &rc.db_path)?;
         let html = render_browse_page(&rc.name, slug, &tree);
         return Ok(html.into_string());
-    }
+    };
 
-    let session = sessions.get(slug).unwrap();
     let form_action = format!("/collection/{slug}");
     let file_url_prefix = format!("/collection/{slug}/file");
     let ctx = RenderContext {
@@ -93,6 +92,8 @@ fn collection_get_inner(state: &AppState, slug: &str) -> Fallible<String> {
     };
     let script_url = format!("/collection/{slug}/script.js");
     let html = page_template_with_script(&script_url, body);
+    // Put the session back now that rendering is done.
+    state.sessions.lock().unwrap().insert(slug.to_owned(), session);
     Ok(html.into_string())
 }
 

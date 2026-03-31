@@ -99,9 +99,14 @@ enum Command {
 Examples:
   hashcards serve --config hashcards.toml
   hashcards serve ./japanese ./math
+  hashcards serve --host 127.0.0.1 --port 9000 ./cards
 
 If neither --config nor directories are given, hashcards.toml in the
 current directory is used if it exists.
+
+When --config is provided, the bind address and port are taken from the
+config file ([server] host/port). Use --host/--port only when serving
+directories directly (without a config file).
 
 Without a config file, git syncing is disabled.
 See hashcards.example.toml for the configuration format.")]
@@ -111,10 +116,10 @@ See hashcards.example.toml for the configuration format.")]
         config: Option<String>,
         /// Collection directories to serve (used when no config file is provided).
         directories: Vec<String>,
-        /// The host address to bind to. Default is 0.0.0.0.
+        /// Bind address (used when no --config is given; default: 0.0.0.0).
         #[arg(long, default_value = "0.0.0.0")]
         host: String,
-        /// The port to use for the web server. Default is 8000.
+        /// Port number (used when no --config is given; default: 8000).
         #[arg(long, default_value_t = 8000)]
         port: u16,
     },

@@ -143,7 +143,8 @@ async fn script_handler() -> (
     (
         axum::http::StatusCode::OK,
         [(axum::http::header::CONTENT_TYPE, "text/javascript")],
-        include_str!("../drill/script.js"),
+        // Landing/browse pages use this route and expect MACROS to be defined.
+        concat!("let MACROS = {};\n\n", include_str!("../drill/script.js")),
     )
 }
 
