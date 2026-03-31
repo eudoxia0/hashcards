@@ -46,18 +46,29 @@ pub async fn collection_get_handler(
     State(state): State<AppState>,
     Path(slug): Path<String>,
 ) -> (StatusCode, Html<String>) {
-    let html = match collection_get_inner(&state, &slug) {
-        Ok(html) => html,
-        Err(e) => page_template(html! {
-            div.error {
-                h1 { "Error" }
-                p { (e) }
-                a href="/" { "Back to collections" }
-            }
-        })
-        .into_string(),
-    };
-    (StatusCode::OK, Html(html))
+    // Determine whether this slug is known before calling the inner function,
+    // so we can return 404 for unknown collections vs. 500 for real errors.
+    let known = find_collection(&state, &slug).is_some()
+        || state.sessions.lock().unwrap().contains_key(&slug);
+    match collection_get_inner(&state, &slug) {
+        Ok(html) => (StatusCode::OK, Html(html)),
+        Err(e) => {
+            let status = if known {
+                StatusCode::INTERNAL_SERVER_ERROR
+            } else {
+                StatusCode::NOT_FOUND
+            };
+            let html = page_template(html! {
+                div.error {
+                    h1 { "Error" }
+                    p { (e) }
+                    a href="/" { "Back to collections" }
+                }
+            })
+            .into_string();
+            (status, Html(html))
+        }
+    }
 }
 
 fn collection_get_inner(state: &AppState, slug: &str) -> Fallible<String> {

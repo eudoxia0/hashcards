@@ -210,7 +210,7 @@ fn resolve_serve_config(
     // Explicit --config: load that file
     if let Some(path) = config_path {
         let config = load_config(Path::new(&path))?;
-        return Ok(ResolvedServeConfig::from_toml(config));
+        return ResolvedServeConfig::from_toml(config);
     }
 
     // No --config: if directories were given, serve them directly
@@ -222,7 +222,7 @@ fn resolve_serve_config(
     let default_path = Path::new("hashcards.toml");
     if default_path.exists() {
         let config = load_config(default_path)?;
-        return Ok(ResolvedServeConfig::from_toml(config));
+        return ResolvedServeConfig::from_toml(config);
     }
 
     fail(

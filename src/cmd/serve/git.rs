@@ -18,6 +18,7 @@ pub async fn clone_or_pull(repo_url: &str, branch: &str, target_dir: &Path) -> F
     if target_dir.join(".git").exists() {
         log::debug!("Checking out branch {} in {}", branch, target_dir.display());
         let checkout = Command::new("git")
+            .env("GIT_TERMINAL_PROMPT", "0")
             .args(["checkout", branch])
             .current_dir(target_dir)
             .output()
@@ -28,6 +29,7 @@ pub async fn clone_or_pull(repo_url: &str, branch: &str, target_dir: &Path) -> F
         }
         log::debug!("Pulling latest changes in {}", target_dir.display());
         let pull = Command::new("git")
+            .env("GIT_TERMINAL_PROMPT", "0")
             .args(["pull", "--ff-only", "origin", branch])
             .current_dir(target_dir)
             .output()
@@ -39,6 +41,7 @@ pub async fn clone_or_pull(repo_url: &str, branch: &str, target_dir: &Path) -> F
     } else {
         log::debug!("Cloning {} into {}", repo_url, target_dir.display());
         let output = Command::new("git")
+            .env("GIT_TERMINAL_PROMPT", "0")
             .args(["clone", "--branch", branch, "--single-branch", repo_url])
             .arg(target_dir)
             .output()

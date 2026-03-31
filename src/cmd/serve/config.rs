@@ -105,8 +105,20 @@ pub struct CollectionEntry {
 
 impl CollectionEntry {
     pub fn slug(&self) -> String {
-        self.path.replace('/', "-")
+        slugify(&self.path)
     }
+}
+
+fn slugify(s: &str) -> String {
+    s.chars()
+        .map(|c| {
+            if c.is_alphanumeric() || c == '-' || c == '_' || c == '.' {
+                c
+            } else {
+                '-'
+            }
+        })
+        .collect()
 }
 
 pub fn load_config(path: &Path) -> Fallible<ServeConfig> {
@@ -141,8 +153,15 @@ pub struct ResolvedServeConfig {
 }
 
 impl ResolvedServeConfig {
-    pub fn from_toml(config: ServeConfig) -> Self {
-        let data_dir = PathBuf::from(&config.server.data_dir);
+    pub fn from_toml(config: ServeConfig) -> Fallible<Self> {
+        let data_dir = {
+            let p = PathBuf::from(&config.server.data_dir);
+            if p.is_absolute() {
+                p
+            } else {
+                current_dir()?.join(p)
+            }
+        };
         let repo_dir = data_dir.join("repo");
         let db_dir = data_dir.join("db");
 
@@ -168,13 +187,13 @@ impl ResolvedServeConfig {
             db_dir,
         });
 
-        Self {
+        Ok(Self {
             host: config.server.host,
             port: config.server.port,
             git,
             defaults: config.defaults,
             collections,
-        }
+        })
     }
 
     pub fn from_directories(
@@ -197,7 +216,7 @@ impl ResolvedServeConfig {
                 .map(|n| n.to_string_lossy().into_owned())
                 .unwrap_or_else(|| dir_str.clone());
 
-            let slug = name.replace('/', "-");
+            let slug = slugify(&name);
             let db_path = dir.join("hashcards.db");
 
             collections.push(ResolvedCollection {
