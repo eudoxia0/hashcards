@@ -14,7 +14,8 @@ use crate::error::fail;
 #[derive(Deserialize)]
 pub struct ServeConfig {
     pub server: ServerSection,
-    pub git: GitSection,
+    #[serde(default)]
+    pub git: Option<GitSection>,
     #[serde(default)]
     pub defaults: DefaultsSection,
     #[serde(rename = "collection")]
@@ -159,16 +160,18 @@ impl ResolvedServeConfig {
             })
             .collect();
 
+        let git = config.git.map(|g| ResolvedGit {
+            repo_url: g.repo_url,
+            branch: g.branch,
+            poll_interval_minutes: g.poll_interval_minutes,
+            repo_dir,
+            db_dir,
+        });
+
         Self {
             host: config.server.host,
             port: config.server.port,
-            git: Some(ResolvedGit {
-                repo_url: config.git.repo_url,
-                branch: config.git.branch,
-                poll_interval_minutes: config.git.poll_interval_minutes,
-                repo_dir,
-                db_dir,
-            }),
+            git,
             defaults: config.defaults,
             collections,
         }

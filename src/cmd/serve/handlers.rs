@@ -163,13 +163,13 @@ fn collection_start_inner(
     slug: &str,
     selected_decks: Vec<String>,
 ) -> Fallible<()> {
-    let mut sessions = state.sessions.lock().unwrap();
-    // Drop any existing session for this collection.
-    sessions.remove(slug);
+    // Remove any existing session before doing DB work.
+    state.sessions.lock().unwrap().remove(slug);
 
+    // Create the session outside the lock (may do filesystem/DB work).
     let session = create_session(state, slug, &selected_decks)?;
     if let Some(s) = session {
-        sessions.insert(slug.to_string(), s);
+        state.sessions.lock().unwrap().insert(slug.to_string(), s);
     }
     Ok(())
 }
@@ -301,8 +301,6 @@ fn collection_post_inner(state: &AppState, slug: &str, action: Action) -> Fallib
 
     match result {
         ActionResult::Home => {
-            drop(sessions);
-            let mut sessions = state.sessions.lock().unwrap();
             sessions.remove(slug);
             Ok(Redirect::to("/"))
         }

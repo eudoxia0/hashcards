@@ -16,27 +16,31 @@ use crate::types::timestamp::Timestamp;
 
 pub async fn clone_or_pull(repo_url: &str, branch: &str, target_dir: &Path) -> Fallible<()> {
     if target_dir.join(".git").exists() {
-        log::debug!("Pulling latest changes in {}", target_dir.display());
-        let output = Command::new("git")
-            .args(["pull", "--ff-only"])
+        log::debug!("Checking out branch {} in {}", branch, target_dir.display());
+        let checkout = Command::new("git")
+            .args(["checkout", branch])
             .current_dir(target_dir)
             .output()
             .await?;
-        if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            return fail(format!("git pull failed: {stderr}"));
+        if !checkout.status.success() {
+            let stderr = String::from_utf8_lossy(&checkout.stderr);
+            return fail(format!("git checkout {branch} failed: {stderr}"));
+        }
+        log::debug!("Pulling latest changes in {}", target_dir.display());
+        let pull = Command::new("git")
+            .args(["pull", "--ff-only", "origin", branch])
+            .current_dir(target_dir)
+            .output()
+            .await?;
+        if !pull.status.success() {
+            let stderr = String::from_utf8_lossy(&pull.stderr);
+            return fail(format!("git pull origin {branch} failed: {stderr}"));
         }
     } else {
         log::debug!("Cloning {} into {}", repo_url, target_dir.display());
         let output = Command::new("git")
-            .args([
-                "clone",
-                "--branch",
-                branch,
-                "--single-branch",
-                repo_url,
-                &target_dir.to_string_lossy(),
-            ])
+            .args(["clone", "--branch", branch, "--single-branch", repo_url])
+            .arg(target_dir)
             .output()
             .await?;
         if !output.status.success() {

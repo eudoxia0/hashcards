@@ -109,7 +109,14 @@ pub fn parse_deck(directory: &PathBuf) -> Fallible<Vec<Card>> {
             let deck_name: DeckName = metadata.name.unwrap_or_else(|| {
                 path.strip_prefix(directory)
                     .ok()
-                    .and_then(|rel| rel.with_extension("").to_str().map(String::from))
+                    .map(|rel| {
+                        rel.with_extension("")
+                            .components()
+                            .filter_map(|c| c.as_os_str().to_str())
+                            .collect::<Vec<_>>()
+                            .join("/")
+                    })
+                    .filter(|s| !s.is_empty())
                     .unwrap_or_else(|| {
                         path.file_stem()
                             .and_then(|os_str| os_str.to_str())
