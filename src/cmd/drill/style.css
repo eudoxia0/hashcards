@@ -390,7 +390,6 @@ body {
     max-width: 800px;
     margin: 0 auto;
     padding: 48px 24px;
-    font-family: system-ui, -apple-system, "Helvetica Neue", sans-serif;
 
     .browse-header {
         margin-bottom: 32px;
@@ -407,14 +406,12 @@ body {
 
         h1 {
             font-size: 36px;
-            font-weight: 600;
             margin-top: 8px;
         }
     }
 
     .deck-tree {
-        border: 1px solid #e0e0e0;
-        border-radius: 8px;
+        border: 1px solid black;
         overflow: hidden;
         margin-bottom: 24px;
     }
@@ -549,11 +546,9 @@ body {
     max-width: 800px;
     margin: 0 auto;
     padding: 48px 24px;
-    font-family: system-ui, -apple-system, "Helvetica Neue", sans-serif;
 
     h1 {
         font-size: 36px;
-        font-weight: 600;
         margin-bottom: 32px;
     }
 
@@ -602,9 +597,8 @@ body {
 
         th {
             text-align: left;
-            font-weight: 600;
             padding: 12px 16px;
-            border-bottom: 2px solid #333;
+            border-bottom: 1px solid black;
         }
 
         td {
