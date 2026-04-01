@@ -10,6 +10,7 @@ use tokio::time::interval;
 use crate::cmd::serve::config::ResolvedCollection;
 use crate::cmd::serve::config::ResolvedGit;
 use crate::cmd::serve::state::CollectionInfo;
+use crate::cmd::serve::state::HedgedocSource;
 use crate::error::Fallible;
 use crate::error::fail;
 use crate::types::timestamp::Timestamp;
@@ -75,7 +76,7 @@ pub fn refresh_collection_info(collections: &[ResolvedCollection]) -> Vec<Collec
     infos
 }
 
-fn compute_collection_counts(coll_dir: &Path, db_path: &Path) -> Fallible<(usize, usize)> {
+pub fn compute_collection_counts(coll_dir: &Path, db_path: &Path) -> Fallible<(usize, usize)> {
     use crate::collection::Collection;
     use crate::types::date::Date;
 
@@ -112,6 +113,7 @@ pub fn spawn_sync_task(
     collections: Vec<ResolvedCollection>,
     collection_infos: Arc<RwLock<Vec<CollectionInfo>>>,
     last_synced: Arc<Mutex<Option<Timestamp>>>,
+    hedgedoc_sources: Arc<Mutex<Vec<HedgedocSource>>>,
 ) {
     if git.poll_interval_minutes == 0 {
         log::debug!("Periodic git sync disabled (poll_interval_minutes = 0)");
@@ -133,8 +135,53 @@ pub fn spawn_sync_task(
                 log::error!("Periodic git sync failed: {e}");
                 continue;
             }
-            let infos = refresh_collection_info(&collections);
-            *collection_infos.write().await = infos;
+            let static_infos = refresh_collection_info(&collections);
+            // Snapshot only the paths needed, then release the lock before
+            // doing filesystem/DB work to avoid blocking other handlers.
+            let source_paths: Vec<(String, String, std::path::PathBuf, std::path::PathBuf)> = {
+                let sources = hedgedoc_sources.lock().unwrap();
+                sources
+                    .iter()
+                    .map(|s| (
+                        s.collection.name.clone(),
+                        s.collection.slug.clone(),
+                        s.collection.coll_dir.clone(),
+                        s.collection.db_path.clone(),
+                    ))
+                    .collect()
+            };
+            let hedgedoc_infos: Vec<CollectionInfo> = match tokio::task::spawn_blocking(move || {
+                source_paths
+                    .into_iter()
+                    .map(|(name, slug, coll_dir, db_path)| {
+                        let (total_cards, due_today) = match compute_collection_counts(&coll_dir, &db_path) {
+                            Ok(counts) => counts,
+                            Err(e) => {
+                                log::warn!(
+                                    "Failed to compute HedgeDoc collection counts for '{}' (slug: '{}', dir: '{}', db: '{}'): {e}",
+                                    name,
+                                    slug,
+                                    coll_dir.display(),
+                                    db_path.display(),
+                                );
+                                (0, 0)
+                            }
+                        };
+                        CollectionInfo { name, slug, total_cards, due_today }
+                    })
+                    .collect::<Vec<CollectionInfo>>()
+            })
+            .await
+            {
+                Ok(infos) => infos,
+                Err(e) => {
+                    log::error!("Failed to join HedgeDoc collection counts task: {e}");
+                    Vec::new()
+                }
+            };
+            let mut combined = static_infos;
+            combined.extend(hedgedoc_infos);
+            *collection_infos.write().await = combined;
             *last_synced.lock().unwrap() = Some(Timestamp::now());
             log::debug!("Periodic git sync complete");
         }

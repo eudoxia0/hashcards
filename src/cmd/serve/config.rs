@@ -4,6 +4,7 @@ use std::path::Path;
 use std::path::PathBuf;
 
 use serde::Deserialize;
+use serde::Serialize;
 
 use crate::cmd::drill::server::AnswerControls;
 use crate::error::Fallible;
@@ -18,8 +19,15 @@ pub struct ServeConfig {
     pub git: Option<GitSection>,
     #[serde(default)]
     pub defaults: DefaultsSection,
-    #[serde(rename = "collection")]
+    #[serde(rename = "collection", default)]
     pub collections: Vec<CollectionEntry>,
+    #[serde(rename = "hedgedoc", default)]
+    pub hedgedoc: Vec<HedgedocEntry>,
+}
+
+#[derive(Deserialize, Serialize, Clone)]
+pub struct HedgedocEntry {
+    pub url: String,
 }
 
 #[derive(Deserialize)]
@@ -41,7 +49,7 @@ fn default_port() -> u16 {
 
 #[derive(Deserialize)]
 pub struct GitSection {
-    pub repo_url: String,
+    pub repo_url: Option<String>,
     #[serde(default = "default_branch")]
     pub branch: String,
     #[serde(default = "default_poll_interval")]
@@ -97,7 +105,7 @@ impl From<AnswerControlsConfig> for AnswerControls {
     }
 }
 
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize, Serialize, Clone)]
 pub struct CollectionEntry {
     pub name: String,
     pub path: String,
@@ -109,7 +117,7 @@ impl CollectionEntry {
     }
 }
 
-fn slugify(s: &str) -> String {
+pub fn slugify(s: &str) -> String {
     s.chars()
         .map(|c| {
             if c.is_alphanumeric() || c == '-' || c == '_' || c == '.' {
@@ -137,11 +145,37 @@ pub struct ResolvedGit {
     pub db_dir: PathBuf,
 }
 
+#[derive(Clone)]
 pub struct ResolvedCollection {
     pub name: String,
     pub slug: String,
     pub coll_dir: PathBuf,
     pub db_path: PathBuf,
+}
+
+pub struct TempDirTracker {
+    path: PathBuf,
+    dismissed: std::sync::atomic::AtomicBool,
+}
+
+impl TempDirTracker {
+    pub fn new(path: PathBuf) -> Self {
+        Self { path, dismissed: std::sync::atomic::AtomicBool::new(false) }
+    }
+
+    /// Stop the temp directory from being deleted on drop (e.g. once a config
+    /// that references it has been persisted to disk).
+    pub fn dismiss(&self) {
+        self.dismissed.store(true, std::sync::atomic::Ordering::Relaxed);
+    }
+}
+
+impl Drop for TempDirTracker {
+    fn drop(&mut self) {
+        if !self.dismissed.load(std::sync::atomic::Ordering::Relaxed) {
+            let _ = std::fs::remove_dir_all(&self.path);
+        }
+    }
 }
 
 pub struct ResolvedServeConfig {
@@ -150,6 +184,14 @@ pub struct ResolvedServeConfig {
     pub git: Option<ResolvedGit>,
     pub defaults: DefaultsSection,
     pub collections: Vec<ResolvedCollection>,
+    /// Set when loaded from a TOML file; None when using directory arguments.
+    pub data_dir: Option<PathBuf>,
+    /// Config file path; needed to persist UI changes back to disk.
+    pub config_path: Option<PathBuf>,
+    /// HedgeDoc source URLs loaded from the config file.
+    pub hedgedoc_entries: Vec<HedgedocEntry>,
+    /// Kept alive for the process lifetime so the OS temp directory is cleaned up.
+    pub _temp_dir: Option<std::sync::Arc<TempDirTracker>>,
 }
 
 impl ResolvedServeConfig {
@@ -179,13 +221,19 @@ impl ResolvedServeConfig {
             })
             .collect();
 
-        let git = config.git.map(|g| ResolvedGit {
-            repo_url: g.repo_url,
-            branch: g.branch,
-            poll_interval_minutes: g.poll_interval_minutes,
-            repo_dir,
-            db_dir,
-        });
+        let git = match config.git {
+            None => None,
+            Some(g) => match g.repo_url {
+                Some(repo_url) => Some(ResolvedGit {
+                    repo_url,
+                    branch: g.branch,
+                    poll_interval_minutes: g.poll_interval_minutes,
+                    repo_dir: repo_dir.clone(),
+                    db_dir: db_dir.clone(),
+                }),
+                None => return fail("configuration error: [git] section is present but `repo_url` is missing"),
+            },
+        };
 
         Ok(Self {
             host: config.server.host,
@@ -193,7 +241,16 @@ impl ResolvedServeConfig {
             git,
             defaults: config.defaults,
             collections,
+            data_dir: Some(data_dir),
+            config_path: None,
+            hedgedoc_entries: config.hedgedoc,
+            _temp_dir: None,
         })
+    }
+
+    pub fn with_config_path(mut self, path: PathBuf) -> Self {
+        self.config_path = Some(path);
+        self
     }
 
     pub fn from_directories(
@@ -233,6 +290,10 @@ impl ResolvedServeConfig {
             git: None,
             defaults: DefaultsSection::default(),
             collections,
+            data_dir: None,
+            config_path: None,
+            hedgedoc_entries: Vec::new(),
+            _temp_dir: None,
         })
     }
 }

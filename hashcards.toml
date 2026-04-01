@@ -1,0 +1,8 @@
+[[hedgedoc]]
+url = "https://hedgedoc.example.org/YOUR_FIRST_NOTE_ID"
+
+[[hedgedoc]]
+url = "https://hedgedoc.example.org/YOUR_SECOND_NOTE_ID"
+
+[server]
+data_dir = "/path/to/your/hashcards/.hashcards"

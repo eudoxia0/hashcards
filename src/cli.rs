@@ -32,7 +32,6 @@ use crate::cmd::serve::server::start_serve;
 use crate::cmd::stats::StatsFormat;
 use crate::cmd::stats::print_stats;
 use crate::error::Fallible;
-use crate::error::fail;
 use crate::types::timestamp::Timestamp;
 use crate::utils::wait_for_server;
 
@@ -209,8 +208,10 @@ fn resolve_serve_config(
 ) -> Fallible<ResolvedServeConfig> {
     // Explicit --config: load that file
     if let Some(path) = config_path {
+        let canonical = std::fs::canonicalize(&path)
+            .map_err(|_| crate::error::ErrorReport::new(format!("Config file not found: {path}")))?;
         let config = load_config(Path::new(&path))?;
-        return ResolvedServeConfig::from_toml(config);
+        return Ok(ResolvedServeConfig::from_toml(config)?.with_config_path(canonical));
     }
 
     // No --config: if directories were given, serve them directly
@@ -221,14 +222,32 @@ fn resolve_serve_config(
     // No --config and no directories: try hashcards.toml in CWD
     let default_path = Path::new("hashcards.toml");
     if default_path.exists() {
+        let canonical = std::fs::canonicalize(default_path)
+            .map_err(|_| crate::error::ErrorReport::new("Failed to resolve hashcards.toml path"))?;
         let config = load_config(default_path)?;
-        return ResolvedServeConfig::from_toml(config);
+        return Ok(ResolvedServeConfig::from_toml(config)?.with_config_path(canonical));
     }
 
-    fail(
-        "no configuration found. Either provide a hashcards.toml config file \
-         (see hashcards.example.toml) or pass collection directories as arguments:\n\n  \
-         hashcards serve ./my-cards\n  \
-         hashcards serve --config hashcards.toml",
-    )
-}
+    // No config and no directories: start in HedgeDoc-only mode.
+    // Include both PID and a nanosecond timestamp to avoid stale-data reuse
+    // when PIDs are recycled across runs.
+    let nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_nanos();
+    let data_dir = std::env::temp_dir().join(format!("hashcards-{}-{}", std::process::id(), nanos));
+    std::fs::create_dir_all(&data_dir)?;
+    let temp_tracker = crate::cmd::serve::config::TempDirTracker::new(data_dir.clone());
+
+    Ok(ResolvedServeConfig {
+        host: host.clone(),
+        port,
+        git: None,
+        defaults: crate::cmd::serve::config::DefaultsSection::default(),
+        collections: Vec::new(),
+        data_dir: Some(data_dir),
+        config_path: None,
+        hedgedoc_entries: Vec::new(),
+        _temp_dir: Some(std::sync::Arc::new(temp_tracker)),
+    })
+    }

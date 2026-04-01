@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::Mutex;
 
@@ -24,14 +25,22 @@ use crate::cmd::serve::config::ResolvedCollection;
 use crate::cmd::serve::config::ResolvedGit;
 use crate::cmd::serve::config::ResolvedServeConfig;
 use crate::cmd::serve::git::clone_or_pull;
-use crate::cmd::serve::git::refresh_collection_info;
 use crate::cmd::serve::git::spawn_sync_task;
 use crate::cmd::serve::handlers::collection_file_handler;
 use crate::cmd::serve::handlers::collection_get_handler;
 use crate::cmd::serve::handlers::collection_post_handler;
 use crate::cmd::serve::handlers::collection_script_handler;
 use crate::cmd::serve::handlers::collection_start_handler;
+use crate::cmd::serve::handlers::hedgedoc_add_handler;
+use crate::cmd::serve::handlers::hedgedoc_delete_handler;
+use crate::cmd::serve::handlers::hedgedoc_manage_handler;
+use crate::cmd::serve::handlers::hedgedoc_sync_now_handler;
 use crate::cmd::serve::handlers::sync_handler;
+use crate::cmd::serve::hedgedoc::build_combined_infos;
+use crate::cmd::serve::hedgedoc::build_note;
+use crate::cmd::serve::hedgedoc::build_source;
+use crate::cmd::serve::hedgedoc::source_uri_from_url;
+use crate::cmd::serve::hedgedoc::spawn_hedgedoc_sync_task;
 use crate::cmd::serve::landing::landing_handler;
 use crate::cmd::serve::state::AppState;
 use crate::error::Fallible;
@@ -66,8 +75,50 @@ pub async fn start_serve(config: ResolvedServeConfig) -> Fallible<()> {
         }
     }
 
-    // Build collection info
-    let collection_infos = refresh_collection_info(&config.collections);
+    // Build initial HedgeDoc sources (fetch markdown, write to disk).
+    let data_dir: Option<PathBuf> = config.data_dir.clone();
+
+    let hedgedoc_sources_init = if let Some(ref dd) = data_dir {
+        let mut sources = Vec::new();
+        for entry in &config.hedgedoc_entries {
+            let maybe_source_uri = source_uri_from_url(&entry.url);
+            let maybe_collection = maybe_source_uri.as_ref().and_then(|source_uri| {
+                sources
+                    .iter()
+                    .find(|s: &&crate::cmd::serve::state::HedgedocSource| &s.source_uri == source_uri)
+                    .map(|s| s.collection.clone())
+            });
+
+            if let Some(collection) = maybe_collection {
+                match build_note(&entry.url, &collection).await {
+                    Ok(note) => {
+                        if let Some(source_uri) = maybe_source_uri {
+                            if let Some(existing) =
+                                sources.iter_mut().find(|s| s.source_uri == source_uri)
+                            {
+                                existing.notes.push(note);
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        log::error!("Failed to initialize HedgeDoc source {}: {e}", entry.url)
+                    }
+                }
+                continue;
+            }
+
+            match build_source(&entry.url, dd).await {
+                Ok(s) => sources.push(s),
+                Err(e) => log::error!("Failed to initialize HedgeDoc source {}: {e}", entry.url),
+            }
+        }
+        sources
+    } else {
+        Vec::new()
+    };
+
+    // Build combined collection info (static + hedgedoc)
+    let collection_infos = build_combined_infos(&config.collections, &hedgedoc_sources_init);
     log::debug!("Loaded {} collections", collection_infos.len());
 
     let last_synced = if config.git.is_some() {
@@ -87,29 +138,69 @@ pub async fn start_serve(config: ResolvedServeConfig) -> Fallible<()> {
         })
         .collect();
 
+    // Determine poll interval for HedgeDoc (inherit from git, or default 30 min).
+    let hedgedoc_poll_minutes = config
+        .git
+        .as_ref()
+        .map(|g| g.poll_interval_minutes)
+        .unwrap_or(30);
+
+    let config_path: Arc<Mutex<Option<PathBuf>>> = Arc::new(Mutex::new(config.config_path.clone()));
     let bind = format!("{}:{}", config.host, config.port);
 
     let config = Arc::new(config);
+    // Mark initial sync time only if at least one note was fetched without error.
+    let hedgedoc_last_synced_init = if hedgedoc_sources_init
+        .iter()
+        .flat_map(|s| s.notes.iter())
+        .any(|n| n.last_error.is_none())
+    {
+        Some(Timestamp::now())
+    } else {
+        None
+    };
+    let hedgedoc_sources = Arc::new(Mutex::new(hedgedoc_sources_init));
+    let hedgedoc_last_synced = Arc::new(Mutex::new(hedgedoc_last_synced_init));
+
     let state = AppState {
         config: config.clone(),
         collections: Arc::new(RwLock::new(collection_infos)),
         sessions: Arc::new(Mutex::new(HashMap::new())),
         last_synced: Arc::new(Mutex::new(last_synced)),
+        hedgedoc_sources: hedgedoc_sources.clone(),
+        hedgedoc_last_synced: hedgedoc_last_synced.clone(),
+        config_path,
     };
 
-    // Spawn background sync task (only in git mode)
+    // Spawn background git sync task (only in git mode)
     if let Some(git) = sync_git {
         spawn_sync_task(
             git,
-            sync_collections,
+            sync_collections.clone(),
             state.collections.clone(),
             state.last_synced.clone(),
+            state.hedgedoc_sources.clone(),
+        );
+    }
+
+    // Spawn background HedgeDoc sync task (only when data_dir is available)
+    if data_dir.is_some() {
+        spawn_hedgedoc_sync_task(
+            hedgedoc_sources,
+            state.collections.clone(),
+            hedgedoc_last_synced,
+            sync_collections,
+            hedgedoc_poll_minutes,
         );
     }
 
     let app = Router::new()
         .route("/", get(landing_handler))
         .route("/sync", post(sync_handler))
+        .route("/hedgedoc", get(hedgedoc_manage_handler))
+        .route("/hedgedoc/add", post(hedgedoc_add_handler))
+        .route("/hedgedoc/delete", post(hedgedoc_delete_handler))
+        .route("/hedgedoc/sync", post(hedgedoc_sync_now_handler))
         .route("/collection/{slug}", get(collection_get_handler))
         .route("/collection/{slug}", post(collection_post_handler))
         .route("/collection/{slug}/start", post(collection_start_handler))
@@ -142,6 +233,7 @@ pub async fn start_serve(config: ResolvedServeConfig) -> Fallible<()> {
     log::debug!("Server shut down");
     Ok(())
 }
+
 
 async fn script_handler() -> (
     axum::http::StatusCode,
