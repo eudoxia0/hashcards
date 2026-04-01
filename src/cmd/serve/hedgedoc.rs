@@ -143,28 +143,48 @@ fn sanitize_deck_name(name: &str, fallback: &str) -> String {
     }
 }
 
-fn strip_leading_yaml_frontmatter(markdown: &str) -> &str {
+fn split_yaml_frontmatter(markdown: &str) -> Option<(&str, &str)> {
     let content = markdown.trim_start();
-    // Opening delimiter must be exactly "---\n" on its own line.
-    if !content.starts_with("---\n") {
-        return markdown;
+    if !content.starts_with("---\n") && !content.starts_with("---\r\n") {
+        return None;
     }
-    let after = match content.get(4..) {
-        Some(s) => s,
-        None => return markdown,
-    };
-    // Closing delimiter must also be on its own line: "\n---\n".
-    let end = match after.find("\n---\n") {
-        Some(idx) => idx,
-        None => return markdown,
-    };
 
-    let body_start_in_trimmed = 4 + end + 5;
-    let body = match content.get(body_start_in_trimmed..) {
-        Some(s) => s,
-        None => return markdown,
-    };
-    body.trim_start_matches('\n')
+    let after_start = if content.starts_with("---\r\n") { 5 } else { 4 };
+    let after = &content[after_start..];
+    
+    let mut current = 0;
+    while let Some(idx) = after[current..].find("\n---") {
+        let abs_idx = current + idx;
+        let next_char_idx = abs_idx + 4;
+        let is_end = next_char_idx == after.len() 
+            || after[next_char_idx..].starts_with('\n') 
+            || after[next_char_idx..].starts_with("\r\n");
+            
+        if is_end {
+            let mut fm_end = abs_idx;
+            if fm_end > 0 && after.as_bytes()[fm_end - 1] == b'\r' {
+                fm_end -= 1;
+            }
+            let frontmatter = &after[..fm_end];
+            let skip = if after[next_char_idx..].starts_with("\r\n") {
+                2
+            } else if after[next_char_idx..].starts_with('\n') {
+                1
+            } else {
+                0
+            };
+            return Some((frontmatter, &after[next_char_idx + skip..]));
+        }
+        current = abs_idx + 4;
+    }
+    None
+}
+
+fn strip_leading_yaml_frontmatter(markdown: &str) -> &str {
+    match split_yaml_frontmatter(markdown) {
+        Some((_, body)) => body.trim_start_matches(|c| c == '\n' || c == '\r'),
+        None => markdown,
+    }
 }
 
 fn wrap_with_deck_frontmatter(markdown: &str, deck_name: &str) -> Fallible<String> {
@@ -182,13 +202,7 @@ fn wrap_with_deck_frontmatter(markdown: &str, deck_name: &str) -> Fallible<Strin
 
 /// Parse the `title:` field from YAML (`---`) frontmatter.
 fn frontmatter_title(markdown: &str) -> Option<String> {
-    let content = markdown.trim_start();
-    if !content.starts_with("---\n") {
-        return None;
-    }
-    let after = content.get(4..)?;
-    let end = after.find("\n---\n")?;
-    let frontmatter = &after[..end];
+    let (frontmatter, _) = split_yaml_frontmatter(markdown)?;
     for line in frontmatter.lines() {
         let line = line.trim();
         if let Some(rest) = line.strip_prefix("title:") {
@@ -352,9 +366,12 @@ pub fn spawn_hedgedoc_sync_task(
                     .collect()
             };
 
+            let mut any_success = false;
+
             for (url, rc) in &entries {
                 match sync_source(url, rc).await {
                     Ok((deck_name, file_name)) => {
+                        any_success = true;
                         let mut sources = hedgedoc_sources.lock().unwrap();
                         if let Some(src) = sources
                             .iter_mut()
@@ -385,7 +402,9 @@ pub fn spawn_hedgedoc_sync_task(
             let hedgedoc_snapshot = hedgedoc_sources.lock().unwrap().clone();
             let all_infos = build_combined_infos(&static_collections, &hedgedoc_snapshot);
             *collection_infos.write().await = all_infos;
-            *hedgedoc_last_synced.lock().unwrap() = Some(Timestamp::now());
+            if any_success {
+                *hedgedoc_last_synced.lock().unwrap() = Some(Timestamp::now());
+            }
             log::debug!("Periodic HedgeDoc sync complete");
         }
     });

@@ -153,8 +153,19 @@ pub fn spawn_sync_task(
             let hedgedoc_infos: Vec<CollectionInfo> = source_paths
                 .into_iter()
                 .map(|(name, slug, coll_dir, db_path)| {
-                    let (total_cards, due_today) =
-                        compute_collection_counts(&coll_dir, &db_path).unwrap_or((0, 0));
+                    let (total_cards, due_today) = match compute_collection_counts(&coll_dir, &db_path) {
+                        Ok(counts) => counts,
+                        Err(e) => {
+                            log::warn!(
+                                "Failed to compute HedgeDoc collection counts for '{}' (slug: '{}', dir: '{}', db: '{}'): {e}",
+                                name,
+                                slug,
+                                coll_dir.display(),
+                                db_path.display(),
+                            );
+                            (0, 0)
+                        }
+                    };
                     CollectionInfo { name, slug, total_cards, due_today }
                 })
                 .collect();

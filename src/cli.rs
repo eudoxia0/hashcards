@@ -235,17 +235,19 @@ fn resolve_serve_config(
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap_or_default()
         .as_nanos();
-    let temp_dir = std::env::temp_dir().join(format!("hashcards-{}-{}", std::process::id(), nanos));
-    std::fs::create_dir_all(&temp_dir)?;
-    
+    let data_dir = std::env::temp_dir().join(format!("hashcards-{}-{}", std::process::id(), nanos));
+    std::fs::create_dir_all(&data_dir)?;
+    let temp_tracker = crate::cmd::serve::config::TempDirTracker::new(data_dir.clone());
+
     Ok(ResolvedServeConfig {
         host: host.clone(),
         port,
         git: None,
         defaults: crate::cmd::serve::config::DefaultsSection::default(),
         collections: Vec::new(),
-        data_dir: Some(temp_dir),
+        data_dir: Some(data_dir),
         config_path: None,
         hedgedoc_entries: Vec::new(),
+        _temp_dir: Some(std::sync::Arc::new(temp_tracker)),
     })
-}
+    }

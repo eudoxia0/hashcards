@@ -153,6 +153,22 @@ pub struct ResolvedCollection {
     pub db_path: PathBuf,
 }
 
+pub struct TempDirTracker {
+    path: PathBuf,
+}
+
+impl TempDirTracker {
+    pub fn new(path: PathBuf) -> Self {
+        Self { path }
+    }
+}
+
+impl Drop for TempDirTracker {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_dir_all(&self.path);
+    }
+}
+
 pub struct ResolvedServeConfig {
     pub host: String,
     pub port: u16,
@@ -165,6 +181,8 @@ pub struct ResolvedServeConfig {
     pub config_path: Option<PathBuf>,
     /// HedgeDoc source URLs loaded from the config file.
     pub hedgedoc_entries: Vec<HedgedocEntry>,
+    /// Kept alive for the process lifetime so the OS temp directory is cleaned up.
+    pub _temp_dir: Option<std::sync::Arc<TempDirTracker>>,
 }
 
 impl ResolvedServeConfig {
@@ -217,6 +235,7 @@ impl ResolvedServeConfig {
             data_dir: Some(data_dir),
             config_path: None,
             hedgedoc_entries: config.hedgedoc,
+            _temp_dir: None,
         })
     }
 
@@ -265,6 +284,7 @@ impl ResolvedServeConfig {
             data_dir: None,
             config_path: None,
             hedgedoc_entries: Vec::new(),
+            _temp_dir: None,
         })
     }
 }

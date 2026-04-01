@@ -58,6 +58,7 @@ mod tests {
             data_dir: None,
             config_path: None,
             hedgedoc_entries: Vec::new(),
+            _temp_dir: None,
         };
 
         spawn(async move { start_serve(config).await });

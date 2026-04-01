@@ -715,9 +715,12 @@ pub async fn hedgedoc_sync_now_handler(State(state): State<AppState>) -> Redirec
             .collect()
     };
 
+    let mut any_success = false;
+
     for (url, rc) in &entries {
         match sync_source(url, rc).await {
             Ok((deck_name, file_name)) => {
+                any_success = true;
                 let mut sources = state.hedgedoc_sources.lock().unwrap();
                 for src in sources.iter_mut() {
                     if let Some(note) = src.notes.iter_mut().find(|n| &n.url == url) {
@@ -745,7 +748,9 @@ pub async fn hedgedoc_sync_now_handler(State(state): State<AppState>) -> Redirec
     let sources_snapshot = state.hedgedoc_sources.lock().unwrap().clone();
     let combined = build_combined_infos(&state.config.collections, &sources_snapshot);
     *state.collections.write().await = combined;
-    *state.hedgedoc_last_synced.lock().unwrap() = Some(Timestamp::now());
+    if any_success {
+        *state.hedgedoc_last_synced.lock().unwrap() = Some(Timestamp::now());
+    }
 
     Redirect::to("/hedgedoc")
 }
