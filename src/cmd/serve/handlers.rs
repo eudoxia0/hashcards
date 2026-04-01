@@ -636,6 +636,15 @@ pub async fn hedgedoc_add_handler(
     let combined = build_combined_infos(&state.config.collections, &sources_snapshot);
     *state.collections.write().await = combined;
 
+    // Update last synced time if the newly added note fetched without error.
+    if sources_snapshot
+        .iter()
+        .flat_map(|s| s.notes.iter())
+        .any(|n| n.url == url && n.last_error.is_none())
+    {
+        *state.hedgedoc_last_synced.lock().unwrap() = Some(Timestamp::now());
+    }
+
     Redirect::to("/hedgedoc")
 }
 

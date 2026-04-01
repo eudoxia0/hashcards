@@ -237,6 +237,16 @@ pub async fn sync_source(url: &str, rc: &ResolvedCollection) -> Fallible<(String
     let final_path = rc.coll_dir.join(&file_name);
     let tmp_path = rc.coll_dir.join(format!(".{}.tmp", file_name));
     tokio::fs::write(&tmp_path, sync_markdown).await?;
+    // On Unix, rename over an existing file is atomic.
+    // On Windows, rename fails if the destination exists, so remove it first
+    // (non-atomic, but best-effort on that platform).
+    #[cfg(windows)]
+    if tokio::fs::metadata(&final_path).await.is_ok() {
+        if let Err(e) = tokio::fs::remove_file(&final_path).await {
+            let _ = tokio::fs::remove_file(&tmp_path).await;
+            return Err(e.into());
+        }
+    }
     if let Err(e) = tokio::fs::rename(&tmp_path, &final_path).await {
         let _ = tokio::fs::remove_file(&tmp_path).await;
         return Err(e.into());

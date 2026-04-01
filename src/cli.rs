@@ -234,7 +234,7 @@ fn resolve_serve_config(
     let nanos = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap_or_default()
-        .subsec_nanos();
+        .as_nanos();
     let temp_dir = std::env::temp_dir().join(format!("hashcards-{}-{}", std::process::id(), nanos));
     std::fs::create_dir_all(&temp_dir)?;
     
