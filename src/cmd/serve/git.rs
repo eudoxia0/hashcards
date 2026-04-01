@@ -150,25 +150,35 @@ pub fn spawn_sync_task(
                     ))
                     .collect()
             };
-            let hedgedoc_infos: Vec<CollectionInfo> = source_paths
-                .into_iter()
-                .map(|(name, slug, coll_dir, db_path)| {
-                    let (total_cards, due_today) = match compute_collection_counts(&coll_dir, &db_path) {
-                        Ok(counts) => counts,
-                        Err(e) => {
-                            log::warn!(
-                                "Failed to compute HedgeDoc collection counts for '{}' (slug: '{}', dir: '{}', db: '{}'): {e}",
-                                name,
-                                slug,
-                                coll_dir.display(),
-                                db_path.display(),
-                            );
-                            (0, 0)
-                        }
-                    };
-                    CollectionInfo { name, slug, total_cards, due_today }
-                })
-                .collect();
+            let hedgedoc_infos: Vec<CollectionInfo> = match tokio::task::spawn_blocking(move || {
+                source_paths
+                    .into_iter()
+                    .map(|(name, slug, coll_dir, db_path)| {
+                        let (total_cards, due_today) = match compute_collection_counts(&coll_dir, &db_path) {
+                            Ok(counts) => counts,
+                            Err(e) => {
+                                log::warn!(
+                                    "Failed to compute HedgeDoc collection counts for '{}' (slug: '{}', dir: '{}', db: '{}'): {e}",
+                                    name,
+                                    slug,
+                                    coll_dir.display(),
+                                    db_path.display(),
+                                );
+                                (0, 0)
+                            }
+                        };
+                        CollectionInfo { name, slug, total_cards, due_today }
+                    })
+                    .collect::<Vec<CollectionInfo>>()
+            })
+            .await
+            {
+                Ok(infos) => infos,
+                Err(e) => {
+                    log::error!("Failed to join HedgeDoc collection counts task: {e}");
+                    Vec::new()
+                }
+            };
             let mut combined = static_infos;
             combined.extend(hedgedoc_infos);
             *collection_infos.write().await = combined;

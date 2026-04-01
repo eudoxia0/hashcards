@@ -603,6 +603,10 @@ pub async fn hedgedoc_add_handler(
                 }
             };
             *state.config_path.lock().unwrap() = Some(p.clone());
+            // The config now references the temp data dir; stop cleanup on exit.
+            if let Some(tracker) = state.config._temp_dir.as_ref() {
+                tracker.dismiss();
+            }
             p
         }
     };

@@ -155,17 +155,26 @@ pub struct ResolvedCollection {
 
 pub struct TempDirTracker {
     path: PathBuf,
+    dismissed: std::sync::atomic::AtomicBool,
 }
 
 impl TempDirTracker {
     pub fn new(path: PathBuf) -> Self {
-        Self { path }
+        Self { path, dismissed: std::sync::atomic::AtomicBool::new(false) }
+    }
+
+    /// Stop the temp directory from being deleted on drop (e.g. once a config
+    /// that references it has been persisted to disk).
+    pub fn dismiss(&self) {
+        self.dismissed.store(true, std::sync::atomic::Ordering::Relaxed);
     }
 }
 
 impl Drop for TempDirTracker {
     fn drop(&mut self) {
-        let _ = std::fs::remove_dir_all(&self.path);
+        if !self.dismissed.load(std::sync::atomic::Ordering::Relaxed) {
+            let _ = std::fs::remove_dir_all(&self.path);
+        }
     }
 }
 
