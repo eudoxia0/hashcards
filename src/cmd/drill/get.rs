@@ -146,6 +146,7 @@ pub fn render_session_page(ctx: &RenderContext, mutable: &MutableState) -> Falli
             div.header {
                 div.progress-bar
                     role="progressbar"
+                    aria-label="Study progress"
                     aria-valuenow=(percent_done)
                     aria-valuemin="0"
                     aria-valuemax="100"

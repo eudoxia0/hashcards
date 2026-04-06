@@ -213,6 +213,26 @@ mod tests {
     }
 
     #[test]
+    fn test_validate_media_files_with_external_urls() -> Fallible<()> {
+        // External image URLs (e.g. from HedgeDoc uploads) must not be treated
+        // as missing local files — the browser fetches them directly.
+        let test_dir = temp_dir().join("hashcards_media_test_external");
+        create_dir_all(&test_dir)?;
+
+        let card_file = test_dir.join("test_deck.md");
+        std::fs::write(&card_file, b"")?;
+
+        let markdown = "Q: What is shown?\nA: ![](https://example.com/image.png)";
+        let parser = CardParser::new("test_deck".to_string(), card_file.clone());
+        let cards = parser.parse(markdown)?;
+
+        let result = validate_media_files(&cards, &test_dir);
+        assert!(result.is_ok(), "external URLs should not fail validation: {result:?}");
+
+        Ok(())
+    }
+
+    #[test]
     fn test_validate_media_files_with_cloze_cards() -> Fallible<()> {
         // Create a temporary directory for the test.
         let test_dir = temp_dir().join("hashcards_media_test_cloze");

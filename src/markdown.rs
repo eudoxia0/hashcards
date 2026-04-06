@@ -111,9 +111,20 @@ fn modify_url(url: &str, config: &MarkdownRenderConfig) -> Fallible<String> {
     let prefix = config.file_url_prefix.trim_end_matches('/');
     let resolved = match config.resolver.resolve(url) {
         Ok(p) => p,
-        // External URLs (e.g. HedgeDoc image uploads) are passed through as-is;
-        // the browser fetches them directly.
-        Err(ResolveError::ExternalUrl) => return Ok(url.to_string()),
+        // External URLs (e.g. HedgeDoc image uploads) are passed through as-is
+        // so the browser fetches them directly. Only http/https is permitted:
+        // a valid http/https URL cannot contain unescaped quotes and is safe
+        // to embed in an HTML attribute.
+        Err(ResolveError::ExternalUrl) => {
+            let lower = url.to_ascii_lowercase();
+            if !lower.starts_with("http://") && !lower.starts_with("https://") {
+                return Err(ErrorReport::new(format!(
+                    "External media URL must use http or https (got: {})",
+                    url
+                )));
+            }
+            return Ok(url.to_string());
+        }
         Err(err) => {
             return Err(ErrorReport::new(format!(
                 "Failed to resolve media path '{}': {}",
@@ -182,6 +193,31 @@ mod tests {
         let config = make_test_config()?;
         let html = markdown_to_html_inline(&config, markdown)?;
         assert_eq!(html, "<h1>Foo</h1>\n");
+        Ok(())
+    }
+
+    #[test]
+    fn test_external_url_image_renders_unchanged() -> Fallible<()> {
+        // External image URLs (e.g. HedgeDoc uploads) must be passed through
+        // as-is so the browser fetches them directly.
+        let markdown = "![alt](https://example.com/image.png)";
+        let config = make_test_config()?;
+        let html = markdown_to_html(&config, markdown)?;
+        assert!(
+            html.contains("https://example.com/image.png"),
+            "external URL should appear unchanged in output: {html}"
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_non_http_external_url_is_rejected() -> Fallible<()> {
+        // Only http/https external URLs are permitted to prevent unsafe schemes
+        // (e.g. javascript:) from being embedded in HTML attributes.
+        let markdown = "![alt](javascript://evil)";
+        let config = make_test_config()?;
+        let result = markdown_to_html(&config, markdown);
+        assert!(result.is_err(), "non-http external URL should be rejected");
         Ok(())
     }
 }
