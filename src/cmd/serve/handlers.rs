@@ -88,7 +88,16 @@ fn collection_get_inner(state: &AppState, slug: &str) -> Fallible<String> {
         let rc = find_collection(state, slug)
             .ok_or_else(|| crate::error::ErrorReport::new(format!("Unknown collection: {slug}")))?;
         let tree = build_deck_tree(&rc.coll_dir, &rc.db_path)?;
-        let html = render_browse_page(&rc.name, slug, &tree);
+        // Build a deck-name → HedgeDoc URL map so the browse page can show edit links.
+        let hedge_urls: std::collections::HashMap<String, String> = {
+            let sources = state.hedgedoc_sources.lock().unwrap();
+            sources
+                .iter()
+                .filter(|s| s.collection.slug == slug)
+                .flat_map(|s| s.notes.iter().map(|n| (n.deck_name.clone(), n.url.clone())))
+                .collect()
+        };
+        let html = render_browse_page(&rc.name, slug, &tree, &hedge_urls);
         return Ok(html.into_string());
     };
 

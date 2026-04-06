@@ -73,9 +73,12 @@ pub fn validate_media_files(cards: &[Card], base_dir: &Path) -> Fallible<()> {
 
         for markdown in markdown_texts {
             for path in extract_media_paths(markdown) {
-                // Try to resolve the path using MediaResolver.
+                use crate::media::resolve::ResolveError;
                 match resolver.resolve(&path) {
                     Ok(_) => {}
+                    // External URLs are intentional (e.g. HedgeDoc image uploads);
+                    // the browser fetches them directly, so they are never "missing".
+                    Err(ResolveError::ExternalUrl) => {}
                     Err(_) => {
                         // Decode percent-encoded characters for better error display.
                         let decoded_path: Cow<str> = percent_decode_str(&path).decode_utf8_lossy();

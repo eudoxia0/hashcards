@@ -107,13 +107,20 @@ pub fn markdown_to_html_inline(config: &MarkdownRenderConfig, markdown: &str) ->
 }
 
 fn modify_url(url: &str, config: &MarkdownRenderConfig) -> Fallible<String> {
+    use crate::media::resolve::ResolveError;
     let prefix = config.file_url_prefix.trim_end_matches('/');
-    let resolved = config
-        .resolver
-        .resolve(url)
-        .map_err(|err| {
-            ErrorReport::new(format!("Failed to resolve media path '{}': {}", url, err))
-        })?;
+    let resolved = match config.resolver.resolve(url) {
+        Ok(p) => p,
+        // External URLs (e.g. HedgeDoc image uploads) are passed through as-is;
+        // the browser fetches them directly.
+        Err(ResolveError::ExternalUrl) => return Ok(url.to_string()),
+        Err(err) => {
+            return Err(ErrorReport::new(format!(
+                "Failed to resolve media path '{}': {}",
+                url, err
+            )));
+        }
+    };
     // Build a percent-encoded, forward-slash-separated URL path.
     let path: String = resolved
         .components()
