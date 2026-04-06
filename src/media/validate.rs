@@ -216,8 +216,7 @@ mod tests {
     fn test_validate_media_files_with_external_urls() -> Fallible<()> {
         // External image URLs (e.g. from HedgeDoc uploads) must not be treated
         // as missing local files — the browser fetches them directly.
-        let test_dir = temp_dir().join("hashcards_media_test_external");
-        create_dir_all(&test_dir)?;
+        let test_dir = crate::helper::create_tmp_directory()?;
 
         let card_file = test_dir.join("test_deck.md");
         std::fs::write(&card_file, b"")?;

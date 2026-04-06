@@ -15,6 +15,7 @@
 use percent_encoding::AsciiSet;
 use percent_encoding::CONTROLS;
 use percent_encoding::utf8_percent_encode;
+use reqwest::Url;
 use pulldown_cmark::CowStr;
 use pulldown_cmark::Event;
 use pulldown_cmark::Options;
@@ -111,19 +112,21 @@ fn modify_url(url: &str, config: &MarkdownRenderConfig) -> Fallible<String> {
     let prefix = config.file_url_prefix.trim_end_matches('/');
     let resolved = match config.resolver.resolve(url) {
         Ok(p) => p,
-        // External URLs (e.g. HedgeDoc image uploads) are passed through as-is
-        // so the browser fetches them directly. Only http/https is permitted:
-        // a valid http/https URL cannot contain unescaped quotes and is safe
-        // to embed in an HTML attribute.
+        // External URLs (e.g. HedgeDoc image uploads) are passed through after
+        // parsing and re-serializing. This rejects invalid URLs (including those
+        // containing whitespace or control characters) and non-http(s) schemes,
+        // and produces a canonicalized string that is safe to embed in HTML.
         Err(ResolveError::ExternalUrl) => {
-            let lower = url.to_ascii_lowercase();
-            if !lower.starts_with("http://") && !lower.starts_with("https://") {
+            let parsed = Url::parse(url).map_err(|err| {
+                ErrorReport::new(format!("External media URL is invalid ('{}'): {}", url, err))
+            })?;
+            if parsed.scheme() != "http" && parsed.scheme() != "https" {
                 return Err(ErrorReport::new(format!(
                     "External media URL must use http or https (got: {})",
                     url
                 )));
             }
-            return Ok(url.to_string());
+            return Ok(parsed.to_string());
         }
         Err(err) => {
             return Err(ErrorReport::new(format!(
