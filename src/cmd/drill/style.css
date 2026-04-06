@@ -15,6 +15,7 @@ body,
 .root {
     width: 100vw;
     height: 100vh;
+    height: 100dvh;
 }
 
 body {
@@ -41,7 +42,7 @@ body {
         align-items: center;
 
         .progress-bar {
-            width: 300px;
+            width: min(300px, 80vw);
             height: 24px;
             border: 1px solid #999;
             border-radius: 12px;
@@ -412,7 +413,8 @@ body {
 
     .deck-tree {
         border: 1px solid black;
-        overflow: hidden;
+        overflow-x: auto;
+        overflow-y: hidden;
         margin-bottom: 24px;
     }
 
@@ -472,8 +474,20 @@ body {
                 }
 
                 .deck-due.muted {
-                    color: #999;
+                    color: #767676;
                     font-weight: normal;
+                }
+            }
+
+            .edit-link {
+                font-size: 12px;
+                color: #666;
+                text-decoration: none;
+                white-space: nowrap;
+                margin-left: 4px;
+
+                &:hover {
+                    color: #333;
                 }
             }
         }
@@ -671,7 +685,7 @@ body {
         }
 
         .muted td {
-            color: #999;
+            color: #666;
         }
 
         .drill-link {
@@ -691,17 +705,29 @@ body {
 
         .no-cards {
             font-size: 14px;
-            color: #999;
+            color: #666;
         }
     }
 }
 
 /* Mobile */
 @media (max-width: 768px) {
+    .header {
+        padding: 16px;
+    }
+
     .card {
         width: 100%;
         height: 100%;
         box-shadow: none;
+    }
+
+    .card-header h1 {
+        font-size: 24px;
+    }
+
+    .rich-text {
+        font-size: 20px;
     }
 
     .controls {
@@ -712,6 +738,7 @@ body {
 
             input {
                 margin: 6px 0;
+                min-height: 44px;
             }
 
             .grades {
@@ -741,6 +768,57 @@ body {
 
         .val {
             padding-left: 24px;
+        }
+    }
+
+    .landing,
+    .browse {
+        padding: 24px 16px;
+    }
+
+    .landing h1,
+    .browse .browse-header h1 {
+        font-size: 28px;
+        margin-top: 6px;
+    }
+
+    .landing h2 {
+        font-size: 22px;
+    }
+
+    .browse .browse-header {
+        margin-bottom: 16px;
+    }
+
+    .browse-controls {
+        flex-direction: column;
+        gap: 12px;
+        align-items: stretch;
+
+        .drill-button {
+            width: 100%;
+        }
+    }
+
+    .collection-table {
+        display: block;
+        overflow-x: auto;
+        font-size: 15px;
+
+        th,
+        td {
+            padding: 8px 10px;
+        }
+    }
+
+    .deck-row {
+        min-height: 44px;
+    }
+
+    .deck-label {
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
         }
     }
 }

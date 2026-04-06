@@ -144,7 +144,13 @@ pub fn render_session_page(ctx: &RenderContext, mutable: &MutableState) -> Falli
     let html = html! {
         div.root {
             div.header {
-                div.progress-bar {
+                div.progress-bar
+                    role="progressbar"
+                    aria-label="Study progress"
+                    aria-valuenow=(percent_done)
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                {
                     div.progress-fill style=(progress_bar_style) {}
                 }
             }

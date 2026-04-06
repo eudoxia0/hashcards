@@ -139,7 +139,14 @@ fn insert_into_tree(
 }
 
 /// Render the deck browser page for a collection.
-pub fn render_browse_page(collection_name: &str, slug: &str, tree: &DeckNode) -> Markup {
+/// `hedge_urls` maps deck name to the original HedgeDoc note URL, for collections
+/// backed by HedgeDoc. Pass an empty map for file-based collections.
+pub fn render_browse_page(
+    collection_name: &str,
+    slug: &str,
+    tree: &DeckNode,
+    hedge_urls: &HashMap<String, String>,
+) -> Markup {
     let total_due = tree.due_today_recursive();
     page_template(html! {
         div.browse {
@@ -153,7 +160,7 @@ pub fn render_browse_page(collection_name: &str, slug: &str, tree: &DeckNode) ->
                 form action=(format!("/collection/{slug}/start")) method="post" {
                     div.deck-tree {
                         @for child in &tree.children {
-                            (render_deck_node(child, 0))
+                            (render_deck_node(child, 0, hedge_urls))
                         }
                     }
                     div.browse-controls {
@@ -177,10 +184,11 @@ pub fn render_browse_page(collection_name: &str, slug: &str, tree: &DeckNode) ->
     })
 }
 
-fn render_deck_node(node: &DeckNode, depth: usize) -> Markup {
+fn render_deck_node(node: &DeckNode, depth: usize, hedge_urls: &HashMap<String, String>) -> Markup {
     let total = node.total_cards_recursive();
     let due = node.due_today_recursive();
     let has_children = !node.children.is_empty();
+    let edit_url = if !has_children { hedge_urls.get(&node.path) } else { None };
 
     html! {
         div.deck-node {
@@ -212,11 +220,14 @@ fn render_deck_node(node: &DeckNode, depth: usize) -> Markup {
                     " / "
                     span.deck-total { (total) }
                 }
+                @if let Some(url) = edit_url {
+                    a.edit-link href=(url) target="_blank" rel="noopener noreferrer" { "Edit \u{2197}" }
+                }
             }
             @if has_children {
                 div.deck-children {
                     @for child in &node.children {
-                        (render_deck_node(child, depth + 1))
+                        (render_deck_node(child, depth + 1, hedge_urls))
                     }
                 }
             }

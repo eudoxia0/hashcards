@@ -73,9 +73,12 @@ pub fn validate_media_files(cards: &[Card], base_dir: &Path) -> Fallible<()> {
 
         for markdown in markdown_texts {
             for path in extract_media_paths(markdown) {
-                // Try to resolve the path using MediaResolver.
+                use crate::media::resolve::ResolveError;
                 match resolver.resolve(&path) {
                     Ok(_) => {}
+                    // External URLs are intentional (e.g. HedgeDoc image uploads);
+                    // the browser fetches them directly, so they are never "missing".
+                    Err(ResolveError::ExternalUrl) => {}
                     Err(_) => {
                         // Decode percent-encoded characters for better error display.
                         let decoded_path: Cow<str> = percent_decode_str(&path).decode_utf8_lossy();
@@ -205,6 +208,25 @@ mod tests {
 
         // Assert that validation succeeded.
         assert_eq!(result, Ok(()));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_validate_media_files_with_external_urls() -> Fallible<()> {
+        // External image URLs (e.g. from HedgeDoc uploads) must not be treated
+        // as missing local files — the browser fetches them directly.
+        let test_dir = crate::helper::create_tmp_directory()?;
+
+        let card_file = test_dir.join("test_deck.md");
+        std::fs::write(&card_file, b"")?;
+
+        let markdown = "Q: What is shown?\nA: ![](https://example.com/image.png)";
+        let parser = CardParser::new("test_deck".to_string(), card_file.clone());
+        let cards = parser.parse(markdown)?;
+
+        let result = validate_media_files(&cards, &test_dir);
+        assert!(result.is_ok(), "external URLs should not fail validation: {result:?}");
 
         Ok(())
     }

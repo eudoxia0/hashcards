@@ -88,7 +88,30 @@ fn collection_get_inner(state: &AppState, slug: &str) -> Fallible<String> {
         let rc = find_collection(state, slug)
             .ok_or_else(|| crate::error::ErrorReport::new(format!("Unknown collection: {slug}")))?;
         let tree = build_deck_tree(&rc.coll_dir, &rc.db_path)?;
-        let html = render_browse_page(&rc.name, slug, &tree);
+        // Build a deck-name → HedgeDoc URL map so the browse page can show edit
+        // links. All URLs were already validated as HTTPS when added. If two notes
+        // share the same deck name the edit link is suppressed for that deck to
+        // avoid pointing at an arbitrary note.
+        let hedge_urls: std::collections::HashMap<String, String> = {
+            let sources = state.hedgedoc_sources.lock().unwrap();
+            let mut map = std::collections::HashMap::new();
+            let mut dupes: HashSet<String> = HashSet::new();
+            for (deck_name, url) in sources
+                .iter()
+                .filter(|s| s.collection.slug == slug)
+                .flat_map(|s| s.notes.iter().map(|n| (n.deck_name.clone(), n.url.clone())))
+            {
+                if dupes.contains(&deck_name) {
+                    continue;
+                }
+                if map.insert(deck_name.clone(), url).is_some() {
+                    dupes.insert(deck_name.clone());
+                    map.remove(&deck_name);
+                }
+            }
+            map
+        };
+        let html = render_browse_page(&rc.name, slug, &tree, &hedge_urls);
         return Ok(html.into_string());
     };
 

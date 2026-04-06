@@ -40,6 +40,12 @@ pub fn source_uri_from_url(url: &str) -> Option<String> {
 }
 
 pub fn source_display_name(source_uri: &str) -> String {
+    // Show just the hostname rather than the full URI for a cleaner display.
+    if let Ok(parsed) = reqwest::Url::parse(source_uri) {
+        if let Some(host) = parsed.host_str() {
+            return host.to_string();
+        }
+    }
     source_uri.to_string()
 }
 
