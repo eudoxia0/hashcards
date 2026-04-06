@@ -98,16 +98,58 @@ Improvements to make hashcards work better for short mobile study sessions.
 
 ---
 
+---
+
+## 7. Multi-user support with authentication *(larger task — later)*
+
+**Problem:** hashcards assumes a single user. Collections, review history, and session state are global. To share an instance (family, study group, multiple devices) users need isolated data and access control.
+
+### User model
+- A `users` table: `id`, `username`, `password_hash` (argon2), `role` (`admin` | `user`), `created_at`.
+- First registered account is automatically `admin`; subsequent accounts require admin approval or an invite token.
+- All existing tables (`cards`, `reviews`, `sessions`) gain a `user_id` foreign key. Existing data is migrated to a seed admin account on upgrade.
+
+### Session / auth
+- Server-side sessions: a `sessions` table (`token`, `user_id`, `expires_at`). Token stored in an `HttpOnly` cookie.
+- Axum middleware extracts the session token, loads the user, and injects it into request extensions. Unauthenticated requests redirect to `/login`.
+- Login page: username + password form, issues a session token on success.
+
+### User scopes / roles
+- `admin`: create/delete accounts, assign collections to users, view all activity.
+- `user`: sees and drills only their own assigned collections; no admin UI.
+- Collections are either shared (visible to all) or assigned per-user by admin.
+
+### Admin UI
+- `/admin` route (admin only): list users, create accounts (username + temporary password), deactivate accounts.
+- Plain HTML table — no framework, consistent with the rest of the UI.
+
+### OIDC (optional)
+- Support a single configured OIDC provider (e.g. Authentik, Keycloak, Google) as an alternative login path.
+- Config: `[oidc]` section in config file with `client_id`, `client_secret`, `issuer_url`.
+- On first OIDC sign-in, auto-provision a `user`-role account (email as username); admin role granted manually.
+- Use the `openidconnect` crate. Local password auth stays available alongside OIDC.
+
+### Architectural notes
+- Keep the single-binary deployment model — no external service required for basic use.
+- Evaluate per-user SQLite files (simpler backup/isolation) vs. a shared DB with `user_id` columns everywhere before starting.
+- Rate-limit login attempts (in-memory token bucket is sufficient).
+
+**Files (new):** `src/auth/`, `src/cmd/serve/admin.rs`, `src/cmd/serve/login.rs`  
+**Files (modified):** `src/schema.sql`, `src/db.rs`, `src/cmd/serve/server.rs`, `src/cmd/serve/handlers.rs`, config structs
+
+---
+
 ## Suggested implementation order
 
 | # | Item | Effort | Value |
 |---|------|--------|-------|
 | 1 | Button consistency | S | Medium |
 | 5 | Completion UX | S | High |
+| 4a | PWA manifest | S | High |
 | 3 | Quick session sizing | M | High |
 | 6 | Per-card timing | M | Medium |
 | 2 | Session persistence | M–L | High |
-| 4a | PWA manifest | S | High |
 | 4b | Service worker | M | Medium |
+| 7 | Multi-user + auth | XL | High |
 
-Start with 1, 5, 4a (quick wins), then 3, 6, 2, 4b.
+Start with 1, 5, 4a (quick wins), then 3, 6, 2, 4b. Multi-user (7) is a separate project.
