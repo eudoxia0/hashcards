@@ -15,6 +15,8 @@ Improvements to make hashcards work better for short mobile study sessions.
 
 **Files:** `src/cmd/drill/style.css`, `src/cmd/serve/landing.rs`, `src/cmd/serve/browse.rs`, `src/cmd/drill/template.rs`
 
+> **Implemented in PR #8.** `.btn`, `.btn-primary`, `.btn-secondary`, `.btn-danger` added to `style.css`. All listed buttons updated to use the shared classes. Mobile `min-height: 44px` applied via media query. ✅ Goal reached.
+
 ---
 
 ## 2. Session persistence (incremental DB writes)
@@ -69,6 +71,12 @@ Improvements to make hashcards work better for short mobile study sessions.
 
 **Files:** new `manifest.json`, new `sw.js`, `src/cmd/drill/template.rs`, router in `src/cmd/serve/server.rs` or `src/cmd/drill/server.rs`
 
+> **Phase A implemented in PR #8.** Manifest served at `/manifest.json` from both drill and serve servers. `<link rel="manifest">` added to `page_template`. Has `name`, `short_name`, `display: standalone`, `theme_color`, `background_color`, `start_url`. ✅ Standalone mode and "Add to Home Screen" are enabled.
+>
+> ⚠️ **Gap — no icons:** `icons` is an empty array. Without a proper icon, mobile browsers will either use a screenshot or a generic placeholder on the home screen. For real-world use the app needs at least one 192×192 and one 512×512 PNG icon served at a stable path (e.g., `/icons/icon-192.png`). This is the main thing missing before Phase A is genuinely complete.
+>
+> Phase B (service worker) not yet started.
+
 ---
 
 ## 5. Session completion UX
@@ -81,6 +89,12 @@ Improvements to make hashcards work better for short mobile study sessions.
 - Remove the "Shutdown" button in serve mode (it was added for drill mode); replace with a plain "Home" link.
 
 **Files:** `src/cmd/drill/get.rs` (completion page render), `src/cmd/drill/style.css`
+
+> **Implemented in PR #8.** Auto-redirect with 5-second countdown and cancel link added (serve mode only). Stats wrapped in `<details>` (collapsed by default). Home submit replaced with plain `<a href="/">`. ✅ Structure correct.
+>
+> ⚠️ **Gap — duration formatting:** The summary line uses integer `duration_s / 60` for minutes. A session shorter than 60 s displays as "0 min", which is nonsensical. Should show seconds directly for sub-minute sessions (e.g., "Done — 5 cards in 45 s") or at minimum show "< 1 min". Needs a fix before this is truly done.
+>
+> ⚠️ **Clarification on "Shutdown in serve mode":** The Shutdown button was never shown in serve mode to begin with — the original code already branched on `CompletionAction`. What was replaced was the `Home` *form-submit button* (`<input type="submit" value="Home">`) with a plain `<a>` link. The plan description was slightly misleading.
 
 ---
 
