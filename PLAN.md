@@ -15,6 +15,8 @@ Improvements to make hashcards work better for short mobile study sessions.
 
 **Files:** `src/cmd/drill/style.css`, `src/cmd/serve/landing.rs`, `src/cmd/serve/browse.rs`, `src/cmd/drill/template.rs`
 
+> **Implemented in PR #8.** `.btn`, `.btn-primary`, `.btn-secondary`, `.btn-danger` added to `style.css`. All listed buttons updated to use the shared classes. Mobile `min-height: 44px` applied via media query. ✅ Goal reached.
+
 ---
 
 ## 2. Session persistence (incremental DB writes)
@@ -69,6 +71,12 @@ Improvements to make hashcards work better for short mobile study sessions.
 
 **Files:** new `manifest.json`, new `sw.js`, `src/cmd/drill/template.rs`, router in `src/cmd/serve/server.rs` or `src/cmd/drill/server.rs`
 
+> **Phase A implemented in PR #8.** Manifest served at `/manifest.json` from both drill and serve servers. `<link rel="manifest">` added to `page_template`. Has `name`, `short_name`, `display: standalone`, `theme_color`, `background_color`, `start_url`. ✅ Standalone mode and "Add to Home Screen" are enabled.
+>
+> ⚠️ **Gap — no icons:** the manifest does not specify an `icons` field. Without a proper icon, mobile browsers will either use a screenshot or a generic placeholder on the home screen. For real-world use the app needs at least one 192×192 and one 512×512 PNG icon served at a stable path (e.g., `/icons/icon-192.png`). This is the main thing missing before Phase A is genuinely complete.
+>
+> Phase B (service worker) not yet started.
+
 ---
 
 ## 5. Session completion UX
@@ -78,9 +86,11 @@ Improvements to make hashcards work better for short mobile study sessions.
 **Fix:**
 - Auto-redirect to `/` after 5 seconds (with a visible countdown so users can cancel).
 - Reduce the stats table to a single summary line: "Done — 42 cards in 6 min (8 s/card)." The full table stays but is collapsed by default (`<details>`).
-- Remove the "Shutdown" button in serve mode (it was added for drill mode); replace with a plain "Home" link.
+- In serve mode, replace the "Shutdown" button (which only appears in drill mode) with a "Home" POST form that tears down the session and returns to the collection list.
 
 **Files:** `src/cmd/drill/get.rs` (completion page render), `src/cmd/drill/style.css`
+
+> **Implemented in PR #8.** Auto-redirect with 5-second countdown and cancel link added (serve mode only). Stats wrapped in `<details>` (collapsed by default). Sub-minute durations display in seconds (e.g., "Done — 5 cards in 45 s"). The `Home` action remains a POST form submit in serve mode so the session is torn down correctly (the Shutdown button was never shown in serve mode — `CompletionAction` branching already handled that). ✅ Done.
 
 ---
 
@@ -139,17 +149,24 @@ Improvements to make hashcards work better for short mobile study sessions.
 
 ---
 
-## Suggested implementation order
+## Status summary
 
-| # | Item | Effort | Value |
-|---|------|--------|-------|
-| 1 | Button consistency | S | Medium |
-| 5 | Completion UX | S | High |
-| 4a | PWA manifest | S | High |
-| 3 | Quick session sizing | M | High |
-| 6 | Per-card timing | M | Medium |
-| 2 | Session persistence | M–L | High |
-| 4b | Service worker | M | Medium |
-| 7 | Multi-user + auth | XL | High |
+| # | Item | Effort | Value | Status |
+|---|------|--------|-------|--------|
+| 1 | Button consistency | S | Medium | ✅ Done (PR #8) |
+| 5 | Completion UX | S | High | ✅ Done (PR #8) |
+| 4a | PWA manifest | S | High | ⚠️ Partial — icons missing |
+| 3 | Quick session sizing | M | High | ⬜ Not started |
+| 6 | Per-card timing | M | Medium | ⬜ Not started |
+| 2 | Session persistence | M–L | High | ⬜ Not started |
+| 4b | Service worker | M | Medium | ⬜ Not started |
+| 7 | Multi-user + auth | XL | High | ⬜ Later |
 
-Start with 1, 5, 4a (quick wins), then 3, 6, 2, 4b. Multi-user (7) is a separate project.
+### Remaining work (in order)
+
+1. **4a — Icons** (gap before Phase A is complete): add at least one 192×192 and one 512×512 PNG icon, serve from `/icons/`, reference in manifest.
+2. **3 — Quick session sizing**: `limit` query param on session start; `<select>` on browse page.
+3. **6 — Per-card timing**: `card_shown_at` in `SessionState`; `duration_ms` in reviews; slowest-card row on completion page.
+4. **2 — Session persistence**: write each review to DB immediately on grade; undo via `voided` flag.
+5. **4b — Service worker**: cache static assets; minimal offline page.
+6. **7 — Multi-user auth**: separate project.

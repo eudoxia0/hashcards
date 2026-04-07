@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use axum::http::HeaderName;
+use axum::http::StatusCode;
+use axum::http::header::CONTENT_TYPE;
 use maud::DOCTYPE;
 use maud::Markup;
 use maud::html;
@@ -21,6 +24,23 @@ use crate::cmd::drill::hljs::HLJS_JS_URL;
 use crate::cmd::drill::katex::KATEX_CSS_URL;
 use crate::cmd::drill::katex::KATEX_JS_URL;
 use crate::cmd::drill::katex::KATEX_MHCHEM_JS_URL;
+
+const MANIFEST_JSON: &str = r##"{
+  "name": "hashcards",
+  "short_name": "hashcards",
+  "display": "standalone",
+  "start_url": "/",
+  "theme_color": "#0d6efd",
+  "background_color": "#ffffff"
+}"##;
+
+pub async fn manifest_handler() -> (StatusCode, [(HeaderName, &'static str); 1], &'static str) {
+    (
+        StatusCode::OK,
+        [(CONTENT_TYPE, "application/manifest+json")],
+        MANIFEST_JSON,
+    )
+}
 
 pub fn page_template(body: Markup) -> Markup {
     page_template_with_script("/script.js", body)
@@ -34,6 +54,7 @@ pub fn page_template_with_script(script_url: &str, body: Markup) -> Markup {
                 meta charset="utf-8";
                 meta name="viewport" content="width=device-width, initial-scale=1";
                 title { "hashcards" }
+                link rel="manifest" href="/manifest.json";
                 link rel="stylesheet" href=(KATEX_CSS_URL);
                 link rel="stylesheet" href=(HLJS_CSS_URL);
                 script defer src=(KATEX_JS_URL) {};

@@ -52,6 +52,7 @@ use crate::cmd::drill::katex::katex_font_handler;
 use crate::cmd::drill::katex::katex_js_handler;
 use crate::cmd::drill::katex::katex_mhchem_js_handler;
 use crate::cmd::drill::post::post_handler;
+use crate::cmd::drill::template::manifest_handler;
 use crate::cmd::drill::state::MutableState;
 use crate::cmd::drill::state::ServerState;
 use crate::collection::Collection;
@@ -184,6 +185,7 @@ pub async fn start_server(config: ServerConfig) -> Fallible<()> {
     let app = Router::new();
     let app = app.route("/", get(get_handler));
     let app = app.route("/", post(post_handler));
+    let app = app.route("/manifest.json", get(manifest_handler));
     let app = app.route("/script.js", get(script_handler));
     let app = app.route("/style.css", get(style_handler));
     let app = app.route(KATEX_CSS_URL, get(katex_css_handler));

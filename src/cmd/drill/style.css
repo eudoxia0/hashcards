@@ -286,6 +286,97 @@ body {
     }
 }
 
+/* ── Shared button system ──────────────────────────────────────── */
+.btn {
+    -webkit-appearance: none;
+    appearance: none;
+    display: inline-block;
+    font-family: system-ui, -apple-system, "Helvetica Neue", sans-serif;
+    font-weight: 600;
+    font-size: 16px;
+    border-radius: 6px;
+    padding: 10px 24px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    text-decoration: none;
+    text-align: center;
+    transition:
+        background-color 0.15s,
+        border-color 0.15s,
+        box-shadow 0.15s;
+
+    &:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+}
+
+.btn-primary {
+    background: #0d6efd;
+    color: white;
+    border-color: #0b5ed7;
+    box-shadow: rgba(13, 110, 253, 0.3) 0px 2px 8px 0px;
+
+    &:hover {
+        background: #0b5ed7;
+        box-shadow: rgba(13, 110, 253, 0.5) 0px 4px 12px 0px;
+    }
+
+    &:active {
+        background: #0a58ca;
+        box-shadow: rgba(13, 110, 253, 0.2) 0px 1px 4px 0px;
+    }
+
+    &:disabled:hover,
+    &:disabled:active {
+        background: #0d6efd;
+        box-shadow: rgba(13, 110, 253, 0.3) 0px 2px 8px 0px;
+    }
+}
+
+.btn-secondary {
+    background: white;
+    color: black;
+    border-color: #999;
+    box-shadow: #ccc 0px 1px 3px 0px;
+
+    &:hover {
+        background: #f0f0f0;
+        border-color: #777;
+        box-shadow: #bbb 0px 2px 5px 0px;
+    }
+
+    &:active {
+        background: #e4e4e4;
+        border-color: #666;
+        box-shadow: #ddd 0px 0px 2px 0px;
+    }
+
+    &:disabled:hover,
+    &:disabled:active {
+        background: white;
+        border-color: #999;
+        box-shadow: #ccc 0px 1px 3px 0px;
+    }
+}
+
+.btn-danger {
+    background: #dc3545;
+    color: white;
+    border-color: #c82333;
+    box-shadow: rgba(220, 53, 69, 0.3) 0px 2px 8px 0px;
+
+    &:hover {
+        background: #c82333;
+        box-shadow: rgba(220, 53, 69, 0.5) 0px 4px 12px 0px;
+    }
+
+    &:active {
+        background: #bd2130;
+        box-shadow: rgba(220, 53, 69, 0.2) 0px 1px 4px 0px;
+    }
+}
+
 .finished {
     h1 {
         text-align: center;
@@ -293,11 +384,46 @@ body {
 
     .summary {
         font-size: 24px;
-        margin-bottom: 48px;
+        margin-bottom: 24px;
     }
 
-    h2 {
-        border-bottom: 1px solid #ccc;
+    .redirect-notice {
+        font-size: 16px;
+        color: #666;
+        margin-bottom: 32px;
+        text-align: center;
+
+        a {
+            color: #0d6efd;
+        }
+    }
+
+    details {
+        margin-bottom: 32px;
+
+        summary {
+            font-size: 20px;
+            font-weight: 600;
+            cursor: pointer;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #ccc;
+            margin-bottom: 8px;
+            list-style: none;
+
+            &::marker, &::-webkit-details-marker {
+                display: none;
+            }
+
+            &::before {
+                content: "\25b6\00a0";
+                font-size: 14px;
+                color: #666;
+            }
+        }
+
+        &[open] summary::before {
+            content: "\25bc\00a0";
+        }
     }
 
     .stats {
@@ -340,49 +466,8 @@ body {
 
         .shutdown-button,
         .home-button {
-            background: #dc3545;
-            color: white;
-            border: 1px solid #c82333;
-            padding: 12px 24px;
             font-size: 18px;
-            font-family:
-                system-ui,
-                -apple-system,
-                "Helvetica Neue",
-                sans-serif;
-            font-weight: 600;
-            border-radius: 6px;
-            cursor: pointer;
-            box-shadow: rgba(220, 53, 69, 0.3) 0px 2px 8px 0px;
-            transition:
-                background-color 0.2s,
-                box-shadow 0.2s;
-
-            &:hover {
-                background: #c82333;
-                box-shadow: rgba(220, 53, 69, 0.5) 0px 4px 12px 0px;
-            }
-
-            &:active {
-                background: #bd2130;
-                box-shadow: rgba(220, 53, 69, 0.2) 0px 1px 4px 0px;
-            }
-        }
-
-        .home-button {
-            background: #0d6efd;
-            border-color: #0b5ed7;
-            box-shadow: rgba(13, 110, 253, 0.3) 0px 2px 8px 0px;
-
-            &:hover {
-                background: #0b5ed7;
-                box-shadow: rgba(13, 110, 253, 0.5) 0px 4px 12px 0px;
-            }
-
-            &:active {
-                background: #0a58ca;
-                box-shadow: rgba(13, 110, 253, 0.2) 0px 1px 4px 0px;
-            }
+            padding: 12px 24px;
         }
     }
 }
@@ -515,38 +600,21 @@ body {
             }
         }
 
-        .drill-button {
-            -webkit-appearance: none;
-            appearance: none;
-            background: #0d6efd;
-            color: white;
-            border: 1px solid #0b5ed7;
-            padding: 10px 24px;
-            font-size: 16px;
-            font-weight: 600;
-            font-family: system-ui, -apple-system, "Helvetica Neue", sans-serif;
+        /* .drill-button visual styles come from .btn.btn-primary */
+
+        .limit-drill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .limit-select {
+            padding: 8px 10px;
+            border: 1px solid #999;
             border-radius: 6px;
+            font-size: 14px;
+            background: white;
             cursor: pointer;
-            box-shadow: rgba(13, 110, 253, 0.3) 0px 2px 8px 0px;
-
-            &:hover {
-                background: #0b5ed7;
-                box-shadow: rgba(13, 110, 253, 0.5) 0px 4px 12px 0px;
-            }
-
-            &:active {
-                background: #0a58ca;
-            }
-
-            &:disabled {
-                opacity: 0.4;
-                cursor: not-allowed;
-            }
-
-            &:disabled:hover {
-                background: #0d6efd;
-                box-shadow: rgba(13, 110, 253, 0.3) 0px 2px 8px 0px;
-            }
         }
     }
 
@@ -592,19 +660,9 @@ body {
     }
 
     .sync-button {
-        -webkit-appearance: none;
-        appearance: none;
-        background: white;
-        border: 1px solid #999;
-        padding: 6px 16px;
+        /* visual styles come from .btn.btn-secondary */
         font-size: 14px;
-        font-weight: 600;
-        border-radius: 6px;
-        cursor: pointer;
-
-        &:hover {
-            background: #f0f0f0;
-        }
+        padding: 6px 16px;
     }
 
     .sync-bar {
@@ -689,18 +747,9 @@ body {
         }
 
         .drill-link {
-            display: inline-block;
-            background: #0d6efd;
-            color: white;
-            text-decoration: none;
-            padding: 6px 16px;
-            border-radius: 6px;
+            /* visual styles come from .btn.btn-primary */
             font-size: 14px;
-            font-weight: 600;
-
-            &:hover {
-                background: #0b5ed7;
-            }
+            padding: 6px 16px;
         }
 
         .no-cards {
@@ -728,6 +777,7 @@ body {
 
     .rich-text {
         font-size: 20px;
+        text-align: left;
     }
 
     .controls {
@@ -771,6 +821,13 @@ body {
         }
     }
 
+    .btn {
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
     .landing,
     .browse {
         padding: 24px 16px;
@@ -794,6 +851,11 @@ body {
         flex-direction: column;
         gap: 12px;
         align-items: stretch;
+
+        .limit-drill {
+            flex-direction: column;
+            align-items: stretch;
+        }
 
         .drill-button {
             width: 100%;

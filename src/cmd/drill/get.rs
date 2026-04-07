@@ -218,6 +218,31 @@ fn render_card(card: &Card, reveal: bool, config: &MarkdownRenderConfig) -> Fall
 
 const TS_FORMAT: &str = "%Y-%m-%d %H:%M:%S";
 
+const REDIRECT_SCRIPT: &str = r#"
+(function() {
+    var secs = 5;
+    var el = document.getElementById('countdown');
+    var timer = setInterval(function() {
+        secs--;
+        if (el) el.textContent = secs;
+        if (secs <= 0) {
+            clearInterval(timer);
+            var form = document.getElementById('home-form');
+            if (form) form.submit();
+        }
+    }, 1000);
+    var cancel = document.getElementById('cancel-redirect');
+    if (cancel) {
+        cancel.addEventListener('click', function(e) {
+            e.preventDefault();
+            clearInterval(timer);
+            var notice = document.querySelector('.redirect-notice');
+            if (notice) notice.style.display = 'none';
+        });
+    }
+})();
+"#;
+
 pub fn render_completion_page(ctx: &RenderContext, mutable: &MutableState) -> Fallible<Markup> {
     let total_cards = ctx.total_cards;
     let cards_reviewed = ctx.total_cards - mutable.cards.len();
@@ -229,68 +254,87 @@ pub fn render_completion_page(ctx: &RenderContext, mutable: &MutableState) -> Fa
     } else {
         duration_s as f64 / cards_reviewed as f64
     };
+    let pace_rounded = pace.round() as i64;
     let pace = format!("{:.2}", pace);
     let start_ts = start.format(TS_FORMAT).to_string();
     let end_ts = end.format(TS_FORMAT).to_string();
+    let duration_min = duration_s / 60;
+    let duration_display = if duration_min >= 1 {
+        format!("{duration_min} min")
+    } else {
+        format!("{duration_s} s")
+    };
+    let summary_line = format!(
+        "Done — {cards_reviewed} card{} in {duration_display} ({pace_rounded} s/card).",
+        if cards_reviewed == 1 { "" } else { "s" }
+    );
 
-    let action_button = match &ctx.completion_action {
-        CompletionAction::Shutdown => html! {
-            div.shutdown-container {
-                form action=(ctx.form_action) method="post" {
-                    input #shutdown .shutdown-button type="submit" name="action" value="Shutdown" title="Shut down the server";
+    let (action_button, redirect_notice) = match &ctx.completion_action {
+        CompletionAction::Shutdown => (
+            html! {
+                div.shutdown-container {
+                    form action=(ctx.form_action) method="post" {
+                        input #shutdown .shutdown-button.btn.btn-danger type="submit" name="action" value="Shutdown" title="Shut down the server";
+                    }
                 }
-            }
-        },
-        CompletionAction::BackToCollections => html! {
-            div.shutdown-container {
-                form action=(ctx.form_action) method="post" {
-                    input #home .home-button type="submit" name="action" value="Home" title="Back to collections";
+            },
+            html! {},
+        ),
+        CompletionAction::BackToCollections => (
+            html! {
+                div.shutdown-container {
+                    form #home-form action=(ctx.form_action) method="post" style="display:inline" {
+                        input type="hidden" name="action" value="Home";
+                        button #home .home-button.btn.btn-primary type="submit" { "Home" }
+                    }
                 }
-            }
-        },
+            },
+            html! {
+                p.redirect-notice {
+                    "Returning to collections in "
+                    span #countdown { "5" }
+                    "s. "
+                    a #cancel-redirect href="#" { "Cancel" }
+                }
+                script { (maud::PreEscaped(REDIRECT_SCRIPT)) }
+            },
+        ),
     };
 
     let html = html! {
         div.finished {
-            h1 {
-                "Session Completed 🎉"
-            }
-            div.summary {
-                "Reviewed "
-                (cards_reviewed)
-                " cards in "
-                (duration_s)
-                " seconds."
-            }
-            h2 {
-                "Session Stats"
-            }
-            div.stats {
-                table {
-                    tbody {
-                        tr {
-                            td .key { "Total Cards" }
-                            td .val { (total_cards) }
-                        }
-                        tr {
-                            td .key { "Cards Reviewed" }
-                            td .val { (cards_reviewed) }
-                        }
-                        tr {
-                            td .key { "Started" }
-                            td .val { (start_ts) }
-                        }
-                        tr {
-                            td .key { "Finished" }
-                            td .val { (end_ts) }
-                        }
-                        tr {
-                            td .key { "Duration (seconds)" }
-                            td .val { (duration_s) }
-                        }
-                        tr {
-                            td .key { "Pace (s/card)" }
-                            td .val { (pace) }
+            h1 { "Session Completed" }
+            div.summary { (summary_line) }
+            (redirect_notice)
+            details {
+                summary { "Session Stats" }
+                div.stats {
+                    table {
+                        tbody {
+                            tr {
+                                td .key { "Total Cards" }
+                                td .val { (total_cards) }
+                            }
+                            tr {
+                                td .key { "Cards Reviewed" }
+                                td .val { (cards_reviewed) }
+                            }
+                            tr {
+                                td .key { "Started" }
+                                td .val { (start_ts) }
+                            }
+                            tr {
+                                td .key { "Finished" }
+                                td .val { (end_ts) }
+                            }
+                            tr {
+                                td .key { "Duration (seconds)" }
+                                td .val { (duration_s) }
+                            }
+                            tr {
+                                td .key { "Pace (s/card)" }
+                                td .val { (pace) }
+                            }
                         }
                     }
                 }

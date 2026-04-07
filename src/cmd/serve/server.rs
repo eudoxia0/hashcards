@@ -41,6 +41,7 @@ use crate::cmd::serve::hedgedoc::build_note;
 use crate::cmd::serve::hedgedoc::build_source;
 use crate::cmd::serve::hedgedoc::source_uri_from_url;
 use crate::cmd::serve::hedgedoc::spawn_hedgedoc_sync_task;
+use crate::cmd::drill::template::manifest_handler;
 use crate::cmd::serve::landing::landing_handler;
 use crate::cmd::serve::state::AppState;
 use crate::error::Fallible;
@@ -212,6 +213,7 @@ pub async fn start_serve(config: ResolvedServeConfig) -> Fallible<()> {
             "/collection/{slug}/script.js",
             get(collection_script_handler),
         )
+        .route("/manifest.json", get(manifest_handler))
         .route("/script.js", get(script_handler))
         .route("/style.css", get(style_handler))
         .route(KATEX_CSS_URL, get(katex_css_handler))
