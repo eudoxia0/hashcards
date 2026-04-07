@@ -257,10 +257,15 @@ pub fn render_completion_page(ctx: &RenderContext, mutable: &MutableState) -> Fa
     let start_ts = start.format(TS_FORMAT).to_string();
     let end_ts = end.format(TS_FORMAT).to_string();
 
-    let duration_min = duration_s / 60;
     let pace_rounded = pace.parse::<f64>().unwrap_or(0.0).round() as i64;
+    let duration_min = duration_s / 60;
+    let duration_display = if duration_min >= 1 {
+        format!("{duration_min} min")
+    } else {
+        format!("{duration_s} s")
+    };
     let summary_line = format!(
-        "Done — {cards_reviewed} card{} in {duration_min} min ({pace_rounded} s/card).",
+        "Done — {cards_reviewed} card{} in {duration_display} ({pace_rounded} s/card).",
         if cards_reviewed == 1 { "" } else { "s" }
     );
 
