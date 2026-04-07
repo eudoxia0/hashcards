@@ -227,7 +227,8 @@ const REDIRECT_SCRIPT: &str = r#"
         if (el) el.textContent = secs;
         if (secs <= 0) {
             clearInterval(timer);
-            window.location.href = '/';
+            var form = document.getElementById('home-form');
+            if (form) form.submit();
         }
     }, 1000);
     var cancel = document.getElementById('cancel-redirect');
@@ -283,7 +284,10 @@ pub fn render_completion_page(ctx: &RenderContext, mutable: &MutableState) -> Fa
         CompletionAction::BackToCollections => (
             html! {
                 div.shutdown-container {
-                    a #home .home-button.btn.btn-primary href="/" { "Home" }
+                    form #home-form action=(ctx.form_action) method="post" style="display:inline" {
+                        input type="hidden" name="action" value="Home";
+                        button #home .home-button.btn.btn-primary type="submit" { "Home" }
+                    }
                 }
             },
             html! {
