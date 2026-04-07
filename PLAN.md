@@ -149,17 +149,24 @@ Improvements to make hashcards work better for short mobile study sessions.
 
 ---
 
-## Suggested implementation order
+## Status summary
 
-| # | Item | Effort | Value |
-|---|------|--------|-------|
-| 1 | Button consistency | S | Medium |
-| 5 | Completion UX | S | High |
-| 4a | PWA manifest | S | High |
-| 3 | Quick session sizing | M | High |
-| 6 | Per-card timing | M | Medium |
-| 2 | Session persistence | M–L | High |
-| 4b | Service worker | M | Medium |
-| 7 | Multi-user + auth | XL | High |
+| # | Item | Effort | Value | Status |
+|---|------|--------|-------|--------|
+| 1 | Button consistency | S | Medium | ✅ Done (PR #8) |
+| 5 | Completion UX | S | High | ✅ Done (PR #8) |
+| 4a | PWA manifest | S | High | ⚠️ Partial — icons missing |
+| 3 | Quick session sizing | M | High | ⬜ Not started |
+| 6 | Per-card timing | M | Medium | ⬜ Not started |
+| 2 | Session persistence | M–L | High | ⬜ Not started |
+| 4b | Service worker | M | Medium | ⬜ Not started |
+| 7 | Multi-user + auth | XL | High | ⬜ Later |
 
-Start with 1, 5, 4a (quick wins), then 3, 6, 2, 4b. Multi-user (7) is a separate project.
+### Remaining work (in order)
+
+1. **4a — Icons** (gap before Phase A is complete): add at least one 192×192 and one 512×512 PNG icon, serve from `/icons/`, reference in manifest.
+2. **3 — Quick session sizing**: `limit` query param on session start; `<select>` on browse page.
+3. **6 — Per-card timing**: `card_shown_at` in `SessionState`; `duration_ms` in reviews; slowest-card row on completion page.
+4. **2 — Session persistence**: write each review to DB immediately on grade; undo via `voided` flag.
+5. **4b — Service worker**: cache static assets; minimal offline page.
+6. **7 — Multi-user auth**: separate project.
