@@ -13,6 +13,15 @@
             <change author="mstoeck3">
                 Added PWA manifest served at `/manifest.json` (linked via `&lt;link rel="manifest"&gt;`) enabling standalone display mode when added to the home screen on supported browsers.
             </change>
+            <change author="mstoeck3">
+                PWA icons (192×192 and 512×512) added and referenced in the manifest, completing Phase A of offline/installable support.
+            </change>
+            <change author="mstoeck3">
+                Browse page now has a session limit selector (All / 10 / 20 / 50 cards) next to the Drill button for quick commute-length sessions.
+            </change>
+            <change author="mstoeck3">
+                Wrapper button colors (landing, browse, completion) simplified to flat black-and-white; colored drop-shadows and blue accents removed.
+            </change>
             <change author="overcuriousity">
                 Added `serve` subcommand for running hashcards as a persistent web server with multiple collections synced from a git repository.
             </change>

@@ -152,6 +152,8 @@ fn find_collection(state: &AppState, slug: &str) -> Option<ResolvedCollection> {
 /// Form data for the start-drill endpoint.
 pub struct StartDrillForm {
     pub decks: Vec<String>,
+    /// Optional card limit: `0` or absent means "all due cards".
+    pub limit: Option<usize>,
 }
 
 /// Custom `Deserialize` for `StartDrillForm`.
@@ -170,20 +172,29 @@ impl<'de> serde::Deserialize<'de> for StartDrillForm {
             type Value = StartDrillForm;
 
             fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-                f.write_str("a form with optional decks fields")
+                f.write_str("a form with optional decks and limit fields")
             }
 
             fn visit_map<A: MapAccess<'de>>(self, mut map: A) -> Result<Self::Value, A::Error> {
                 let mut decks = Vec::new();
+                let mut limit: Option<usize> = None;
                 while let Some(key) = map.next_key::<String>()? {
                     match key.as_str() {
                         "decks" => decks.push(map.next_value::<String>()?),
+                        "limit" => {
+                            let raw = map.next_value::<String>()?;
+                            if let Ok(n) = raw.parse::<usize>() {
+                                if n > 0 {
+                                    limit = Some(n);
+                                }
+                            }
+                        }
                         _ => {
                             let _ = map.next_value::<serde::de::IgnoredAny>()?;
                         }
                     }
                 }
-                Ok(StartDrillForm { decks })
+                Ok(StartDrillForm { decks, limit })
             }
         }
 
@@ -196,7 +207,7 @@ pub async fn collection_start_handler(
     Path(slug): Path<String>,
     Form(form): Form<StartDrillForm>,
 ) -> Redirect {
-    match collection_start_inner(&state, &slug, form.decks) {
+    match collection_start_inner(&state, &slug, form.decks, form.limit) {
         Ok(()) => Redirect::to(&format!("/collection/{slug}")),
         Err(e) => {
             log::error!("error starting drill for collection {slug}: {e}");
@@ -209,12 +220,13 @@ fn collection_start_inner(
     state: &AppState,
     slug: &str,
     selected_decks: Vec<String>,
+    limit: Option<usize>,
 ) -> Fallible<()> {
     // Remove any existing session before doing DB work.
     state.sessions.lock().unwrap().remove(slug);
 
     // Create the session outside the lock (may do filesystem/DB work).
-    let session = create_session(state, slug, &selected_decks)?;
+    let session = create_session(state, slug, &selected_decks, limit)?;
     if let Some(s) = session {
         state.sessions.lock().unwrap().insert(slug.to_string(), s);
     }
@@ -225,6 +237,7 @@ fn create_session(
     state: &AppState,
     slug: &str,
     selected_decks: &[String],
+    limit: Option<usize>,
 ) -> Fallible<Option<DrillSession>> {
     let rc = find_collection(state, slug)
         .ok_or_else(|| crate::error::ErrorReport::new(format!("Unknown collection: {slug}")))?;
@@ -276,6 +289,11 @@ fn create_session(
         .as_nanos() as u64;
     let mut rng = TinyRng::from_seed(seed);
     due_cards = shuffle(due_cards, &mut rng);
+
+    // Apply session card limit if requested.
+    if let Some(n) = limit {
+        due_cards.truncate(n);
+    }
 
     // Build cache
     let mut cache = Cache::new();

@@ -73,7 +73,7 @@ Improvements to make hashcards work better for short mobile study sessions.
 
 > **Phase A implemented in PR #8.** Manifest served at `/manifest.json` from both drill and serve servers. `<link rel="manifest">` added to `page_template`. Has `name`, `short_name`, `display: standalone`, `theme_color`, `background_color`, `start_url`. ✅ Standalone mode and "Add to Home Screen" are enabled.
 >
-> ⚠️ **Gap — no icons:** the manifest does not specify an `icons` field. Without a proper icon, mobile browsers will either use a screenshot or a generic placeholder on the home screen. For real-world use the app needs at least one 192×192 and one 512×512 PNG icon served at a stable path (e.g., `/icons/icon-192.png`). This is the main thing missing before Phase A is genuinely complete.
+> ✅ **Icons added:** 192×192 and 512×512 PNG icons served at `/icons/icon-192.png` and `/icons/icon-512.png`, referenced in the manifest. Placeholder monochrome art included; replace files and rebuild to update.
 >
 > Phase B (service worker) not yet started.
 
@@ -155,8 +155,8 @@ Improvements to make hashcards work better for short mobile study sessions.
 |---|------|--------|-------|--------|
 | 1 | Button consistency | S | Medium | ✅ Done (PR #8) |
 | 5 | Completion UX | S | High | ✅ Done (PR #8) |
-| 4a | PWA manifest | S | High | ⚠️ Partial — icons missing |
-| 3 | Quick session sizing | M | High | ⬜ Not started |
+| 4a | PWA manifest | S | High | ✅ Done |
+| 3 | Quick session sizing | M | High | ✅ Done |
 | 6 | Per-card timing | M | Medium | ⬜ Not started |
 | 2 | Session persistence | M–L | High | ⬜ Not started |
 | 4b | Service worker | M | Medium | ⬜ Not started |
@@ -164,8 +164,8 @@ Improvements to make hashcards work better for short mobile study sessions.
 
 ### Remaining work (in order)
 
-1. **4a — Icons** (gap before Phase A is complete): add at least one 192×192 and one 512×512 PNG icon, serve from `/icons/`, reference in manifest.
-2. **3 — Quick session sizing**: `limit` query param on session start; `<select>` on browse page.
+1. ~~**4a — Icons**~~ ✅ Done — 192×192 and 512×512 PNG icons added, served from `/icons/`, referenced in manifest.
+2. ~~**3 — Quick session sizing**~~ ✅ Done — `limit` form field on session start; `<select>` on browse page.
 3. **6 — Per-card timing**: `card_shown_at` in `SessionState`; `duration_ms` in reviews; slowest-card row on completion page.
 4. **2 — Session persistence**: write each review to DB immediately on grade; undo via `voided` flag.
 5. **4b — Service worker**: cache static assets; minimal offline page.

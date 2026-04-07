@@ -169,11 +169,19 @@ pub fn render_browse_page(
                             " / "
                             a.select-none href="#" onclick="selectAll(false); return false;" { "Select none" }
                         }
-                        input
-                            type="submit"
-                            value=(format!("Drill ({total_due} due)"))
-                            class="drill-button btn btn-primary"
-                            disabled[total_due == 0];
+                        div.limit-drill {
+                            select name="limit" class="limit-select" {
+                                option value="0" selected { "All" }
+                                option value="10" { "10" }
+                                option value="20" { "20" }
+                                option value="50" { "50" }
+                            }
+                            input
+                                type="submit"
+                                value=(format!("Drill ({total_due} due)"))
+                                class="drill-button btn btn-primary"
+                                disabled[total_due == 0];
+                        }
                     }
                 }
                 script {

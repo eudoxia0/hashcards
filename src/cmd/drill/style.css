@@ -302,8 +302,7 @@ body {
     text-align: center;
     transition:
         background-color 0.15s,
-        border-color 0.15s,
-        box-shadow 0.15s;
+        border-color 0.15s;
 
     &:disabled {
         opacity: 0.4;
@@ -312,25 +311,18 @@ body {
 }
 
 .btn-primary {
-    background: #0d6efd;
+    background: black;
     color: white;
-    border-color: #0b5ed7;
-    box-shadow: rgba(13, 110, 253, 0.3) 0px 2px 8px 0px;
+    border-color: black;
 
     &:hover {
-        background: #0b5ed7;
-        box-shadow: rgba(13, 110, 253, 0.5) 0px 4px 12px 0px;
+        background: #222;
+        border-color: #222;
     }
 
     &:active {
-        background: #0a58ca;
-        box-shadow: rgba(13, 110, 253, 0.2) 0px 1px 4px 0px;
-    }
-
-    &:disabled:hover,
-    &:disabled:active {
-        background: #0d6efd;
-        box-shadow: rgba(13, 110, 253, 0.3) 0px 2px 8px 0px;
+        background: #000;
+        border-color: #000;
     }
 }
 
@@ -338,25 +330,15 @@ body {
     background: white;
     color: black;
     border-color: #999;
-    box-shadow: #ccc 0px 1px 3px 0px;
 
     &:hover {
         background: #f0f0f0;
         border-color: #777;
-        box-shadow: #bbb 0px 2px 5px 0px;
     }
 
     &:active {
         background: #e4e4e4;
         border-color: #666;
-        box-shadow: #ddd 0px 0px 2px 0px;
-    }
-
-    &:disabled:hover,
-    &:disabled:active {
-        background: white;
-        border-color: #999;
-        box-shadow: #ccc 0px 1px 3px 0px;
     }
 }
 
@@ -394,7 +376,8 @@ body {
         text-align: center;
 
         a {
-            color: #0d6efd;
+            color: black;
+            text-decoration: underline;
         }
     }
 
@@ -591,7 +574,7 @@ body {
             font-size: 14px;
 
             a {
-                color: #0d6efd;
+                color: black;
                 text-decoration: none;
 
                 &:hover {
@@ -610,7 +593,7 @@ body {
 
         .limit-select {
             padding: 8px 10px;
-            border: 1px solid #999;
+            border: 1px solid black;
             border-radius: 6px;
             font-size: 14px;
             background: white;

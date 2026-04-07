@@ -30,9 +30,16 @@ const MANIFEST_JSON: &str = r##"{
   "short_name": "hashcards",
   "display": "standalone",
   "start_url": "/",
-  "theme_color": "#0d6efd",
-  "background_color": "#ffffff"
+  "theme_color": "#000000",
+  "background_color": "#ffffff",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
 }"##;
+
+const ICON_192: &[u8] = include_bytes!("icon-192.png");
+const ICON_512: &[u8] = include_bytes!("icon-512.png");
 
 pub async fn manifest_handler() -> (StatusCode, [(HeaderName, &'static str); 1], &'static str) {
     (
@@ -40,6 +47,14 @@ pub async fn manifest_handler() -> (StatusCode, [(HeaderName, &'static str); 1],
         [(CONTENT_TYPE, "application/manifest+json")],
         MANIFEST_JSON,
     )
+}
+
+pub async fn icon_192_handler() -> (StatusCode, [(HeaderName, &'static str); 1], &'static [u8]) {
+    (StatusCode::OK, [(CONTENT_TYPE, "image/png")], ICON_192)
+}
+
+pub async fn icon_512_handler() -> (StatusCode, [(HeaderName, &'static str); 1], &'static [u8]) {
+    (StatusCode::OK, [(CONTENT_TYPE, "image/png")], ICON_512)
 }
 
 pub fn page_template(body: Markup) -> Markup {
