@@ -218,6 +218,30 @@ fn render_card(card: &Card, reveal: bool, config: &MarkdownRenderConfig) -> Fall
 
 const TS_FORMAT: &str = "%Y-%m-%d %H:%M:%S";
 
+const REDIRECT_SCRIPT: &str = r#"
+(function() {
+    var secs = 5;
+    var el = document.getElementById('countdown');
+    var timer = setInterval(function() {
+        secs--;
+        if (el) el.textContent = secs;
+        if (secs <= 0) {
+            clearInterval(timer);
+            window.location.href = '/';
+        }
+    }, 1000);
+    var cancel = document.getElementById('cancel-redirect');
+    if (cancel) {
+        cancel.addEventListener('click', function(e) {
+            e.preventDefault();
+            clearInterval(timer);
+            var notice = document.querySelector('.redirect-notice');
+            if (notice) notice.style.display = 'none';
+        });
+    }
+})();
+"#;
+
 pub fn render_completion_page(ctx: &RenderContext, mutable: &MutableState) -> Fallible<Markup> {
     let total_cards = ctx.total_cards;
     let cards_reviewed = ctx.total_cards - mutable.cards.len();
@@ -233,64 +257,76 @@ pub fn render_completion_page(ctx: &RenderContext, mutable: &MutableState) -> Fa
     let start_ts = start.format(TS_FORMAT).to_string();
     let end_ts = end.format(TS_FORMAT).to_string();
 
-    let action_button = match &ctx.completion_action {
-        CompletionAction::Shutdown => html! {
-            div.shutdown-container {
-                form action=(ctx.form_action) method="post" {
-                    input #shutdown .shutdown-button type="submit" name="action" value="Shutdown" title="Shut down the server";
+    let duration_min = duration_s / 60;
+    let pace_rounded = pace.parse::<f64>().unwrap_or(0.0).round() as i64;
+    let summary_line = format!(
+        "Done — {cards_reviewed} card{} in {duration_min} min ({pace_rounded} s/card).",
+        if cards_reviewed == 1 { "" } else { "s" }
+    );
+
+    let (action_button, redirect_notice) = match &ctx.completion_action {
+        CompletionAction::Shutdown => (
+            html! {
+                div.shutdown-container {
+                    form action=(ctx.form_action) method="post" {
+                        input #shutdown .shutdown-button.btn.btn-danger type="submit" name="action" value="Shutdown" title="Shut down the server";
+                    }
                 }
-            }
-        },
-        CompletionAction::BackToCollections => html! {
-            div.shutdown-container {
-                form action=(ctx.form_action) method="post" {
-                    input #home .home-button type="submit" name="action" value="Home" title="Back to collections";
+            },
+            html! {},
+        ),
+        CompletionAction::BackToCollections => (
+            html! {
+                div.shutdown-container {
+                    a #home .home-button.btn.btn-primary href="/" { "Home" }
                 }
-            }
-        },
+            },
+            html! {
+                p.redirect-notice {
+                    "Returning to collections in "
+                    span #countdown { "5" }
+                    "s. "
+                    a #cancel-redirect href="#" { "Cancel" }
+                }
+                script { (maud::PreEscaped(REDIRECT_SCRIPT)) }
+            },
+        ),
     };
 
     let html = html! {
         div.finished {
-            h1 {
-                "Session Completed 🎉"
-            }
-            div.summary {
-                "Reviewed "
-                (cards_reviewed)
-                " cards in "
-                (duration_s)
-                " seconds."
-            }
-            h2 {
-                "Session Stats"
-            }
-            div.stats {
-                table {
-                    tbody {
-                        tr {
-                            td .key { "Total Cards" }
-                            td .val { (total_cards) }
-                        }
-                        tr {
-                            td .key { "Cards Reviewed" }
-                            td .val { (cards_reviewed) }
-                        }
-                        tr {
-                            td .key { "Started" }
-                            td .val { (start_ts) }
-                        }
-                        tr {
-                            td .key { "Finished" }
-                            td .val { (end_ts) }
-                        }
-                        tr {
-                            td .key { "Duration (seconds)" }
-                            td .val { (duration_s) }
-                        }
-                        tr {
-                            td .key { "Pace (s/card)" }
-                            td .val { (pace) }
+            h1 { "Session Completed" }
+            div.summary { (summary_line) }
+            (redirect_notice)
+            details {
+                summary { "Session Stats" }
+                div.stats {
+                    table {
+                        tbody {
+                            tr {
+                                td .key { "Total Cards" }
+                                td .val { (total_cards) }
+                            }
+                            tr {
+                                td .key { "Cards Reviewed" }
+                                td .val { (cards_reviewed) }
+                            }
+                            tr {
+                                td .key { "Started" }
+                                td .val { (start_ts) }
+                            }
+                            tr {
+                                td .key { "Finished" }
+                                td .val { (end_ts) }
+                            }
+                            tr {
+                                td .key { "Duration (seconds)" }
+                                td .val { (duration_s) }
+                            }
+                            tr {
+                                td .key { "Pace (s/card)" }
+                                td .val { (pace) }
+                            }
                         }
                     }
                 }

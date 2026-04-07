@@ -48,7 +48,7 @@ fn render_landing_page(
                         }
                     }
                     form action="/sync" method="post" style="display:inline" {
-                        input .sync-button type="submit" value="Sync Now";
+                        input .sync-button.btn.btn-secondary type="submit" value="Sync Now";
                     }
                 }
             }
@@ -66,7 +66,7 @@ fn render_landing_page(
                         }
                     }
                     form action="/hedgedoc" method="get" style="display:inline" {
-                        input .sync-button type="submit" value="Manage HedgeDoc";
+                        input .sync-button.btn.btn-secondary type="submit" value="Manage HedgeDoc";
                     }
                 }
             }
@@ -90,7 +90,7 @@ fn render_landing_page(
                                 td.num { (coll.total_cards) }
                                 td {
                                     @if coll.due_today > 0 {
-                                        a.drill-link href=(format!("/collection/{}", coll.slug)) {
+                                        a.drill-link.btn.btn-primary href=(format!("/collection/{}", coll.slug)) {
                                             "Drill"
                                         }
                                     } @else {

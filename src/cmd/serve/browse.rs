@@ -172,7 +172,7 @@ pub fn render_browse_page(
                         input
                             type="submit"
                             value=(format!("Drill ({total_due} due)"))
-                            class="drill-button"
+                            class="drill-button btn btn-primary"
                             disabled[total_due == 0];
                     }
                 }
