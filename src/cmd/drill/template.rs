@@ -31,8 +31,7 @@ const MANIFEST_JSON: &str = r##"{
   "display": "standalone",
   "start_url": "/",
   "theme_color": "#0d6efd",
-  "background_color": "#ffffff",
-  "icons": []
+  "background_color": "#ffffff"
 }"##;
 
 pub async fn manifest_handler() -> (StatusCode, [(HeaderName, &'static str); 1], &'static str) {

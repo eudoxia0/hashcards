@@ -90,11 +90,7 @@ Improvements to make hashcards work better for short mobile study sessions.
 
 **Files:** `src/cmd/drill/get.rs` (completion page render), `src/cmd/drill/style.css`
 
-> **Implemented in PR #8.** Auto-redirect with 5-second countdown and cancel link added (serve mode only). Stats wrapped in `<details>` (collapsed by default). Home submit replaced with plain `<a href="/">`. ✅ Structure correct.
->
-> ⚠️ **Gap — duration formatting:** The summary line uses integer `duration_s / 60` for minutes. A session shorter than 60 s displays as "0 min", which is nonsensical. Should show seconds directly for sub-minute sessions (e.g., "Done — 5 cards in 45 s") or at minimum show "< 1 min". Needs a fix before this is truly done.
->
-> ⚠️ **Clarification on "Shutdown in serve mode":** The Shutdown button was never shown in serve mode to begin with — the original code already branched on `CompletionAction`. What was replaced was the `Home` *form-submit button* (`<input type="submit" value="Home">`) with a plain `<a>` link. The plan description was slightly misleading.
+> **Implemented in PR #8.** Auto-redirect with 5-second countdown and cancel link added (serve mode only). Stats wrapped in `<details>` (collapsed by default). Sub-minute durations display in seconds (e.g., "Done — 5 cards in 45 s"). The `Home` action remains a POST form submit in serve mode so the session is torn down correctly (the Shutdown button was never shown in serve mode — `CompletionAction` branching already handled that). ✅ Done.
 
 ---
 

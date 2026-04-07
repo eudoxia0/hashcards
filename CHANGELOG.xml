@@ -11,7 +11,7 @@
                 Session completion page now auto-redirects to the collection list after 5 seconds (with countdown and cancel link). Stats are collapsed into a `&lt;details&gt;` element.
             </change>
             <change author="mstoeck3">
-                Added PWA manifest (`/manifest.json`) enabling "Add to Home Screen" and standalone display mode on mobile.
+                Added PWA manifest served at `/manifest.json` (linked via `&lt;link rel="manifest"&gt;`) enabling standalone display mode when added to the home screen on supported browsers.
             </change>
             <change author="overcuriousity">
                 Added `serve` subcommand for running hashcards as a persistent web server with multiple collections synced from a git repository.
