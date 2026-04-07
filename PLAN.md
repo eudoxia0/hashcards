@@ -73,7 +73,7 @@ Improvements to make hashcards work better for short mobile study sessions.
 
 > **Phase A implemented in PR #8.** Manifest served at `/manifest.json` from both drill and serve servers. `<link rel="manifest">` added to `page_template`. Has `name`, `short_name`, `display: standalone`, `theme_color`, `background_color`, `start_url`. ✅ Standalone mode and "Add to Home Screen" are enabled.
 >
-> ⚠️ **Gap — no icons:** `icons` is an empty array. Without a proper icon, mobile browsers will either use a screenshot or a generic placeholder on the home screen. For real-world use the app needs at least one 192×192 and one 512×512 PNG icon served at a stable path (e.g., `/icons/icon-192.png`). This is the main thing missing before Phase A is genuinely complete.
+> ⚠️ **Gap — no icons:** the manifest does not specify an `icons` field. Without a proper icon, mobile browsers will either use a screenshot or a generic placeholder on the home screen. For real-world use the app needs at least one 192×192 and one 512×512 PNG icon served at a stable path (e.g., `/icons/icon-192.png`). This is the main thing missing before Phase A is genuinely complete.
 >
 > Phase B (service worker) not yet started.
 
@@ -86,7 +86,7 @@ Improvements to make hashcards work better for short mobile study sessions.
 **Fix:**
 - Auto-redirect to `/` after 5 seconds (with a visible countdown so users can cancel).
 - Reduce the stats table to a single summary line: "Done — 42 cards in 6 min (8 s/card)." The full table stays but is collapsed by default (`<details>`).
-- Remove the "Shutdown" button in serve mode (it was added for drill mode); replace with a plain "Home" link.
+- In serve mode, replace the "Shutdown" button (which only appears in drill mode) with a "Home" POST form that tears down the session and returns to the collection list.
 
 **Files:** `src/cmd/drill/get.rs` (completion page render), `src/cmd/drill/style.css`
 
