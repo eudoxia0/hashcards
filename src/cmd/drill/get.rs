@@ -52,6 +52,14 @@ async fn inner(state: ServerState) -> Fallible<Markup> {
     Ok(html)
 }
 
+fn render_deck_names(card: &Card) -> String {
+    if card.deck_names().len() > 1 {
+        format!("{}, ...", &card.deck_names()[0])
+    } else {
+        card.deck_names()[0].clone()
+    }
+}
+
 fn render_session_page(state: &ServerState, mutable: &MutableState) -> Fallible<Markup> {
     let undo_disabled = mutable.reviews.is_empty();
     let total_cards = state.total_cards;
@@ -119,7 +127,7 @@ fn render_session_page(state: &ServerState, mutable: &MutableState) -> Fallible<
                 div.card {
                     div.card-header {
                         h1 {
-                            (card.deck_name())
+                            (render_deck_names(&card))
                         }
                     }
                     (card_content)
