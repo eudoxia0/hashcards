@@ -56,11 +56,7 @@ fn render_session_page(state: &ServerState, mutable: &MutableState) -> Fallible<
     let undo_disabled = mutable.reviews.is_empty();
     let total_cards = state.total_cards;
     let cards_done = state.total_cards - mutable.cards.len();
-    let percent_done = if total_cards == 0 {
-        100
-    } else {
-        (cards_done * 100) / total_cards
-    };
+    let percent_done = (cards_done * 100).checked_div(total_cards).unwrap_or(100);
     let progress_bar_style = format!("width: {}%;", percent_done);
     let card = mutable.cards[0].clone();
     let coll_path = state.directory.clone();
