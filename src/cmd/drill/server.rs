@@ -323,7 +323,7 @@ async fn shutdown_signal(shutdown_rx: Receiver<()>) {
     }
 }
 
-fn filter_deck(
+pub(super) fn filter_deck(
     db: &Database,
     deck: Vec<Card>,
     card_limit: Option<usize>,
@@ -368,7 +368,7 @@ fn filter_deck(
     Ok(deck)
 }
 
-fn bury_siblings(deck: Vec<Card>) -> Vec<Card> {
+pub(super) fn bury_siblings(deck: Vec<Card>) -> Vec<Card> {
     let mut seen_families = HashSet::new();
     let mut result = Vec::new();
     for card in deck.into_iter() {

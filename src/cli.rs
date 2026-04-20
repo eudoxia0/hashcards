@@ -22,6 +22,8 @@ use crate::cmd::check::check_collection;
 use crate::cmd::drill::server::AnswerControls;
 use crate::cmd::drill::server::ServerConfig;
 use crate::cmd::drill::server::start_server;
+use crate::cmd::drill::tui::TuiConfig;
+use crate::cmd::drill::tui::start_tui;
 use crate::cmd::export::export_collection;
 use crate::cmd::orphans::delete_orphans;
 use crate::cmd::orphans::list_orphans;
@@ -62,6 +64,9 @@ enum Command {
         /// Whether or not to bury siblings. Default is true.
         #[arg(long)]
         bury_siblings: Option<bool>,
+        /// Drill in the terminal using a TUI instead of a web browser.
+        #[arg(long)]
+        tui: bool,
     },
     /// Check the integrity of a collection.
     Check {
@@ -118,7 +123,20 @@ pub async fn entrypoint() -> Fallible<()> {
             open_browser,
             answer_controls,
             bury_siblings,
+            tui,
         } => {
+            if tui {
+                let config = TuiConfig {
+                    directory,
+                    session_started_at: Timestamp::now(),
+                    card_limit,
+                    new_card_limit,
+                    deck_filter: from_deck,
+                    answer_controls,
+                    bury_siblings: bury_siblings.unwrap_or(true),
+                };
+                return start_tui(config);
+            }
             if open_browser.unwrap_or(true) {
                 // Start a separate task to open the browser once the server is up.
                 let browser_host = host.clone();

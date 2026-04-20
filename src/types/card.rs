@@ -134,9 +134,35 @@ impl Card {
     pub fn html_back(&self, config: &MarkdownRenderConfig) -> Fallible<Markup> {
         self.content.html_back(config)
     }
+
+    pub fn text_front(&self) -> Fallible<String> {
+        self.content.text_front()
+    }
+
+    pub fn text_back(&self) -> String {
+        self.content.text_back()
+    }
 }
 
 impl CardContent {
+    pub fn text_front(&self) -> Fallible<String> {
+        match self {
+            CardContent::Basic { question, .. } => Ok(question.clone()),
+            CardContent::Cloze { text, start, end } => {
+                let mut bytes: Vec<u8> = text.as_bytes().to_owned();
+                bytes.splice(*start..*end + 1, b"[...]".iter().copied());
+                Ok(String::from_utf8(bytes)?)
+            }
+        }
+    }
+
+    pub fn text_back(&self) -> String {
+        match self {
+            CardContent::Basic { answer, .. } => answer.clone(),
+            CardContent::Cloze { text, .. } => text.clone(),
+        }
+    }
+
     pub fn new_basic(question: impl Into<String>, answer: impl Into<String>) -> Self {
         Self::Basic {
             question: question.into().trim().to_string(),

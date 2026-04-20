@@ -19,6 +19,7 @@ mod post;
 pub mod server;
 mod state;
 mod template;
+pub mod tui;
 
 #[cfg(test)]
 mod tests {
