@@ -41,4 +41,4 @@ Add random noise to review intervals, to diffuse the peaks.
 
 # Logo
 
-Make up a logo and a favicon.
+Make up a logo.
