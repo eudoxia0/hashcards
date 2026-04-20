@@ -466,3 +466,144 @@ body {
         }
     }
 }
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+    body {
+        color: #e0e0e0;
+        background: #1a1a1a;
+    }
+
+    .root {
+        .header,
+        .controls {
+            background: #252525;
+        }
+
+        .header {
+            border-bottom-color: #444;
+
+            .progress-bar {
+                border-color: #555;
+                background: #333;
+            }
+        }
+
+        .card-container {
+            background: #1e1e1e;
+
+            .card {
+                background: #2a2a2a;
+
+                .card-header {
+                    border-bottom-color: #444;
+                }
+
+                .card-content {
+                    .question {
+                        border-bottom-color: #444;
+                    }
+
+                    .rich-text {
+                        .cloze {
+                            background: #555;
+                        }
+
+                        .cloze-reveal {
+                            color: #6ea8fe;
+                        }
+
+                        blockquote {
+                            background: #333;
+                            border-left-color: #555;
+                        }
+
+                        table {
+                            border-color: #555;
+
+                            th,
+                            td {
+                                border-color: #444;
+                            }
+
+                            th {
+                                background: #383838;
+                                border-color: #555;
+                            }
+
+                            tbody tr:nth-child(odd) {
+                                background: #2a2a2a;
+                            }
+
+                            tbody tr:nth-child(even) {
+                                background: #323232;
+                            }
+
+                            code {
+                                background: #383838;
+                            }
+                        }
+
+                        code {
+                            background: #333;
+                            border-color: #444;
+                        }
+
+                        pre {
+                            background: #333;
+                            border-color: #444;
+                        }
+                    }
+                }
+            }
+        }
+
+        .controls {
+            border-top-color: #444;
+
+            form input {
+                background: #333;
+                border-color: #555;
+                color: #e0e0e0;
+                box-shadow: #111 0px 1px 3px 0px;
+
+                &:hover {
+                    background: #3a3a3a;
+                    border-color: #666;
+                    box-shadow: #111 0px 2px 5px 0px;
+                }
+
+                &:active {
+                    background: #444;
+                    border-color: #777;
+                    box-shadow: #111 0px 0px 2px 0px;
+                }
+
+                &:disabled:hover,
+                &:disabled:active {
+                    background: #333;
+                    border-color: #555;
+                    box-shadow: #111 0px 1px 3px 0px;
+                }
+            }
+        }
+    }
+
+    .finished {
+        h2 {
+            border-bottom-color: #444;
+        }
+
+        .stats table tr {
+            border-bottom-color: #333;
+        }
+    }
+
+    /* Desktop card shadow */
+    @media (min-width: 769px) {
+        .card {
+            box-shadow: 0px 0px 48px 16px #111;
+            border-color: #444;
+        }
+    }
+}
