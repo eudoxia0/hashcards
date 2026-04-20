@@ -5,15 +5,15 @@
                 MP4 audio files are now supported.
             </change>
             <change author="eudoxia0">
-                Audio files now autoplay.
-            </change>
-            <change author="eudoxia0">
                 Add a favicon using the Noto Color Emoji design of the bookmark emoji.
             </change>
         </added>
         <changed>
             <change author="eudoxia0">
                 Update dependencies.
+            </change>
+            <change author="eudoxia0">
+                Audio files now autoplay.
             </change>
         </changed>
     </unreleased>
