@@ -121,8 +121,7 @@ pub fn start_tui(config: TuiConfig) -> Fallible<()> {
     };
 
     if due_today.is_empty() {
-        println!("No cards due today.");
-        return Ok(());
+        return run_empty_tui();
     }
 
     let seed = match SystemTime::now().duration_since(UNIX_EPOCH) {
@@ -158,6 +157,49 @@ pub fn start_tui(config: TuiConfig) -> Fallible<()> {
     let mut terminal = Terminal::new(backend)?;
 
     let result = run_tui(&mut terminal, &mut state);
+
+    disable_raw_mode()?;
+    execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
+
+    result
+}
+
+fn run_empty_tui() -> Fallible<()> {
+    enable_raw_mode()?;
+    let mut stdout = io::stdout();
+    execute!(stdout, EnterAlternateScreen)?;
+    let backend = CrosstermBackend::new(stdout);
+    let mut terminal = Terminal::new(backend)?;
+
+    let result = (|| -> Fallible<()> {
+        loop {
+            terminal.draw(|frame| {
+                let area = frame.area();
+                let lines = vec![
+                    Line::from(""),
+                    Line::from(Span::styled(
+                        "  No cards due today.",
+                        Style::default().fg(Color::Green),
+                    )),
+                    Line::from(""),
+                    Line::from("  [q] Quit"),
+                ];
+                let paragraph = Paragraph::new(Text::from(lines))
+                    .block(Block::bordered())
+                    .wrap(Wrap { trim: false });
+                frame.render_widget(paragraph, area);
+            })?;
+
+            if let Event::Key(key) = event::read()? {
+                if key.kind != KeyEventKind::Press {
+                    continue;
+                }
+                if key.code == KeyCode::Char('q') || key.code == KeyCode::Esc {
+                    return Ok(());
+                }
+            }
+        }
+    })();
 
     disable_raw_mode()?;
     execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
