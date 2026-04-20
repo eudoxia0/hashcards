@@ -60,7 +60,7 @@ pub fn markdown_to_html(config: &MarkdownRenderConfig, markdown: &str) -> Fallib
                     // If so, render it as an HTML5 audio element.
                     Event::Html(CowStr::Boxed(
                         format!(
-                            r#"<audio controls src="{}" title="{}"></audio>"#,
+                            r#"<audio autoplay controls src="{}" title="{}"></audio>"#,
                             url, title
                         )
                         .into_boxed_str(),
