@@ -1,7 +1,7 @@
 PREFIX ?= /usr/local
 BINDIR = $(PREFIX)/bin
 SRC    = $(shell find src -name '*.rs')
-KATEX_VERSION = 0.16.25
+KATEX_VERSION = 0.16.45
 KATEX_URL = https://github.com/KaTeX/KaTeX/releases/download/v$(KATEX_VERSION)/katex.tar.gz
 
 .PHONY: all

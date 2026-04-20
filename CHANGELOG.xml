@@ -18,6 +18,9 @@
             <change author="eudoxia0">
                 Audio files now autoplay.
             </change>
+            <change author="eudoxia0">
+                Upgrade KaTeX to `0.16.45`.
+            </change>
         </changed>
     </unreleased>
     <releases>
