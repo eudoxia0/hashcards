@@ -182,6 +182,7 @@ pub async fn start_server(config: ServerConfig) -> Fallible<()> {
     let app = app.route("/", post(post_handler));
     let app = app.route("/script.js", get(script_handler));
     let app = app.route("/style.css", get(style_handler));
+    let app = app.route("/favicon.ico", get(favicon_handler));
     let app = app.route(KATEX_CSS_URL, get(katex_css_handler));
     let app = app.route(KATEX_JS_URL, get(katex_js_handler));
     let app = app.route(KATEX_MHCHEM_JS_URL, get(katex_mhchem_js_handler));
@@ -236,6 +237,18 @@ async fn style_handler() -> (StatusCode, [(HeaderName, &'static str); 2], &'stat
         StatusCode::OK,
         [
             (CONTENT_TYPE, "text/css"),
+            (CACHE_CONTROL, CACHE_CONTROL_IMMUTABLE),
+        ],
+        bytes,
+    )
+}
+
+async fn favicon_handler() -> (StatusCode, [(HeaderName, &'static str); 2], &'static [u8]) {
+    let bytes = include_bytes!("favicon.png");
+    (
+        StatusCode::OK,
+        [
+            (CONTENT_TYPE, "image/png"),
             (CACHE_CONTROL, CACHE_CONTROL_IMMUTABLE),
         ],
         bytes,
