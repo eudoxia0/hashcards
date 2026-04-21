@@ -225,12 +225,20 @@ fn run_tui(
                 }
             } else if state.reveal {
                 match key.code {
-                    KeyCode::Char('1') => handle_grade(state, Grade::Forgot)?,
-                    KeyCode::Char('2') if state.answer_controls == AnswerControls::Full => {
+                    KeyCode::Char('1') | KeyCode::Char('f') => {
+                        handle_grade(state, Grade::Forgot)?;
+                    }
+                    KeyCode::Char('2') | KeyCode::Char('h')
+                        if state.answer_controls == AnswerControls::Full =>
+                    {
                         handle_grade(state, Grade::Hard)?;
                     }
-                    KeyCode::Char('3') => handle_grade(state, Grade::Good)?,
-                    KeyCode::Char('4') if state.answer_controls == AnswerControls::Full => {
+                    KeyCode::Char('3') | KeyCode::Char('j') => {
+                        handle_grade(state, Grade::Good)?;
+                    }
+                    KeyCode::Char('4') | KeyCode::Char('k')
+                        if state.answer_controls == AnswerControls::Full =>
+                    {
                         handle_grade(state, Grade::Easy)?;
                     }
                     KeyCode::Char('u') => handle_undo(state)?,
@@ -403,9 +411,9 @@ fn draw_session(frame: &mut Frame, state: &DrillState) {
     let controls_text = if state.reveal {
         match state.answer_controls {
             AnswerControls::Full => {
-                "[1] Forgot  [2] Hard  [3] Good  [4] Easy  |  [u] Undo  [q] End"
+                "[1/f] Forgot  [2/h] Hard  [3/j] Good  [4/k] Easy  |  [u] Undo  [q] End"
             }
-            AnswerControls::Binary => "[1] Forgot  [3] Good  |  [u] Undo  [q] End",
+            AnswerControls::Binary => "[1/f] Forgot  [3/j] Good  |  [u] Undo  [q] End",
         }
     } else if state.reviews.is_empty() {
         "[Space] Reveal  |  [q] End"
