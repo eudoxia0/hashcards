@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use std::fmt::Display;
 use std::fmt::Formatter;
@@ -27,6 +27,7 @@ use crate::error::Fallible;
 use crate::types::aliases::DeckName;
 use crate::types::card::Card;
 use crate::types::card::CardContent;
+use crate::types::card_hash::CardHash;
 
 /// Metadata that can be specified at the top of a deck file.
 #[derive(Debug, Deserialize)]
@@ -123,9 +124,19 @@ pub fn parse_deck(directory: &PathBuf) -> Fallible<Vec<Card>> {
     // deterministic.
     all_cards.sort_by_key(|c| c.hash());
 
-    // Remove duplicates.
-    all_cards.dedup_by_key(|c| c.hash());
+    let mut all_cards_dedup: HashMap<CardHash, Card> = HashMap::new();
 
+    for card in all_cards {
+        match all_cards_dedup.get_mut(&card.hash()) {
+            Some(repr) => repr.add_deck_names(card.deck_names()),
+            None => {
+                all_cards_dedup.insert(card.hash(), card);
+            }
+        }
+    }
+
+    let mut all_cards: Vec<Card> = all_cards_dedup.into_values().collect();
+    all_cards.sort_by_key(|c| c.hash());
     Ok(all_cards)
 }
 
@@ -908,8 +919,8 @@ mod tests {
         std::fs::write(&file1, "Q: foo\nA: bar").expect("Failed to write test file");
         std::fs::write(&file2, "Q: foo\nA: bar").expect("Failed to write test file");
         let deck = parse_deck(&directory)?;
-
         assert_eq!(deck.len(), 1);
+        assert_eq!(deck.get(0).unwrap().deck_names(), vec!["file1", "file2"]);
         Ok(())
     }
 
@@ -1133,7 +1144,7 @@ A: Genetic material."#,
         // Both cards should have the custom deck name "Cell Biology"
         assert_eq!(deck.len(), 2);
         for card in &deck {
-            assert_eq!(card.deck_name(), "Cell Biology");
+            assert_eq!(card.deck_names(), vec!["Cell Biology"]);
         }
 
         // Clean up

@@ -52,7 +52,7 @@ enum Command {
         port: u16,
         /// Only drill cards from this deck.
         #[arg(long)]
-        from_deck: Option<String>,
+        from_deck: Option<Vec<String>>,
         /// Whether to open the browser automatically. Default is true.
         #[arg(long)]
         open_browser: Option<bool>,
@@ -141,7 +141,7 @@ pub async fn entrypoint() -> Fallible<()> {
                 session_started_at: Timestamp::now(),
                 card_limit,
                 new_card_limit,
-                deck_filter: from_deck,
+                deck_filters: from_deck,
                 shuffle: true,
                 answer_controls,
                 bury_siblings: bury_siblings.unwrap_or(true),

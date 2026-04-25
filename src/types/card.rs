@@ -32,8 +32,8 @@ const CLOZE_TAG: &str = "CLOZE_DELETION";
 
 #[derive(Clone)]
 pub struct Card {
-    /// The name of the deck this card belongs to.
-    deck_name: DeckName,
+    /// The decks this card and its duplicates are in.
+    deck_names: Vec<DeckName>,
     /// The absolute path of the file this card was parsed from.
     file_path: PathBuf,
     /// The line number range that contains the card.
@@ -75,7 +75,7 @@ impl Card {
     ) -> Self {
         let hash = content.hash();
         Self {
-            deck_name,
+            deck_names: vec![deck_name],
             file_path,
             content,
             range,
@@ -83,8 +83,16 @@ impl Card {
         }
     }
 
-    pub fn deck_name(&self) -> &DeckName {
-        &self.deck_name
+    pub fn add_deck_names(&mut self, deck_names: &[DeckName]) {
+        for deck_name in deck_names {
+            if !self.deck_names.contains(deck_name) {
+                self.deck_names.push(deck_name.clone())
+            }
+        }
+    }
+
+    pub fn deck_names(&self) -> &[DeckName] {
+        &self.deck_names
     }
 
     pub fn content(&self) -> &CardContent {
