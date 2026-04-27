@@ -55,7 +55,7 @@ struct Export {
 struct CardExport {
     hash: CardHash,
     family_hash: Option<CardHash>,
-    deck_name: DeckName,
+    deck_names: Vec<DeckName>,
     location: LocationExport,
     content: CardContentExport,
     performance: Option<PerformanceExport>,
@@ -131,7 +131,7 @@ fn get_card_export(coll: &Collection) -> Fallible<Vec<CardExport>> {
         let ce = CardExport {
             hash: card.hash(),
             family_hash: card.family_hash(),
-            deck_name: card.deck_name().to_owned(),
+            deck_names: card.deck_names().to_vec(),
             location: LocationExport {
                 file_path: card.file_path().clone().display().to_string(),
                 line_start: card.range().0,
