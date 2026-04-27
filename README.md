@@ -5,7 +5,7 @@
 [![codecov](https://codecov.io/gh/eudoxia0/hashcards/branch/master/graph/badge.svg?token=GDV3CYZMHQ)](https://codecov.io/gh/eudoxia0/hashcards)
 [![dependency status](https://deps.rs/repo/github/eudoxia0/hashcards/status.svg)](https://deps.rs/repo/github/eudoxia0/hashcards)
 
-![Screenshot of the app, showing a front/back flashcard.](screenshot.webp)
+![Screenshot of the app, showing a front/back flashcard.](.github/screenshots/screenshot.webp)
 
 A plain text-based spaced repetition system. Features:
 

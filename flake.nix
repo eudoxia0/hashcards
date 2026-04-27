@@ -16,7 +16,7 @@
       # Crane filters source files, so that mods to eg README.md don't
       # trigger a rebuild. srcFilter adds css, js, sql, and woff2 files to
       # the filtered source files.
-      srcFilter = path: _type: builtins.match ".*css$|.*js$|.*sql$|.*woff2$" path != null;
+      srcFilter = path: _type: builtins.match ".*css$|.*js$|.*sql$|.*woff2$|.*png$" path != null;
       allSrcFilter = path: type:
         (srcFilter path type) || (craneLib.filterCargoSources path type);
     in {
