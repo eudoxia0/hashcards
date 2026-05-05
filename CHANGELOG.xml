@@ -10,6 +10,9 @@
             <change author="eudoxia0">
                 Add dark mode support.
             </change>
+            <change author="eudoxia0">
+                When a deck has no cards, hashcards will raise an error.
+            </change>
         </added>
         <changed>
             <change author="eudoxia0">
