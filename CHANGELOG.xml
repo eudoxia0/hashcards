@@ -21,6 +21,9 @@
             <change author="eudoxia0">
                 Upgrade KaTeX to `0.16.45`.
             </change>
+            <change author="eudoxia0">
+                Syntax highlighter JS/CSS is now embedded into the binary.
+            </change>
         </changed>
     </unreleased>
     <releases>
