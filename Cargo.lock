@@ -610,7 +610,7 @@ checksum = "4f467dd6dccf739c208452f8014c75c18bb8301b050ad1cfb27153803edb0f51"
 
 [[package]]
 name = "hashcards"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "axum",
  "blake3",
