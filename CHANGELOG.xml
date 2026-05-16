@@ -1,6 +1,10 @@
 <changelog>
     <unreleased>
-
+        <added>
+            <change author="eudoxia0">
+                Add `due` command, which prints which decks have cards due today and how many.
+            </change>
+        </added>
     </unreleased>
     <releases>
         <release version="0.3.1" date="2026-05-05">
