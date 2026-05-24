@@ -333,6 +333,40 @@ body {
         }
     }
 
+    .heatmap {
+        --heatmap-empty: #ebedf0;
+        --heatmap-border: #d0d7de;
+
+        margin-top: 16px;
+        margin-bottom: 32px;
+        overflow-x: auto;
+
+        table {
+            border-collapse: separate;
+            border-spacing: 3px;
+            margin: 0 auto;
+        }
+
+        td.cell {
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+            border: 1px solid var(--heatmap-border);
+        }
+
+        td.cell.empty {
+            background: transparent !important;
+            border-color: transparent;
+        }
+
+        &.empty {
+            text-align: center;
+            color: #888;
+            font-style: italic;
+            padding: 24px;
+        }
+    }
+
     .shutdown-container {
         margin-top: 48px;
         text-align: center;
@@ -596,6 +630,11 @@ body {
 
         .stats table tr {
             border-bottom-color: #333;
+        }
+
+        .heatmap {
+            --heatmap-empty: #1f1f1f;
+            --heatmap-border: #333;
         }
     }
 
