@@ -288,14 +288,17 @@ impl Database {
     /// Count the number of reviews performed on each date in the given closed
     /// range, returning a map from date to count. Dates with no reviews are not
     /// in the map.
-    pub fn review_counts_in_range(
-        &self,
-        start: Date,
-        end: Date,
-    ) -> Fallible<HashMap<Date, usize>> {
-        let sql = "select substr(reviewed_at, 1, 10) as d, count(*) from reviews \
-                   where substr(reviewed_at, 1, 10) >= ? and substr(reviewed_at, 1, 10) <= ? \
-                   group by d;";
+    pub fn review_counts_in_range(&self, start: Date, end: Date) -> Fallible<HashMap<Date, usize>> {
+        let sql = "
+            select
+                substr(reviewed_at, 1, 10) as d,
+                count(*) from reviews
+            where
+                substr(reviewed_at, 1, 10) >= ?
+                and
+                substr(reviewed_at, 1, 10) <= ?
+            group by d;
+        ";
         let mut stmt = self.conn.prepare(sql)?;
         let mut rows = stmt.query(params![start, end])?;
         let mut counts: HashMap<Date, usize> = HashMap::new();
