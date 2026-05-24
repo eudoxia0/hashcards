@@ -197,7 +197,7 @@ mod tests {
     fn test_build_grid_shape_and_anchors() {
         // Sunday 2026-05-24.
         let today = Date::new(NaiveDate::from_ymd_opt(2026, 5, 24).unwrap());
-        let grid = build_grid(today, &HashMap::new());
+        let grid: Vec<Vec<Cell>> = build_grid(today, &HashMap::new());
         assert_eq!(grid.len(), 12);
         for col in &grid {
             assert_eq!(col.len(), 7);
@@ -205,8 +205,8 @@ mod tests {
         // Last column, row 0 (Sunday) is today.
         assert_eq!(grid[11][0].date, Some(today));
         // Last column, rows 1..6 are future days.
-        for r in 1..7 {
-            assert_eq!(grid[11][r].date, None);
+        for cell in grid[11].iter().take(7).skip(1) {
+            assert_eq!(cell.date, None);
         }
         // First column, row 0 (Sunday) is 11 weeks before today.
         let expected_first =
