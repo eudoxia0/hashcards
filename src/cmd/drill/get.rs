@@ -18,6 +18,7 @@ use axum::response::Html;
 use maud::Markup;
 use maud::html;
 
+use crate::cmd::drill::retention::retention_rate;
 use crate::cmd::drill::server::AnswerControls;
 use crate::cmd::drill::state::MutableState;
 use crate::cmd::drill::state::ServerState;
@@ -188,6 +189,7 @@ fn render_completion_page(state: &ServerState, mutable: &MutableState) -> Fallib
         duration_s as f64 / cards_reviewed as f64
     };
     let pace = format!("{:.2}", pace);
+    let retention_rate = format!("{:.2}%", retention_rate(&mutable.reviews));
     let start_ts = start.format(TS_FORMAT).to_string();
     let end_ts = end.format(TS_FORMAT).to_string();
     let html = html! {
@@ -231,6 +233,10 @@ fn render_completion_page(state: &ServerState, mutable: &MutableState) -> Fallib
                         tr {
                             td .key { "Pace (s/card)" }
                             td .val { (pace) }
+                        }
+                        tr {
+                            td .key { "Retention Rate" }
+                            td .val { (retention_rate) }
                         }
                     }
                 }

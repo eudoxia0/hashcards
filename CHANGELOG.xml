@@ -4,6 +4,9 @@
             <change author="eudoxia0">
                 Add `due` command, which prints which decks have cards due today and how many.
             </change>
+            <change author="eudoxia0">
+                Add retention rate to end of session stats.
+            </change>
         </added>
     </unreleased>
     <releases>
