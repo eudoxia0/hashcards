@@ -14,6 +14,7 @@
 
 mod cache;
 mod get;
+mod heatmap;
 mod highlight;
 mod katex;
 mod post;

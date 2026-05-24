@@ -18,6 +18,7 @@ use axum::response::Html;
 use maud::Markup;
 use maud::html;
 
+use crate::cmd::drill::heatmap::render_heatmap;
 use crate::cmd::drill::retention::retention_rate;
 use crate::cmd::drill::server::AnswerControls;
 use crate::cmd::drill::state::MutableState;
@@ -192,6 +193,7 @@ fn render_completion_page(state: &ServerState, mutable: &MutableState) -> Fallib
     let retention_rate = format!("{:.2}%", retention_rate(&mutable.reviews));
     let start_ts = start.format(TS_FORMAT).to_string();
     let end_ts = end.format(TS_FORMAT).to_string();
+    let heatmap = render_heatmap(&mutable.db, state.session_started_at.date())?;
     let html = html! {
         div.finished {
             h1 {
@@ -241,6 +243,10 @@ fn render_completion_page(state: &ServerState, mutable: &MutableState) -> Fallib
                     }
                 }
             }
+            h2 {
+                "Last 12 Weeks"
+            }
+            (heatmap)
             div.shutdown-container {
                 form action="/" method="post" {
                     input #shutdown .shutdown-button type="submit" name="action" value="Shutdown" title="Shut down the server";

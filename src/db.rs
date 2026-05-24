@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::collections::HashMap;
 use std::collections::HashSet;
 
 use rusqlite::Connection;
@@ -284,6 +285,31 @@ impl Database {
         Ok(count as usize)
     }
 
+    /// Count the number of reviews performed on each date in the given closed
+    /// range, returning a map from date to count. Dates with no reviews are not
+    /// in the map.
+    pub fn review_counts_in_range(&self, start: Date, end: Date) -> Fallible<HashMap<Date, usize>> {
+        let sql = "
+            select
+                substr(reviewed_at, 1, 10) as d,
+                count(*) from reviews
+            where
+                substr(reviewed_at, 1, 10) >= ?
+                and
+                substr(reviewed_at, 1, 10) <= ?
+            group by d;
+        ";
+        let mut stmt = self.conn.prepare(sql)?;
+        let mut rows = stmt.query(params![start, end])?;
+        let mut counts: HashMap<Date, usize> = HashMap::new();
+        while let Some(row) = rows.next()? {
+            let date: Date = row.get(0)?;
+            let count: i64 = row.get(1)?;
+            counts.insert(date, count as usize);
+        }
+        Ok(counts)
+    }
+
     /// Get the list of all sessions in the database.
     pub fn get_all_sessions(&self) -> Fallible<Vec<SessionRow>> {
         let sql = "select session_id, started_at, ended_at from sessions order by started_at;";
@@ -469,6 +495,50 @@ mod tests {
         assert_eq!(fetched_review.data.interval_raw, 1.0);
         assert_eq!(fetched_review.data.interval_days, 1);
         assert_eq!(fetched_review.data.due_date, now.date());
+        Ok(())
+    }
+
+    /// `review_counts_in_range` returns review counts grouped by date.
+    #[test]
+    fn test_review_counts_in_range() -> Fallible<()> {
+        let mut db = Database::new(":memory:")?;
+        let card_hash = CardHash::hash_bytes(b"a");
+        let day1 = Timestamp::try_from("2026-05-20T09:00:00.000".to_string())?;
+        let day2_a = Timestamp::try_from("2026-05-22T08:00:00.000".to_string())?;
+        let day2_b = Timestamp::try_from("2026-05-22T20:00:00.000".to_string())?;
+        let day3 = Timestamp::try_from("2026-05-24T12:00:00.000".to_string())?;
+        db.insert_card(card_hash, day1)?;
+        let mk = |ts: Timestamp| ReviewRecord {
+            card_hash,
+            reviewed_at: ts,
+            grade: Grade::Good,
+            stability: 1.0,
+            difficulty: 1.0,
+            interval_raw: 0.0,
+            interval_days: 0,
+            due_date: ts.date(),
+        };
+        db.save_session(day1, day1, vec![mk(day1)])?;
+        db.save_session(day2_a, day2_b, vec![mk(day2_a), mk(day2_b)])?;
+        db.save_session(day3, day3, vec![mk(day3)])?;
+
+        // Whole range: all three days.
+        let counts = db.review_counts_in_range(
+            Date::try_from("2026-05-20".to_string())?,
+            Date::try_from("2026-05-24".to_string())?,
+        )?;
+        assert_eq!(counts.len(), 3);
+        assert_eq!(counts[&Date::try_from("2026-05-20".to_string())?], 1);
+        assert_eq!(counts[&Date::try_from("2026-05-22".to_string())?], 2);
+        assert_eq!(counts[&Date::try_from("2026-05-24".to_string())?], 1);
+
+        // Narrower range: excludes endpoints outside the window.
+        let counts = db.review_counts_in_range(
+            Date::try_from("2026-05-21".to_string())?,
+            Date::try_from("2026-05-23".to_string())?,
+        )?;
+        assert_eq!(counts.len(), 1);
+        assert_eq!(counts[&Date::try_from("2026-05-22".to_string())?], 2);
         Ok(())
     }
 

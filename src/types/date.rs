@@ -28,7 +28,7 @@ use serde::Serialize;
 use crate::error::ErrorReport;
 
 /// Represents a date.
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
 pub struct Date(NaiveDate);
 
 impl Date {
