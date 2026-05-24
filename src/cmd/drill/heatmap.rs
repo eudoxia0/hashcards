@@ -209,9 +209,8 @@ mod tests {
             assert_eq!(grid[11][r].date, None);
         }
         // First column, row 0 (Sunday) is 11 weeks before today.
-        let expected_first = Date::new(
-            NaiveDate::from_ymd_opt(2026, 5, 24).unwrap() - Duration::days(7 * 11),
-        );
+        let expected_first =
+            Date::new(NaiveDate::from_ymd_opt(2026, 5, 24).unwrap() - Duration::days(7 * 11));
         assert_eq!(grid[0][0].date, Some(expected_first));
     }
 
