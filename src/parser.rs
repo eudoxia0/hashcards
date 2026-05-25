@@ -235,7 +235,8 @@ fn is_cloze(line: &str) -> bool {
 }
 
 fn is_separator(line: &str) -> bool {
-    line.trim() == "---"
+    let trimmed = line.trim();
+    trimmed.len() >= 3 && trimmed.bytes().all(|b| b == b'-')
 }
 
 fn trim(line: &str) -> String {
@@ -1255,6 +1256,74 @@ A: Genetic material."#,
                 question,
                 answer,
             } if question == "foo" && answer == "bar"
+        ));
+        Ok(())
+    }
+
+    #[test]
+    fn test_text_after_separator_excluded_from_answer() -> Result<(), ParserError> {
+        let input = "Q: foo\nA: bar\n---\nignored line\nanother ignored line";
+        let parser = make_test_parser();
+        let cards = parser.parse(input)?;
+
+        assert_eq!(cards.len(), 1);
+        assert!(matches!(
+            &cards[0].content(),
+            CardContent::Basic {
+                question,
+                answer,
+            } if question == "foo" && answer == "bar"
+        ));
+        Ok(())
+    }
+
+    #[test]
+    fn test_text_after_separator_excluded_from_cloze() -> Result<(), ParserError> {
+        let input = "C: [foo]\n---\nignored line\nanother ignored line";
+        let parser = make_test_parser();
+        let cards = parser.parse(input)?;
+
+        assert_cloze(&cards, "foo", &[(0, 2)]);
+        Ok(())
+    }
+
+    #[test]
+    fn test_long_dash_separator() -> Result<(), ParserError> {
+        let input = "Q: foo\nA: bar\n--------\nQ: baz\nA: quux";
+        let parser = make_test_parser();
+        let cards = parser.parse(input)?;
+
+        assert_eq!(cards.len(), 2);
+        assert!(matches!(
+            &cards[0].content(),
+            CardContent::Basic {
+                question,
+                answer,
+            } if question == "foo" && answer == "bar"
+        ));
+        assert!(matches!(
+            &cards[1].content(),
+            CardContent::Basic {
+                question,
+                answer,
+            } if question == "baz" && answer == "quux"
+        ));
+        Ok(())
+    }
+
+    #[test]
+    fn test_two_dashes_not_separator() -> Result<(), ParserError> {
+        let input = "Q: foo\nA: bar\n--\nstill in answer";
+        let parser = make_test_parser();
+        let cards = parser.parse(input)?;
+
+        assert_eq!(cards.len(), 1);
+        assert!(matches!(
+            &cards[0].content(),
+            CardContent::Basic {
+                question,
+                answer,
+            } if question == "foo" && answer == "bar\n--\nstill in answer"
         ));
         Ok(())
     }
