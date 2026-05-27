@@ -12,11 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::ops::Range;
+
 use pulldown_cmark::CowStr;
 use pulldown_cmark::Event;
 use pulldown_cmark::Options;
 use pulldown_cmark::Parser;
 use pulldown_cmark::Tag;
+use pulldown_cmark::TagEnd;
 use pulldown_cmark::html::push_html;
 
 use crate::error::ErrorReport;
@@ -45,7 +48,8 @@ pub fn markdown_to_html(config: &MarkdownRenderConfig, markdown: &str) -> Fallib
     let mut options = Options::empty();
     options.insert(Options::ENABLE_TABLES);
     options.insert(Options::ENABLE_MATH);
-    let parser = Parser::new_ext(markdown, options);
+    let rewritten = rewrite_latex_delimiters(markdown);
+    let parser = Parser::new_ext(&rewritten, options);
     let events: Vec<Event<'_>> = parser
         .map(|event| match event {
             Event::Start(Tag::Image {
@@ -92,6 +96,98 @@ pub fn markdown_to_html_inline(config: &MarkdownRenderConfig, markdown: &str) ->
     } else {
         Ok(text)
     }
+}
+
+/// Rewrites LaTeX-style math delimiters into the pulldown-cmark/KaTeX dollar
+/// form: `\(...\)` → `$...$` and `\[...\]` → `$$...$$`. Content inside fenced
+/// code blocks and inline code spans is left untouched.
+fn rewrite_latex_delimiters(markdown: &str) -> String {
+    let protected = protected_code_ranges(markdown);
+    let bytes = markdown.as_bytes();
+    let mut out = String::with_capacity(bytes.len());
+    let mut copied = 0;
+    let mut i = 0;
+    while i + 1 < bytes.len() {
+        if bytes[i] != b'\\' || is_in_ranges(i, &protected) {
+            i += 1;
+            continue;
+        }
+        let next = bytes[i + 1];
+        if next == b'\\' {
+            // Escaped backslash; skip both bytes so we don't misread `\\(` as `\(`.
+            i += 2;
+            continue;
+        }
+        let (close_char, dollars) = match next {
+            b'(' => (b')', "$"),
+            b'[' => (b']', "$$"),
+            _ => {
+                i += 1;
+                continue;
+            }
+        };
+        if let Some(close_pos) = find_close(bytes, i + 2, close_char, &protected) {
+            out.push_str(&markdown[copied..i]);
+            out.push_str(dollars);
+            out.push_str(&markdown[i + 2..close_pos]);
+            out.push_str(dollars);
+            i = close_pos + 2;
+            copied = i;
+        } else {
+            i += 1;
+        }
+    }
+    out.push_str(&markdown[copied..]);
+    out
+}
+
+fn find_close(
+    bytes: &[u8],
+    from: usize,
+    close_char: u8,
+    protected: &[Range<usize>],
+) -> Option<usize> {
+    let mut i = from;
+    while i + 1 < bytes.len() {
+        if bytes[i] == b'\\' && !is_in_ranges(i, protected) {
+            if bytes[i + 1] == b'\\' {
+                i += 2;
+                continue;
+            }
+            if bytes[i + 1] == close_char {
+                return Some(i);
+            }
+        }
+        i += 1;
+    }
+    None
+}
+
+fn protected_code_ranges(markdown: &str) -> Vec<Range<usize>> {
+    let mut ranges = Vec::new();
+    let mut code_block_start: Option<usize> = None;
+    let parser = Parser::new_ext(markdown, Options::empty()).into_offset_iter();
+    for (event, range) in parser {
+        match event {
+            Event::Start(Tag::CodeBlock(_)) => {
+                code_block_start = Some(range.start);
+            }
+            Event::End(TagEnd::CodeBlock) => {
+                if let Some(start) = code_block_start.take() {
+                    ranges.push(start..range.end);
+                }
+            }
+            Event::Code(_) => {
+                ranges.push(range);
+            }
+            _ => {}
+        }
+    }
+    ranges
+}
+
+fn is_in_ranges(pos: usize, ranges: &[Range<usize>]) -> bool {
+    ranges.iter().any(|r| pos >= r.start && pos < r.end)
 }
 
 fn modify_url(url: &str, config: &MarkdownRenderConfig) -> Fallible<String> {

@@ -19,8 +19,7 @@ body,
 
 body {
     font-family:
-        "TeX Gyre Termes", "Nimbus Roman No9 L", "Times New Roman", "Times",
-        serif;
+        "Libertinus Sans", sans-serif;
 }
 
 .root {
@@ -192,7 +191,7 @@ body {
                         padding: 2px 6px;
                         border-radius: 3px;
                         font-family:
-                            "Menlo", "Monaco", "Courier New", monospace;
+                            "Iosevka", "Menlo", "Monaco", "Courier New", monospace;
                         font-size: 0.7em;
                         color: inherit;
                     }

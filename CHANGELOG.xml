@@ -10,6 +10,12 @@
             <change author="eudoxia0">
                 Add a review heatmap to the end of session page.
             </change>
+            <change author="kchousos">
+                Support `\(...\)` and `\[...\]` as LaTeX math delimiters, alongside `$...$` and `$$...$$`.
+            </change>
+            <change author="kchousos">
+                Treat any run of three or more dashes (e.g. `----`, `--------`) as a flashcard separator, matching Markdown horizontal-rule semantics.
+            </change>
         </added>
     </unreleased>
     <releases>
