@@ -16,6 +16,9 @@
         </added>
         <changed>
             <change author="eudoxia0">
+                Update dependencies.
+            </change>
+            <change author="eudoxia0">
                 Orphan deletion is now faster.
             </change>
         </changed>
