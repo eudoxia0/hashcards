@@ -114,7 +114,16 @@ pub fn parse_deck(directory: &PathBuf) -> Fallible<Vec<Card>> {
             });
 
             let parser = Parser::new(deck_name, path.to_path_buf());
-            let cards = parser.parse(content)?;
+            let cards: Vec<Card> = parser.parse(content)?;
+
+            // No cards found in this deck? Error.
+            if cards.is_empty() {
+                return Err(ErrorReport::new(format!(
+                    "No cards found in deck: {}",
+                    path.display()
+                )));
+            }
+
             all_cards.extend(cards);
         }
     }

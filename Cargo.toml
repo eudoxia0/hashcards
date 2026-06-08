@@ -1,6 +1,6 @@
 [package]
 name = "hashcards"
-version = "0.3.0"
+version = "0.3.1"
 edition = "2024"
 description = "A plain text-based spaced repetition system."
 homepage = "https://github.com/eudoxia0/hashcards"
@@ -11,25 +11,25 @@ categories = ["command-line-utilities"]
 [dependencies]
 axum = "0.8.8"
 blake3 = "1.8.3"
-chrono = "0.4.44"
+chrono = "0.4.45"
 clap = { version = "4.6.0", features = ["derive"] }
 env_logger = "0.11.10"
-log = "0.4.29"
+log = "0.4.32"
 maud = "0.27.0"
 open = "5.3.3"
 percent-encoding = "2.3.2"
 pulldown-cmark = "0.13.3"
 ratatui = "0.29"
-rusqlite = { version = "0.39.0", features = ["bundled"] }
+rusqlite = { version = "0.40.1", features = ["bundled"] }
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
-tokio = { version = "1.51.0", features = ["rt-multi-thread", "fs", "signal"] }
+tokio = { version = "1.52.3", features = ["rt-multi-thread", "fs", "signal"] }
 toml = "1.1.2"
 walkdir = "2.5.0"
 
 [dev-dependencies]
 portpicker = "0.1.1"
-reqwest = { version = "0.13.2", features = ["form"] }
+reqwest = { version = "0.13.3", features = ["form"] }
 tempfile = "3.27.0"
 
 [profile.release]

@@ -40,6 +40,10 @@ use tokio::sync::oneshot::channel;
 
 use crate::cmd::drill::cache::Cache;
 use crate::cmd::drill::get::get_handler;
+use crate::cmd::drill::highlight::HIGHLIGHT_CSS_URL;
+use crate::cmd::drill::highlight::HIGHLIGHT_JS_URL;
+use crate::cmd::drill::highlight::highlight_css_handler;
+use crate::cmd::drill::highlight::highlight_js_handler;
 use crate::cmd::drill::katex::KATEX_CSS_URL;
 use crate::cmd::drill::katex::KATEX_JS_URL;
 use crate::cmd::drill::katex::KATEX_MHCHEM_JS_URL;
@@ -178,16 +182,20 @@ pub async fn start_server(config: ServerConfig) -> Fallible<()> {
         answer_controls: config.answer_controls,
     };
     let app = Router::new();
+
     let app = app.route("/", get(get_handler));
     let app = app.route("/", post(post_handler));
+    let app = app.route("/favicon.ico", get(favicon_handler));
+    let app = app.route("/file/{*path}", get(file_handler));
+    let app = app.route("/katex/fonts/{*path}", get(katex_font_handler));
     let app = app.route("/script.js", get(script_handler));
     let app = app.route("/style.css", get(style_handler));
-    let app = app.route("/favicon.ico", get(favicon_handler));
+    let app = app.route(HIGHLIGHT_CSS_URL, get(highlight_css_handler));
+    let app = app.route(HIGHLIGHT_JS_URL, get(highlight_js_handler));
     let app = app.route(KATEX_CSS_URL, get(katex_css_handler));
     let app = app.route(KATEX_JS_URL, get(katex_js_handler));
     let app = app.route(KATEX_MHCHEM_JS_URL, get(katex_mhchem_js_handler));
-    let app = app.route("/katex/fonts/{*path}", get(katex_font_handler));
-    let app = app.route("/file/{*path}", get(file_handler));
+
     let app = app.fallback(not_found_handler);
     let app = app.with_state(state.clone());
     let bind = format!("{}:{}", config.host, config.port);

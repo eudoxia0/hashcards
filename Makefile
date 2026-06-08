@@ -1,8 +1,13 @@
 PREFIX ?= /usr/local
 BINDIR = $(PREFIX)/bin
 SRC    = $(shell find src -name '*.rs')
-KATEX_VERSION = 0.16.45
+KATEX_VERSION = 0.17.0
 KATEX_URL = https://github.com/KaTeX/KaTeX/releases/download/v$(KATEX_VERSION)/katex.tar.gz
+HIGHLIGHT_VERSION = 11.9.0
+HIGHLIGHT_CSS_FILE = vendor/highlight/highlight.css
+HIGHLIGHT_CSS_URL = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/$(HIGHLIGHT_VERSION)/styles/github.min.css";
+HIGHLIGHT_JS_FILE = vendor/highlight/highlight.js
+HIGHLIGHT_JS_URL = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/$(HIGHLIGHT_VERSION)/highlight.min.js"
 
 .PHONY: all
 all: hashcards
@@ -36,7 +41,16 @@ vendor/katex:
 	@rm vendor/katex/fonts/*.ttf
 	@rm vendor/katex/fonts/*.woff
 
-hashcards: vendor/katex $(SRC) Cargo.toml Cargo.lock
+vendor/highlight:
+	@mkdir -p vendor/highlight
+
+$(HIGHLIGHT_CSS_FILE): vendor/highlight
+	@curl -L -o $@ $(HIGHLIGHT_CSS_URL)
+
+$(HIGHLIGHT_JS_FILE): vendor/highlight
+	@curl -L -o $@ $(HIGHLIGHT_JS_URL)
+
+hashcards: vendor/katex $(HIGHLIGHT_CSS_FILE) $(HIGHLIGHT_JS_FILE) $(SRC) Cargo.toml Cargo.lock
 	cargo build --release
 	cp "target/release/hashcards" hashcards
 
