@@ -14,7 +14,7 @@ blake3 = "1.8.3"
 chrono = "0.4.44"
 clap = { version = "4.6.0", features = ["derive"] }
 env_logger = "0.11.10"
-log = "0.4.29"
+log = "0.4.32"
 maud = "0.27.0"
 open = "5.3.3"
 percent-encoding = "2.3.2"
