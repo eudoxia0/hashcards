@@ -16,10 +16,10 @@
         </added>
         <changed>
             <change author="eudoxia0">
-                Update dependencies.
+                Orphan deletion is now faster.
             </change>
             <change author="eudoxia0">
-                Orphan deletion is now faster.
+                Update dependencies.
             </change>
         </changed>
     </unreleased>
