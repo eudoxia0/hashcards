@@ -58,6 +58,8 @@ pub struct ReviewRow {
 }
 
 impl Database {
+    /// Create or open a database handle at the given path. If the file does
+    /// not exist, a new database is created and the tables are created.
     pub fn new(database_path: &str) -> Fallible<Self> {
         let mut conn = Connection::open(database_path)?;
         conn.set_db_config(DbConfig::SQLITE_DBCONFIG_ENABLE_FKEY, true)?;
