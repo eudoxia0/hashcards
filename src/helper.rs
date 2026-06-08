@@ -20,6 +20,7 @@ use tempfile::tempdir;
 
 use crate::error::Fallible;
 
+/// Create a temporary directory, and return its path.
 pub fn create_tmp_directory() -> Fallible<PathBuf> {
     let dir: PathBuf = tempdir()?.path().to_path_buf().canonicalize()?;
     create_dir_all(&dir)?;
