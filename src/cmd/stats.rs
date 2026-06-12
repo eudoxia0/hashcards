@@ -39,6 +39,7 @@ impl Display for StatsFormat {
     }
 }
 
+/// Print collection stats.
 pub fn print_stats(directory: Option<String>, format: StatsFormat) -> Fallible<()> {
     let stats = get_stats(directory)?;
     // Print.
