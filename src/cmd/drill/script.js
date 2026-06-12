@@ -33,6 +33,8 @@ document.addEventListener("DOMContentLoaded", function () {
   if (typeof hljs !== "undefined") {
     hljs.highlightAll();
   }
+  // Make the card content visible, after we've rendered the math and
+  // highlighted the code.
   const cardContent = document.querySelector(".card-content");
   if (cardContent) {
     cardContent.style.opacity = "1";

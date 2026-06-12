@@ -36,6 +36,11 @@ pub fn page_template(body: Markup) -> Markup {
                 script defer src=(KATEX_MHCHEM_JS_URL) {};
                 script defer src=(HIGHLIGHT_JS_URL) {};
                 link rel="stylesheet" href="/style.css";
+                // See `script.js`. To prevent a flash of un-rendered TeX and
+                // un-highlighted source code, we make the card content
+                // invisible until the math rendering and syntax highlighting
+                // are done. If the browser has JavaScript disabled, however,
+                // we keep the content visible.
                 style { ".card-content { opacity: 0; }" }
                 noscript { style { ".card-content { opacity: 1; }" }}
             }
