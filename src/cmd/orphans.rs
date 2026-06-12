@@ -18,6 +18,7 @@ use crate::collection::Collection;
 use crate::error::Fallible;
 use crate::types::card_hash::CardHash;
 
+/// Print the hashes of orphan cards.
 pub fn list_orphans(directory: Option<String>) -> Fallible<()> {
     let coll = Collection::new(directory)?;
     let orphans: Vec<CardHash> = get_orphans(&coll)?;
@@ -28,6 +29,7 @@ pub fn list_orphans(directory: Option<String>) -> Fallible<()> {
     Ok(())
 }
 
+/// Delete orphan card data in the database.
 pub fn delete_orphans(directory: Option<String>) -> Fallible<()> {
     let mut coll = Collection::new(directory)?;
     let orphans: Vec<CardHash> = get_orphans(&coll)?;
