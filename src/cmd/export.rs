@@ -32,6 +32,7 @@ use crate::types::performance::Performance;
 use crate::types::performance::ReviewedPerformance;
 use crate::types::timestamp::Timestamp;
 
+/// Export a collection to JSON.
 pub fn export_collection(directory: Option<String>, output: Option<String>) -> Fallible<()> {
     let coll: Collection = Collection::new(directory)?;
     let export: Export = get_export(coll)?;
