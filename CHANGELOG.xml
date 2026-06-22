@@ -25,6 +25,11 @@
                 Upgrade KaTeX to `0.17.0`.
             </change>
         </changed>
+        <fixed>
+            <change author="eudoxia0">
+                Bold text now renders correctly.
+            </change>
+        </fixed>
     </unreleased>
     <releases>
         <release version="0.3.1" date="2026-05-05">
