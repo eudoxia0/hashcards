@@ -65,7 +65,7 @@ pub struct Stats {
 }
 
 fn get_stats(directory: Option<String>) -> Fallible<Stats> {
-    let coll = Collection::new(directory)?;
+    let coll = Collection::new(&directory)?;
     let cards_in_db_count = coll.db.card_hashes()?.len();
     let today = Date::today();
     let stats = Stats {

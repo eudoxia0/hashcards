@@ -16,7 +16,7 @@ use crate::collection::Collection;
 use crate::error::Fallible;
 
 pub fn check_collection(directory: Option<String>) -> Fallible<()> {
-    let _ = Collection::new(directory)?;
+    let _ = Collection::new(&directory)?;
     println!("ok");
     Ok(())
 }

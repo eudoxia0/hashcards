@@ -33,7 +33,7 @@ pub struct Collection {
 }
 
 impl Collection {
-    pub fn new(directory: Option<String>) -> Fallible<Self> {
+    pub fn new(directory: &Option<String>) -> Fallible<Self> {
         let directory: PathBuf = match directory {
             Some(dir) => PathBuf::from(dir),
             None => current_dir()?,

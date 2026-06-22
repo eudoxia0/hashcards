@@ -133,6 +133,8 @@ Options:
 
 - `--card-limit=<N>`: Limit the session to at most N cards.
 - `--new-card-limit=<N>`: Limit the number of new cards in the session.
+- `--min-cards=<N>`: Drill at least N cards, adding the next-soonest cards if
+  fewer are due.
 - `--port=<PORT>`: Use a specific port (default: 8000).
 - `--from-deck=<NAME>`: Only drill cards from a deck with the given name.
 - `--open-browser=<true|false>`: Whether or not to open the browser after the
