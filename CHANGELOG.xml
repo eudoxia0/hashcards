@@ -24,6 +24,9 @@
             <change author="eudoxia0">
                 Upgrade KaTeX to `0.17.0`.
             </change>
+            <change author="eudoxia0">
+                Remove space after comma in TeX mode.
+            </change>
         </changed>
         <fixed>
             <change author="eudoxia0">

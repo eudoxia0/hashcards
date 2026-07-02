@@ -228,6 +228,7 @@ async fn script_handler(
         let definition = escape_js_string_literal(definition);
         content.push_str(&format!("MACROS['{name}'] = '{definition}';\n"));
     }
+    content.push_str("MACROS[','] = '{\\\\char`,}';\n");
     content.push('\n');
     content.push_str(include_str!("script.js"));
     (StatusCode::OK, [(CONTENT_TYPE, "text/javascript")], content)
