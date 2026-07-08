@@ -13,6 +13,9 @@
             <change author="kchousos">
                 Support `\(...\)` and `\[...\]` as LaTeX math delimiters, alongside `$...$` and `$$...$$`.
             </change>
+            <change author="IvanVergiliev">
+                Add `--resource-hostname` to customize rewritten media resource URLs.
+            </change>
         </added>
         <changed>
             <change author="eudoxia0">

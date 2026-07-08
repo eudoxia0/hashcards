@@ -87,6 +87,7 @@ impl Display for AnswerControls {
 pub struct ServerConfig {
     pub directory: Option<String>,
     pub host: String,
+    pub resource_hostname: String,
     pub port: u16,
     pub session_started_at: Timestamp,
     pub card_limit: Option<usize>,
@@ -166,6 +167,7 @@ pub async fn start_server(config: ServerConfig) -> Fallible<()> {
 
     let state = ServerState {
         port: config.port,
+        resource_hostname: config.resource_hostname,
         directory,
         macros,
         total_cards: due_today.len(),

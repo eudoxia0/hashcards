@@ -40,6 +40,8 @@ fn is_audio_file(url: &str) -> bool {
 pub struct MarkdownRenderConfig {
     /// A media resolver.
     pub resolver: MediaResolver,
+    /// The hostname where linked media resources are exposed.
+    pub resource_hostname: String,
     /// The port where the server is exposed.
     pub port: u16,
 }
@@ -192,6 +194,7 @@ fn is_in_ranges(pos: usize, ranges: &[Range<usize>]) -> bool {
 
 fn modify_url(url: &str, config: &MarkdownRenderConfig) -> Fallible<String> {
     let port = config.port;
+    let hostname = &config.resource_hostname;
     let path: String = config
         .resolver
         .resolve(url)
@@ -200,7 +203,7 @@ fn modify_url(url: &str, config: &MarkdownRenderConfig) -> Fallible<String> {
         })?
         .display()
         .to_string();
-    Ok(format!("http://localhost:{port}/file/{path}"))
+    Ok(format!("http://{hostname}:{port}/file/{path}"))
 }
 
 #[cfg(test)]
@@ -222,6 +225,7 @@ mod tests {
                 .with_collection_path(coll_path)?
                 .with_deck_path(PathBuf::from("deck.md"))?
                 .build()?,
+            resource_hostname: "localhost".to_string(),
             port: 1234,
         };
         Ok(config)
@@ -235,6 +239,19 @@ mod tests {
         assert_eq!(
             html,
             "<p><img src=\"http://localhost:1234/file/image.png\" alt=\"alt\" /></p>\n"
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_markdown_to_html_custom_resource_hostname() -> Fallible<()> {
+        let markdown = "![alt](@/image.png)";
+        let mut config = make_test_config()?;
+        config.resource_hostname = "host.containers.internal".to_string();
+        let html = markdown_to_html(&config, markdown)?;
+        assert_eq!(
+            html,
+            "<p><img src=\"http://host.containers.internal:1234/file/image.png\" alt=\"alt\" /></p>\n"
         );
         Ok(())
     }

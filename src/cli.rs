@@ -48,6 +48,9 @@ enum Command {
         /// The host address to bind to. Default is 127.0.0.1.
         #[arg(long, default_value = "127.0.0.1")]
         host: String,
+        /// The hostname to use when rewriting linked resource URLs. Default is localhost.
+        #[arg(long, default_value = "localhost")]
+        resource_hostname: String,
         /// The port to use for the web server. Default is 8000.
         #[arg(long, default_value_t = 8000)]
         port: u16,
@@ -119,6 +122,7 @@ pub async fn entrypoint() -> Fallible<()> {
             card_limit,
             new_card_limit,
             host,
+            resource_hostname,
             port,
             from_deck,
             open_browser,
@@ -143,6 +147,7 @@ pub async fn entrypoint() -> Fallible<()> {
             let config = ServerConfig {
                 directory,
                 host,
+                resource_hostname,
                 port,
                 session_started_at: Timestamp::now(),
                 card_limit,
