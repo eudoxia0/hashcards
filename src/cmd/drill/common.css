@@ -10,10 +10,16 @@
     box-sizing: border-box;
 }
 
-body {
-    font-family:
+:root {
+    --font-serif:
         "TeX Gyre Termes", "Nimbus Roman No9 L", "Times New Roman", "Times",
         serif;
+    --font-sans: system-ui, -apple-system, "Helvetica Neue", sans-serif;
+    --font-mono: "Menlo", "Monaco", "Courier New", monospace;
+}
+
+body {
+    font-family: var(--font-serif);
 }
 
 strong {

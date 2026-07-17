@@ -134,9 +134,7 @@ body,
                         border-collapse: collapse;
                         width: 100%;
                         font-size: 0.65em;
-                        font-family:
-                            -apple-system, BlinkMacSystemFont, "Segoe UI",
-                            Helvetica, Arial, sans-serif;
+                        font-family: var(--font-sans);
                         line-height: 1.6;
                         border: 1px solid #999;
 
@@ -173,8 +171,7 @@ body,
                         border: 1px solid #ddd;
                         padding: 2px 6px;
                         border-radius: 3px;
-                        font-family:
-                            "Menlo", "Monaco", "Courier New", monospace;
+                        font-family: var(--font-mono);
                         font-size: 0.7em;
                         color: inherit;
                     }
@@ -229,11 +226,7 @@ body,
                 padding: 7px 12px;
                 font-size: 16px;
                 color: black;
-                font-family:
-                    system-ui,
-                    -apple-system,
-                    "Helvetica Neue",
-                    sans-serif;
+                font-family: var(--font-sans);
                 font-weight: 600;
                 border-radius: 6px;
                 cursor: pointer;

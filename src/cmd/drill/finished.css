@@ -25,22 +25,14 @@
                     padding-bottom: 12px;
 
                     &.key {
-                        font-family:
-                            system-ui,
-                            -apple-system,
-                            "Helvetica Neue",
-                            sans-serif;
+                        font-family: var(--font-sans);
                         font-weight: 500;
                         width: auto;
                         white-space: nowrap;
                     }
 
                     &.val {
-                        font-family:
-                            system-ui,
-                            -apple-system,
-                            "Helvetica Neue",
-                            sans-serif;
+                        font-family: var(--font-sans);
                         font-feature-settings: "tnum";
                         font-variant-numeric: tabular-nums;
                         width: 100%;
@@ -65,11 +57,7 @@
         }
 
         th.day-label {
-            font-family:
-                system-ui,
-                -apple-system,
-                "Helvetica Neue",
-                sans-serif;
+            font-family: var(--font-sans);
             font-size: 14px;
             text-align: right;
             padding-right: 8px;
@@ -110,11 +98,7 @@
             border: 1px solid #c82333;
             padding: 12px 24px;
             font-size: 18px;
-            font-family:
-                system-ui,
-                -apple-system,
-                "Helvetica Neue",
-                sans-serif;
+            font-family: var(--font-sans);
             font-weight: 600;
             border-radius: 6px;
             cursor: pointer;
