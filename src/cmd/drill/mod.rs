@@ -26,6 +26,8 @@ mod template;
 #[cfg(test)]
 mod tests {
     use std::fs::create_dir_all;
+    use std::fs::write;
+    use std::path::Path;
 
     use portpicker::pick_unused_port;
     use reqwest::StatusCode;
@@ -41,6 +43,7 @@ mod tests {
     use crate::utils::wait_for_server;
 
     const TEST_HOST: &str = "127.0.0.1";
+    const TEST_RESOURCE_HOSTNAME: &str = "localhost";
 
     #[tokio::test]
     async fn test_start_server_on_non_existent_directory() -> Fallible<()> {
@@ -49,6 +52,7 @@ mod tests {
         let config = ServerConfig {
             directory: Some("./derpherp".to_string()),
             host: TEST_HOST.to_string(),
+            resource_hostname: TEST_RESOURCE_HOSTNAME.to_string(),
             port,
             session_started_at,
             card_limit: None,
@@ -75,6 +79,7 @@ mod tests {
         let config = ServerConfig {
             directory: Some(dir),
             host: TEST_HOST.to_string(),
+            resource_hostname: TEST_RESOURCE_HOSTNAME.to_string(),
             port,
             session_started_at,
             card_limit: None,
@@ -96,6 +101,7 @@ mod tests {
         let config = ServerConfig {
             directory: Some(directory),
             host: TEST_HOST.to_string(),
+            resource_hostname: TEST_RESOURCE_HOSTNAME.to_string(),
             port,
             session_started_at,
             card_limit: None,
@@ -193,6 +199,42 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_resource_hostname_rewrites_image_urls() -> Fallible<()> {
+        let port = pick_unused_port().unwrap();
+        let directory = create_tmp_copy_of_test_directory()?;
+        write(
+            Path::new(&directory).join("Deck.md"),
+            "Q: ![](foo.jpg)\nA: BAR",
+        )?;
+        let session_started_at = Timestamp::now();
+        let resource_hostname = "host.containers.internal";
+        let config = ServerConfig {
+            directory: Some(directory),
+            host: TEST_HOST.to_string(),
+            resource_hostname: resource_hostname.to_string(),
+            port,
+            session_started_at,
+            card_limit: None,
+            new_card_limit: None,
+            deck_filter: None,
+            shuffle: false,
+            answer_controls: AnswerControls::Full,
+            bury_siblings: false,
+        };
+        spawn(async move { start_server(config).await });
+        wait_for_server(TEST_HOST, port).await?;
+
+        let response = reqwest::get(format!("http://{TEST_HOST}:{port}/")).await?;
+        assert!(response.status().is_success());
+        let html = response.text().await?;
+        assert!(html.contains(&format!(
+            "src=\"http://{resource_hostname}:{port}/file/foo.jpg\""
+        )));
+
+        Ok(())
+    }
+
+    #[tokio::test]
     async fn test_undo() -> Fallible<()> {
         let port = pick_unused_port().unwrap();
         let directory = create_tmp_copy_of_test_directory()?;
@@ -200,6 +242,7 @@ mod tests {
         let config = ServerConfig {
             directory: Some(directory),
             host: TEST_HOST.to_string(),
+            resource_hostname: TEST_RESOURCE_HOSTNAME.to_string(),
             port,
             session_started_at,
             card_limit: None,
@@ -249,6 +292,7 @@ mod tests {
         let config = ServerConfig {
             directory: Some(directory),
             host: TEST_HOST.to_string(),
+            resource_hostname: TEST_RESOURCE_HOSTNAME.to_string(),
             port,
             session_started_at,
             card_limit: None,
@@ -280,6 +324,7 @@ mod tests {
         let config = ServerConfig {
             directory: Some(directory),
             host: TEST_HOST.to_string(),
+            resource_hostname: TEST_RESOURCE_HOSTNAME.to_string(),
             port,
             session_started_at,
             card_limit: None,
@@ -311,6 +356,7 @@ mod tests {
         let config = ServerConfig {
             directory: Some(directory),
             host: TEST_HOST.to_string(),
+            resource_hostname: TEST_RESOURCE_HOSTNAME.to_string(),
             port,
             session_started_at,
             card_limit: None,
@@ -360,6 +406,7 @@ mod tests {
         let config = ServerConfig {
             directory: Some(directory),
             host: TEST_HOST.to_string(),
+            resource_hostname: TEST_RESOURCE_HOSTNAME.to_string(),
             port,
             session_started_at,
             card_limit: None,

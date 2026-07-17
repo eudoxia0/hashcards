@@ -1,6 +1,10 @@
 <changelog>
     <unreleased>
-
+        <changed>
+            <change author="IvanVergiliev">
+                Add `--resource-hostname` to customize rewritten media resource URLs.
+            </change>
+        </changed>
     </unreleased>
     <releases>
         <release version="0.4.0" date="2026-07-17">
