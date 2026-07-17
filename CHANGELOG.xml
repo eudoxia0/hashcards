@@ -1,40 +1,43 @@
 <changelog>
     <unreleased>
-        <added>
-            <change author="eudoxia0">
-                Add `due` command, which prints which decks have cards due today and how many.
-            </change>
-            <change author="eudoxia0">
-                Add retention rate to end of session stats.
-            </change>
-            <change author="eudoxia0">
-                Add a review heatmap to the end of session page.
-            </change>
-            <change author="kchousos">
-                Support `\(...\)` and `\[...\]` as LaTeX math delimiters, alongside `$...$` and `$$...$$`.
-            </change>
-        </added>
-        <changed>
-            <change author="eudoxia0">
-                Orphan deletion is now faster.
-            </change>
-            <change author="eudoxia0">
-                Update dependencies.
-            </change>
-            <change author="eudoxia0">
-                Upgrade KaTeX to `0.17.0`.
-            </change>
-            <change author="eudoxia0">
-                Remove space after comma in TeX mode.
-            </change>
-        </changed>
-        <fixed>
-            <change author="eudoxia0">
-                Bold text now renders correctly.
-            </change>
-        </fixed>
+
     </unreleased>
     <releases>
+        <release version="0.4.0" date="2026-07-17">
+            <added>
+                <change author="eudoxia0">
+                    Add `due` command, which prints which decks have cards due today and how many.
+                </change>
+                <change author="eudoxia0">
+                    Add retention rate to end of session stats.
+                </change>
+                <change author="eudoxia0">
+                    Add a review heatmap to the end of session page.
+                </change>
+                <change author="kchousos">
+                    Support `\(...\)` and `\[...\]` as LaTeX math delimiters, alongside `$...$` and `$$...$$`.
+                </change>
+            </added>
+            <changed>
+                <change author="eudoxia0">
+                    Orphan deletion is now faster.
+                </change>
+                <change author="eudoxia0">
+                    Update dependencies.
+                </change>
+                <change author="eudoxia0">
+                    Upgrade KaTeX to `0.17.0`.
+                </change>
+                <change author="eudoxia0">
+                    Remove space after comma in TeX mode.
+                </change>
+            </changed>
+            <fixed>
+                <change author="eudoxia0">
+                    Bold text now renders correctly.
+                </change>
+            </fixed>
+        </release>
         <release version="0.3.1" date="2026-05-05">
             <added>
                 <change author="eudoxia0">
