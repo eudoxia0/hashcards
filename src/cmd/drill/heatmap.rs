@@ -26,6 +26,10 @@ use crate::types::date::Date;
 const WEEKS: i64 = 12;
 const DAYS_PER_WEEK: i64 = 7;
 
+/// Row labels, indexed by weekday with Sunday at index 0 (matching the grid).
+const DAY_LABELS: [&str; DAYS_PER_WEEK as usize] =
+    ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
 /// A cell in the heatmap grid as it will be rendered.
 struct RenderedCell {
     class: &'static str,
@@ -145,8 +149,9 @@ pub fn render_heatmap(db: &Database, today: Date) -> Fallible<Markup> {
         div.heatmap {
             table {
                 tbody {
-                    @for row in &rows {
+                    @for (r, row) in rows.iter().enumerate() {
                         tr {
+                            th.day-label { (DAY_LABELS[r]) }
                             @for cell in row {
                                 td class=(cell.class)
                                    style=(format!("background-color: {};", cell.background))

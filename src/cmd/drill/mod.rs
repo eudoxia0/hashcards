@@ -114,10 +114,12 @@ mod tests {
         spawn(async move { start_server(config).await });
         wait_for_server(TEST_HOST, port).await?;
 
-        // Hit the `style.css` endpoint.
-        let response = reqwest::get(format!("http://{TEST_HOST}:{port}/style.css")).await?;
-        assert!(response.status().is_success());
-        assert_eq!(response.headers().get("content-type").unwrap(), "text/css");
+        // Hit the CSS endpoints.
+        for stylesheet in ["common.css", "drill.css", "finished.css"] {
+            let response = reqwest::get(format!("http://{TEST_HOST}:{port}/{stylesheet}")).await?;
+            assert!(response.status().is_success());
+            assert_eq!(response.headers().get("content-type").unwrap(), "text/css");
+        }
 
         // Hit the `script.js` endpoint.
         let response = reqwest::get(format!("http://{TEST_HOST}:{port}/script.js")).await?;
