@@ -20,7 +20,7 @@ use crate::types::date::Date;
 
 /// Print the number of cards due today in each deck, and the total.
 pub fn print_due(directory: Option<String>) -> Fallible<()> {
-    let coll = Collection::new(directory)?;
+    let coll = Collection::new(&directory)?;
     let today = Date::today();
     let due_hashes = coll.db.due_today(today)?;
     // Count due cards per deck.

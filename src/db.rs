@@ -100,6 +100,24 @@ impl Database {
         Ok(card_hashes)
     }
 
+    /// Return the set of all card hashes and their due dates in the database.
+    pub fn card_hashes_and_due(&self) -> Fallible<HashMap<CardHash, Option<Date>>> {
+        let sql = "select card_hash, due_date from cards;";
+        let mut stmt = self.conn.prepare(sql)?;
+        let card_and_due_iter = stmt.query_map([], |row| {
+            let card_hash: CardHash = row.get(0)?;
+            let due_date: Option<Date> = row.get(1)?;
+            Ok((card_hash, due_date))
+        })?;
+
+        let mut card_and_due_hashes = HashMap::new();
+        for card_and_due in card_and_due_iter {
+            let (hash, due) = card_and_due?;
+            card_and_due_hashes.insert(hash, due);
+        }
+        Ok(card_and_due_hashes)
+    }
+
     /// Find the hashes of the cards due today.
     pub fn due_today(&self, today: Date) -> Fallible<HashSet<CardHash>> {
         let mut due = HashSet::new();
@@ -376,19 +394,26 @@ mod tests {
         Ok(())
     }
 
-    /// Insert a card, and see that its hash is returned by `card_hashes`, and
-    /// that `get_card_performance` returns an initial empty performance, and
-    /// `due_today` returns it since it's new.
+    /// Insert a card, and see that its hash is returned by `card_hashes`,
+    /// and that `get_card_performance` returns an initial empty performance,
+    /// and that `card_hashes_and_due` returns it with no due date,
+    /// and `due_today` returns it since it's new.
     #[test]
     fn test_insert_card() -> Fallible<()> {
         let db = Database::new(":memory:")?;
         let card_hash = CardHash::hash_bytes(b"a");
         let now = Timestamp::now();
         db.insert_card(card_hash, now)?;
+
         let hashes = db.card_hashes()?;
         assert!(hashes.contains(&card_hash));
+
+        let hashes_and_due = db.card_hashes_and_due()?;
+        assert_eq!(hashes_and_due.get(&card_hash), Some(&None));
+
         let performance = db.get_card_performance(card_hash)?;
         assert_eq!(performance, Performance::New);
+
         let due_today = db.due_today(now.date())?;
         assert!(due_today.contains(&card_hash));
         Ok(())
@@ -409,7 +434,7 @@ mod tests {
     }
 
     /// Updating a card's performance, and checking that `get_card_performance`
-    /// works and that `due_today` returns the card.
+    /// works and that `due_today` and `card_hashes_and_due` return the card.
     #[test]
     fn test_update_performance() -> Fallible<()> {
         let db = Database::new(":memory:")?;
@@ -426,10 +451,16 @@ mod tests {
             review_count: 1,
         });
         db.update_card_performance(card_hash, performance)?;
+
         let fetched_performance = db.get_card_performance(card_hash)?;
         assert_eq!(fetched_performance, performance);
+
         let due_today = db.due_today(now.date())?;
         assert!(due_today.contains(&card_hash));
+
+        let hashes_and_due = db.card_hashes_and_due()?;
+        assert_eq!(hashes_and_due.get(&card_hash), Some(&Some(now.date())));
+
         Ok(())
     }
 

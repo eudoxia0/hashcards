@@ -91,6 +91,7 @@ pub struct ServerConfig {
     pub session_started_at: Timestamp,
     pub card_limit: Option<usize>,
     pub new_card_limit: Option<usize>,
+    pub min_cards: Option<usize>,
     pub deck_filter: Option<String>,
     pub shuffle: bool,
     pub answer_controls: AnswerControls,
@@ -103,7 +104,7 @@ pub async fn start_server(config: ServerConfig) -> Fallible<()> {
         db,
         cards,
         macros,
-    } = Collection::new(config.directory)?;
+    } = Collection::new(&config.directory)?;
 
     let today: Date = config.session_started_at.date();
 
@@ -116,47 +117,39 @@ pub async fn start_server(config: ServerConfig) -> Fallible<()> {
         }
     }
 
-    // Find cards due today.
-    let due_today: HashSet<CardHash> = db.due_today(today)?;
-    let due_today: Vec<Card> = cards
-        .into_iter()
-        .filter(|card| due_today.contains(&card.hash()))
-        .collect::<Vec<_>>();
-
-    let due_today: Vec<Card> = filter_deck(
-        &db,
-        due_today,
-        config.card_limit,
-        config.new_card_limit,
-        config.deck_filter,
-    )?;
-
-    let due_today: Vec<Card> = if config.bury_siblings {
-        bury_siblings(due_today)
+    let review_cards: HashSet<CardHash> = if config.min_cards.is_none() {
+        db.due_today(today)?
     } else {
-        due_today
+        db.card_hashes()?
     };
 
-    if due_today.is_empty() {
-        println!("No cards due today.");
+    let review_cards: Vec<Card> = cards
+        .into_iter()
+        .filter(|card| review_cards.contains(&card.hash()))
+        .collect::<Vec<_>>();
+
+    let review_cards: Vec<Card> = filter_deck(&db, today, review_cards, &config)?;
+
+    if review_cards.is_empty() {
+        println!("No cards for review today.");
         return Ok(());
     }
 
     // Finally, shuffle the cards.
-    let due_today: Vec<Card> = if config.shuffle {
+    let review_cards: Vec<Card> = if config.shuffle {
         let seed = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_nanos() as u64;
         let mut rng = TinyRng::from_seed(seed);
-        shuffle(due_today, &mut rng)
+        shuffle(review_cards, &mut rng)
     } else {
-        due_today
+        review_cards
     };
 
-    // For all cards due today, fetch their performance from the database and store it in the cache.
+    // For all cards for review today, fetch their performance from the database and store it in the cache.
     let mut cache = Cache::new();
-    for card in due_today.iter() {
+    for card in review_cards.iter() {
         let performance = db.get_card_performance(card.hash())?;
         cache.insert(card.hash(), performance)?;
     }
@@ -168,13 +161,13 @@ pub async fn start_server(config: ServerConfig) -> Fallible<()> {
         port: config.port,
         directory,
         macros,
-        total_cards: due_today.len(),
+        total_cards: review_cards.len(),
         session_started_at: config.session_started_at,
         mutable: Arc::new(Mutex::new(MutableState {
             reveal: false,
             db,
             cache,
-            cards: due_today,
+            cards: review_cards,
             reviews: Vec::new(),
             finished_at: None,
         })),
@@ -349,28 +342,27 @@ async fn shutdown_signal(shutdown_rx: Receiver<()>) {
 
 fn filter_deck(
     db: &Database,
+    today: Date,
     deck: Vec<Card>,
-    card_limit: Option<usize>,
-    new_card_limit: Option<usize>,
-    deck_filter: Option<String>,
+    config: &ServerConfig,
 ) -> Fallible<Vec<Card>> {
     // Apply the deck filter.
-    let deck = match deck_filter {
+    let deck = match &config.deck_filter {
         Some(filter) => deck
             .into_iter()
-            .filter(|card| card.deck_name() == &filter)
+            .filter(|card| card.deck_name() == filter)
             .collect(),
         None => deck,
     };
 
-    // Apply the card limit.
-    let deck = match card_limit {
-        Some(limit) => deck.into_iter().take(limit).collect(),
-        None => deck,
+    let deck = if config.bury_siblings {
+        bury_siblings(deck)
+    } else {
+        deck
     };
 
     // Apply the new card limit.
-    let deck = match new_card_limit {
+    let deck = match config.new_card_limit {
         Some(limit) => {
             let mut new_count = 0;
             let mut result = Vec::new();
@@ -386,6 +378,42 @@ fn filter_deck(
             }
             result
         }
+        None => deck,
+    };
+
+    let deck = if let Some(min_cards_value) = config.min_cards {
+        let hash_and_due = db.card_hashes_and_due()?;
+        let mut deck = deck;
+
+        deck.sort_by(|a, b| {
+            let a_due = hash_and_due.get(&a.hash());
+            let b_due = hash_and_due.get(&b.hash());
+            a_due.cmp(&b_due)
+        });
+
+        let index = deck
+            .iter()
+            .filter(|c| match hash_and_due.get(&c.hash()) {
+                Some(Some(d)) => d <= &today,
+                _ => true,
+            })
+            .count();
+
+        let additional_cards = deck.split_off(index);
+        if deck.len() >= min_cards_value {
+            deck
+        } else {
+            let needed_amount = min_cards_value - deck.len();
+            deck.extend(additional_cards.into_iter().take(needed_amount));
+            deck
+        }
+    } else {
+        deck
+    };
+
+    // Apply the card limit.
+    let deck = match config.card_limit {
+        Some(limit) => deck.into_iter().take(limit).collect(),
         None => deck,
     };
 
@@ -405,4 +433,142 @@ fn bury_siblings(deck: Vec<Card>) -> Vec<Card> {
         result.push(card);
     }
     result
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashSet;
+    use std::path::PathBuf;
+
+    use chrono::Duration;
+
+    use crate::cmd::drill::server::AnswerControls;
+    use crate::cmd::drill::server::ServerConfig;
+    use crate::cmd::drill::server::filter_deck;
+    use crate::db::Database;
+    use crate::error::Fallible;
+    use crate::types::card::Card;
+    use crate::types::card::CardContent;
+    use crate::types::date::Date;
+    use crate::types::performance::Performance;
+    use crate::types::performance::ReviewedPerformance;
+    use crate::types::timestamp::Timestamp;
+
+    fn card(content: &str) -> Card {
+        Card::new(
+            "deck".to_string(),
+            PathBuf::from("test.md"),
+            (0, 0),
+            CardContent::new_basic(content, "answer"),
+        )
+    }
+
+    fn day_offset(days: i64) -> Date {
+        Date::new(Date::today().into_inner() + Duration::days(days))
+    }
+
+    fn insert_with_due(db: &Database, card: &Card, due: Date) -> Fallible<()> {
+        let now = Timestamp::now();
+        db.insert_card(card.hash(), now)?;
+        db.update_card_performance(
+            card.hash(),
+            Performance::Reviewed(ReviewedPerformance {
+                last_reviewed_at: now,
+                stability: 2.0,
+                difficulty: 2.0,
+                interval_raw: 1.0,
+                interval_days: 1,
+                due_date: due,
+                review_count: 1,
+            }),
+        )?;
+        Ok(())
+    }
+
+    fn base_config() -> ServerConfig {
+        ServerConfig {
+            directory: None,
+            host: "127.0.0.1".to_string(),
+            port: 0,
+            session_started_at: Timestamp::now(),
+            card_limit: None,
+            new_card_limit: None,
+            min_cards: None,
+            deck_filter: None,
+            shuffle: false,
+            answer_controls: AnswerControls::Full,
+            bury_siblings: false,
+        }
+    }
+
+    /// check `min_cards` behaviour across a range of decks.
+    #[test]
+    fn test_min_cards_filtering() -> Fallible<()> {
+        struct Case {
+            name: &'static str,
+            /// Each card as `(label, due offset in days from today)`.
+            cards: &'static [(&'static str, i64)],
+            min_cards: Option<usize>,
+            card_limit: Option<usize>,
+            /// Labels of the cards expected to survive filtering.
+            expected: &'static [&'static str],
+        }
+
+        let cases = [
+            Case {
+                name: "tops up with the soonest-due cards when below the minimum",
+                cards: &[
+                    ("due-a", 0),
+                    ("due-b", 0),
+                    ("near", 1),
+                    ("mid", 5),
+                    ("far", 10),
+                ],
+                min_cards: Some(4),
+                card_limit: None,
+                expected: &["due-a", "due-b", "near", "mid"],
+            },
+            Case {
+                name: "pulls in nothing when enough cards are already due",
+                cards: &[("due-a", 0), ("due-b", 0), ("due-c", 0), ("future", 3)],
+                min_cards: Some(2),
+                card_limit: None,
+                expected: &["due-a", "due-b", "due-c"],
+            },
+            Case {
+                name: "applies card_limit after the top-up",
+                cards: &[("due", 0), ("near", 1), ("far", 2)],
+                min_cards: Some(3),
+                card_limit: Some(2),
+                expected: &["due", "near"],
+            },
+        ];
+
+        for case in cases {
+            let db = Database::new(":memory:")?;
+            let today = Date::today();
+
+            let deck: Vec<Card> = case
+                .cards
+                .iter()
+                .map(|(label, offset)| {
+                    let c = card(label);
+                    insert_with_due(&db, &c, day_offset(*offset))?;
+                    Ok(c)
+                })
+                .collect::<Fallible<_>>()?;
+
+            let config = ServerConfig {
+                min_cards: case.min_cards,
+                card_limit: case.card_limit,
+                ..base_config()
+            };
+            let result = filter_deck(&db, today, deck, &config)?;
+
+            let got: HashSet<_> = result.iter().map(|c| c.hash()).collect();
+            let want: HashSet<_> = case.expected.iter().map(|l| card(l).hash()).collect();
+            assert_eq!(got, want, "case: {}", case.name);
+        }
+        Ok(())
+    }
 }

@@ -34,7 +34,7 @@ use crate::types::timestamp::Timestamp;
 
 /// Export a collection to JSON.
 pub fn export_collection(directory: Option<String>, output: Option<String>) -> Fallible<()> {
-    let coll: Collection = Collection::new(directory)?;
+    let coll: Collection = Collection::new(&directory)?;
     let export: Export = get_export(coll)?;
     let json = serde_json::to_string_pretty(&export)?;
     match output {
@@ -234,7 +234,7 @@ mod tests {
     #[test]
     fn test_full_export() -> Fallible<()> {
         let dir = create_tmp_copy_of_test_directory()?;
-        let mut coll = Collection::new(Some(dir.clone()))?;
+        let mut coll = Collection::new(&Some(dir.clone()))?;
         let deck = parse_deck(&PathBuf::from(dir.clone()))?;
         let now = Timestamp::now();
         let mut reviews = Vec::new();

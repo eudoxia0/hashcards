@@ -1,6 +1,10 @@
 <changelog>
     <unreleased>
-
+        <added>
+            <change author="konyahin">
+                Add `--min-cards` option to the `drill` command, which drills at least N cards, adding the next-soonest cards if fewer are due.
+            </change>
+        </added>
     </unreleased>
     <releases>
         <release version="0.4.0" date="2026-07-17">

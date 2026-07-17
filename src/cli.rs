@@ -45,6 +45,9 @@ enum Command {
         /// Maximum number of new cards to drill in a session.
         #[arg(long)]
         new_card_limit: Option<usize>,
+        /// Minimum number of cards to drill in a session. If fewer are due, the next-soonest cards are added.
+        #[arg(long)]
+        min_cards: Option<usize>,
         /// The host address to bind to. Default is 127.0.0.1.
         #[arg(long, default_value = "127.0.0.1")]
         host: String,
@@ -118,6 +121,7 @@ pub async fn entrypoint() -> Fallible<()> {
             directory,
             card_limit,
             new_card_limit,
+            min_cards,
             host,
             port,
             from_deck,
@@ -140,6 +144,13 @@ pub async fn entrypoint() -> Fallible<()> {
                     }
                 });
             }
+            if let Some(min_cards_value) = min_cards
+                && let Some(card_limit_value) = card_limit
+                && min_cards_value > card_limit_value
+            {
+                eprintln!("--min-cards cannot be greater than --card-limit");
+                exit(-1);
+            }
             let config = ServerConfig {
                 directory,
                 host,
@@ -147,6 +158,7 @@ pub async fn entrypoint() -> Fallible<()> {
                 session_started_at: Timestamp::now(),
                 card_limit,
                 new_card_limit,
+                min_cards,
                 deck_filter: from_deck,
                 shuffle: true,
                 answer_controls,
