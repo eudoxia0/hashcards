@@ -110,8 +110,7 @@ mod tests {
 
         // Hit the CSS endpoints.
         for stylesheet in ["common.css", "drill.css", "finished.css"] {
-            let response =
-                reqwest::get(format!("http://{TEST_HOST}:{port}/{stylesheet}")).await?;
+            let response = reqwest::get(format!("http://{TEST_HOST}:{port}/{stylesheet}")).await?;
             assert!(response.status().is_success());
             assert_eq!(response.headers().get("content-type").unwrap(), "text/css");
         }
