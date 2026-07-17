@@ -189,7 +189,9 @@ pub async fn start_server(config: ServerConfig) -> Fallible<()> {
     let app = app.route("/file/{*path}", get(file_handler));
     let app = app.route("/katex/fonts/{*path}", get(katex_font_handler));
     let app = app.route("/script.js", get(script_handler));
-    let app = app.route("/style.css", get(style_handler));
+    let app = app.route("/common.css", get(common_css_handler));
+    let app = app.route("/drill.css", get(drill_css_handler));
+    let app = app.route("/finished.css", get(finished_css_handler));
     let app = app.route(HIGHLIGHT_CSS_URL, get(highlight_css_handler));
     let app = app.route(HIGHLIGHT_JS_URL, get(highlight_js_handler));
     let app = app.route(KATEX_CSS_URL, get(katex_css_handler));
@@ -240,8 +242,9 @@ fn escape_js_string_literal(s: &str) -> String {
         .replace('$', "\\$")
 }
 
-async fn style_handler() -> (StatusCode, [(HeaderName, &'static str); 2], &'static [u8]) {
-    let bytes = include_bytes!("style.css");
+fn css_response(
+    bytes: &'static [u8],
+) -> (StatusCode, [(HeaderName, &'static str); 2], &'static [u8]) {
     (
         StatusCode::OK,
         [
@@ -250,6 +253,18 @@ async fn style_handler() -> (StatusCode, [(HeaderName, &'static str); 2], &'stat
         ],
         bytes,
     )
+}
+
+async fn common_css_handler() -> (StatusCode, [(HeaderName, &'static str); 2], &'static [u8]) {
+    css_response(include_bytes!("common.css"))
+}
+
+async fn drill_css_handler() -> (StatusCode, [(HeaderName, &'static str); 2], &'static [u8]) {
+    css_response(include_bytes!("drill.css"))
+}
+
+async fn finished_css_handler() -> (StatusCode, [(HeaderName, &'static str); 2], &'static [u8]) {
+    css_response(include_bytes!("finished.css"))
 }
 
 async fn favicon_handler() -> (StatusCode, [(HeaderName, &'static str); 2], &'static [u8]) {

@@ -1,26 +1,8 @@
-* {
-    margin: 0;
-    padding: 0;
-    font-weight: normal;
-}
-
-*,
-*::before,
-*::after {
-    box-sizing: border-box;
-}
-
 html,
 body,
 .root {
     width: 100vw;
     height: 100vh;
-}
-
-body {
-    font-family:
-        "TeX Gyre Termes", "Nimbus Roman No9 L", "Times New Roman", "Times",
-        serif;
 }
 
 .root {
@@ -289,124 +271,6 @@ body {
     }
 }
 
-.finished {
-    h1 {
-        text-align: center;
-    }
-
-    .summary {
-        font-size: 24px;
-        margin-bottom: 48px;
-    }
-
-    h2 {
-        border-bottom: 1px solid #ccc;
-    }
-
-    .stats {
-        table {
-            width: 100%;
-            border-collapse: collapse;
-
-            tr {
-                border-bottom: 1px solid #eee;
-
-                td {
-                    padding-top: 12px;
-                    padding-bottom: 12px;
-
-                    &.key {
-                        font-family: "SF Pro", sans-serif;
-                        font-weight: 500;
-                        width: auto;
-                        white-space: nowrap;
-                    }
-
-                    &.val {
-                        font-family: "SF Pro", sans-serif;
-                        font-feature-settings: "tnum";
-                        font-variant-numeric: tabular-nums;
-                        width: 100%;
-                    }
-                }
-            }
-        }
-    }
-
-    .heatmap {
-        --heatmap-empty: #ebedf0;
-        --heatmap-border: #d0d7de;
-
-        margin-top: 16px;
-        margin-bottom: 32px;
-        overflow-x: auto;
-
-        table {
-            border-collapse: separate;
-            border-spacing: 3px;
-            margin: 0 auto;
-        }
-
-        td.cell {
-            width: 16px;
-            height: 16px;
-            border-radius: 3px;
-            border: 1px solid var(--heatmap-border);
-        }
-
-        td.cell.empty {
-            background: transparent !important;
-            border-color: transparent;
-        }
-
-        &.empty {
-            text-align: center;
-            color: #888;
-            font-style: italic;
-            padding: 24px;
-        }
-    }
-
-    .shutdown-container {
-        margin-top: 48px;
-        text-align: center;
-
-        form {
-            display: inline-block;
-        }
-
-        .shutdown-button {
-            background: #dc3545;
-            color: white;
-            border: 1px solid #c82333;
-            padding: 12px 24px;
-            font-size: 18px;
-            font-family:
-                system-ui,
-                -apple-system,
-                "Helvetica Neue",
-                sans-serif;
-            font-weight: 600;
-            border-radius: 6px;
-            cursor: pointer;
-            box-shadow: rgba(220, 53, 69, 0.3) 0px 2px 8px 0px;
-            transition:
-                background-color 0.2s,
-                box-shadow 0.2s;
-
-            &:hover {
-                background: #c82333;
-                box-shadow: rgba(220, 53, 69, 0.5) 0px 4px 12px 0px;
-            }
-
-            &:active {
-                background: #bd2130;
-                box-shadow: rgba(220, 53, 69, 0.2) 0px 1px 4px 0px;
-            }
-        }
-    }
-}
-
 /* Mobile */
 @media (max-width: 768px) {
     .card {
@@ -432,29 +296,6 @@ body {
             }
         }
     }
-
-    .finished {
-        padding: 24px;
-
-        h1 {
-            font-size: 36px;
-            margin-bottom: 36px;
-        }
-
-        h2 {
-            font-size: 30px;
-            margin-top: 16px;
-            margin-bottom: 16px;
-        }
-
-        .stats {
-            font-size: 16px;
-        }
-
-        .val {
-            padding-left: 24px;
-        }
-    }
 }
 
 /* Desktop */
@@ -478,38 +319,10 @@ body {
             }
         }
     }
-
-    .finished {
-        padding: 48px;
-
-        h1 {
-            font-size: 48px;
-            margin-bottom: 48px;
-        }
-
-        h2 {
-            font-size: 36px;
-            margin-top: 24px;
-            margin-bottom: 24px;
-        }
-
-        .stats {
-            font-size: 22px;
-        }
-
-        .val {
-            padding-left: 48px;
-        }
-    }
 }
 
 /* Dark mode */
 @media (prefers-color-scheme: dark) {
-    body {
-        color: #e0e0e0;
-        background: #1a1a1a;
-    }
-
     .root {
         .header,
         .controls {
@@ -625,21 +438,6 @@ body {
         }
     }
 
-    .finished {
-        h2 {
-            border-bottom-color: #444;
-        }
-
-        .stats table tr {
-            border-bottom-color: #333;
-        }
-
-        .heatmap {
-            --heatmap-empty: #1f1f1f;
-            --heatmap-border: #333;
-        }
-    }
-
     /* Desktop card shadow */
     @media (min-width: 769px) {
         .card {
@@ -647,8 +445,4 @@ body {
             border-color: #444;
         }
     }
-}
-
-strong {
-    font-weight: bold;
 }

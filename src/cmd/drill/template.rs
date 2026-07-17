@@ -22,7 +22,9 @@ use crate::cmd::drill::katex::KATEX_CSS_URL;
 use crate::cmd::drill::katex::KATEX_JS_URL;
 use crate::cmd::drill::katex::KATEX_MHCHEM_JS_URL;
 
-pub fn page_template(body: Markup) -> Markup {
+/// Render the full HTML page. `page_stylesheet`, if present, is the URL of a
+/// page-specific stylesheet linked after the shared `common.css`.
+pub fn page_template(body: Markup, page_stylesheet: Option<&str>) -> Markup {
     html! {
         (DOCTYPE)
         html lang="en" {
@@ -35,7 +37,10 @@ pub fn page_template(body: Markup) -> Markup {
                 script defer src=(KATEX_JS_URL) {};
                 script defer src=(KATEX_MHCHEM_JS_URL) {};
                 script defer src=(HIGHLIGHT_JS_URL) {};
-                link rel="stylesheet" href="/style.css";
+                link rel="stylesheet" href="/common.css";
+                @if let Some(href) = page_stylesheet {
+                    link rel="stylesheet" href=(href);
+                }
                 // See `script.js`. To prevent a flash of un-rendered TeX and
                 // un-highlighted source code, we make the card content
                 // invisible until the math rendering and syntax highlighting
