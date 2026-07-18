@@ -25,7 +25,7 @@ use crate::cmd::drill::katex::KATEX_JS_URL;
 use crate::cmd::drill::katex::KATEX_MHCHEM_JS_URL;
 use crate::error::ErrorReport;
 
-/// Render the full HTML page for the browse interface.
+/// Page template.
 pub fn page_template(title: &str, body: Markup) -> Markup {
     html! {
         (DOCTYPE)
@@ -79,14 +79,4 @@ pub fn error_response(status: StatusCode, message: &str) -> (StatusCode, Html<St
 /// An internal server error page from an error report.
 pub fn internal_error_response(e: ErrorReport) -> (StatusCode, Html<String>) {
     error_response(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string())
-}
-
-/// A count followed by the singular or plural form of a word, e.g. "1 card",
-/// "3 cards".
-pub fn pluralize(n: usize, word: &str) -> String {
-    if n == 1 {
-        format!("{n} {word}")
-    } else {
-        format!("{n} {word}s")
-    }
 }

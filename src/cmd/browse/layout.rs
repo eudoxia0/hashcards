@@ -28,7 +28,6 @@ use crate::cmd::browse::entries::entry_type_label;
 use crate::cmd::browse::entries::entry_url;
 use crate::cmd::browse::state::BrowseState;
 use crate::cmd::browse::template::page_template;
-use crate::cmd::browse::template::pluralize;
 use crate::error::Fallible;
 use crate::types::aliases::DeckName;
 
@@ -174,4 +173,14 @@ fn first_letter(name: &str) -> char {
 /// Generate the URL of a deck from its name.
 fn deck_url(name: &DeckName) -> String {
     format!("/deck/{}", utf8_percent_encode(name, NON_ALPHANUMERIC))
+}
+
+/// A count followed by the singular or plural form of a word, e.g. "1 card",
+/// "3 cards".
+fn pluralize(n: usize, word: &str) -> String {
+    if n == 1 {
+        format!("{n} {word}")
+    } else {
+        format!("{n} {word}s")
+    }
 }
