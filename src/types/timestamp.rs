@@ -29,7 +29,7 @@ use serde::Serialize;
 use crate::error::ErrorReport;
 use crate::types::date::Date;
 
-/// A timestamp without a timezone and millisecond precision.
+/// A timestamp without a timezone, and with only millisecond precision.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct Timestamp(NaiveDateTime);
 
