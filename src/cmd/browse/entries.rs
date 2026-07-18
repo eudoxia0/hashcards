@@ -21,8 +21,6 @@ use maud::html;
 
 use crate::cmd::browse::render::label_config;
 use crate::cmd::browse::state::BrowseState;
-use crate::cmd::browse::url::basic_card_url;
-use crate::cmd::browse::url::cloze_family_url;
 use crate::error::Fallible;
 use crate::error::fail;
 use crate::markdown::markdown_to_html_inline;
