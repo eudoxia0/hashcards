@@ -13,6 +13,7 @@
 // limitations under the License.
 
 use maud::Markup;
+use maud::PreEscaped;
 use maud::html;
 
 use crate::cmd::browse::shared::BrowseState;
@@ -66,12 +67,6 @@ fn build_config(
 pub fn source_rows(state: &BrowseState, card: &Card, card_type: &str) -> Fallible<Markup> {
     let source_path = card.relative_file_path(&state.directory)?;
     let (start_line, end_line) = card.range();
-    let source = format!(
-        "{}, lines {}–{}",
-        source_path.display(),
-        start_line,
-        end_line
-    );
     Ok(html! {
         tr {
             td .key { "Type" }
@@ -79,7 +74,15 @@ pub fn source_rows(state: &BrowseState, card: &Card, card_type: &str) -> Fallibl
         }
         tr {
             td .key { "Source" }
-            td .val { (source) }
+            td .val {
+                code {
+                    (source_path.display())
+                }
+                ", lines "
+                (start_line)
+                (PreEscaped("&ndash;"))
+                (end_line)
+            }
         }
     })
 }
