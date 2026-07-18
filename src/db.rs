@@ -314,7 +314,20 @@ impl Database {
     /// Get every review in the database, grouped by card, in chronological
     /// order within each card.
     pub fn reviews_by_card(&self) -> Fallible<HashMap<CardHash, Vec<ReviewRecord>>> {
-        let sql = "select card_hash, reviewed_at, grade, stability, difficulty, interval_raw, interval_days, due_date from reviews order by reviewed_at;";
+        let sql = "
+            select
+                card_hash,
+                reviewed_at,
+                grade,
+                stability,
+                difficulty,
+                interval_raw,
+                interval_days,
+                due_date
+            from
+                reviews
+            order by
+                reviewed_at asc;";
         let mut stmt = self.conn.prepare(sql)?;
         let review_iter = stmt.query_map([], |row| {
             Ok(ReviewRecord {
