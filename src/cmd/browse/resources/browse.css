@@ -7,7 +7,6 @@ body {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    background: #fcfcfc;
 }
 
 .browse-columns {
@@ -21,7 +20,7 @@ body {
     }
 }
 
-/* Shared pane chrome */
+/* Shared pane style */
 
 .pane-header {
     padding: 12px 16px;
