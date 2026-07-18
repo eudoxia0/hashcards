@@ -100,7 +100,7 @@ body {
             .due-badge {
                 flex-shrink: 0;
                 font-size: 12px;
-                font-weight: 600;
+                font-weight: bold;
                 font-feature-settings: "tnum";
                 font-variant-numeric: tabular-nums;
                 background: palegreen;
@@ -317,7 +317,7 @@ body {
 
             th {
                 background: #e8e8e8;
-                font-weight: 600;
+                font-weight: bold;
                 border: 1px solid #999;
             }
 
@@ -383,7 +383,6 @@ body {
                     padding-bottom: 10px;
 
                     &.key {
-                        font-weight: 500;
                         width: auto;
                         white-space: nowrap;
                         padding-right: 48px;
@@ -428,7 +427,7 @@ body {
         }
 
         th {
-            font-weight: 600;
+            font-weight: bold;
             border-bottom: 1px solid #999;
         }
 
@@ -457,7 +456,7 @@ body {
         text-align: center;
         font-family: var(--font-sans);
         font-size: 13px;
-        font-weight: 600;
+        font-weight: bold;
         color: white;
         border-radius: 6px;
         padding: 2px 0;
