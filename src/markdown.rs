@@ -44,13 +44,9 @@ pub struct MarkdownRenderConfig {
     pub resource_hostname: String,
     /// The port where the server is exposed.
     pub port: u16,
-    /// Whether audio elements start playing as soon as the page loads. This
-    /// makes sense when drilling (one card per page), but not when browsing
-    /// (many cards per page).
+    /// Whether audio elements should autoplay.
     pub autoplay_audio: bool,
-    /// Whether to render media (images and audio) at all. When false, they
-    /// are stripped, and an image's alt text is kept as plain text. Used for
-    /// compact card lists.
+    /// Whether to render media (images and audio) at all.
     pub render_media: bool,
 }
 
@@ -69,12 +65,12 @@ pub fn markdown_to_html(config: &MarkdownRenderConfig, markdown: &str) -> Fallib
                 dest_url,
                 id,
             }) => {
-                // With media rendering off, drop the image tags. The events
-                // between them (the alt text) fall through as plain text.
+                // If media rendering is off, skip this event.
                 if !config.render_media {
                     continue;
                 }
-                let url = modify_url(&dest_url, config)?;
+
+                let url: String = modify_url(&dest_url, config)?;
                 // Does the URL point to an audio file? If so, render it as an
                 // HTML5 audio element.
                 let ev = if is_audio_file(&url) {
@@ -91,7 +87,7 @@ pub fn markdown_to_html(config: &MarkdownRenderConfig, markdown: &str) -> Fallib
                         .into_boxed_str(),
                     ))
                 } else {
-                    // Treat it as a normal image.
+                    // Otherwise, treat it as a normal image.
                     Event::Start(Tag::Image {
                         link_type,
                         title,
