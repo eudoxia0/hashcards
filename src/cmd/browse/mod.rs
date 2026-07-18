@@ -17,7 +17,6 @@ mod layout;
 mod render;
 mod server;
 mod shared;
-mod state;
 mod templates;
 mod views;
 

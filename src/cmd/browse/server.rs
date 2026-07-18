@@ -29,7 +29,7 @@ use axum::routing::get;
 use tokio::net::TcpListener;
 use tokio::signal;
 
-use crate::cmd::browse::state::BrowseState;
+use crate::cmd::browse::shared::BrowseState;
 use crate::cmd::browse::views::card_basic::basic_card_handler;
 use crate::cmd::browse::views::card_cloze::cloze_family_handler;
 use crate::cmd::browse::views::deck::deck_handler;

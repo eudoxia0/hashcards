@@ -20,7 +20,7 @@ use maud::PreEscaped;
 use maud::html;
 
 use crate::cmd::browse::render::label_config;
-use crate::cmd::browse::state::BrowseState;
+use crate::cmd::browse::shared::BrowseState;
 use crate::error::Fallible;
 use crate::error::fail;
 use crate::markdown::markdown_to_html_inline;

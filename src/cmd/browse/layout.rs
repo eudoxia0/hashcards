@@ -26,7 +26,7 @@ use crate::cmd::browse::entries::entry_label_html;
 use crate::cmd::browse::entries::entry_schedule;
 use crate::cmd::browse::entries::entry_type_label;
 use crate::cmd::browse::entries::entry_url;
-use crate::cmd::browse::state::BrowseState;
+use crate::cmd::browse::shared::BrowseState;
 use crate::cmd::browse::templates::page_template;
 use crate::error::Fallible;
 use crate::types::aliases::DeckName;

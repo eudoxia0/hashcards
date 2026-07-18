@@ -15,7 +15,7 @@
 use maud::Markup;
 use maud::html;
 
-use crate::cmd::browse::state::BrowseState;
+use crate::cmd::browse::shared::BrowseState;
 use crate::error::Fallible;
 use crate::error::fail;
 use crate::fsrs::Grade;
