@@ -16,6 +16,7 @@
         serif;
     --font-sans:
         "TeX Gyre Heros", system-ui, -apple-system, "Helvetica Neue", sans-serif;
+    --font-ui: "U001", system-ui, -apple-system, "Helvetica Neue", sans-serif;
     --font-mono: "Menlo", "Monaco", "Courier New", monospace;
 }
 
