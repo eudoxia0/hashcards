@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+mod entries;
 mod layout;
 mod page_template;
 
+pub use entries::*;
 pub use layout::*;
 pub use page_template::*;

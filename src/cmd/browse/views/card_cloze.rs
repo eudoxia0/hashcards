@@ -20,7 +20,6 @@ use maud::Markup;
 use maud::PreEscaped;
 use maud::html;
 
-use crate::cmd::browse::entries::EntryKey;
 use crate::cmd::browse::render::performance_rows;
 use crate::cmd::browse::render::render_config;
 use crate::cmd::browse::render::render_family_revealed;
@@ -30,6 +29,7 @@ use crate::cmd::browse::shared::BrowseState;
 use crate::cmd::browse::shared::error_response;
 use crate::cmd::browse::shared::internal_error_response;
 use crate::cmd::browse::shared::ok_response;
+use crate::cmd::browse::templates::EntryKey;
 use crate::cmd::browse::templates::Selection;
 use crate::cmd::browse::templates::columns_page;
 use crate::error::ErrorReport;
