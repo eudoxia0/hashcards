@@ -101,7 +101,7 @@ fn render_cloze_detail(
                 "Cloze Card"
             }
         }
-        .detail-pane-body {
+        div .pane-body {
             h2 { "Source Text" }
             div .browse-card {
                 (render_family_revealed(siblings, &config)?)
@@ -124,8 +124,8 @@ fn render_cloze_detail(
             }
             h2 { "Clozes" }
             div .card-list {
-                @for (index, sibling) in siblings.iter().enumerate() {
-                    (render_sibling(state, sibling, index, &config)?)
+                @for sibling in siblings.iter() {
+                    (render_sibling(state, sibling, &config)?)
                 }
             }
         }
@@ -137,7 +137,6 @@ fn render_cloze_detail(
 fn render_sibling(
     state: &BrowseState,
     sibling: &Card,
-    index: usize,
     config: &MarkdownRenderConfig,
 ) -> Fallible<Markup> {
     let deleted = match sibling.content().deletion_text()? {
@@ -148,7 +147,6 @@ fn render_sibling(
     Ok(html! {
         div .browse-card .cloze-sibling {
             div .cloze-sibling-header {
-                span .badge { "Cloze " (index + 1) }
                 span .deletion { (PreEscaped(deleted)) }
             }
             div .stats {

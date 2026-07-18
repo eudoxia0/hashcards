@@ -82,7 +82,7 @@ fn render_basic_detail(state: &BrowseState, card: &Card) -> Fallible<Markup> {
                 "Basic Card"
             }
         }
-        .detail-pane-body {
+        div .pane-body {
             h2 { "Front" }
             div .browse-card {
                 div .card-content {

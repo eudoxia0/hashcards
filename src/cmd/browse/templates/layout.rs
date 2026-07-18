@@ -100,19 +100,21 @@ fn deck_pane(state: &BrowseState, selected: Option<&str>) -> Markup {
             div .pane-title { "Decks" }
             div .pane-sub { (pluralize(total_cards, "card")) ", " (total_due) " due" }
         }
-        @if groups.is_empty() {
-            div .pane-empty { "No cards in this collection." }
-        }
-        @for (letter, decks) in &groups {
-            div .letter-group {
-                div .letter { (letter) }
-                ul {
-                    @for (name, due) in decks {
-                        li {
-                            a .selected[selected == Some(name.as_str())] href=(deck_url(name)) {
-                                span .name { (name) }
-                                @if *due > 0 {
-                                    span .due-badge { (due) }
+        div .pane-body {
+            @if groups.is_empty() {
+                div .pane-empty { "No cards in this collection." }
+            }
+            @for (letter, decks) in &groups {
+                div .letter-group {
+                    div .letter { (letter) }
+                    ul {
+                        @for (name, due) in decks {
+                            li {
+                                a .selected[selected == Some(name.as_str())] href=(deck_url(name)) {
+                                    span .name { (name) }
+                                    @if *due > 0 {
+                                        span .due-badge { (due) }
+                                    }
                                 }
                             }
                         }
@@ -136,11 +138,13 @@ fn cards_pane(state: &BrowseState, deck: &str, selected: Option<EntryKey>) -> Fa
             div .pane-title { (deck) }
             div .pane-sub { (pluralize(entries.len(), "card")) ", " (due_count) " due" }
         }
-        ul .card-items {
-            @for entry in &entries {
-                li {
-                    a .selected[selected == Some(entry_key(entry))] href=(entry_url(entry)) {
-                        div .label { (entry_label_html(state, entry)?) }
+        div .pane-body {
+            ul .card-items {
+                @for entry in &entries {
+                    li {
+                        a .selected[selected == Some(entry_key(entry))] href=(entry_url(entry)) {
+                            div .label { (entry_label_html(state, entry)?) }
+                        }
                     }
                 }
             }
