@@ -85,9 +85,8 @@ body {
             display: flex;
             flex-direction: row;
             align-items: center;
-            gap: 8px;
-            padding: 7px 16px;
-            color: inherit;
+            padding: 8px 16px;
+            color: black;
             text-decoration: none;
             font-family: var(--font-sans);
 
@@ -181,7 +180,6 @@ body {
 
             &.selected {
                 background: #e2ebff;
-                box-shadow: inset 3px 0 0 royalblue;
             }
         }
     }
