@@ -429,6 +429,7 @@ body {
         th {
             font-weight: bold;
             border-bottom: 1px solid #999;
+            font-family: var(--font-ui);
         }
 
         td:first-child {
