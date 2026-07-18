@@ -17,7 +17,6 @@ mod deck;
 mod entries;
 mod index;
 mod layout;
-mod render;
 mod server;
 mod state;
 mod template;
