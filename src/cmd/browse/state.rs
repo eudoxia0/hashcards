@@ -48,7 +48,7 @@ pub struct BrowseState {
 
 impl BrowseState {
     /// The performance of the card with the given hash. Cards absent from the
-    /// database are new.
+    /// database return [`Performance::New`].
     pub fn performance_of(&self, hash: CardHash) -> Performance {
         self.performance
             .get(&hash)
