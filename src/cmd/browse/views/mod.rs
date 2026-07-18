@@ -12,13 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-mod entries;
-mod layout;
-mod render;
-mod server;
-mod state;
-mod template;
-mod views;
-
-pub use server::BrowseServerConfig;
-pub use server::start_browse_server;
+pub mod card_basic;
+pub mod card_cloze;
+pub mod deck;
+pub mod index;

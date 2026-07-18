@@ -19,7 +19,7 @@ use maud::Markup;
 use maud::PreEscaped;
 use maud::html;
 
-use crate::cmd::browse::card::label_config;
+use crate::cmd::browse::render::label_config;
 use crate::cmd::browse::state::BrowseState;
 use crate::error::Fallible;
 use crate::error::fail;

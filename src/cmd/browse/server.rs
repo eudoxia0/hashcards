@@ -29,11 +29,11 @@ use axum::routing::get;
 use tokio::net::TcpListener;
 use tokio::signal;
 
-use crate::cmd::browse::card::basic_card_handler;
-use crate::cmd::browse::card::cloze_family_handler;
-use crate::cmd::browse::deck::deck_handler;
-use crate::cmd::browse::index::index_handler;
 use crate::cmd::browse::state::BrowseState;
+use crate::cmd::browse::views::card_basic::basic_card_handler;
+use crate::cmd::browse::views::card_cloze::cloze_family_handler;
+use crate::cmd::browse::views::deck::deck_handler;
+use crate::cmd::browse::views::index::index_handler;
 use crate::cmd::drill::highlight::HIGHLIGHT_CSS_URL;
 use crate::cmd::drill::highlight::HIGHLIGHT_JS_URL;
 use crate::cmd::drill::highlight::highlight_css_handler;
