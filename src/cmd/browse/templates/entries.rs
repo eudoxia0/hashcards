@@ -13,7 +13,6 @@
 // limitations under the License.
 
 use std::collections::HashSet;
-use std::slice::from_ref;
 
 use maud::Markup;
 use maud::PreEscaped;
@@ -27,8 +26,6 @@ use crate::markdown::markdown_to_html_inline;
 use crate::types::card::Card;
 use crate::types::card::CardContent;
 use crate::types::card_hash::CardHash;
-use crate::types::date::Date;
-use crate::types::performance::Performance;
 
 /// An entry in the list of cards corresponds to a card as written in the
 /// Markdown source. In the case of cloze cards, this is all the effective
@@ -138,46 +135,5 @@ pub fn entry_key(entry: &DeckEntry) -> EntryKey {
     match entry {
         DeckEntry::Basic(card) => EntryKey::Basic(card.hash()),
         DeckEntry::ClozeFamily(family, _) => EntryKey::Family(*family),
-    }
-}
-
-/// The entry's type, as shown in the card list: "Basic", "Cloze", or
-/// "Cloze × n".
-pub fn entry_type_label(entry: &DeckEntry) -> String {
-    match entry {
-        DeckEntry::Basic(_) => "Basic".to_string(),
-        DeckEntry::ClozeFamily(_, siblings) => {
-            if siblings.len() == 1 {
-                "Cloze".to_string()
-            } else {
-                format!("Cloze × {}", siblings.len())
-            }
-        }
-    }
-}
-
-/// Summarize the schedule of an entry: "New" if any of its cards has never
-/// been reviewed (new cards are due immediately), otherwise the earliest due
-/// date.
-pub fn entry_schedule(state: &BrowseState, entry: &DeckEntry) -> String {
-    let cards: &[Card] = match entry {
-        DeckEntry::Basic(card) => from_ref(*card),
-        DeckEntry::ClozeFamily(_, siblings) => siblings,
-    };
-    let mut earliest: Option<Date> = None;
-    for card in cards {
-        match state.performance_of(card.hash()) {
-            Performance::New => return "New".to_string(),
-            Performance::Reviewed(rp) => {
-                earliest = match earliest {
-                    Some(date) => Some(date.min(rp.due_date)),
-                    None => Some(rp.due_date),
-                };
-            }
-        }
-    }
-    match earliest {
-        Some(date) => format!("Due {date}"),
-        None => "New".to_string(),
     }
 }

@@ -24,8 +24,6 @@ use crate::cmd::browse::templates::EntryKey;
 use crate::cmd::browse::templates::deck_entries;
 use crate::cmd::browse::templates::entry_key;
 use crate::cmd::browse::templates::entry_label_html;
-use crate::cmd::browse::templates::entry_schedule;
-use crate::cmd::browse::templates::entry_type_label;
 use crate::cmd::browse::templates::entry_url;
 use crate::cmd::browse::templates::page_template;
 use crate::error::Fallible;
@@ -143,9 +141,6 @@ fn cards_pane(state: &BrowseState, deck: &str, selected: Option<EntryKey>) -> Fa
                 li {
                     a .selected[selected == Some(entry_key(entry))] href=(entry_url(entry)) {
                         div .label { (entry_label_html(state, entry)?) }
-                        div .meta {
-                            (entry_type_label(entry)) " · " (entry_schedule(state, entry))
-                        }
                     }
                 }
             }

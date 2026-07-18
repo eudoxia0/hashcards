@@ -132,17 +132,8 @@ body {
 
 .cards-pane {
     width: 340px;
-    flex-shrink: 0;
     border-right: 1px solid black;
     background: #fbfbfb;
-
-    /* No letter headers in this pane, so the header can stick without
-       colliding with them. */
-    .pane-header {
-        position: sticky;
-        top: 0;
-        z-index: 1;
-    }
 
     .card-items {
         list-style: none;
@@ -165,13 +156,6 @@ body {
                     color: #999;
                     font-style: italic;
                 }
-            }
-
-            .meta {
-                margin-top: 3px;
-                font-family: var(--font-sans);
-                font-size: 12px;
-                color: #888;
             }
 
             &:hover {
