@@ -19,6 +19,7 @@ use axum::response::Html;
 use crate::cmd::browse::layout::Selection;
 use crate::cmd::browse::layout::columns_page;
 use crate::cmd::browse::state::BrowseState;
+use crate::cmd::browse::template::internal_error_response;
 use crate::cmd::browse::template::ok_response;
 
 pub async fn index_handler(State(state): State<BrowseState>) -> (StatusCode, Html<String>) {
@@ -26,5 +27,8 @@ pub async fn index_handler(State(state): State<BrowseState>) -> (StatusCode, Htm
         deck: None,
         entry: None,
     };
-    ok_response(columns_page(&state, selection, None))
+    match columns_page(&state, selection, None) {
+        Ok(markup) => ok_response(markup),
+        Err(e) => internal_error_response(e),
+    }
 }

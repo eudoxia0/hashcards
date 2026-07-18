@@ -48,6 +48,10 @@ pub struct MarkdownRenderConfig {
     /// makes sense when drilling (one card per page), but not when browsing
     /// (many cards per page).
     pub autoplay_audio: bool,
+    /// Whether to render media (images and audio) at all. When false, they
+    /// are stripped, and an image's alt text is kept as plain text. Used for
+    /// compact card lists.
+    pub render_media: bool,
 }
 
 pub fn markdown_to_html(config: &MarkdownRenderConfig, markdown: &str) -> Fallible<String> {
@@ -56,14 +60,20 @@ pub fn markdown_to_html(config: &MarkdownRenderConfig, markdown: &str) -> Fallib
     options.insert(Options::ENABLE_MATH);
     let rewritten = rewrite_latex_delimiters(markdown);
     let parser = Parser::new_ext(&rewritten, options);
-    let events: Vec<Event<'_>> = parser
-        .map(|event| match event {
+    let mut events: Vec<Event<'_>> = Vec::new();
+    for event in parser {
+        match event {
             Event::Start(Tag::Image {
                 link_type,
                 title,
                 dest_url,
                 id,
             }) => {
+                // With media rendering off, drop the image tags. The events
+                // between them (the alt text) fall through as plain text.
+                if !config.render_media {
+                    continue;
+                }
                 let url = modify_url(&dest_url, config)?;
                 // Does the URL point to an audio file? If so, render it as an
                 // HTML5 audio element.
@@ -89,11 +99,16 @@ pub fn markdown_to_html(config: &MarkdownRenderConfig, markdown: &str) -> Fallib
                         id,
                     })
                 };
-                Ok(ev)
+                events.push(ev);
             }
-            _ => Ok(event),
-        })
-        .collect::<Fallible<Vec<_>>>()?;
+            Event::End(TagEnd::Image) => {
+                if config.render_media {
+                    events.push(event);
+                }
+            }
+            _ => events.push(event),
+        }
+    }
     let mut html_output: String = String::new();
     push_html(&mut html_output, events.into_iter());
     Ok(html_output)
@@ -237,6 +252,7 @@ mod tests {
             resource_hostname: "localhost".to_string(),
             port: 1234,
             autoplay_audio: true,
+            render_media: true,
         };
         Ok(config)
     }

@@ -166,6 +166,11 @@ body {
                 overflow: hidden;
                 white-space: nowrap;
                 text-overflow: ellipsis;
+
+                .untitled {
+                    color: #999;
+                    font-style: italic;
+                }
             }
 
             .meta {
@@ -454,16 +459,28 @@ body {
             width: 1%;
             padding-right: 48px;
         }
+
+        th.day,
+        td.day {
+            text-align: right;
+            white-space: nowrap;
+            width: 1%;
+            padding-right: 48px;
+            font-feature-settings: "tnum";
+            font-variant-numeric: tabular-nums;
+        }
     }
 
     .grade {
         display: inline-block;
+        width: 72px;
+        text-align: center;
         font-family: var(--font-sans);
         font-size: 13px;
         font-weight: 600;
         color: white;
         border-radius: 6px;
-        padding: 2px 10px;
+        padding: 2px 0;
 
         &.grade-forgot {
             background: #dc3545;
@@ -480,6 +497,24 @@ body {
         &.grade-easy {
             background: #1c7ed6;
         }
+    }
+
+    .difficulty {
+        display: inline-block;
+        font-family: var(--font-sans);
+        font-size: 13px;
+        font-weight: 600;
+        font-feature-settings: "tnum";
+        font-variant-numeric: tabular-nums;
+        border-radius: 6px;
+        padding: 2px 10px;
+    }
+
+    /* Keys with a tooltip. */
+    .stats td.key[title] {
+        text-decoration: underline dotted #999;
+        text-underline-offset: 3px;
+        cursor: help;
     }
 }
 
@@ -598,6 +633,10 @@ body {
 
         .card-items li a {
             border-bottom-color: #333;
+
+            .label .untitled {
+                color: #777;
+            }
 
             .meta {
                 color: #999;

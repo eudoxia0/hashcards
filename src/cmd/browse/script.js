@@ -39,4 +39,9 @@ document.addEventListener("DOMContentLoaded", function () {
   document.querySelectorAll(".card-content").forEach(function (element) {
     element.style.opacity = "1";
   });
+  // Each navigation loads a fresh page, which resets the deck and card
+  // lists' scroll positions. Scroll the selected items back into view.
+  document.querySelectorAll(".pane .selected").forEach(function (element) {
+    element.scrollIntoView({ block: "center", inline: "nearest" });
+  });
 });

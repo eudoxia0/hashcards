@@ -15,9 +15,17 @@
 use std::collections::HashSet;
 use std::slice::from_ref;
 
+use maud::Markup;
+use maud::PreEscaped;
+use maud::html;
+
+use crate::cmd::browse::render::label_config;
 use crate::cmd::browse::state::BrowseState;
 use crate::cmd::browse::url::basic_card_url;
 use crate::cmd::browse::url::cloze_family_url;
+use crate::error::Fallible;
+use crate::error::fail;
+use crate::markdown::markdown_to_html_inline;
 use crate::types::card::Card;
 use crate::types::card::CardContent;
 use crate::types::card_hash::CardHash;
@@ -78,6 +86,37 @@ pub fn entry_label<'a>(entry: &DeckEntry<'a>) -> &'a str {
         DeckEntry::ClozeFamily(_, siblings) => match siblings.first().map(|card| card.content()) {
             Some(CardContent::Cloze { text, .. }) => text,
             _ => "",
+        },
+    }
+}
+
+/// The label of an entry as shown in the card list: the first line of its
+/// text, rendered as inline Markdown with media stripped (an image's alt
+/// text, if any, is kept). Falls back to a placeholder for entries whose
+/// first line is nothing but media.
+pub fn entry_label_html(state: &BrowseState, entry: &DeckEntry) -> Fallible<Markup> {
+    let card = entry_card(entry)?;
+    let config = label_config(state, card)?;
+    let first_line = entry_label(entry).lines().next().unwrap_or("");
+    let html = markdown_to_html_inline(&config, first_line)?;
+    if html.trim().is_empty() {
+        Ok(html! {
+            span .untitled { "(untitled)" }
+        })
+    } else {
+        Ok(html! {
+            (PreEscaped(html))
+        })
+    }
+}
+
+/// The first card of an entry.
+fn entry_card<'a>(entry: &DeckEntry<'a>) -> Fallible<&'a Card> {
+    match entry {
+        DeckEntry::Basic(card) => Ok(card),
+        DeckEntry::ClozeFamily(_, siblings) => match siblings.first() {
+            Some(first) => Ok(first),
+            None => fail("cloze family has no cards."),
         },
     }
 }

@@ -37,6 +37,7 @@ use crate::markdown::MarkdownRenderConfig;
 use crate::markdown::markdown_to_html_inline;
 use crate::types::card::Card;
 use crate::types::card_hash::CardHash;
+use crate::types::date::Date;
 use crate::types::performance::Performance;
 
 pub async fn basic_card_handler(
@@ -67,7 +68,10 @@ pub async fn basic_card_handler(
         deck: Some(card.deck_name()),
         entry: Some(EntryKey::Basic(hash)),
     };
-    ok_response(columns_page(&state, selection, Some(detail)))
+    match columns_page(&state, selection, Some(detail)) {
+        Ok(markup) => ok_response(markup),
+        Err(e) => internal_error_response(e),
+    }
 }
 
 pub async fn cloze_family_handler(
@@ -106,7 +110,10 @@ pub async fn cloze_family_handler(
         deck: Some(first.deck_name()),
         entry: Some(EntryKey::Family(family)),
     };
-    ok_response(columns_page(&state, selection, Some(detail)))
+    match columns_page(&state, selection, Some(detail)) {
+        Ok(markup) => ok_response(markup),
+        Err(e) => internal_error_response(e),
+    }
 }
 
 fn render_basic_detail(state: &BrowseState, card: &Card) -> Fallible<Markup> {
@@ -137,7 +144,7 @@ fn render_basic_detail(state: &BrowseState, card: &Card) -> Fallible<Markup> {
                         td .key { "Hash" }
                         td .val { code { (card.hash()) } }
                     }
-                    (performance_rows(state.performance_of(card.hash())))
+                    (performance_rows(state.performance_of(card.hash()), state.today))
                 }
             }
         }
@@ -212,7 +219,7 @@ fn render_sibling(
                             td .key { "Hash" }
                             td .val { code { (sibling.hash()) } }
                         }
-                        (performance_rows(state.performance_of(sibling.hash())))
+                        (performance_rows(state.performance_of(sibling.hash()), state.today))
                     }
                 }
             }
@@ -242,33 +249,46 @@ fn source_rows(state: &BrowseState, card: &Card, card_type: &str) -> Fallible<Ma
 
 const TS_FORMAT: &str = "%Y-%m-%d %H:%M:%S";
 
-/// A card's review history: when it was reviewed, and with what grade, most
-/// recent review first.
+/// A card's review history, in chronological order: when it was reviewed,
+/// how many days had passed since the first review, and with what grade.
 fn render_history(state: &BrowseState, hash: CardHash) -> Markup {
     let reviews = state.reviews_of(hash);
-    if reviews.is_empty() {
-        return html! {
-            p .empty { "No reviews yet." }
-        };
-    }
+    let first = match reviews.first() {
+        Some(first) => first,
+        None => {
+            return html! {
+                p .empty { "No reviews yet." }
+            };
+        }
+    };
+    let first_date = first.reviewed_at.date();
     html! {
         table .history {
             thead {
                 tr {
                     th { "Reviewed" }
+                    th .day { "Day" }
                     th { "Grade" }
                 }
             }
             tbody {
-                @for review in reviews.iter().rev() {
+                @for review in reviews {
                     tr {
                         td { (review.reviewed_at.into_inner().format(TS_FORMAT).to_string()) }
+                        td .day {
+                            (days_between(first_date, review.reviewed_at.date()))
+                        }
                         td { (grade_chip(review.grade)) }
                     }
                 }
             }
         }
     }
+}
+
+/// The number of days from the first date to the second.
+fn days_between(from: Date, to: Date) -> i64 {
+    (to.into_inner() - from.into_inner()).num_days()
 }
 
 fn grade_chip(grade: Grade) -> Markup {
@@ -284,7 +304,10 @@ fn grade_chip(grade: Grade) -> Markup {
     }
 }
 
-fn performance_rows(performance: Performance) -> Markup {
+const STABILITY_EXPLANATION: &str =
+    "The number of days until recall probability falls to the target retention.";
+
+fn performance_rows(performance: Performance, today: Date) -> Markup {
     match performance {
         Performance::New => html! {
             tr {
@@ -302,12 +325,12 @@ fn performance_rows(performance: Performance) -> Markup {
                 td .val { (rp.review_count) }
             }
             tr {
-                td .key { "Stability" }
-                td .val { (format!("{:.2}", rp.stability)) }
+                td .key title=(STABILITY_EXPLANATION) { "Stability" }
+                td .val { (format!("{:.2}", rp.stability)) " days" }
             }
             tr {
                 td .key { "Difficulty" }
-                td .val { (format!("{:.2}", rp.difficulty)) }
+                td .val { (difficulty_chip(rp.difficulty)) }
             }
             tr {
                 td .key { "Interval (days)" }
@@ -315,8 +338,33 @@ fn performance_rows(performance: Performance) -> Markup {
             }
             tr {
                 td .key { "Due Date" }
-                td .val { (rp.due_date) }
+                td .val { (rp.due_date) " (" (relative_due(rp.due_date, today)) ")" }
             }
         },
+    }
+}
+
+/// FSRS difficulty ranges from 1 (easiest) to 10 (hardest). Colour-code it
+/// from green to red.
+fn difficulty_chip(difficulty: f64) -> Markup {
+    let clamped = difficulty.clamp(1.0, 10.0);
+    let hue = 120.0 * (10.0 - clamped) / 9.0;
+    let style = format!(
+        "background: hsl({hue:.0}, 70%, 85%); color: hsl({hue:.0}, 90%, 20%);"
+    );
+    html! {
+        span .difficulty style=(style) { (format!("{:.2}", difficulty)) }
+    }
+}
+
+/// A due date relative to today, e.g. "today", "in 2 days", "3 days ago".
+fn relative_due(due: Date, today: Date) -> String {
+    let days = days_between(today, due);
+    match days {
+        0 => "today".to_string(),
+        1 => "tomorrow".to_string(),
+        -1 => "yesterday".to_string(),
+        d if d > 1 => format!("in {d} days"),
+        d => format!("{} days ago", -d),
     }
 }

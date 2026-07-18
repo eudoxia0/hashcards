@@ -24,9 +24,24 @@ use crate::types::card::Card;
 use crate::types::card::CardContent;
 use crate::types::card::html_cloze_family;
 
-/// Build the Markdown render configuration for the given card. Media paths
-/// are resolved relative to the file the card was parsed from.
+/// Build the Markdown render configuration for the given card, for the
+/// detail pane. Media paths are resolved relative to the file the card was
+/// parsed from.
 pub fn render_config(state: &BrowseState, card: &Card) -> Fallible<MarkdownRenderConfig> {
+    build_config(state, card, true)
+}
+
+/// Build the Markdown render configuration for a card-list label: images and
+/// audio are stripped.
+pub fn label_config(state: &BrowseState, card: &Card) -> Fallible<MarkdownRenderConfig> {
+    build_config(state, card, false)
+}
+
+fn build_config(
+    state: &BrowseState,
+    card: &Card,
+    render_media: bool,
+) -> Fallible<MarkdownRenderConfig> {
     let coll_path = state.directory.clone();
     let deck_path = card.relative_file_path(&coll_path)?;
     Ok(MarkdownRenderConfig {
@@ -37,6 +52,7 @@ pub fn render_config(state: &BrowseState, card: &Card) -> Fallible<MarkdownRende
         resource_hostname: state.resource_hostname.clone(),
         port: state.port,
         autoplay_audio: false,
+        render_media,
     })
 }
 

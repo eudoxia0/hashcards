@@ -20,7 +20,7 @@ use maud::html;
 use crate::cmd::browse::entries::EntryKey;
 use crate::cmd::browse::entries::deck_entries;
 use crate::cmd::browse::entries::entry_key;
-use crate::cmd::browse::entries::entry_label;
+use crate::cmd::browse::entries::entry_label_html;
 use crate::cmd::browse::entries::entry_schedule;
 use crate::cmd::browse::entries::entry_type_label;
 use crate::cmd::browse::entries::entry_url;
@@ -28,11 +28,8 @@ use crate::cmd::browse::state::BrowseState;
 use crate::cmd::browse::template::page_template;
 use crate::cmd::browse::template::pluralize;
 use crate::cmd::browse::url::deck_url;
+use crate::error::Fallible;
 use crate::types::aliases::DeckName;
-
-/// The maximum number of characters of an entry's label shown in the card
-/// list.
-const MAX_LABEL_CHARS: usize = 120;
 
 /// Which deck and card, if any, are currently selected.
 pub struct Selection<'a> {
@@ -42,13 +39,17 @@ pub struct Selection<'a> {
 
 /// Render the three-column browse page: the deck list, the card list of the
 /// selected deck, and the detail view of the selected card.
-pub fn columns_page(state: &BrowseState, selection: Selection, detail: Option<Markup>) -> Markup {
+pub fn columns_page(
+    state: &BrowseState,
+    selection: Selection,
+    detail: Option<Markup>,
+) -> Fallible<Markup> {
     let title = match selection.deck {
         Some(deck) => format!("{deck} — hashcards"),
         None => "hashcards".to_string(),
     };
     let cards_pane_body = match selection.deck {
-        Some(deck) => cards_pane(state, deck, selection.entry),
+        Some(deck) => cards_pane(state, deck, selection.entry)?,
         None => placeholder("Select a deck."),
     };
     let detail_pane_body = match detail {
@@ -69,7 +70,7 @@ pub fn columns_page(state: &BrowseState, selection: Selection, detail: Option<Ma
             }
         }
     };
-    page_template(&title, body)
+    Ok(page_template(&title, body))
 }
 
 /// The deck list, grouped by starting letter like a dictionary.
@@ -122,14 +123,14 @@ fn deck_pane(state: &BrowseState, selected: Option<&str>) -> Markup {
 }
 
 /// The list of cards in a deck.
-fn cards_pane(state: &BrowseState, deck: &str, selected: Option<EntryKey>) -> Markup {
+fn cards_pane(state: &BrowseState, deck: &str, selected: Option<EntryKey>) -> Fallible<Markup> {
     let entries = deck_entries(state, deck);
     let due_count = state
         .cards
         .iter()
         .filter(|card| card.deck_name() == deck && state.is_due(card.hash()))
         .count();
-    html! {
+    Ok(html! {
         div .pane-header {
             div .pane-title { (deck) }
             div .pane-sub { (pluralize(entries.len(), "card")) ", " (due_count) " due" }
@@ -138,7 +139,7 @@ fn cards_pane(state: &BrowseState, deck: &str, selected: Option<EntryKey>) -> Ma
             @for entry in &entries {
                 li {
                     a .selected[selected == Some(entry_key(entry))] href=(entry_url(entry)) {
-                        div .label { (truncate_label(entry_label(entry))) }
+                        div .label { (entry_label_html(state, entry)?) }
                         div .meta {
                             (entry_type_label(entry)) " · " (entry_schedule(state, entry))
                         }
@@ -146,7 +147,7 @@ fn cards_pane(state: &BrowseState, deck: &str, selected: Option<EntryKey>) -> Ma
                 }
             }
         }
-    }
+    })
 }
 
 fn placeholder(message: &str) -> Markup {
@@ -164,12 +165,4 @@ fn first_letter(name: &str) -> char {
         Some(c) if c.is_alphabetic() => c.to_uppercase().next().unwrap_or(c),
         _ => '#',
     }
-}
-
-/// The first line of a label, cut off at `MAX_LABEL_CHARS` characters. The
-/// CSS truncates overflowing labels with an ellipsis; this just keeps huge
-/// cards from bloating the list markup.
-fn truncate_label(label: &str) -> String {
-    let first_line = label.lines().next().unwrap_or("");
-    first_line.chars().take(MAX_LABEL_CHARS).collect()
 }
