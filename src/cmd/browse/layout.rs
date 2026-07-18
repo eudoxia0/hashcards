@@ -16,6 +16,8 @@ use std::collections::BTreeMap;
 
 use maud::Markup;
 use maud::html;
+use percent_encoding::NON_ALPHANUMERIC;
+use percent_encoding::utf8_percent_encode;
 
 use crate::cmd::browse::entries::EntryKey;
 use crate::cmd::browse::entries::deck_entries;
@@ -27,7 +29,6 @@ use crate::cmd::browse::entries::entry_url;
 use crate::cmd::browse::state::BrowseState;
 use crate::cmd::browse::template::page_template;
 use crate::cmd::browse::template::pluralize;
-use crate::cmd::browse::url::deck_url;
 use crate::error::Fallible;
 use crate::types::aliases::DeckName;
 
@@ -92,7 +93,10 @@ fn deck_pane(state: &BrowseState, selected: Option<&str>) -> Markup {
     // Group by starting letter. Within a group, decks stay in sorted order.
     let mut groups: BTreeMap<char, Vec<(&DeckName, usize)>> = BTreeMap::new();
     for (name, due) in decks {
-        groups.entry(first_letter(name)).or_default().push((name, due));
+        groups
+            .entry(first_letter(name))
+            .or_default()
+            .push((name, due));
     }
     html! {
         div .pane-header {
@@ -165,4 +169,9 @@ fn first_letter(name: &str) -> char {
         Some(c) if c.is_alphabetic() => c.to_uppercase().next().unwrap_or(c),
         _ => '#',
     }
+}
+
+/// Generate the URL of a deck from its name.
+fn deck_url(name: &DeckName) -> String {
+    format!("/deck/{}", utf8_percent_encode(name, NON_ALPHANUMERIC))
 }

@@ -12,16 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use percent_encoding::NON_ALPHANUMERIC;
-use percent_encoding::utf8_percent_encode;
-
-use crate::types::aliases::DeckName;
 use crate::types::card_hash::CardHash;
-
-/// Generate the URl of a deck from its name.
-pub fn deck_url(name: &DeckName) -> String {
-    format!("/deck/{}", utf8_percent_encode(name, NON_ALPHANUMERIC))
-}
 
 /// The URL of a basic card.
 pub fn basic_card_url(hash: CardHash) -> String {
