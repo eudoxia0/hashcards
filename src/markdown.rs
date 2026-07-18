@@ -44,6 +44,10 @@ pub struct MarkdownRenderConfig {
     pub resource_hostname: String,
     /// The port where the server is exposed.
     pub port: u16,
+    /// Whether audio elements start playing as soon as the page loads. This
+    /// makes sense when drilling (one card per page), but not when browsing
+    /// (many cards per page).
+    pub autoplay_audio: bool,
 }
 
 pub fn markdown_to_html(config: &MarkdownRenderConfig, markdown: &str) -> Fallible<String> {
@@ -61,13 +65,18 @@ pub fn markdown_to_html(config: &MarkdownRenderConfig, markdown: &str) -> Fallib
                 id,
             }) => {
                 let url = modify_url(&dest_url, config)?;
-                // Does the URL point to an audio file?
+                // Does the URL point to an audio file? If so, render it as an
+                // HTML5 audio element.
                 let ev = if is_audio_file(&url) {
-                    // If so, render it as an HTML5 audio element.
+                    let autoplay = if config.autoplay_audio {
+                        "autoplay "
+                    } else {
+                        ""
+                    };
                     Event::Html(CowStr::Boxed(
                         format!(
-                            r#"<audio autoplay controls src="{}" title="{}"></audio>"#,
-                            url, title
+                            r#"<audio {}controls src="{}" title="{}"></audio>"#,
+                            autoplay, url, title
                         )
                         .into_boxed_str(),
                     ))
@@ -227,6 +236,7 @@ mod tests {
                 .build()?,
             resource_hostname: "localhost".to_string(),
             port: 1234,
+            autoplay_audio: true,
         };
         Ok(config)
     }

@@ -311,6 +311,31 @@ impl Database {
         Ok(counts)
     }
 
+    /// Get every review in the database, grouped by card, in chronological
+    /// order within each card.
+    pub fn reviews_by_card(&self) -> Fallible<HashMap<CardHash, Vec<ReviewRecord>>> {
+        let sql = "select card_hash, reviewed_at, grade, stability, difficulty, interval_raw, interval_days, due_date from reviews order by reviewed_at;";
+        let mut stmt = self.conn.prepare(sql)?;
+        let review_iter = stmt.query_map([], |row| {
+            Ok(ReviewRecord {
+                card_hash: row.get(0)?,
+                reviewed_at: row.get(1)?,
+                grade: row.get(2)?,
+                stability: row.get(3)?,
+                difficulty: row.get(4)?,
+                interval_raw: row.get(5)?,
+                interval_days: row.get(6)?,
+                due_date: row.get(7)?,
+            })
+        })?;
+        let mut reviews: HashMap<CardHash, Vec<ReviewRecord>> = HashMap::new();
+        for review in review_iter {
+            let review = review?;
+            reviews.entry(review.card_hash).or_default().push(review);
+        }
+        Ok(reviews)
+    }
+
     /// Get the list of all sessions in the database.
     pub fn get_all_sessions(&self) -> Fallible<Vec<SessionRow>> {
         let sql = "select session_id, started_at, ended_at from sessions order by started_at;";
