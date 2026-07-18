@@ -33,12 +33,14 @@ use crate::error::ErrorReport;
 use crate::error::Fallible;
 use crate::error::fail;
 use crate::fsrs::Grade;
+use crate::fsrs::retrievability;
 use crate::markdown::MarkdownRenderConfig;
 use crate::markdown::markdown_to_html_inline;
 use crate::types::card::Card;
 use crate::types::card_hash::CardHash;
 use crate::types::date::Date;
 use crate::types::performance::Performance;
+use crate::types::performance::ReviewedPerformance;
 
 pub async fn basic_card_handler(
     State(state): State<BrowseState>,
@@ -307,6 +309,9 @@ fn grade_chip(grade: Grade) -> Markup {
 const STABILITY_EXPLANATION: &str =
     "The number of days until recall probability falls to the target retention.";
 
+const RECALL_EXPLANATION: &str =
+    "The estimated probability of recalling this card if it were reviewed today.";
+
 fn performance_rows(performance: Performance, today: Date) -> Markup {
     match performance {
         Performance::New => html! {
@@ -333,6 +338,10 @@ fn performance_rows(performance: Performance, today: Date) -> Markup {
                 td .val { (difficulty_chip(rp.difficulty)) }
             }
             tr {
+                td .key title=(RECALL_EXPLANATION) { "Predicted Recall" }
+                td .val { (predicted_recall(&rp, today)) }
+            }
+            tr {
                 td .key { "Interval (days)" }
                 td .val { (rp.interval_days) }
             }
@@ -355,6 +364,14 @@ fn difficulty_chip(difficulty: f64) -> Markup {
     html! {
         span .difficulty style=(style) { (format!("{:.2}", difficulty)) }
     }
+}
+
+/// The FSRS-estimated probability of recalling a card today, as a
+/// percentage.
+fn predicted_recall(rp: &ReviewedPerformance, today: Date) -> String {
+    let elapsed = days_between(rp.last_reviewed_at.date(), today).max(0) as f64;
+    let recall = retrievability(elapsed, rp.stability);
+    format!("{:.1}%", recall * 100.0)
 }
 
 /// A due date relative to today, e.g. "today", "in 2 days", "3 days ago".
