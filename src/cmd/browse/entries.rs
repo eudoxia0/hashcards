@@ -123,10 +123,15 @@ fn entry_card<'a>(entry: &DeckEntry<'a>) -> Fallible<&'a Card> {
 
 /// The URL of an entry's detail page.
 pub fn entry_url(entry: &DeckEntry) -> String {
-    match entry {
-        DeckEntry::Basic(card) => basic_card_url(card.hash()),
-        DeckEntry::ClozeFamily(family, _) => cloze_family_url(*family),
-    }
+    let segment: &str = match entry {
+        DeckEntry::Basic(_) => "basic",
+        DeckEntry::ClozeFamily(_, _) => "cloze",
+    };
+    let hash: String = match entry {
+        DeckEntry::Basic(card) => card.hash().to_hex(),
+        DeckEntry::ClozeFamily(family_hash, _) => family_hash.to_hex(),
+    };
+    format!("/card/{segment}/{hash}")
 }
 
 /// The key identifying an entry, for selection highlighting.
