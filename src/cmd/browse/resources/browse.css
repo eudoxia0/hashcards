@@ -36,27 +36,27 @@ body {
 
     .pane-sub {
         font-size: 12px;
-        color: #888;
+        color: #333;
         margin-top: 2px;
     }
 }
 
 .pane-empty {
     padding: 16px;
-    font-family: var(--font-sans);
-    font-size: 14px;
-    color: #888;
+    font-family: var(--font-ui);
+    font-size: 16px;
+    color: #666;
 }
 
 .placeholder {
     display: flex;
     justify-content: center;
-    padding: 96px 24px;
+    padding: 24px 24px;
 
     p {
-        font-family: var(--font-sans);
-        font-size: 15px;
-        color: #999;
+        font-family: var(--font-ui);
+        font-size: 16px;
+        color: #666;
     }
 }
 
