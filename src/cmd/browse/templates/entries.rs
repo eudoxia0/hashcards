@@ -57,7 +57,7 @@ pub fn deck_entries<'a>(state: &'a BrowseState, deck: &str) -> Vec<DeckEntry<'a>
     let mut seen_families: HashSet<CardHash> = HashSet::new();
     for card in &cards {
         match card.family_hash() {
-            None => entries.push(DeckEntry::Basic(*card)),
+            None => entries.push(DeckEntry::Basic(card)),
             Some(family) => {
                 if seen_families.insert(family) {
                     if let Some(siblings) = state.families.get(&family) {
