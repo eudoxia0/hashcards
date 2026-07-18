@@ -174,7 +174,10 @@ body {
 .detail-pane {
     flex: 1;
     background: #fcfcfc;
-    padding: 24px 32px 96px;
+
+    .detail-pane-body {
+        padding: 24px 32px 96px;
+    }
 
     h2 {
         font-size: 24px;

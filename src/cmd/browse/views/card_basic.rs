@@ -74,36 +74,46 @@ pub async fn basic_card_handler(
 fn render_basic_detail(state: &BrowseState, card: &Card) -> Fallible<Markup> {
     let config = render_config(state, card)?;
     Ok(html! {
-        h2 { "Front" }
-        div .browse-card {
-            div .card-content {
-                div .prompt .rich-text {
-                    (card.html_front(&config)?)
-                }
+        .pane-header {
+            .pane-title {
+                "Card"
+            }
+            .pane-sub {
+                "Basic Card"
             }
         }
-        h2 { "Back" }
-        div .browse-card {
-            div .card-content {
-                div .prompt .rich-text {
-                    (card.html_back(&config)?)
-                }
-            }
-        }
-        h2 { "Details" }
-        div .stats {
-            table {
-                tbody {
-                    (source_rows(state, card, "Basic")?)
-                    tr {
-                        td .key { "Hash" }
-                        td .val { code { (card.hash()) } }
+        .detail-pane-body {
+            h2 { "Front" }
+            div .browse-card {
+                div .card-content {
+                    div .prompt .rich-text {
+                        (card.html_front(&config)?)
                     }
-                    (performance_rows(state.performance_of(card.hash()), state.today))
                 }
             }
+            h2 { "Back" }
+            div .browse-card {
+                div .card-content {
+                    div .prompt .rich-text {
+                        (card.html_back(&config)?)
+                    }
+                }
+            }
+            h2 { "Properties" }
+            div .stats {
+                table {
+                    tbody {
+                        (source_rows(state, card, "Basic")?)
+                        tr {
+                            td .key { "Hash" }
+                            td .val { code { (card.hash()) } }
+                        }
+                        (performance_rows(state.performance_of(card.hash()), state.today))
+                    }
+                }
+            }
+            h2 { "History" }
+            (render_history(state, card.hash()))
         }
-        h2 { "History" }
-        (render_history(state, card.hash()))
     })
 }

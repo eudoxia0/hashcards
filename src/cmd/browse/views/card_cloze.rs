@@ -93,30 +93,40 @@ fn render_cloze_detail(
     };
     let config = render_config(state, first)?;
     Ok(html! {
-        h2 { "Text" }
-        div .browse-card {
-            (render_family_revealed(siblings, &config)?)
+        .pane-header {
+            .pane-title {
+                "Card"
+            }
+            .pane-sub {
+                "Cloze Card"
+            }
         }
-        h2 { "Details" }
-        div .stats {
-            table {
-                tbody {
-                    (source_rows(state, first, "Cloze")?)
-                    tr {
-                        td .key { "Family Hash" }
-                        td .val { code { (family) } }
-                    }
-                    tr {
-                        td .key { "Clozes" }
-                        td .val { (siblings.len()) }
+        .detail-pane-body {
+            h2 { "Source Text" }
+            div .browse-card {
+                (render_family_revealed(siblings, &config)?)
+            }
+            h2 { "Properties" }
+            div .stats {
+                table {
+                    tbody {
+                        (source_rows(state, first, "Cloze")?)
+                        tr {
+                            td .key { "Family Hash" }
+                            td .val { code { (family) } }
+                        }
+                        tr {
+                            td .key { "Clozes" }
+                            td .val { (siblings.len()) }
+                        }
                     }
                 }
             }
-        }
-        h2 { "Clozes" }
-        div .card-list {
-            @for (index, sibling) in siblings.iter().enumerate() {
-                (render_sibling(state, sibling, index, &config)?)
+            h2 { "Clozes" }
+            div .card-list {
+                @for (index, sibling) in siblings.iter().enumerate() {
+                    (render_sibling(state, sibling, index, &config)?)
+                }
             }
         }
     })
