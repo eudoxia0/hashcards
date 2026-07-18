@@ -21,7 +21,6 @@ mod render;
 mod server;
 mod state;
 mod template;
-mod url;
 
 pub use server::BrowseServerConfig;
 pub use server::start_browse_server;
