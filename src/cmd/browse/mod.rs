@@ -13,7 +13,6 @@
 // limitations under the License.
 
 mod entries;
-mod layout;
 mod render;
 mod server;
 mod shared;
