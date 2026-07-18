@@ -26,7 +26,7 @@ use crate::collection::Collection;
 use crate::error::Fallible;
 
 /// Server configuration.
-pub struct ServerConfig {
+pub struct BrowseServerConfig {
     /// The collection directory.
     pub directory: Option<String>,
     /// Interface to bind to.
@@ -38,7 +38,7 @@ pub struct ServerConfig {
 }
 
 /// Start the browse server.
-pub async fn start_server(config: ServerConfig) -> Fallible<()> {
+pub async fn start_browse_server(config: BrowseServerConfig) -> Fallible<()> {
     let Collection {
         directory,
         db,

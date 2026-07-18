@@ -18,6 +18,8 @@ use clap::Parser;
 use clap::Subcommand;
 use tokio::spawn;
 
+use crate::cmd::browse::BrowseServerConfig;
+use crate::cmd::browse::start_browse_server;
 use crate::cmd::check::check_collection;
 use crate::cmd::drill::server::AnswerControls;
 use crate::cmd::drill::server::ServerConfig;
@@ -66,6 +68,23 @@ enum Command {
         /// Whether or not to bury siblings. Default is true.
         #[arg(long)]
         bury_siblings: Option<bool>,
+    },
+    /// Browse a flashcard collection through a web interface.
+    Browse {
+        /// Path to the collection directory. By default, the current working directory is used.
+        directory: Option<String>,
+        /// The host address to bind to. Default is 127.0.0.1.
+        #[arg(long, default_value = "127.0.0.1")]
+        host: String,
+        /// The hostname to use when rewriting linked resource URLs. Default is localhost.
+        #[arg(long, default_value = "localhost")]
+        resource_hostname: String,
+        /// The port to use for the web server. Default is 8000.
+        #[arg(long, default_value_t = 8000)]
+        port: u16,
+        /// Whether to open the browser automatically. Default is true.
+        #[arg(long)]
+        open_browser: Option<bool>,
     },
     /// Print which decks have cards due today.
     Due {
@@ -158,6 +177,36 @@ pub async fn entrypoint() -> Fallible<()> {
                 bury_siblings: bury_siblings.unwrap_or(true),
             };
             start_server(config).await
+        }
+        Command::Browse {
+            directory,
+            host,
+            resource_hostname,
+            port,
+            open_browser,
+        } => {
+            if open_browser.unwrap_or(true) {
+                // Start a separate task to open the browser once the server is up.
+                let browser_host = host.clone();
+                spawn(async move {
+                    match wait_for_server(&browser_host, port).await {
+                        Ok(_) => {
+                            let _ = open::that(format!("http://{browser_host}:{port}/"));
+                        }
+                        Err(e) => {
+                            eprintln!("Failed to connect to server: {e}");
+                            exit(-1)
+                        }
+                    }
+                });
+            };
+            let config = BrowseServerConfig {
+                directory,
+                host,
+                resource_hostname,
+                port,
+            };
+            start_browse_server(config).await
         }
         Command::Due { directory } => print_due(directory),
         Command::Check { directory } => check_collection(directory),
