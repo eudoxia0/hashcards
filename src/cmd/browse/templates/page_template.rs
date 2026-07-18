@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use axum::http::StatusCode;
-use axum::response::Html;
 use maud::DOCTYPE;
 use maud::Markup;
 use maud::html;
@@ -23,7 +21,6 @@ use crate::cmd::drill::highlight::HIGHLIGHT_JS_URL;
 use crate::cmd::drill::katex::KATEX_CSS_URL;
 use crate::cmd::drill::katex::KATEX_JS_URL;
 use crate::cmd::drill::katex::KATEX_MHCHEM_JS_URL;
-use crate::error::ErrorReport;
 
 /// Page template.
 pub fn page_template(title: &str, body: Markup) -> Markup {
@@ -49,28 +46,4 @@ pub fn page_template(title: &str, body: Markup) -> Markup {
             }
         }
     }
-}
-
-/// A successful HTML response.
-pub fn ok_response(markup: Markup) -> (StatusCode, Html<String>) {
-    (StatusCode::OK, Html(markup.into_string()))
-}
-
-/// An HTML error page with the given status code and message.
-pub fn error_response(status: StatusCode, message: &str) -> (StatusCode, Html<String>) {
-    let markup = page_template(
-        "Error — hashcards",
-        html! {
-            main .error-page {
-                h1 { "Error" }
-                p { (message) }
-            }
-        },
-    );
-    (status, Html(markup.into_string()))
-}
-
-/// An internal server error page from an error report.
-pub fn internal_error_response(e: ErrorReport) -> (StatusCode, Html<String>) {
-    error_response(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string())
 }

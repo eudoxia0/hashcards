@@ -12,14 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-mod entries;
-mod layout;
-mod render;
-mod server;
-mod shared;
-mod state;
-mod templates;
-mod views;
-
-pub use server::BrowseServerConfig;
-pub use server::start_browse_server;
+mod responses;
+pub use responses::*;

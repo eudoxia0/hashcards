@@ -19,10 +19,10 @@ use axum::response::Html;
 
 use crate::cmd::browse::layout::Selection;
 use crate::cmd::browse::layout::columns_page;
+use crate::cmd::browse::shared::error_response;
+use crate::cmd::browse::shared::internal_error_response;
+use crate::cmd::browse::shared::ok_response;
 use crate::cmd::browse::state::BrowseState;
-use crate::cmd::browse::template::error_response;
-use crate::cmd::browse::template::internal_error_response;
-use crate::cmd::browse::template::ok_response;
 
 pub async fn deck_handler(
     State(state): State<BrowseState>,
