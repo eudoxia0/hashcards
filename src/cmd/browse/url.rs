@@ -18,18 +18,17 @@ use percent_encoding::utf8_percent_encode;
 use crate::types::aliases::DeckName;
 use crate::types::card_hash::CardHash;
 
-/// The URL of a deck's page. Deck names are arbitrary strings, so they are
-/// percent-encoded into a single path segment.
+/// Generate the URl of a deck from its name.
 pub fn deck_url(name: &DeckName) -> String {
     format!("/deck/{}", utf8_percent_encode(name, NON_ALPHANUMERIC))
 }
 
-/// The URL of a basic card's page.
+/// The URL of a basic card.
 pub fn basic_card_url(hash: CardHash) -> String {
     format!("/card/basic/{}", hash.to_hex())
 }
 
-/// The URL of a cloze family's page.
+/// The URL of a cloze card's family.
 pub fn cloze_family_url(family: CardHash) -> String {
     format!("/card/cloze/{}", family.to_hex())
 }
