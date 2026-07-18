@@ -265,8 +265,7 @@ pub fn html_cloze_family(
     }
     // Replace each deletion with a placeholder tag unique to it. Splice in
     // descending order of position, so that earlier byte offsets stay valid.
-    let mut indexed: Vec<(usize, (usize, usize))> =
-        deletions.iter().copied().enumerate().collect();
+    let mut indexed: Vec<(usize, (usize, usize))> = deletions.iter().copied().enumerate().collect();
     indexed.sort_by_key(|(_, (start, _))| Reverse(*start));
     let mut text_bytes: Vec<u8> = bytes.to_owned();
     for (index, (start, end)) in indexed {

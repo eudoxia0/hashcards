@@ -49,7 +49,10 @@ pub async fn basic_card_handler(
     let hash = match CardHash::from_hex(&hash) {
         Ok(hash) => hash,
         Err(_) => {
-            return error_response(StatusCode::NOT_FOUND, &format!("Invalid card hash '{hash}'."));
+            return error_response(
+                StatusCode::NOT_FOUND,
+                &format!("Invalid card hash '{hash}'."),
+            );
         }
     };
     let card = state.cards.iter().find(|card| card.hash() == hash);
@@ -236,7 +239,12 @@ fn render_sibling(
 fn source_rows(state: &BrowseState, card: &Card, card_type: &str) -> Fallible<Markup> {
     let source_path = card.relative_file_path(&state.directory)?;
     let (start_line, end_line) = card.range();
-    let source = format!("{}, lines {}–{}", source_path.display(), start_line, end_line);
+    let source = format!(
+        "{}, lines {}–{}",
+        source_path.display(),
+        start_line,
+        end_line
+    );
     Ok(html! {
         tr {
             td .key { "Type" }
@@ -358,9 +366,7 @@ fn performance_rows(performance: Performance, today: Date) -> Markup {
 fn difficulty_chip(difficulty: f64) -> Markup {
     let clamped = difficulty.clamp(1.0, 10.0);
     let hue = 120.0 * (10.0 - clamped) / 9.0;
-    let style = format!(
-        "background: hsl({hue:.0}, 70%, 85%); color: hsl({hue:.0}, 90%, 20%);"
-    );
+    let style = format!("background: hsl({hue:.0}, 70%, 85%); color: hsl({hue:.0}, 90%, 20%);");
     html! {
         span .difficulty style=(style) { (format!("{:.2}", difficulty)) }
     }
