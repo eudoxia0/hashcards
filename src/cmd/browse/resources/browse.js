@@ -13,32 +13,6 @@
 // limitations under the License.
 
 document.addEventListener("DOMContentLoaded", function () {
-  // Render inline math
-  document.querySelectorAll(".math-inline").forEach(function (element) {
-    katex.render(element.textContent, element, {
-      displayMode: false,
-      throwOnError: false,
-      macros: MACROS,
-    });
-  });
-  // Render display math
-  document.querySelectorAll(".math-display").forEach(function (element) {
-    katex.render(element.textContent, element, {
-      displayMode: true,
-      throwOnError: false,
-      macros: MACROS,
-    });
-  });
-  // Initialize syntax highlighting
-  if (typeof hljs !== "undefined") {
-    hljs.highlightAll();
-  }
-  // Make the card content visible, after we've rendered the math and
-  // highlighted the code. Unlike the drill interface, a browse page can show
-  // many cards at once, so reveal all of them.
-  document.querySelectorAll(".card-content").forEach(function (element) {
-    element.style.opacity = "1";
-  });
   // Each navigation loads a fresh page, which resets the deck and card
   // lists' scroll positions. Scroll the selected items back into view.
   document.querySelectorAll(".pane .selected").forEach(function (element) {

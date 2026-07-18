@@ -41,17 +41,11 @@ pub fn page_template(title: &str, body: Markup) -> Markup {
                 script defer src=(HIGHLIGHT_JS_URL) {};
                 link rel="stylesheet" href="/common.css";
                 link rel="stylesheet" href="/browse.css";
-                // See `script.js`. To prevent a flash of un-rendered TeX and
-                // un-highlighted source code, we make the card content
-                // invisible until the math rendering and syntax highlighting
-                // are done. If the browser has JavaScript disabled, however,
-                // we keep the content visible.
-                style { ".card-content { opacity: 0; }" }
-                noscript { style { ".card-content { opacity: 1; }" }}
             }
             body {
                 (body)
                 script src="/script.js" {};
+                script src="/browse.js" {};
             }
         }
     }

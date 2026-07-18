@@ -24,6 +24,7 @@ use axum::http::StatusCode;
 use axum::http::header::CACHE_CONTROL;
 use axum::http::header::CONTENT_TYPE;
 use axum::response::Html;
+use axum::response::IntoResponse;
 use axum::routing::get;
 use tokio::net::TcpListener;
 use tokio::signal;
@@ -124,6 +125,7 @@ pub async fn start_browse_server(config: BrowseServerConfig) -> Fallible<()> {
     let app = app.route("/file/{*path}", get(file_handler));
     let app = app.route("/katex/fonts/{*path}", get(katex_font_handler));
     let app = app.route("/script.js", get(script_handler));
+    let app = app.route("/browse.js", get(browse_js_handler));
     let app = app.route("/common.css", get(common_css_handler));
     let app = app.route("/browse.css", get(browse_css_handler));
     let app = app.route(HIGHLIGHT_CSS_URL, get(highlight_css_handler));
@@ -172,8 +174,19 @@ async fn script_handler(
     }
     content.push_str("MACROS[','] = '{\\\\char`,}';\n");
     content.push('\n');
-    content.push_str(include_str!("script.js"));
+    content.push_str(include_str!("../drill/script.js"));
     (StatusCode::OK, [(CONTENT_TYPE, "text/javascript")], content)
+}
+
+async fn browse_js_handler() -> impl IntoResponse {
+    (
+        StatusCode::OK,
+        [
+            (CONTENT_TYPE, "text/javascript"),
+            (CACHE_CONTROL, CACHE_CONTROL_IMMUTABLE),
+        ],
+        include_bytes!("resources/browse.js"),
+    )
 }
 
 fn escape_js_string_literal(s: &str) -> String {
@@ -200,7 +213,7 @@ async fn common_css_handler() -> (StatusCode, [(HeaderName, &'static str); 2], &
 }
 
 async fn browse_css_handler() -> (StatusCode, [(HeaderName, &'static str); 2], &'static [u8]) {
-    css_response(include_bytes!("browse.css"))
+    css_response(include_bytes!("resources/browse.css"))
 }
 
 async fn favicon_handler() -> (StatusCode, [(HeaderName, &'static str); 2], &'static [u8]) {
