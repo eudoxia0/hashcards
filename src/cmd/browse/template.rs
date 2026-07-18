@@ -50,11 +50,6 @@ pub fn page_template(title: &str, body: Markup) -> Markup {
                 noscript { style { ".card-content { opacity: 1; }" }}
             }
             body {
-                header .site-header {
-                    nav {
-                        a href="/" { "hashcards" }
-                    }
-                }
                 (body)
                 script src="/script.js" {};
             }

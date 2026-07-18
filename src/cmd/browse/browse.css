@@ -10,21 +10,6 @@ body {
     background: #fcfcfc;
 }
 
-.site-header {
-    flex-shrink: 0;
-    background: #f8f8f8;
-    border-bottom: 1px solid black;
-    padding: 12px 24px;
-
-    nav a {
-        font-family: var(--font-sans);
-        font-size: 18px;
-        font-weight: 600;
-        color: inherit;
-        text-decoration: none;
-    }
-}
-
 .browse-columns {
     flex: 1;
     display: flex;
@@ -555,11 +540,6 @@ body {
 @media (prefers-color-scheme: dark) {
     body {
         background: #1e1e1e;
-    }
-
-    .site-header {
-        background: #252525;
-        border-bottom-color: #444;
     }
 
     .pane-header {

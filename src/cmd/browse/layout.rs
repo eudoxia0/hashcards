@@ -124,21 +124,15 @@ fn deck_pane(state: &BrowseState, selected: Option<&str>) -> Markup {
 /// The list of cards in a deck.
 fn cards_pane(state: &BrowseState, deck: &str, selected: Option<EntryKey>) -> Markup {
     let entries = deck_entries(state, deck);
-    let card_count = state
+    let due_count = state
         .cards
         .iter()
-        .filter(|card| card.deck_name() == deck)
+        .filter(|card| card.deck_name() == deck && state.is_due(card.hash()))
         .count();
     html! {
         div .pane-header {
             div .pane-title { (deck) }
-            div .pane-sub {
-                @if entries.len() == card_count {
-                    (pluralize(card_count, "card"))
-                } @else {
-                    (pluralize(entries.len(), "card")) " (" (card_count) " drillable)"
-                }
-            }
+            div .pane-sub { (pluralize(entries.len(), "card")) ", " (due_count) " due" }
         }
         ul .card-items {
             @for entry in &entries {
