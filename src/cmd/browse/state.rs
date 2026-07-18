@@ -22,8 +22,7 @@ use crate::types::card_hash::CardHash;
 use crate::types::date::Date;
 use crate::types::performance::Performance;
 
-/// State shared by the browse server's handlers. Browsing is read-only: the
-/// state is a snapshot of the collection taken at startup, and never changes.
+/// Server state.
 #[derive(Clone)]
 pub struct BrowseState {
     /// Server port.
