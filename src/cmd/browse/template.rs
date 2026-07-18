@@ -55,9 +55,7 @@ pub fn page_template(title: &str, body: Markup) -> Markup {
                         a href="/" { "hashcards" }
                     }
                 }
-                main .browse {
-                    (body)
-                }
+                (body)
                 script src="/script.js" {};
             }
         }
@@ -74,7 +72,7 @@ pub fn error_response(status: StatusCode, message: &str) -> (StatusCode, Html<St
     let markup = page_template(
         "Error — hashcards",
         html! {
-            div .error {
+            main .error-page {
                 h1 { "Error" }
                 p { (message) }
             }

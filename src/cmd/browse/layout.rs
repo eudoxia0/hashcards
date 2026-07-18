@@ -1,0 +1,181 @@
+// Copyright 2025–2026 Fernando Borretti
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+use std::collections::BTreeMap;
+
+use maud::Markup;
+use maud::html;
+
+use crate::cmd::browse::entries::EntryKey;
+use crate::cmd::browse::entries::deck_entries;
+use crate::cmd::browse::entries::entry_key;
+use crate::cmd::browse::entries::entry_label;
+use crate::cmd::browse::entries::entry_schedule;
+use crate::cmd::browse::entries::entry_type_label;
+use crate::cmd::browse::entries::entry_url;
+use crate::cmd::browse::state::BrowseState;
+use crate::cmd::browse::template::page_template;
+use crate::cmd::browse::template::pluralize;
+use crate::cmd::browse::url::deck_url;
+use crate::types::aliases::DeckName;
+
+/// The maximum number of characters of an entry's label shown in the card
+/// list.
+const MAX_LABEL_CHARS: usize = 120;
+
+/// Which deck and card, if any, are currently selected.
+pub struct Selection<'a> {
+    pub deck: Option<&'a str>,
+    pub entry: Option<EntryKey>,
+}
+
+/// Render the three-column browse page: the deck list, the card list of the
+/// selected deck, and the detail view of the selected card.
+pub fn columns_page(state: &BrowseState, selection: Selection, detail: Option<Markup>) -> Markup {
+    let title = match selection.deck {
+        Some(deck) => format!("{deck} — hashcards"),
+        None => "hashcards".to_string(),
+    };
+    let cards_pane_body = match selection.deck {
+        Some(deck) => cards_pane(state, deck, selection.entry),
+        None => placeholder("Select a deck."),
+    };
+    let detail_pane_body = match detail {
+        Some(markup) => markup,
+        None if selection.deck.is_some() => placeholder("Select a card."),
+        None => placeholder(""),
+    };
+    let body = html! {
+        main .browse-columns {
+            div .pane .deck-pane {
+                (deck_pane(state, selection.deck))
+            }
+            div .pane .cards-pane {
+                (cards_pane_body)
+            }
+            div .pane .detail-pane {
+                (detail_pane_body)
+            }
+        }
+    };
+    page_template(&title, body)
+}
+
+/// The deck list, grouped by starting letter like a dictionary.
+fn deck_pane(state: &BrowseState, selected: Option<&str>) -> Markup {
+    // Count due cards per deck. The `entry` call ensures every deck is
+    // present, even with zero due cards.
+    let mut due_counts: BTreeMap<&DeckName, usize> = BTreeMap::new();
+    for card in state.cards.iter() {
+        let count = due_counts.entry(card.deck_name()).or_default();
+        if state.is_due(card.hash()) {
+            *count += 1;
+        }
+    }
+    let total_cards = state.cards.len();
+    let total_due: usize = due_counts.values().sum();
+    // Case-insensitive alphabetical order.
+    let mut decks: Vec<(&DeckName, usize)> = due_counts.into_iter().collect();
+    decks.sort_by_key(|(name, _)| name.to_lowercase());
+    // Group by starting letter. Within a group, decks stay in sorted order.
+    let mut groups: BTreeMap<char, Vec<(&DeckName, usize)>> = BTreeMap::new();
+    for (name, due) in decks {
+        groups.entry(first_letter(name)).or_default().push((name, due));
+    }
+    html! {
+        div .pane-header {
+            div .pane-title { "Decks" }
+            div .pane-sub { (pluralize(total_cards, "card")) ", " (total_due) " due" }
+        }
+        @if groups.is_empty() {
+            div .pane-empty { "No cards in this collection." }
+        }
+        @for (letter, decks) in &groups {
+            div .letter-group {
+                div .letter { (letter) }
+                ul {
+                    @for (name, due) in decks {
+                        li {
+                            a .selected[selected == Some(name.as_str())] href=(deck_url(name)) {
+                                span .name { (name) }
+                                @if *due > 0 {
+                                    span .due-badge { (due) }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// The list of cards in a deck.
+fn cards_pane(state: &BrowseState, deck: &str, selected: Option<EntryKey>) -> Markup {
+    let entries = deck_entries(state, deck);
+    let card_count = state
+        .cards
+        .iter()
+        .filter(|card| card.deck_name() == deck)
+        .count();
+    html! {
+        div .pane-header {
+            div .pane-title { (deck) }
+            div .pane-sub {
+                @if entries.len() == card_count {
+                    (pluralize(card_count, "card"))
+                } @else {
+                    (pluralize(entries.len(), "card")) " (" (card_count) " drillable)"
+                }
+            }
+        }
+        ul .card-items {
+            @for entry in &entries {
+                li {
+                    a .selected[selected == Some(entry_key(entry))] href=(entry_url(entry)) {
+                        div .label { (truncate_label(entry_label(entry))) }
+                        div .meta {
+                            (entry_type_label(entry)) " · " (entry_schedule(state, entry))
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn placeholder(message: &str) -> Markup {
+    html! {
+        div .placeholder {
+            p { (message) }
+        }
+    }
+}
+
+/// The letter a deck is grouped under: the uppercased first letter of its
+/// name, or '#' for names not starting with a letter.
+fn first_letter(name: &str) -> char {
+    match name.chars().next() {
+        Some(c) if c.is_alphabetic() => c.to_uppercase().next().unwrap_or(c),
+        _ => '#',
+    }
+}
+
+/// The first line of a label, cut off at `MAX_LABEL_CHARS` characters. The
+/// CSS truncates overflowing labels with an ellipsis; this just keeps huge
+/// cards from bloating the list markup.
+fn truncate_label(label: &str) -> String {
+    let first_line = label.lines().next().unwrap_or("");
+    first_line.chars().take(MAX_LABEL_CHARS).collect()
+}

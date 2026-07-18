@@ -22,7 +22,6 @@ use crate::markdown::MarkdownRenderConfig;
 use crate::media::resolve::MediaResolverBuilder;
 use crate::types::card::Card;
 use crate::types::card::CardContent;
-use crate::types::card::CardType;
 use crate::types::card::html_cloze_family;
 
 /// Build the Markdown render configuration for the given card. Media paths
@@ -38,36 +37,6 @@ pub fn render_config(state: &BrowseState, card: &Card) -> Fallible<MarkdownRende
         resource_hostname: state.resource_hostname.clone(),
         port: state.port,
         autoplay_audio: false,
-    })
-}
-
-/// Render a card's content with the answer visible. Basic cards show the
-/// question and the answer, cloze cards show the text with the deletion
-/// revealed.
-pub fn render_card_revealed(card: &Card, config: &MarkdownRenderConfig) -> Fallible<Markup> {
-    let html = match card.card_type() {
-        CardType::Basic => {
-            html! {
-                div .question .rich-text {
-                    (card.html_front(config)?)
-                }
-                div .answer .rich-text {
-                    (card.html_back(config)?)
-                }
-            }
-        }
-        CardType::Cloze => {
-            html! {
-                div .prompt .rich-text {
-                    (card.html_back(config)?)
-                }
-            }
-        }
-    };
-    Ok(html! {
-        div .card-content {
-            (html)
-        }
     })
 }
 

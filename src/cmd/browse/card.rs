@@ -20,14 +20,16 @@ use maud::Markup;
 use maud::PreEscaped;
 use maud::html;
 
+use crate::cmd::browse::entries::EntryKey;
+use crate::cmd::browse::layout::Selection;
+use crate::cmd::browse::layout::columns_page;
 use crate::cmd::browse::render::render_config;
 use crate::cmd::browse::render::render_family_revealed;
 use crate::cmd::browse::state::BrowseState;
 use crate::cmd::browse::template::error_response;
 use crate::cmd::browse::template::internal_error_response;
 use crate::cmd::browse::template::ok_response;
-use crate::cmd::browse::template::page_template;
-use crate::cmd::browse::url::deck_url;
+use crate::error::ErrorReport;
 use crate::error::Fallible;
 use crate::error::fail;
 use crate::fsrs::Grade;
@@ -57,10 +59,15 @@ pub async fn basic_card_handler(
             );
         }
     };
-    match render_basic_page(&state, card) {
-        Ok(markup) => ok_response(markup),
-        Err(e) => internal_error_response(e),
-    }
+    let detail = match render_basic_detail(&state, card) {
+        Ok(detail) => detail,
+        Err(e) => return internal_error_response(e),
+    };
+    let selection = Selection {
+        deck: Some(card.deck_name()),
+        entry: Some(EntryKey::Basic(hash)),
+    };
+    ok_response(columns_page(&state, selection, Some(detail)))
 }
 
 pub async fn cloze_family_handler(
@@ -85,17 +92,26 @@ pub async fn cloze_family_handler(
             );
         }
     };
-    match render_cloze_page(&state, family, siblings) {
-        Ok(markup) => ok_response(markup),
-        Err(e) => internal_error_response(e),
-    }
+    let first = match siblings.first() {
+        Some(first) => first,
+        None => {
+            return internal_error_response(ErrorReport::new("cloze family has no cards."));
+        }
+    };
+    let detail = match render_cloze_detail(&state, family, siblings) {
+        Ok(detail) => detail,
+        Err(e) => return internal_error_response(e),
+    };
+    let selection = Selection {
+        deck: Some(first.deck_name()),
+        entry: Some(EntryKey::Family(family)),
+    };
+    ok_response(columns_page(&state, selection, Some(detail)))
 }
 
-fn render_basic_page(state: &BrowseState, card: &Card) -> Fallible<Markup> {
+fn render_basic_detail(state: &BrowseState, card: &Card) -> Fallible<Markup> {
     let config = render_config(state, card)?;
-    let body = html! {
-        (breadcrumbs(card))
-        h1 { "Card" }
+    Ok(html! {
         h2 { "Front" }
         div .browse-card {
             div .card-content {
@@ -127,11 +143,10 @@ fn render_basic_page(state: &BrowseState, card: &Card) -> Fallible<Markup> {
         }
         h2 { "History" }
         (render_history(state, card.hash()))
-    };
-    Ok(page_template("Card — hashcards", body))
+    })
 }
 
-fn render_cloze_page(
+fn render_cloze_detail(
     state: &BrowseState,
     family: CardHash,
     siblings: &[Card],
@@ -141,9 +156,7 @@ fn render_cloze_page(
         None => return fail("cloze family has no cards."),
     };
     let config = render_config(state, first)?;
-    let body = html! {
-        (breadcrumbs(first))
-        h1 { "Card" }
+    Ok(html! {
         h2 { "Text" }
         div .browse-card {
             (render_family_revealed(siblings, &config)?)
@@ -170,12 +183,11 @@ fn render_cloze_page(
                 (render_sibling(state, sibling, index, &config)?)
             }
         }
-    };
-    Ok(page_template("Card — hashcards", body))
+    })
 }
 
 /// One section per cloze card in the family: the deleted text, and the card's
-/// own review stats.
+/// own review stats and history.
 fn render_sibling(
     state: &BrowseState,
     sibling: &Card,
@@ -211,26 +223,12 @@ fn render_sibling(
     })
 }
 
-fn breadcrumbs(card: &Card) -> Markup {
-    html! {
-        nav .breadcrumbs {
-            a href="/" { "← Collection" }
-            " / "
-            a href=(deck_url(card.deck_name())) { (card.deck_name()) }
-        }
-    }
-}
-
 /// The deck, type, and source rows shared by both detail pages.
 fn source_rows(state: &BrowseState, card: &Card, card_type: &str) -> Fallible<Markup> {
     let source_path = card.relative_file_path(&state.directory)?;
     let (start_line, end_line) = card.range();
     let source = format!("{}, lines {}–{}", source_path.display(), start_line, end_line);
     Ok(html! {
-        tr {
-            td .key { "Deck" }
-            td .val { a href=(deck_url(card.deck_name())) { (card.deck_name()) } }
-        }
         tr {
             td .key { "Type" }
             td .val { (card_type) }
