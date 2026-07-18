@@ -30,8 +30,9 @@ use crate::types::card_hash::CardHash;
 use crate::types::date::Date;
 use crate::types::performance::Performance;
 
-/// A card as written in a deck file: either a basic card, or a family of
-/// cloze cards sharing the same text.
+/// An entry in the list of cards corresponds to a card as written in the
+/// Markdown source. In the case of cloze cards, this is all the effective
+/// cards rolled up into one.
 pub enum DeckEntry<'a> {
     Basic(&'a Card),
     ClozeFamily(CardHash, &'a [Card]),
