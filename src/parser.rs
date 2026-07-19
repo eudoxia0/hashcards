@@ -295,7 +295,17 @@ impl Parser {
                     start_line: line_num,
                 }),
                 Line::Separator => Ok(State::Start),
-                Line::Text(_) => Ok(State::Start),
+                Line::Text(text) => {
+                    if text.trim().is_empty() {
+                        Ok(State::Start)
+                    } else {
+                        Err(ParserError::new(
+                            "Found text that doesn't parse as a flashcard. Did you forget a 'Q:' or 'C:' tag?",
+                            self.file_path.clone(),
+                            line_num,
+                        ))
+                    }
+                }
                 Line::Eof => Ok(State::End),
             },
             State::ReadingQuestion {
@@ -1239,6 +1249,29 @@ A: Genetic material."#,
                 answer,
             } if question == "baz" && answer == "quux"
         ));
+        Ok(())
+    }
+
+    #[test]
+    fn test_unparseable_text_between_separators_errors() -> Result<(), ParserError> {
+        let input = "Q: foo\nA: bar\n\n---\n\nI'm a mistake!\n\n---\n\nQ: baz\nA: quux";
+        let parser = make_test_parser();
+        let result = parser.parse(input);
+
+        assert!(result.is_err());
+        if let Err(e) = result {
+            assert!(e.to_string().contains("doesn't parse as a flashcard"));
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn test_unparseable_text_at_start_errors() -> Result<(), ParserError> {
+        let input = "This is stray text.\n\nQ: foo\nA: bar";
+        let parser = make_test_parser();
+        let result = parser.parse(input);
+
+        assert!(result.is_err());
         Ok(())
     }
 
