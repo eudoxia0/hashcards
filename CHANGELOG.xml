@@ -5,6 +5,11 @@
                 Add `--resource-hostname` to customize rewritten media resource URLs.
             </change>
         </changed>
+        <fixed>
+            <change author="eudoxia0">
+                Stray text between flashcards produces an error.
+            </change>
+        </fixed>
     </unreleased>
     <releases>
         <release version="0.4.0" date="2026-07-17">
