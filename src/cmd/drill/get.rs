@@ -74,6 +74,8 @@ fn render_session_page(state: &ServerState, mutable: &MutableState) -> Fallible<
             .build()?,
         resource_hostname: state.resource_hostname.clone(),
         port: state.port,
+        autoplay_audio: true,
+        render_media: true,
     };
     let card_content = render_card(&card, mutable.reveal, &config)?;
     let card_controls = if mutable.reveal {

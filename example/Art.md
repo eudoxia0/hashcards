@@ -1,6 +1,6 @@
 Q: What is the title of this painting?
 
-![](@/thetempest.webp)
+![The Tempest](@/thetempest.webp)
 
 A: _The Tempest_
 
@@ -8,6 +8,6 @@ A: _The Tempest_
 
 Q: What is the title of this painting?
 
-![](@/jss.webp)
+![Portrait of Lady Agnew of Lochnaw](@/jss.webp)
 
 A: _Portrait of Lady Agnew of Lochnaw_

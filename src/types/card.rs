@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::cmp::Reverse;
 use std::path::Path;
 use std::path::PathBuf;
 
@@ -207,6 +208,18 @@ impl CardContent {
         Ok(html)
     }
 
+    /// The deleted text of a cloze card. For basic cards, this is `None`.
+    pub fn deletion_text(&self) -> Fallible<Option<String>> {
+        match self {
+            CardContent::Basic { .. } => Ok(None),
+            CardContent::Cloze { text, start, end } => {
+                let bytes = text.as_bytes();
+                let deleted = String::from_utf8(bytes[*start..*end + 1].to_vec())?;
+                Ok(Some(deleted))
+            }
+        }
+    }
+
     pub fn html_back(&self, config: &MarkdownRenderConfig) -> Fallible<Markup> {
         let html = match self {
             CardContent::Basic { answer, .. } => {
@@ -233,6 +246,49 @@ impl CardContent {
         };
         Ok(html)
     }
+}
+
+/// Render a cloze text with every deletion revealed. `deletions` is the list
+/// of `(start, end)` inclusive byte ranges into `text`, one per card in the
+/// family.
+pub fn html_cloze_family(
+    config: &MarkdownRenderConfig,
+    text: &str,
+    deletions: &[(usize, usize)],
+) -> Fallible<Markup> {
+    // Render each deletion's text before splicing.
+    let bytes = text.as_bytes();
+    let mut revealed: Vec<String> = Vec::new();
+    for (start, end) in deletions {
+        let deleted = String::from_utf8(bytes[*start..*end + 1].to_vec())?;
+        revealed.push(markdown_to_html_inline(config, &deleted)?);
+    }
+    // Replace each deletion with a placeholder tag unique to it. Splice in
+    // descending order of position, so that earlier byte offsets stay valid.
+    let mut indexed: Vec<(usize, (usize, usize))> = deletions.iter().copied().enumerate().collect();
+    indexed.sort_by_key(|(_, (start, _))| Reverse(*start));
+    let mut text_bytes: Vec<u8> = bytes.to_owned();
+    for (index, (start, end)) in indexed {
+        let tag = cloze_family_tag(index);
+        text_bytes.splice(start..end + 1, tag.bytes());
+    }
+    let text = String::from_utf8(text_bytes)?;
+    let mut html = markdown_to_html(config, &text)?;
+    // Replace tags in descending index order, so that e.g. the tag for
+    // deletion 1 does not match the prefix of the tag for deletion 10.
+    for (index, revealed) in revealed.iter().enumerate().rev() {
+        html = html.replace(
+            &cloze_family_tag(index),
+            &format!("<span class='cloze-reveal'>{}</span>", revealed),
+        );
+    }
+    Ok(html! {
+        (PreEscaped(html))
+    })
+}
+
+fn cloze_family_tag(index: usize) -> String {
+    format!("{CLOZE_TAG}_{index}")
 }
 
 #[cfg(test)]

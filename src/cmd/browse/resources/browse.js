@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub mod browse;
-pub mod check;
-pub mod drill;
-pub mod due;
-pub mod export;
-pub mod orphans;
-pub mod stats;
+document.addEventListener("DOMContentLoaded", function () {
+  // Each navigation loads a fresh page, which resets the deck and card
+  // lists' scroll positions. Scroll the selected items back into view.
+  document.querySelectorAll(".pane .selected").forEach(function (element) {
+    element.scrollIntoView({ block: "center", inline: "nearest" });
+  });
+});
