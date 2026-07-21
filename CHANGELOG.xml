@@ -9,6 +9,10 @@
             <change author="eudoxia0">
                 Stray text between flashcards produces an error.
             </change>
+            <change author="konyahin">
+                The card limit is now the final session cap, applied after the new
+                card limit and sibling burying.
+            </change>
         </fixed>
     </unreleased>
     <releases>

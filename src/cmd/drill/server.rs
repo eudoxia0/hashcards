@@ -104,7 +104,7 @@ pub async fn start_server(config: ServerConfig) -> Fallible<()> {
         db,
         cards,
         macros,
-    } = Collection::new(config.directory)?;
+    } = Collection::new(config.directory.clone())?;
 
     let today: Date = config.session_started_at.date();
 
@@ -124,19 +124,7 @@ pub async fn start_server(config: ServerConfig) -> Fallible<()> {
         .filter(|card| due_today.contains(&card.hash()))
         .collect::<Vec<_>>();
 
-    let due_today: Vec<Card> = filter_deck(
-        &db,
-        due_today,
-        config.card_limit,
-        config.new_card_limit,
-        config.deck_filter,
-    )?;
-
-    let due_today: Vec<Card> = if config.bury_siblings {
-        bury_siblings(due_today)
-    } else {
-        due_today
-    };
+    let due_today: Vec<Card> = filter_deck(&db, due_today, &config)?;
 
     if due_today.is_empty() {
         println!("No cards due today.");
@@ -349,30 +337,18 @@ async fn shutdown_signal(shutdown_rx: Receiver<()>) {
     }
 }
 
-fn filter_deck(
-    db: &Database,
-    deck: Vec<Card>,
-    card_limit: Option<usize>,
-    new_card_limit: Option<usize>,
-    deck_filter: Option<String>,
-) -> Fallible<Vec<Card>> {
+fn filter_deck(db: &Database, deck: Vec<Card>, config: &ServerConfig) -> Fallible<Vec<Card>> {
     // Apply the deck filter.
-    let deck = match deck_filter {
+    let deck = match &config.deck_filter {
         Some(filter) => deck
             .into_iter()
-            .filter(|card| card.deck_name() == &filter)
+            .filter(|card| card.deck_name() == filter)
             .collect(),
         None => deck,
     };
 
-    // Apply the card limit.
-    let deck = match card_limit {
-        Some(limit) => deck.into_iter().take(limit).collect(),
-        None => deck,
-    };
-
     // Apply the new card limit.
-    let deck = match new_card_limit {
+    let deck: Vec<Card> = match config.new_card_limit {
         Some(limit) => {
             let mut new_count = 0;
             let mut result = Vec::new();
@@ -388,6 +364,18 @@ fn filter_deck(
             }
             result
         }
+        None => deck,
+    };
+
+    let deck = if config.bury_siblings {
+        bury_siblings(deck)
+    } else {
+        deck
+    };
+
+    // Apply the card limit.
+    let deck = match config.card_limit {
+        Some(limit) => deck.into_iter().take(limit).collect(),
         None => deck,
     };
 
@@ -407,4 +395,278 @@ fn bury_siblings(deck: Vec<Card>) -> Vec<Card> {
         result.push(card);
     }
     result
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashMap;
+    use std::path::PathBuf;
+
+    use crate::cmd::drill::server::AnswerControls;
+    use crate::cmd::drill::server::ServerConfig;
+    use crate::cmd::drill::server::filter_deck;
+    use crate::db::Database;
+    use crate::error::Fallible;
+    use crate::types::card::Card;
+    use crate::types::card::CardContent;
+    use crate::types::card_hash::CardHash;
+    use crate::types::date::Date;
+    use crate::types::performance::Performance;
+    use crate::types::performance::ReviewedPerformance;
+    use crate::types::timestamp::Timestamp;
+
+    const ANSWER: &str = "answer";
+
+    fn insert_card(db: &Database, card: &Card, is_new: bool) -> Fallible<()> {
+        let now = Timestamp::now();
+        db.insert_card(card.hash(), now)?;
+        db.update_card_performance(
+            card.hash(),
+            if is_new {
+                Performance::New
+            } else {
+                Performance::Reviewed(ReviewedPerformance {
+                    last_reviewed_at: now,
+                    stability: 1.0,
+                    difficulty: 1.0,
+                    interval_raw: 1.0,
+                    interval_days: 1,
+                    due_date: Date::today(),
+                    review_count: 1,
+                })
+            },
+        )?;
+        Ok(())
+    }
+
+    fn base_config() -> ServerConfig {
+        ServerConfig {
+            directory: None,
+            host: "127.0.0.1".to_string(),
+            resource_hostname: "localhost".to_string(),
+            port: 0,
+            session_started_at: Timestamp::now(),
+            card_limit: None,
+            new_card_limit: None,
+            deck_filter: None,
+            shuffle: false,
+            answer_controls: AnswerControls::Full,
+            bury_siblings: false,
+        }
+    }
+
+    /// check `filter_deck` behaviour across a range of decks.
+    #[test]
+    fn test_filter_deck() -> Fallible<()> {
+        struct CaseCard {
+            label: String,
+            card: Card,
+            is_new: bool,
+        }
+
+        fn card(label: &'static str, deck: &'static str, is_new: bool) -> CaseCard {
+            CaseCard {
+                label: label.to_string(),
+                card: Card::new(
+                    deck.to_string(),
+                    PathBuf::from("test.md"),
+                    (0, 0),
+                    CardContent::new_basic(label, ANSWER),
+                ),
+                is_new,
+            }
+        }
+
+        // we can't reuse label for card content for cloze cards, because we need to find right
+        // card by label in HashMap later
+        fn cloze_card(
+            label: &str,
+            prompt: &str,
+            start: usize,
+            deck: &str,
+            is_new: bool,
+        ) -> CaseCard {
+            CaseCard {
+                label: label.to_string(),
+                card: Card::new(
+                    deck.to_string(),
+                    PathBuf::from("test.md"),
+                    (0, 0),
+                    CardContent::new_cloze(prompt, start, start + 1),
+                ),
+                is_new,
+            }
+        }
+
+        struct Case {
+            name: &'static str,
+            cards: Vec<CaseCard>,
+            card_limit: Option<usize>,
+            new_card_limit: Option<usize>,
+            deck_filter: Option<String>,
+            bury_siblings: bool,
+            /// Labels of the cards expected to survive filtering.
+            expected: &'static [&'static str],
+        }
+
+        let cases = [
+            Case {
+                name: "pull all cards",
+                cards: vec![
+                    card("first", "first", false),
+                    card("second", "second", false),
+                    card("new", "first", true),
+                    cloze_card("cloze", "cloze", 0, "first", false),
+                ],
+                card_limit: None,
+                new_card_limit: None,
+                deck_filter: None,
+                bury_siblings: false,
+                expected: &["first", "second", "new", "cloze"],
+            },
+            Case {
+                name: "pull all cards from specific deck",
+                cards: vec![
+                    card("first", "first", false),
+                    card("second", "second", false),
+                    card("new", "first", true),
+                ],
+                card_limit: None,
+                new_card_limit: None,
+                deck_filter: Some("first".to_string()),
+                bury_siblings: false,
+                expected: &["first", "new"],
+            },
+            Case {
+                name: "pull N cards",
+                cards: vec![
+                    card("first", "first", false),
+                    card("second", "second", false),
+                    card("third", "third", false),
+                ],
+                card_limit: Some(2),
+                new_card_limit: None,
+                deck_filter: None,
+                bury_siblings: false,
+                expected: &["first", "second"],
+            },
+            Case {
+                name: "pull N new cards",
+                cards: vec![
+                    card("first", "first", false),
+                    card("second", "second", false),
+                    card("new", "first", true),
+                    card("new2", "first", true),
+                    card("new3", "first", true),
+                ],
+                card_limit: None,
+                new_card_limit: Some(2),
+                deck_filter: None,
+                bury_siblings: false,
+                expected: &["first", "second", "new", "new2"],
+            },
+            Case {
+                name: "bury all siblings",
+                cards: vec![
+                    cloze_card("cloze0", "cloze", 0, "first", false),
+                    cloze_card("cloze1", "cloze", 1, "first", false),
+                    cloze_card("cloze2", "cloze", 2, "first", false),
+                    cloze_card("cloze3", "cloze", 3, "first", false),
+                ],
+                card_limit: None,
+                new_card_limit: None,
+                deck_filter: None,
+                bury_siblings: true,
+                expected: &["cloze0"],
+            },
+            Case {
+                name: "don't bury siblings",
+                cards: vec![
+                    cloze_card("cloze0", "cloze", 0, "first", false),
+                    cloze_card("cloze1", "cloze", 1, "first", false),
+                    cloze_card("cloze2", "cloze", 2, "first", false),
+                    cloze_card("cloze3", "cloze", 3, "first", false),
+                ],
+                card_limit: None,
+                new_card_limit: None,
+                deck_filter: None,
+                bury_siblings: false,
+                expected: &["cloze0", "cloze1", "cloze2", "cloze3"],
+            },
+            Case {
+                name: "pull N new cards with card limit",
+                cards: vec![
+                    card("first", "first", false),
+                    card("second", "second", false),
+                    card("new", "first", true),
+                    card("new2", "first", true),
+                    card("new3", "first", true),
+                    card("third", "third", false),
+                    card("fourth", "fourth", false),
+                ],
+                card_limit: Some(5),
+                new_card_limit: Some(2),
+                deck_filter: None,
+                bury_siblings: false,
+                expected: &["first", "second", "new", "new2", "third"],
+            },
+            Case {
+                name: "pull N cards with bury siblings",
+                cards: vec![
+                    card("first", "first", false),
+                    card("second", "second", false),
+                    cloze_card("cloze0", "cloze", 0, "first", false),
+                    cloze_card("cloze1", "cloze", 1, "first", false),
+                    cloze_card("cloze2", "cloze", 2, "first", false),
+                    card("third", "third", false),
+                    card("new", "first", true),
+                    card("new2", "first", true),
+                ],
+                card_limit: Some(5),
+                new_card_limit: None,
+                deck_filter: None,
+                bury_siblings: true,
+                expected: &["first", "second", "cloze0", "third", "new"],
+            },
+        ];
+
+        for case in cases {
+            let db = Database::new(":memory:")?;
+
+            let deck: Vec<Card> = case
+                .cards
+                .iter()
+                .map(|case_card| {
+                    insert_card(&db, &case_card.card, case_card.is_new)?;
+                    Ok(case_card.card.clone())
+                })
+                .collect::<Fallible<_>>()?;
+
+            let config = ServerConfig {
+                card_limit: case.card_limit,
+                deck_filter: case.deck_filter,
+                new_card_limit: case.new_card_limit,
+                bury_siblings: case.bury_siblings,
+                ..base_config()
+            };
+            let result = filter_deck(&db, deck, &config)?;
+
+            let got: Vec<CardHash> = result.iter().map(|card| card.hash()).collect();
+
+            let by_label: HashMap<String, CardHash> = case
+                .cards
+                .iter()
+                .map(|cc| (cc.label.clone(), cc.card.hash()))
+                .collect();
+
+            let want: Vec<CardHash> = case
+                .expected
+                .iter()
+                .map(|l| by_label[&l.to_string()])
+                .collect();
+
+            assert_eq!(got, want, "case: {}", case.name);
+        }
+        Ok(())
+    }
 }
