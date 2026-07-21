@@ -4,6 +4,9 @@
             <change author="IvanVergiliev">
                 Add `--resource-hostname` to customize rewritten media resource URLs.
             </change>
+            <change author="eudoxia0">
+                Update dependencies.
+            </change>
         </changed>
         <fixed>
             <change author="eudoxia0">
