@@ -64,12 +64,12 @@ uninstall:
 	rm -f $(BINDIR)/hashcards
 
 .PHONY: example
-example:
+example: vendor/katex
 	rm -f example/hashcards.db
 	RUST_LOG=debug cargo run -- drill example
 
 .PHONY: coverage
-coverage:
+coverage: vendor/katex
 	cargo llvm-cov --html --open --ignore-filename-regex '(main|error|cli).rs'
 
 .PHONY: clean
