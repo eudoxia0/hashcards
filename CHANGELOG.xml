@@ -1,5 +1,10 @@
 <changelog>
     <unreleased>
+        <added>
+            <change author="chrisdoram">
+                Added support for term-definition cards.
+            </change>
+        </added>
         <changed>
             <change author="IvanVergiliev">
                 Add `--resource-hostname` to customize rewritten media resource URLs.
