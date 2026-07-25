@@ -156,7 +156,7 @@ impl Card {
 }
 
 impl CardContent {
-    /// Construct a basic card.
+    /// Construct a basic [`CardContent`].
     pub fn new_basic(question: impl Into<String>, answer: impl Into<String>) -> Self {
         Self::Basic {
             question: question.into().trim().to_string(),
@@ -164,7 +164,7 @@ impl CardContent {
         }
     }
 
-    /// Construct a cloze card.
+    /// Construct a cloze [`CardContent`].
     pub fn new_cloze(prompt: impl Into<String>, start: usize, end: usize) -> Self {
         Self::Cloze {
             text: prompt.into(),
@@ -173,13 +173,8 @@ impl CardContent {
         }
     }
 
-    /// Given a term and a definition, generate a pair of Cloze CardContent.
-    /// One with the cloze deletion for the term, the other for the definition.
-    ///
-    /// The cloze content is generated following the convention:
-    /// Term: [term]
-    ///
-    /// Definition: [definition]
+    /// Given a term and a definition, generate a pair of cloze [`CardContent`]
+    /// values.
     pub fn new_cloze_pair_from_term_definition(term: &str, definition: &str) -> [Self; 2] {
         let term = term.trim();
         let definition = definition.trim();
