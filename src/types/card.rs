@@ -84,23 +84,28 @@ impl Card {
         }
     }
 
+    /// The name of the deck this card was parsed from.
     pub fn deck_name(&self) -> &DeckName {
         &self.deck_name
     }
 
+    /// The card's content.
     pub fn content(&self) -> &CardContent {
         &self.content
     }
 
+    /// The card's hash.
     pub fn hash(&self) -> CardHash {
         self.hash
     }
 
+    /// The card's family hash. This value is the same for all cloze cards
+    /// parsed from the same source text.
     pub fn family_hash(&self) -> Option<CardHash> {
         self.content.family_hash()
     }
 
-    /// Return the absolute path of the file this card was parsed from.
+    /// The absolute path of the file this card was parsed from.
     pub fn file_path(&self) -> &PathBuf {
         &self.file_path
     }
@@ -117,6 +122,8 @@ impl Card {
         Ok(result)
     }
 
+    /// The line range of the card's source text, in the file this card was
+    /// parsed from.
     pub fn range(&self) -> (usize, usize) {
         self.range
     }
