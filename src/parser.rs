@@ -1035,7 +1035,7 @@ mod tests {
         assert_eq!(cards.len(), 3);
         assert_single_cloze(&cards[0], "foo", 6, 8)?;
         assert_single_cloze(&cards[1], "bar", 23, 25)?;
-        assert_single_cloze(&cards[1], "cloze", 11, 16)?;
+        assert_single_cloze(&cards[2], "cloze", 10, 14)?;
         Ok(())
     }
 

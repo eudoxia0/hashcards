@@ -175,7 +175,9 @@ impl CardContent {
     ///
     /// Definition: [definition]
     pub fn new_cloze_pair_from_term_definition(term: &str, definition: &str) -> [Self; 2] {
-        let text = format!("Term: {}\n\nDefinition: {}", term.trim(), definition.trim());
+        let term = term.trim();
+        let definition = definition.trim();
+        let text = format!("Term: {term}\n\nDefinition: {definition}");
         [
             Self::Cloze {
                 text: text.clone(),
