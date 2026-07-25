@@ -1001,16 +1001,13 @@ mod tests {
     }
 
     #[test]
-    fn test_multiline_term_and_defintion() -> Result<(), ParserError> {
+    fn test_multiline_term_and_defintion() -> Fallible<()> {
         let input = "T: foo\nbar\n\nD: baz\nquux\n";
         let parser = make_test_parser();
         let cards = parser.parse(input)?;
 
-        assert_cloze(
-            &cards,
-            "Term: foo\nbar\n\n\nDefinition: baz\nquux",
-            &[(6, 13), (28, 35)],
-        );
+        assert_single_cloze(&cards[0], "foo\nbar", 6, 12)?;
+        assert_single_cloze(&cards[1], "baz\nquux", 27, 34)?;
         Ok(())
     }
 
