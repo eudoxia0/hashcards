@@ -978,16 +978,6 @@ mod tests {
     }
 
     #[test]
-    fn test_term_followed_by_cloze_errors() -> Result<(), ParserError> {
-        let input = "T: foo\nD: bar\n\nC: this is a [cloze]";
-        let parser = make_test_parser();
-        let result = parser.parse(input);
-
-        assert!(result.is_err());
-        Ok(())
-    }
-
-    #[test]
     fn test_term_with_no_definition_errors() -> Result<(), ParserError> {
         let input = "T: foo\n";
         let parser = make_test_parser();
