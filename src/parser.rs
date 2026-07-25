@@ -890,13 +890,8 @@ mod tests {
     }
 
     /// Assert that the given card is a cloze card, and that its n-th deletion
-    /// has the given text and deletion positions.
-    fn assert_single_cloze(
-        card: &Card,
-        cloze: &str,
-        deletion_start: usize,
-        deletion_end: usize,
-    ) -> Fallible<()> {
+    /// has the given text and starts at the given position.
+    fn assert_single_cloze(card: &Card, cloze: &str, deletion_start: usize) -> Fallible<()> {
         match card.content() {
             CardContent::Cloze {
                 text: _,
@@ -905,7 +900,7 @@ mod tests {
             } => {
                 assert_eq!(card.cloze_text()?, cloze);
                 assert_eq!(*start, deletion_start);
-                assert_eq!(*end, deletion_end);
+                assert_eq!(*end, deletion_start + cloze.len() - 1);
                 Ok(())
             }
             CardContent::Basic { .. } => {
@@ -1006,8 +1001,8 @@ mod tests {
         let parser = make_test_parser();
         let cards = parser.parse(input)?;
 
-        assert_single_cloze(&cards[0], "foo\nbar", 6, 12)?;
-        assert_single_cloze(&cards[1], "baz\nquux", 27, 34)?;
+        assert_single_cloze(&cards[0], "foo\nbar", 6)?;
+        assert_single_cloze(&cards[1], "baz\nquux", 27)?;
         Ok(())
     }
 
@@ -1030,9 +1025,9 @@ mod tests {
         assert!(result.is_ok());
         let cards: Vec<Card> = result?;
         assert_eq!(cards.len(), 3);
-        assert_single_cloze(&cards[0], "foo", 6, 8)?;
-        assert_single_cloze(&cards[1], "bar", 23, 25)?;
-        assert_single_cloze(&cards[2], "cloze", 10, 14)?;
+        assert_single_cloze(&cards[0], "foo", 6)?;
+        assert_single_cloze(&cards[1], "bar", 23)?;
+        assert_single_cloze(&cards[2], "cloze", 10)?;
         Ok(())
     }
 
