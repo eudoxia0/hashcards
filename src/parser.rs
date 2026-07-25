@@ -867,6 +867,12 @@ mod tests {
 
     use super::*;
 
+    /// Assert that the given card is a cloze card, and that its n-th deletion
+    /// has the given text and deletion positions.
+    fn assert_single_cloze(card: &Card) {
+        todo!()
+    }
+
     #[test]
     fn test_empty_string() -> Result<(), ParserError> {
         let input = "";
@@ -974,6 +980,28 @@ mod tests {
         let result = parser.parse(input);
 
         assert!(result.is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn test_term_followed_by_cloze_errors() -> Result<(), ParserError> {
+        let input = "T: foo\nD: bar\n\nC: this is a [cloze]";
+        let parser = make_test_parser();
+        let result = parser.parse(input);
+
+        assert!(result.is_ok());
+        let cards: Vec<Card> = result?;
+        assert_eq!(cards.len(), 3);
+        assert_cloze(
+            &cards[0..1],
+            "Term: foo\n\nDefinition: bar",
+            &[(6, 8), (23, 25)],
+        );
+        assert_cloze(
+            &cards[1..],
+            "Term: foo\n\nDefinition: bar",
+            &[(6, 8), (23, 25)],
+        );
         Ok(())
     }
 
