@@ -136,10 +136,12 @@ impl Card {
         }
     }
 
+    /// The HTML of the front of the card.
     pub fn html_front(&self, config: &MarkdownRenderConfig) -> Fallible<Markup> {
         self.content.html_front(config)
     }
 
+    /// The HTML of the back of the card.
     pub fn html_back(&self, config: &MarkdownRenderConfig) -> Fallible<Markup> {
         self.content.html_back(config)
     }
