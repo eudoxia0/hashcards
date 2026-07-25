@@ -193,6 +193,7 @@ impl CardContent {
         ]
     }
 
+    /// The hash of the card content.
     pub fn hash(&self) -> CardHash {
         let mut hasher = Hasher::new();
         match &self {
