@@ -140,15 +140,7 @@ impl Card {
     /// If the card is a basic card, panic.
     #[cfg(test)]
     pub fn cloze_text(&self) -> Fallible<String> {
-        match self.content() {
-            CardContent::Cloze { text, start, end } => {
-                let bytes: Vec<u8> = text.as_bytes()[*start..*end + 1].to_owned();
-                Ok(String::from_utf8(bytes)?)
-            }
-            CardContent::Basic { .. } => {
-                panic!("Called `Card::cloze_text` with a basic card.")
-            }
-        }
+        self.content().cloze_text()
     }
 }
 
@@ -273,6 +265,22 @@ impl CardContent {
             }
         };
         Ok(html)
+    }
+
+    /// For a cloze card: return the text under the cloze.
+    ///
+    /// If the card is a basic card, panic.
+    #[cfg(test)]
+    pub fn cloze_text(&self) -> Fallible<String> {
+        match self {
+            CardContent::Cloze { text, start, end } => {
+                let bytes: Vec<u8> = text.as_bytes()[*start..*end + 1].to_owned();
+                Ok(String::from_utf8(bytes)?)
+            }
+            CardContent::Basic { .. } => {
+                panic!("Called `CardContent::cloze_text` with a basic card.")
+            }
+        }
     }
 }
 
