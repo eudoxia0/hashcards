@@ -167,7 +167,7 @@ impl ParserError {
     ) -> Self {
         Self::new(
             format!(
-                "Found a new {} whilst parsing a previous {}.",
+                "Found a new {} while parsing a previous {}.",
                 new_line_type, current_line_type
             ),
             file_path,
