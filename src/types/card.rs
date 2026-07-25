@@ -138,6 +138,7 @@ impl Card {
     /// For a cloze card: return the text under the cloze.
     ///
     /// If the card is a basic card, panic.
+    #[cfg(test)]
     pub fn cloze_text(&self) -> Fallible<String> {
         match self.content() {
             CardContent::Cloze { text, start, end } => {
