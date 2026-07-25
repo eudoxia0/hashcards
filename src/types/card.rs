@@ -176,9 +176,9 @@ impl CardContent {
     /// Given a term and a definition, generate a pair of cloze [`CardContent`]
     /// values.
     pub fn new_cloze_pair_from_term_definition(term: &str, definition: &str) -> [Self; 2] {
-        let term = term.trim();
-        let definition = definition.trim();
-        let text = format!("Term: {term}\n\nDefinition: {definition}");
+        let term: &str = term.trim();
+        let definition: &str = definition.trim();
+        let text: String = format!("Term: {term}\n\nDefinition: {definition}");
         [
             Self::Cloze {
                 text: text.clone(),
