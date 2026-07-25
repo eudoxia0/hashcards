@@ -50,6 +50,7 @@ pub fn markdown_to_html(config: &MarkdownRenderConfig, markdown: &str) -> Fallib
     let mut options = Options::empty();
     options.insert(Options::ENABLE_TABLES);
     options.insert(Options::ENABLE_MATH);
+    options.insert(Options::ENABLE_SMART_PUNCTUATION);
     let rewritten = rewrite_latex_delimiters(markdown);
     let parser = Parser::new_ext(&rewritten, options);
     let events: Vec<Event<'_>> = parser
