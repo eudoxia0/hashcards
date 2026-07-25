@@ -67,6 +67,7 @@ pub enum CardType {
 }
 
 impl Card {
+    /// Construct a new card.
     pub fn new(
         deck_name: DeckName,
         file_path: PathBuf,
