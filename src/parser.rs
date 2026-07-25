@@ -867,6 +867,25 @@ mod tests {
 
     use super::*;
 
+    /// Construct a parser for testing.
+    fn make_test_parser() -> Parser {
+        Parser::new("test_deck".to_string(), PathBuf::from("test.md"))
+    }
+
+    fn assert_cloze(cards: &[Card], clean_text: &str, deletions: &[(usize, usize)]) {
+        assert_eq!(cards.len(), deletions.len());
+        for (i, (start, end)) in deletions.iter().enumerate() {
+            assert!(matches!(
+                &cards[i].content(),
+                CardContent::Cloze {
+                    text,
+                    start: s,
+                    end: e,
+                } if text == clean_text && *s == *start && *e == *end
+            ));
+        }
+    }
+
     /// Assert that the given card is a cloze card, and that its n-th deletion
     /// has the given text and deletion positions.
     fn assert_single_cloze(card: &Card) {
@@ -1233,24 +1252,6 @@ mod tests {
 
         assert_eq!(deck.len(), 1);
         Ok(())
-    }
-
-    fn make_test_parser() -> Parser {
-        Parser::new("test_deck".to_string(), PathBuf::from("test.md"))
-    }
-
-    fn assert_cloze(cards: &[Card], clean_text: &str, deletions: &[(usize, usize)]) {
-        assert_eq!(cards.len(), deletions.len());
-        for (i, (start, end)) in deletions.iter().enumerate() {
-            assert!(matches!(
-                &cards[i].content(),
-                CardContent::Cloze {
-                    text,
-                    start: s,
-                    end: e,
-                } if text == clean_text && *s == *start && *e == *end
-            ));
-        }
     }
 
     /// Parsing invalid UTF-8.
