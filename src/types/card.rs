@@ -134,6 +134,14 @@ impl Card {
     pub fn html_back(&self, config: &MarkdownRenderConfig) -> Fallible<Markup> {
         self.content.html_back(config)
     }
+
+    /// For a cloze card: return the text under the cloze.
+    ///
+    /// If the card is a basic card, panic.
+    #[cfg(test)]
+    pub fn cloze_text(&self) -> Fallible<String> {
+        self.content().cloze_text()
+    }
 }
 
 impl CardContent {
@@ -160,15 +168,17 @@ impl CardContent {
     ///
     /// Definition: [definition]
     pub fn new_cloze_pair_from_term_definition(term: &str, definition: &str) -> [Self; 2] {
+        let term = term.trim();
+        let definition = definition.trim();
+        let text = format!("Term: {term}\n\nDefinition: {definition}");
         [
             Self::Cloze {
-                text: format!("Term: {}\n\nDefinition: {}", term, definition),
+                text: text.clone(),
                 start: 6,
                 end: 6 + term.len() - 1,
             },
             Self::Cloze {
-                // \n escape sequence has len 1
-                text: format!("Term: {}\n\nDefinition: {}", term, definition),
+                text,
                 start: 20 + term.len(),
                 end: 20 + term.len() + definition.len() - 1,
             },
@@ -255,6 +265,22 @@ impl CardContent {
             }
         };
         Ok(html)
+    }
+
+    /// For a cloze card: return the text under the cloze.
+    ///
+    /// If the card is a basic card, panic.
+    #[cfg(test)]
+    pub fn cloze_text(&self) -> Fallible<String> {
+        match self {
+            CardContent::Cloze { text, start, end } => {
+                let bytes: Vec<u8> = text.as_bytes()[*start..*end + 1].to_owned();
+                Ok(String::from_utf8(bytes)?)
+            }
+            CardContent::Basic { .. } => {
+                panic!("Called `CardContent::cloze_text` with a basic card.")
+            }
+        }
     }
 }
 

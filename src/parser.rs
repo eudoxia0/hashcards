@@ -867,6 +867,48 @@ mod tests {
 
     use super::*;
 
+    /// Construct a parser for testing.
+    fn make_test_parser() -> Parser {
+        Parser::new("test_deck".to_string(), PathBuf::from("test.md"))
+    }
+
+    /// Assert that the cards in the given range are all cloze cards, with the
+    /// given (clean) text, and that the i-th card in the range has the
+    /// deletions of the i-th element in the deletions vector.
+    fn assert_cloze(cards: &[Card], clean_text: &str, deletions: &[(usize, usize)]) {
+        assert_eq!(cards.len(), deletions.len());
+        for (i, (start, end)) in deletions.iter().enumerate() {
+            assert!(matches!(
+                &cards[i].content(),
+                CardContent::Cloze {
+                    text,
+                    start: s,
+                    end: e,
+                } if text == clean_text && *s == *start && *e == *end
+            ));
+        }
+    }
+
+    /// Assert that the given card is a cloze card, and that its n-th deletion
+    /// has the given text and starts at the given position.
+    fn assert_single_cloze(card: &Card, cloze: &str, deletion_start: usize) -> Fallible<()> {
+        match card.content() {
+            CardContent::Cloze {
+                text: _,
+                start,
+                end,
+            } => {
+                assert_eq!(card.cloze_text()?, cloze);
+                assert_eq!(*start, deletion_start);
+                assert_eq!(*end, deletion_start + cloze.len() - 1);
+                Ok(())
+            }
+            CardContent::Basic { .. } => {
+                todo!()
+            }
+        }
+    }
+
     #[test]
     fn test_empty_string() -> Result<(), ParserError> {
         let input = "";
@@ -954,16 +996,13 @@ mod tests {
     }
 
     #[test]
-    fn test_multiline_term_and_defintion() -> Result<(), ParserError> {
+    fn test_multiline_term_and_defintion() -> Fallible<()> {
         let input = "T: foo\nbar\n\nD: baz\nquux\n";
         let parser = make_test_parser();
         let cards = parser.parse(input)?;
 
-        assert_cloze(
-            &cards,
-            "Term: foo\nbar\n\n\nDefinition: baz\nquux",
-            &[(6, 13), (28, 35)],
-        );
+        assert_single_cloze(&cards[0], "foo\nbar", 6)?;
+        assert_single_cloze(&cards[1], "baz\nquux", 27)?;
         Ok(())
     }
 
@@ -974,6 +1013,21 @@ mod tests {
         let result = parser.parse(input);
 
         assert!(result.is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn test_term_followed_by_cloze_errors() -> Fallible<()> {
+        let input = "T: foo\nD: bar\n\nC: this is a [cloze]";
+        let parser = make_test_parser();
+        let result = parser.parse(input);
+
+        assert!(result.is_ok());
+        let cards: Vec<Card> = result?;
+        assert_eq!(cards.len(), 3);
+        assert_single_cloze(&cards[0], "foo", 6)?;
+        assert_single_cloze(&cards[1], "bar", 23)?;
+        assert_single_cloze(&cards[2], "cloze", 10)?;
         Ok(())
     }
 
@@ -1205,24 +1259,6 @@ mod tests {
 
         assert_eq!(deck.len(), 1);
         Ok(())
-    }
-
-    fn make_test_parser() -> Parser {
-        Parser::new("test_deck".to_string(), PathBuf::from("test.md"))
-    }
-
-    fn assert_cloze(cards: &[Card], clean_text: &str, deletions: &[(usize, usize)]) {
-        assert_eq!(cards.len(), deletions.len());
-        for (i, (start, end)) in deletions.iter().enumerate() {
-            assert!(matches!(
-                &cards[i].content(),
-                CardContent::Cloze {
-                    text,
-                    start: s,
-                    end: e,
-                } if text == clean_text && *s == *start && *e == *end
-            ));
-        }
     }
 
     /// Parsing invalid UTF-8.
