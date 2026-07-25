@@ -872,6 +872,9 @@ mod tests {
         Parser::new("test_deck".to_string(), PathBuf::from("test.md"))
     }
 
+    /// Assert that the cards in the given range are all cloze cards, with the
+    /// given (clean) text, and that the i-th card in the range has the
+    /// deletions of the i-th element in the deletions vector.
     fn assert_cloze(cards: &[Card], clean_text: &str, deletions: &[(usize, usize)]) {
         assert_eq!(cards.len(), deletions.len());
         for (i, (start, end)) in deletions.iter().enumerate() {
