@@ -158,6 +158,22 @@ impl ParserError {
             line_num,
         }
     }
+
+    fn new_from_invalid_line_combination(
+        new_line_type: &str,
+        current_line_type: &str,
+        file_path: PathBuf,
+        line_num: usize,
+    ) -> Self {
+        Self::new(
+            format!(
+                "Found a new {} whilst parsing a previous {}.",
+                new_line_type, current_line_type
+            ),
+            file_path,
+            line_num,
+        )
+    }
 }
 
 impl Display for ParserError {
@@ -177,44 +193,60 @@ impl Error for ParserError {}
 enum State {
     /// Start state.
     Start,
-    /// Reading a question (Q:)
+    /// Reading a question `Q:`.
     ReadingQuestion { question: String, start_line: usize },
-    /// Reading an answer (A:)
+    /// Reading an answer `A:`.
     ReadingAnswer {
         question: String,
         answer: String,
         start_line: usize,
     },
-    /// Reading a cloze card (C:)
+    /// Reading a term `T:`.
+    ReadingTerm { term: String, start_line: usize },
+    /// Reading a definition `D:`
+    ReadingDefinition {
+        term: String,
+        definition: String,
+        start_line: usize,
+    },
+    /// Reading a cloze `C:`
     ReadingCloze { text: String, start_line: usize },
     /// End state.
     End,
 }
 
 enum Line {
-    /// A line like `Q: <text>`.
+    /// `Q: <text>`.
     StartQuestion(String),
-    /// A line like `A: <text>`.
+    /// `A: <text>`.
     StartAnswer(String),
-    /// A line like `C: <text>`.
+    /// `T: <text>`.
+    StartTerm(String),
+    /// `D: <text>`.
+    StartDefinition(String),
+    /// `C: <text>`.
     StartCloze(String),
     /// A line that's just `---` (flashcard separator).
     Separator,
     /// Any other line.
     Text(String),
-    /// End of file
+    /// End of file.
     Eof,
 }
 
 impl Line {
     fn read(line: &str) -> Self {
-        if is_question(line) {
-            Line::StartQuestion(trim(line))
-        } else if is_answer(line) {
-            Line::StartAnswer(trim(line))
-        } else if is_cloze(line) {
-            Line::StartCloze(trim(line))
-        } else if is_separator(line) {
+        if line.starts_with("Q:") {
+            Line::StartQuestion(line_content(line))
+        } else if line.starts_with("A:") {
+            Line::StartAnswer(line_content(line))
+        } else if line.starts_with("T:") {
+            Line::StartTerm(line_content(line))
+        } else if line.starts_with("D:") {
+            Line::StartDefinition(line_content(line))
+        } else if line.starts_with("C:") {
+            Line::StartCloze(line_content(line))
+        } else if line.trim() == "---" {
             Line::Separator
         } else {
             Line::Text(line.to_string())
@@ -222,23 +254,8 @@ impl Line {
     }
 }
 
-fn is_question(line: &str) -> bool {
-    line.starts_with("Q:")
-}
-
-fn is_answer(line: &str) -> bool {
-    line.starts_with("A:")
-}
-
-fn is_cloze(line: &str) -> bool {
-    line.starts_with("C:")
-}
-
-fn is_separator(line: &str) -> bool {
-    line.trim() == "---"
-}
-
-fn trim(line: &str) -> String {
+/// Remove the line type, e.g. remove `Q:`, and trim.
+fn line_content(line: &str) -> String {
     line[2..].trim().to_string()
 }
 
@@ -286,7 +303,16 @@ impl Parser {
                     start_line: line_num,
                 }),
                 Line::StartAnswer(_) => Err(ParserError::new(
-                    "Found answer tag without a question.",
+                    "Found answer without an associated question.",
+                    self.file_path.clone(),
+                    line_num,
+                )),
+                Line::StartTerm(text) => Ok(State::ReadingTerm {
+                    term: text,
+                    start_line: line_num,
+                }),
+                Line::StartDefinition(_) => Err(ParserError::new(
+                    "Found definition without an associated term.",
                     self.file_path.clone(),
                     line_num,
                 )),
@@ -312,8 +338,9 @@ impl Parser {
                 question,
                 start_line,
             } => match line {
-                Line::StartQuestion(_) => Err(ParserError::new(
-                    "New question without answer.",
+                Line::StartQuestion(_) => Err(ParserError::new_from_invalid_line_combination(
+                    "question",
+                    "question",
                     self.file_path.clone(),
                     line_num,
                 )),
@@ -322,13 +349,27 @@ impl Parser {
                     answer: text,
                     start_line,
                 }),
-                Line::StartCloze(_) => Err(ParserError::new(
-                    "Found cloze tag while reading a question.",
+                Line::StartTerm(_) => Err(ParserError::new_from_invalid_line_combination(
+                    "term",
+                    "question",
                     self.file_path.clone(),
                     line_num,
                 )),
-                Line::Separator => Err(ParserError::new(
-                    "Found flashcard separator while reading a question.",
+                Line::StartDefinition(_) => Err(ParserError::new_from_invalid_line_combination(
+                    "definition",
+                    "question",
+                    self.file_path.clone(),
+                    line_num,
+                )),
+                Line::StartCloze(_) => Err(ParserError::new_from_invalid_line_combination(
+                    "cloze",
+                    "question",
+                    self.file_path.clone(),
+                    line_num,
+                )),
+                Line::Separator => Err(ParserError::new_from_invalid_line_combination(
+                    "flashcard separator",
+                    "question",
                     self.file_path.clone(),
                     line_num,
                 )),
@@ -363,11 +404,35 @@ impl Parser {
                             start_line: line_num,
                         })
                     }
-                    Line::StartAnswer(_) => Err(ParserError::new(
-                        "Found answer tag while reading an answer.",
+                    Line::StartAnswer(_) => Err(ParserError::new_from_invalid_line_combination(
+                        "answer",
+                        "answer",
                         self.file_path.clone(),
                         line_num,
                     )),
+                    Line::StartTerm(text) => {
+                        // Finalize the previous card.
+                        let card = Card::new(
+                            self.deck_name.clone(),
+                            self.file_path.clone(),
+                            (start_line, line_num),
+                            CardContent::new_basic(question, answer),
+                        );
+                        cards.push(card);
+                        // Start reading a new term.
+                        Ok(State::ReadingTerm {
+                            term: text,
+                            start_line: line_num,
+                        })
+                    }
+                    Line::StartDefinition(_) => {
+                        Err(ParserError::new_from_invalid_line_combination(
+                            "definition",
+                            "answer",
+                            self.file_path.clone(),
+                            line_num,
+                        ))
+                    }
                     Line::StartCloze(text) => {
                         // Finalize the previous card.
                         let card = Card::new(
@@ -413,6 +478,154 @@ impl Parser {
                     }
                 }
             }
+            State::ReadingTerm { term, start_line } => match line {
+                Line::StartQuestion(_) => Err(ParserError::new_from_invalid_line_combination(
+                    "question",
+                    "term",
+                    self.file_path.clone(),
+                    line_num,
+                )),
+                Line::StartAnswer(_) => Err(ParserError::new_from_invalid_line_combination(
+                    "answer",
+                    "term",
+                    self.file_path.clone(),
+                    line_num,
+                )),
+                Line::StartTerm(_) => Err(ParserError::new_from_invalid_line_combination(
+                    "term",
+                    "term",
+                    self.file_path.clone(),
+                    line_num,
+                )),
+                Line::StartDefinition(text) => Ok(State::ReadingDefinition {
+                    term,
+                    definition: text,
+                    start_line,
+                }),
+                Line::StartCloze(_) => Err(ParserError::new_from_invalid_line_combination(
+                    "cloze",
+                    "term",
+                    self.file_path.clone(),
+                    line_num,
+                )),
+                Line::Separator => Err(ParserError::new_from_invalid_line_combination(
+                    "flashcard separator",
+                    "term",
+                    self.file_path.clone(),
+                    line_num,
+                )),
+                Line::Text(text) => Ok(State::ReadingTerm {
+                    term: format!("{term}\n{text}"),
+                    start_line,
+                }),
+                Line::Eof => Err(ParserError::new(
+                    "File ended while reading a term without a definition.",
+                    self.file_path.clone(),
+                    line_num,
+                )),
+            },
+            State::ReadingDefinition {
+                term,
+                definition,
+                start_line,
+            } => {
+                match line {
+                    Line::StartQuestion(_) => Err(ParserError::new_from_invalid_line_combination(
+                        "question",
+                        "definition",
+                        self.file_path.clone(),
+                        line_num,
+                    )),
+                    Line::StartAnswer(_) => Err(ParserError::new_from_invalid_line_combination(
+                        "answer",
+                        "definition",
+                        self.file_path.clone(),
+                        line_num,
+                    )),
+                    Line::StartTerm(text) => {
+                        // Finalize the previous card.
+                        cards.extend(
+                            CardContent::new_cloze_pair_from_term_definition(&term, &definition)
+                                .map(|content| {
+                                    Card::new(
+                                        self.deck_name.clone(),
+                                        self.file_path.clone(),
+                                        (start_line, line_num),
+                                        content,
+                                    )
+                                }),
+                        );
+                        // Start a new question.
+                        Ok(State::ReadingTerm {
+                            term: text,
+                            start_line: line_num,
+                        })
+                    }
+                    Line::StartDefinition(_) => {
+                        Err(ParserError::new_from_invalid_line_combination(
+                            "definition",
+                            "definition",
+                            self.file_path.clone(),
+                            line_num,
+                        ))
+                    }
+                    Line::StartCloze(text) => {
+                        // Finalize the previous card.
+                        cards.extend(
+                            CardContent::new_cloze_pair_from_term_definition(&term, &definition)
+                                .map(|content| {
+                                    Card::new(
+                                        self.deck_name.clone(),
+                                        self.file_path.clone(),
+                                        (start_line, line_num),
+                                        content,
+                                    )
+                                }),
+                        );
+                        // Start reading a new cloze card.
+                        Ok(State::ReadingCloze {
+                            text,
+                            start_line: line_num,
+                        })
+                    }
+                    Line::Separator => {
+                        // Finalize the current card.
+                        cards.extend(
+                            CardContent::new_cloze_pair_from_term_definition(&term, &definition)
+                                .map(|content| {
+                                    Card::new(
+                                        self.deck_name.clone(),
+                                        self.file_path.clone(),
+                                        (start_line, line_num),
+                                        content,
+                                    )
+                                }),
+                        );
+                        // Return to start state.
+                        Ok(State::Start)
+                    }
+                    Line::Text(text) => Ok(State::ReadingDefinition {
+                        term,
+                        definition: format!("{definition}\n{text}"),
+                        start_line,
+                    }),
+                    Line::Eof => {
+                        // Finalize the current card.
+                        cards.extend(
+                            CardContent::new_cloze_pair_from_term_definition(&term, &definition)
+                                .map(|content| {
+                                    Card::new(
+                                        self.deck_name.clone(),
+                                        self.file_path.clone(),
+                                        (start_line, line_num),
+                                        content,
+                                    )
+                                }),
+                        );
+                        Ok(State::End)
+                    }
+                }
+            }
             State::ReadingCloze { text, start_line } => {
                 match line {
                     Line::StartQuestion(new_text) => {
@@ -424,11 +637,29 @@ impl Parser {
                             start_line: line_num,
                         })
                     }
-                    Line::StartAnswer(_) => Err(ParserError::new(
-                        "Found answer tag while reading a cloze card.",
+                    Line::StartAnswer(_) => Err(ParserError::new_from_invalid_line_combination(
+                        "answer",
+                        "cloze",
                         self.file_path.clone(),
                         line_num,
                     )),
+                    Line::StartTerm(new_text) => {
+                        // Finalize the previous cloze card.
+                        cards.extend(self.parse_cloze_cards(text, start_line, line_num)?);
+                        // Start a new question card
+                        Ok(State::ReadingTerm {
+                            term: new_text,
+                            start_line: line_num,
+                        })
+                    }
+                    Line::StartDefinition(_) => {
+                        Err(ParserError::new_from_invalid_line_combination(
+                            "definition",
+                            "cloze",
+                            self.file_path.clone(),
+                            line_num,
+                        ))
+                    }
                     Line::StartCloze(new_text) => {
                         // Finalize the previous card.
                         cards.extend(self.parse_cloze_cards(text, start_line, line_num)?);
@@ -553,10 +784,10 @@ impl Parser {
         for (bytepos, c) in text.bytes().enumerate() {
             if c == b'[' {
                 if image_mode {
-                    // We are in image mode, so this closing bracket is part of a markdown image.
+                    // We are in image mode, so this opening bracket is part of a markdown image.
                     index += 1;
                 } else if escape_mode {
-                    // We are in escape mode, so this closing bracket is part of a markdown text.
+                    // We are in escape mode, so this opening bracket is part of a markdown text.
                     index += 1;
                     escape_mode = false;
                 } else {
@@ -709,6 +940,60 @@ mod tests {
                 answer,
             } if question == "baz" && answer == "quux"
         ));
+        Ok(())
+    }
+
+    #[test]
+    fn test_term_creates_two_cloze_cards() -> Result<(), ParserError> {
+        let input = "T: foo\nD: bar\n";
+        let parser = make_test_parser();
+        let cards = parser.parse(input)?;
+
+        assert_cloze(&cards, "Term: foo\n\nDefinition: bar", &[(6, 8), (23, 25)]);
+        Ok(())
+    }
+
+    #[test]
+    fn test_multiline_term_and_defintion() -> Result<(), ParserError> {
+        let input = "T: foo\nbar\n\nD: baz\nquux\n";
+        let parser = make_test_parser();
+        let cards = parser.parse(input)?;
+
+        assert_cloze(
+            &cards,
+            "Term: foo\nbar\n\n\nDefinition: baz\nquux",
+            &[(6, 13), (28, 35)],
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_two_definitions_error() -> Result<(), ParserError> {
+        let input = "T: foo\nD: bar\n\nD: second one";
+        let parser = make_test_parser();
+        let result = parser.parse(input);
+
+        assert!(result.is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn test_term_followed_by_cloze_errors() -> Result<(), ParserError> {
+        let input = "T: foo\nD: bar\n\nC: this is a [cloze]";
+        let parser = make_test_parser();
+        let result = parser.parse(input);
+
+        assert!(result.is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn test_term_with_no_definition_errors() -> Result<(), ParserError> {
+        let input = "T: foo\n";
+        let parser = make_test_parser();
+        let result = parser.parse(input);
+
+        assert!(result.is_err());
         Ok(())
     }
 

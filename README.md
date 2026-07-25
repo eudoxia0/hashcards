@@ -248,6 +248,23 @@ desire: this is also vanity and vexation of spirit.
 — [Ecclesiastes] [6]:[9]
 ```
 
+### Term-definition Cards
+
+A shorthand for writing a cloze card for a term definition. Writing:
+
+```
+T: lithification
+D: The process of turning loose sediment into rock.
+```
+
+Is equivalent to writing:
+
+```
+C: Term: [lithification]
+
+Definition: [The process of turning loose sediment into rock.]
+```
+
 ### Separators
 
 Optionally, cards can be separated by horizontal rules, like so:
