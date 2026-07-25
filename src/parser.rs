@@ -891,8 +891,27 @@ mod tests {
 
     /// Assert that the given card is a cloze card, and that its n-th deletion
     /// has the given text and deletion positions.
-    fn assert_single_cloze(card: &Card) {
-        todo!()
+    fn assert_single_cloze(
+        card: &Card,
+        cloze: &str,
+        deletion_start: usize,
+        deletion_end: usize,
+    ) -> Fallible<()> {
+        match card.content() {
+            CardContent::Cloze {
+                text: _,
+                start,
+                end,
+            } => {
+                assert_eq!(card.cloze_text()?, cloze);
+                assert_eq!(*start, deletion_start);
+                assert_eq!(*end, deletion_end);
+                Ok(())
+            }
+            CardContent::Basic { .. } => {
+                todo!()
+            }
+        }
     }
 
     #[test]
@@ -1006,7 +1025,7 @@ mod tests {
     }
 
     #[test]
-    fn test_term_followed_by_cloze_errors() -> Result<(), ParserError> {
+    fn test_term_followed_by_cloze_errors() -> Fallible<()> {
         let input = "T: foo\nD: bar\n\nC: this is a [cloze]";
         let parser = make_test_parser();
         let result = parser.parse(input);
@@ -1014,16 +1033,9 @@ mod tests {
         assert!(result.is_ok());
         let cards: Vec<Card> = result?;
         assert_eq!(cards.len(), 3);
-        assert_cloze(
-            &cards[0..1],
-            "Term: foo\n\nDefinition: bar",
-            &[(6, 8), (23, 25)],
-        );
-        assert_cloze(
-            &cards[1..],
-            "Term: foo\n\nDefinition: bar",
-            &[(6, 8), (23, 25)],
-        );
+        assert_single_cloze(&cards[0], "foo", 6, 8)?;
+        assert_single_cloze(&cards[1], "bar", 23, 25)?;
+        assert_single_cloze(&cards[1], "cloze", 11, 16)?;
         Ok(())
     }
 
