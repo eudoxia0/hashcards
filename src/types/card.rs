@@ -156,6 +156,7 @@ impl Card {
 }
 
 impl CardContent {
+    /// Construct a basic card.
     pub fn new_basic(question: impl Into<String>, answer: impl Into<String>) -> Self {
         Self::Basic {
             question: question.into().trim().to_string(),
@@ -163,6 +164,7 @@ impl CardContent {
         }
     }
 
+    /// Construct a cloze card.
     pub fn new_cloze(prompt: impl Into<String>, start: usize, end: usize) -> Self {
         Self::Cloze {
             text: prompt.into(),
