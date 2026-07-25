@@ -128,6 +128,7 @@ impl Card {
         self.range
     }
 
+    /// Whether this is a basic or cloze card.
     pub fn card_type(&self) -> CardType {
         match &self.content {
             CardContent::Basic { .. } => CardType::Basic,
