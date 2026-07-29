@@ -20,6 +20,7 @@ use axum::routing::get;
 use tokio::net::TcpListener;
 use tokio::signal;
 
+use crate::cmd::browse::views::index::index_handler;
 use crate::error::Fallible;
 
 /// Server configuration.
@@ -61,10 +62,6 @@ async fn shutdown_signal() {
         .await
         .expect("failed to install Ctrl+C handler");
     log::debug!("Received Ctrl+C, shutting down gracefully.");
-}
-
-async fn index_handler() -> impl IntoResponse {
-    (StatusCode::OK, Html("<h1>Hello, world!</h1>"))
 }
 
 async fn not_found_handler() -> impl IntoResponse {

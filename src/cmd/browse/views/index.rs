@@ -12,4 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub mod index;
+use axum::http::StatusCode;
+use axum::response::Html;
+use axum::response::IntoResponse;
+
+pub async fn index_handler() -> impl IntoResponse {
+    (StatusCode::OK, Html("<h1>Hello, world!</h1>"))
+}
