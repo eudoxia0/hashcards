@@ -17,6 +17,8 @@ use std::sync::Arc;
 use std::sync::Mutex;
 
 use axum::Router;
+use axum::extract::Path;
+use axum::extract::State;
 use axum::http::StatusCode;
 use axum::response::Html;
 use axum::response::IntoResponse;
@@ -33,6 +35,7 @@ use crate::error::Fallible;
 use crate::server::constants::CACHE_CONTROL_IMMUTABLE;
 use crate::server::constants::CONTENT_TYPE_CSS;
 use crate::server::favicon::favicon_handler;
+use crate::server::file_handler::file_handler_logic;
 use crate::server::highlight::HIGHLIGHT_CSS_URL;
 use crate::server::highlight::HIGHLIGHT_JS_URL;
 use crate::server::highlight::highlight_css_handler;
@@ -101,6 +104,7 @@ pub async fn start_browse_server(config: BrowseServerConfig) -> Fallible<()> {
     let app = app.route("/", get(index_handler));
     let app = app.route("/browse.css", get(browse_css_handler));
     let app = app.route("/favicon.ico", get(favicon_handler));
+    let app = app.route("/file/{*path}", get(file_handler));
     let app = app.route("/katex/fonts/{*path}", get(katex_font_handler));
     let app = app.route(HIGHLIGHT_CSS_URL, get(highlight_css_handler));
     let app = app.route(HIGHLIGHT_JS_URL, get(highlight_js_handler));
@@ -139,4 +143,11 @@ async fn browse_css_handler() -> impl IntoResponse {
         ],
         include_bytes!("resources/browse.css"),
     )
+}
+
+async fn file_handler(
+    State(state): State<BrowseState>,
+    Path(path): Path<String>,
+) -> impl IntoResponse {
+    file_handler_logic(state.directory.clone(), path).await
 }

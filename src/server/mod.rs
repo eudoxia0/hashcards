@@ -14,5 +14,6 @@
 
 pub mod constants;
 pub mod favicon;
+pub mod file_handler;
 pub mod highlight;
 pub mod katex;

@@ -26,6 +26,7 @@ use axum::extract::Path;
 use axum::extract::State;
 use axum::http::StatusCode;
 use axum::response::Html;
+use axum::response::IntoResponse;
 use axum::routing::get;
 use axum::routing::post;
 use clap::ValueEnum;
@@ -53,6 +54,7 @@ use crate::rng::shuffle;
 use crate::server::constants::CACHE_CONTROL_IMMUTABLE;
 use crate::server::constants::CONTENT_TYPE_CSS;
 use crate::server::favicon::favicon_handler;
+use crate::server::file_handler::file_handler_logic;
 use crate::server::highlight::HIGHLIGHT_CSS_URL;
 use crate::server::highlight::HIGHLIGHT_JS_URL;
 use crate::server::highlight::highlight_css_handler;
@@ -266,44 +268,8 @@ async fn not_found_handler() -> (StatusCode, Html<String>) {
 async fn file_handler(
     State(state): State<ServerState>,
     Path(path): Path<String>,
-) -> (StatusCode, [(HeaderName, &'static str); 1], Vec<u8>) {
-    let loader = MediaLoader::new(state.directory.clone());
-    let validated_path: PathBuf = match loader.validate(&path) {
-        Ok(p) => p,
-        Err(_) => {
-            return (
-                StatusCode::NOT_FOUND,
-                [(CONTENT_TYPE, "text/plain")],
-                b"Not Found".to_vec(),
-            );
-        }
-    };
-    let extension = validated_path
-        .extension()
-        .and_then(|ext| ext.to_str())
-        .unwrap_or("")
-        .to_lowercase();
-    let content_type: &str = match extension.as_str() {
-        "png" => "image/png",
-        "jpg" | "jpeg" => "image/jpeg",
-        "gif" => "image/gif",
-        "svg" => "image/svg+xml",
-        "mp3" => "audio/mpeg",
-        "wav" => "audio/wav",
-        "ogg" => "audio/ogg",
-        "mp4" => "video/mp4",
-        "webm" => "video/webm",
-        _ => "application/octet-stream",
-    };
-    let content = tokio::fs::read(validated_path).await;
-    match content {
-        Ok(bytes) => (StatusCode::OK, [(CONTENT_TYPE, content_type)], bytes),
-        Err(_) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            [(CONTENT_TYPE, "text/plain")],
-            b"Internal Server Error".to_vec(),
-        ),
-    }
+) -> impl IntoResponse {
+    file_handler_logic(state.directory.clone(), path).await
 }
 
 async fn shutdown_signal(shutdown_rx: Receiver<()>) {
