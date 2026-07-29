@@ -16,11 +16,11 @@ use maud::DOCTYPE;
 use maud::Markup;
 use maud::html;
 
-use crate::cmd::drill::highlight::HIGHLIGHT_CSS_URL;
-use crate::cmd::drill::highlight::HIGHLIGHT_JS_URL;
-use crate::cmd::drill::katex::KATEX_CSS_URL;
-use crate::cmd::drill::katex::KATEX_JS_URL;
-use crate::cmd::drill::katex::KATEX_MHCHEM_JS_URL;
+use crate::server::highlight::HIGHLIGHT_CSS_URL;
+use crate::server::highlight::HIGHLIGHT_JS_URL;
+use crate::server::katex::KATEX_CSS_URL;
+use crate::server::katex::KATEX_JS_URL;
+use crate::server::katex::KATEX_MHCHEM_JS_URL;
 
 /// Render the full HTML page. `page_stylesheet`, if present, is the URL of a
 /// page-specific stylesheet linked after the shared `common.css`.

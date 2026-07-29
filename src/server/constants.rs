@@ -12,21 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::time::Duration;
+/// max-age is one week in seconds.
+pub const CACHE_CONTROL_IMMUTABLE: &str = "public, max-age=604800, immutable";
 
-use tokio::net::TcpStream;
-use tokio::time::sleep;
+pub const CONTENT_TYPE_CSS: &str = "text/css";
 
-use crate::error::Fallible;
-
-/// Wait for the server at the given host/port to be available.
-pub async fn wait_for_server(host: &str, port: u16) -> Fallible<()> {
-    loop {
-        if let Ok(stream) = TcpStream::connect(format!("{host}:{port}")).await {
-            drop(stream);
-            break;
-        }
-        sleep(Duration::from_millis(1)).await;
-    }
-    Ok(())
-}
+pub const CONTENT_TYPE_JS: &str = "text/javascript";

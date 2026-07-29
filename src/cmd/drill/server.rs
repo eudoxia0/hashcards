@@ -40,17 +40,6 @@ use tokio::sync::oneshot::channel;
 
 use crate::cmd::drill::cache::Cache;
 use crate::cmd::drill::get::get_handler;
-use crate::cmd::drill::highlight::HIGHLIGHT_CSS_URL;
-use crate::cmd::drill::highlight::HIGHLIGHT_JS_URL;
-use crate::cmd::drill::highlight::highlight_css_handler;
-use crate::cmd::drill::highlight::highlight_js_handler;
-use crate::cmd::drill::katex::KATEX_CSS_URL;
-use crate::cmd::drill::katex::KATEX_JS_URL;
-use crate::cmd::drill::katex::KATEX_MHCHEM_JS_URL;
-use crate::cmd::drill::katex::katex_css_handler;
-use crate::cmd::drill::katex::katex_font_handler;
-use crate::cmd::drill::katex::katex_js_handler;
-use crate::cmd::drill::katex::katex_mhchem_js_handler;
 use crate::cmd::drill::post::post_handler;
 use crate::cmd::drill::state::MutableState;
 use crate::cmd::drill::state::ServerState;
@@ -61,11 +50,24 @@ use crate::error::fail;
 use crate::media::load::MediaLoader;
 use crate::rng::TinyRng;
 use crate::rng::shuffle;
+use crate::server::constants::CACHE_CONTROL_IMMUTABLE;
+use crate::server::constants::CONTENT_TYPE_CSS;
+use crate::server::favicon::favicon_handler;
+use crate::server::highlight::HIGHLIGHT_CSS_URL;
+use crate::server::highlight::HIGHLIGHT_JS_URL;
+use crate::server::highlight::highlight_css_handler;
+use crate::server::highlight::highlight_js_handler;
+use crate::server::katex::KATEX_CSS_URL;
+use crate::server::katex::KATEX_JS_URL;
+use crate::server::katex::KATEX_MHCHEM_JS_URL;
+use crate::server::katex::katex_css_handler;
+use crate::server::katex::katex_font_handler;
+use crate::server::katex::katex_js_handler;
+use crate::server::katex::katex_mhchem_js_handler;
 use crate::types::card::Card;
 use crate::types::card_hash::CardHash;
 use crate::types::date::Date;
 use crate::types::timestamp::Timestamp;
-use crate::utils::CACHE_CONTROL_IMMUTABLE;
 
 #[derive(ValueEnum, Clone, Copy, PartialEq)]
 pub enum AnswerControls {
@@ -238,7 +240,7 @@ fn css_response(
     (
         StatusCode::OK,
         [
-            (CONTENT_TYPE, "text/css"),
+            (CONTENT_TYPE, CONTENT_TYPE_CSS),
             (CACHE_CONTROL, CACHE_CONTROL_IMMUTABLE),
         ],
         bytes,
@@ -255,18 +257,6 @@ async fn drill_css_handler() -> (StatusCode, [(HeaderName, &'static str); 2], &'
 
 async fn finished_css_handler() -> (StatusCode, [(HeaderName, &'static str); 2], &'static [u8]) {
     css_response(include_bytes!("finished.css"))
-}
-
-async fn favicon_handler() -> (StatusCode, [(HeaderName, &'static str); 2], &'static [u8]) {
-    let bytes = include_bytes!("favicon.png");
-    (
-        StatusCode::OK,
-        [
-            (CONTENT_TYPE, "image/png"),
-            (CACHE_CONTROL, CACHE_CONTROL_IMMUTABLE),
-        ],
-        bytes,
-    )
 }
 
 async fn not_found_handler() -> (StatusCode, Html<String>) {

@@ -28,6 +28,12 @@ use crate::cmd::browse::views::index::index_handler;
 use crate::collection::Collection;
 use crate::db::Database;
 use crate::error::Fallible;
+use crate::server::favicon::favicon_handler;
+use crate::server::highlight::HIGHLIGHT_CSS_URL;
+use crate::server::highlight::HIGHLIGHT_JS_URL;
+use crate::server::katex::KATEX_CSS_URL;
+use crate::server::katex::KATEX_JS_URL;
+use crate::server::katex::KATEX_MHCHEM_JS_URL;
 use crate::types::card::Card;
 
 /// Server configuration.
@@ -83,6 +89,16 @@ pub async fn start_browse_server(config: BrowseServerConfig) -> Fallible<()> {
     // Construct the app.
     let app = Router::new();
     let app = app.route("/", get(index_handler));
+    let app = app.route("/favicon.ico", get(favicon_handler));
+    // let app = app.route("/file/{*path}", get(file_handler));
+    // let app = app.route("/katex/fonts/{*path}", get(katex_font_handler));
+    // let app = app.route("/script.js", get(script_handler));
+    // let app = app.route("/browse.js", get(browse_js_handler));
+    // let app = app.route(HIGHLIGHT_CSS_URL, get(highlight_css_handler));
+    // let app = app.route(HIGHLIGHT_JS_URL, get(highlight_js_handler));
+    // let app = app.route(KATEX_CSS_URL, get(katex_css_handler));
+    // let app = app.route(KATEX_JS_URL, get(katex_js_handler));
+    // let app = app.route(KATEX_MHCHEM_JS_URL, get(katex_mhchem_js_handler));
     let app = app.fallback(not_found_handler);
     let app = app.with_state(state);
     // Start server.

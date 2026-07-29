@@ -12,37 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use axum::http::HeaderName;
 use axum::http::StatusCode;
 use axum::http::header::CACHE_CONTROL;
 use axum::http::header::CONTENT_TYPE;
+use axum::response::IntoResponse;
 
-use crate::utils::CACHE_CONTROL_IMMUTABLE;
+use crate::server::constants::CACHE_CONTROL_IMMUTABLE;
 
-pub const HIGHLIGHT_JS_URL: &str = "/highlight.js";
-
-pub const HIGHLIGHT_CSS_URL: &str = "/highlight.css";
-
-pub async fn highlight_css_handler() -> (StatusCode, [(HeaderName, &'static str); 2], &'static [u8])
-{
-    let bytes = include_bytes!("../../../vendor/highlight/highlight.css");
+pub async fn favicon_handler() -> impl IntoResponse {
+    let bytes = include_bytes!("favicon.png");
     (
         StatusCode::OK,
         [
-            (CONTENT_TYPE, "text/css"),
-            (CACHE_CONTROL, CACHE_CONTROL_IMMUTABLE),
-        ],
-        bytes,
-    )
-}
-
-pub async fn highlight_js_handler() -> (StatusCode, [(HeaderName, &'static str); 2], &'static [u8])
-{
-    let bytes = include_bytes!("../../../vendor/highlight/highlight.js");
-    (
-        StatusCode::OK,
-        [
-            (CONTENT_TYPE, "text/javascript"),
+            (CONTENT_TYPE, "image/png"),
             (CACHE_CONTROL, CACHE_CONTROL_IMMUTABLE),
         ],
         bytes,
