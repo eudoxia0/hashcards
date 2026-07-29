@@ -34,7 +34,6 @@ use crate::db::Database;
 use crate::error::Fallible;
 use crate::server::constants::CACHE_CONTROL_IMMUTABLE;
 use crate::server::constants::CONTENT_TYPE_CSS;
-use crate::server::favicon::favicon_handler;
 use crate::server::file_handler::file_handler_logic;
 use crate::server::highlight::HIGHLIGHT_CSS_URL;
 use crate::server::highlight::HIGHLIGHT_JS_URL;
@@ -47,6 +46,8 @@ use crate::server::katex::katex_css_handler;
 use crate::server::katex::katex_font_handler;
 use crate::server::katex::katex_js_handler;
 use crate::server::katex::katex_mhchem_js_handler;
+use crate::server::resources::common_css_handler;
+use crate::server::resources::favicon_handler;
 use crate::types::card::Card;
 
 /// Server configuration.
@@ -103,6 +104,7 @@ pub async fn start_browse_server(config: BrowseServerConfig) -> Fallible<()> {
     let app = Router::new();
     let app = app.route("/", get(index_handler));
     let app = app.route("/browse.css", get(browse_css_handler));
+    let app = app.route("/common.css", get(common_css_handler));
     let app = app.route("/favicon.ico", get(favicon_handler));
     let app = app.route("/file/{*path}", get(file_handler));
     let app = app.route("/katex/fonts/{*path}", get(katex_font_handler));

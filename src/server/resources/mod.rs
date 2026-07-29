@@ -18,6 +18,7 @@ use http::header::CACHE_CONTROL;
 use http::header::CONTENT_TYPE;
 
 use crate::server::constants::CACHE_CONTROL_IMMUTABLE;
+use crate::server::constants::CONTENT_TYPE_CSS;
 
 pub async fn favicon_handler() -> impl IntoResponse {
     let bytes = include_bytes!("favicon.png");
@@ -28,5 +29,16 @@ pub async fn favicon_handler() -> impl IntoResponse {
             (CACHE_CONTROL, CACHE_CONTROL_IMMUTABLE),
         ],
         bytes,
+    )
+}
+
+pub async fn common_css_handler() -> impl IntoResponse {
+    (
+        StatusCode::OK,
+        [
+            (CONTENT_TYPE, CONTENT_TYPE_CSS),
+            (CACHE_CONTROL, CACHE_CONTROL_IMMUTABLE),
+        ],
+        include_bytes!("common.css"),
     )
 }
