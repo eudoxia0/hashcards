@@ -15,7 +15,6 @@
 use std::collections::HashSet;
 use std::fmt::Display;
 use std::fmt::Formatter;
-use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::time::SystemTime;
@@ -48,7 +47,6 @@ use crate::collection::Collection;
 use crate::db::Database;
 use crate::error::Fallible;
 use crate::error::fail;
-use crate::media::load::MediaLoader;
 use crate::rng::TinyRng;
 use crate::rng::shuffle;
 use crate::server::constants::CACHE_CONTROL_IMMUTABLE;
