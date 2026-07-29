@@ -28,6 +28,9 @@ use http::header::CONTENT_TYPE;
 use tokio::net::TcpListener;
 use tokio::signal;
 
+use crate::cmd::browse::views::card_basic::card_basic_handler;
+use crate::cmd::browse::views::card_cloze::card_cloze_handler;
+use crate::cmd::browse::views::deck::deck_handler;
 use crate::cmd::browse::views::index::index_handler;
 use crate::collection::Collection;
 use crate::db::Database;
@@ -106,7 +109,10 @@ pub async fn start_browse_server(config: BrowseServerConfig) -> Fallible<()> {
     let app = app.route("/", get(index_handler));
     let app = app.route("/browse.css", get(browse_css_handler));
     let app = app.route("/browse.js", get(browse_js_handler));
+    let app = app.route("/card/basic/{card_hash}", get(card_basic_handler));
+    let app = app.route("/card/cloze/{family_hash}", get(card_cloze_handler));
     let app = app.route("/common.css", get(common_css_handler));
+    let app = app.route("/deck/{deck_name}", get(deck_handler));
     let app = app.route("/favicon.ico", get(favicon_handler));
     let app = app.route("/file/{*path}", get(file_handler));
     let app = app.route("/katex/fonts/{*path}", get(katex_font_handler));
