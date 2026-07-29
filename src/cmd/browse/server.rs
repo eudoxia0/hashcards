@@ -12,6 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::path::PathBuf;
+use std::sync::Arc;
+use std::sync::Mutex;
+
 use axum::Router;
 use axum::http::StatusCode;
 use axum::response::Html;
@@ -21,7 +25,10 @@ use tokio::net::TcpListener;
 use tokio::signal;
 
 use crate::cmd::browse::views::index::index_handler;
+use crate::collection::Collection;
+use crate::db::Database;
 use crate::error::Fallible;
+use crate::types::card::Card;
 
 /// Server configuration.
 pub struct BrowseServerConfig {
@@ -37,11 +44,42 @@ pub struct BrowseServerConfig {
 
 /// Server state.
 #[derive(Clone)]
-pub struct BrowseState {}
+pub struct BrowseState {
+    /// Server port.
+    pub port: u16,
+    /// Hostname to serve resources on.
+    pub resource_hostname: String,
+    /// The collection directory.
+    pub directory: PathBuf,
+    /// TeX macros.
+    pub macros: Vec<(String, String)>,
+    /// All the cards in the collection, behind an [`Arc`] so we don't copy the
+    /// entire collection on each request.
+    pub cards: Arc<Vec<Card>>,
+    /// The database.
+    pub db: Arc<Mutex<Database>>,
+}
 
 /// Start the browse server.
 pub async fn start_browse_server(config: BrowseServerConfig) -> Fallible<()> {
-    let state = BrowseState {};
+    // Load the collection.
+    let Collection {
+        directory,
+        db,
+        cards,
+        macros,
+    } = Collection::new(config.directory)?;
+    // Construct app state.
+    let cards: Arc<Vec<Card>> = Arc::new(cards);
+    let db: Arc<Mutex<Database>> = Arc::new(Mutex::new(db));
+    let state = BrowseState {
+        port: config.port,
+        resource_hostname: config.resource_hostname.clone(),
+        directory: directory,
+        macros,
+        cards,
+        db,
+    };
     // Construct the app.
     let app = Router::new();
     let app = app.route("/", get(index_handler));
