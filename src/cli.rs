@@ -22,6 +22,7 @@ use crate::cmd::check::check_collection;
 use crate::cmd::drill::server::AnswerControls;
 use crate::cmd::drill::server::ServerConfig;
 use crate::cmd::drill::server::start_server;
+use crate::cmd::due::parse_date_arg;
 use crate::cmd::due::print_due;
 use crate::cmd::export::export_collection;
 use crate::cmd::orphans::delete_orphans;
@@ -67,10 +68,13 @@ enum Command {
         #[arg(long)]
         bury_siblings: Option<bool>,
     },
-    /// Print which decks have cards due today.
+    /// Print which decks have cards due on a given date.
     Due {
         /// Path to the collection directory. By default, the current working directory is used.
         directory: Option<String>,
+        /// Date to check: 'today' (default), 'tomorrow', or YYYY-MM-DD.
+        #[arg(default_value = "today")]
+        date: String,
     },
     /// Check the integrity of a collection.
     Check {
@@ -159,7 +163,7 @@ pub async fn entrypoint() -> Fallible<()> {
             };
             start_server(config).await
         }
-        Command::Due { directory } => print_due(directory),
+        Command::Due { directory, date } => print_due(directory, parse_date_arg(&date)?),
         Command::Check { directory } => check_collection(directory),
         Command::Stats { directory, format } => print_stats(directory, format),
         Command::Orphans { command } => match command {

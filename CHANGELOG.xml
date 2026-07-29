@@ -4,6 +4,9 @@
             <change author="chrisdoram">
                 Added support for term-definition cards.
             </change>
+            <change author="eudoxia0">
+                The `due` command now accepts a specific date.
+            </change>
         </added>
         <changed>
             <change author="IvanVergiliev">

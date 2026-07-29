@@ -127,6 +127,19 @@ impl Database {
         Ok(due)
     }
 
+    /// Find the hashes of the cards due on exactly the given date.
+    pub fn due_on(&self, date: Date) -> Fallible<HashSet<CardHash>> {
+        let mut due = HashSet::new();
+        let sql = "select card_hash from cards where due_date = ?1;";
+        let mut stmt = self.conn.prepare(sql)?;
+        let mut rows = stmt.query(params![date])?;
+        while let Some(row) = rows.next()? {
+            let hash: CardHash = row.get(0)?;
+            due.insert(hash);
+        }
+        Ok(due)
+    }
+
     /// Get a card's performance information.
     pub fn get_card_performance_opt(&self, card_hash: CardHash) -> Fallible<Option<Performance>> {
         let sql = "select last_reviewed_at, stability, difficulty, interval_raw, interval_days, due_date, review_count from cards where card_hash = ?;";
@@ -392,7 +405,7 @@ mod tests {
         assert!(hashes.contains(&card_hash));
         let performance = db.get_card_performance(card_hash)?;
         assert_eq!(performance, Performance::New);
-        let due_today = db.due_today(now.date())?;
+        let due_today = db.all_due(now.date())?;
         assert!(due_today.contains(&card_hash));
         Ok(())
     }
@@ -431,7 +444,7 @@ mod tests {
         db.update_card_performance(card_hash, performance)?;
         let fetched_performance = db.get_card_performance(card_hash)?;
         assert_eq!(fetched_performance, performance);
-        let due_today = db.due_today(now.date())?;
+        let due_today = db.all_due(now.date())?;
         assert!(due_today.contains(&card_hash));
         Ok(())
     }

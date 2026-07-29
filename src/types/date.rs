@@ -15,6 +15,7 @@
 use std::fmt::Display;
 use std::fmt::Formatter;
 
+use chrono::Days;
 use chrono::Local;
 use chrono::NaiveDate;
 use rusqlite::ToSql;
@@ -32,14 +33,28 @@ use crate::error::ErrorReport;
 pub struct Date(NaiveDate);
 
 impl Date {
+    /// Construct a [`Date`] from a [`NaiveDate`].
     pub fn new(naive_date: NaiveDate) -> Self {
         Self(naive_date)
     }
 
+    /// Return today's date.
     pub fn today() -> Self {
         Self(Local::now().naive_local().date())
     }
 
+    /// Return tomorrow's date.
+    pub fn tomorrow() -> Self {
+        Self(
+            Local::now()
+                .naive_local()
+                .date()
+                .checked_add_days(Days::new(1))
+                .unwrap(),
+        )
+    }
+
+    /// Consume a [`Date`] and return its [`NaiveDate`].
     pub fn into_inner(self) -> NaiveDate {
         self.0
     }
