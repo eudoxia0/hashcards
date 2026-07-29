@@ -100,8 +100,11 @@ impl Database {
         Ok(card_hashes)
     }
 
-    /// Find the hashes of the cards due today.
-    pub fn due_today(&self, today: Date) -> Fallible<HashSet<CardHash>> {
+    /// Find the hashes of:
+    ///
+    /// 1. Cards due on or before the given date, and
+    /// 2. New cards.
+    pub fn all_due(&self, today: Date) -> Fallible<HashSet<CardHash>> {
         let mut due = HashSet::new();
         let sql = "select card_hash, due_date from cards;";
         let mut stmt = self.conn.prepare(sql)?;

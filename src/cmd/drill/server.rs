@@ -118,7 +118,7 @@ pub async fn start_server(config: ServerConfig) -> Fallible<()> {
     }
 
     // Find cards due today.
-    let due_today: HashSet<CardHash> = db.due_today(today)?;
+    let due_today: HashSet<CardHash> = db.all_due(today)?;
     let due_today: Vec<Card> = cards
         .into_iter()
         .filter(|card| due_today.contains(&card.hash()))
