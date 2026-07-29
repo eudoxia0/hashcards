@@ -1,0 +1,59 @@
+body {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.deck-list-page {
+    min-width: 600px;
+
+    table.deck-list {
+        width: 100%;
+        border-collapse: collapse;
+
+        td {
+            padding: 4px 12px;
+            text-align: left;
+        }
+
+        tr.group-row {
+            td {
+                font-weight: bold;
+                font-family: var(--font-ui);
+                font-size: 24px;
+                padding-left: 0;
+            }
+        }
+
+        tr.deck-row {
+            &:hover {
+                background: #f7f7f7;
+            }
+
+            td {
+                font-family: var(--font-ui);
+                font-size: 20px;
+
+                &.col-deck {
+                    padding-left: 24px;
+                }
+
+                &.col-stat {
+                    text-align: right;
+                    font-size: 14px;
+                }
+            }
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+
+            &:hover {
+                text-decoration: underline;
+            }
+        }
+    }
+}
