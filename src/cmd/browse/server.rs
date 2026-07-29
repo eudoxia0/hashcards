@@ -18,11 +18,11 @@ use std::sync::Mutex;
 
 use axum::Router;
 use axum::http::StatusCode;
-use axum::http::header::CACHE_CONTROL;
-use axum::http::header::CONTENT_TYPE;
 use axum::response::Html;
 use axum::response::IntoResponse;
 use axum::routing::get;
+use http::header::CACHE_CONTROL;
+use http::header::CONTENT_TYPE;
 use tokio::net::TcpListener;
 use tokio::signal;
 

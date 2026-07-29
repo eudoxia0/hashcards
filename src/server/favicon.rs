@@ -13,9 +13,9 @@
 // limitations under the License.
 
 use axum::http::StatusCode;
-use axum::http::header::CACHE_CONTROL;
-use axum::http::header::CONTENT_TYPE;
 use axum::response::IntoResponse;
+use http::header::CACHE_CONTROL;
+use http::header::CONTENT_TYPE;
 
 use crate::server::constants::CACHE_CONTROL_IMMUTABLE;
 

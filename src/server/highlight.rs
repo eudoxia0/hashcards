@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use axum::http::HeaderName;
 use axum::http::StatusCode;
-use axum::http::header::CACHE_CONTROL;
-use axum::http::header::CONTENT_TYPE;
+use http::HeaderName;
+use http::header::CACHE_CONTROL;
+use http::header::CONTENT_TYPE;
 
 use crate::server::constants::CACHE_CONTROL_IMMUTABLE;
 use crate::server::constants::CONTENT_TYPE_CSS;
