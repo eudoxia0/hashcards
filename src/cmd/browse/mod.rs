@@ -13,6 +13,7 @@
 // limitations under the License.
 
 mod server;
+mod templates;
 mod views;
 
 pub use server::BrowseServerConfig;
