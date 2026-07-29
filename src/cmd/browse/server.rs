@@ -34,6 +34,7 @@ use crate::db::Database;
 use crate::error::Fallible;
 use crate::server::constants::CACHE_CONTROL_IMMUTABLE;
 use crate::server::constants::CONTENT_TYPE_CSS;
+use crate::server::constants::CONTENT_TYPE_JS;
 use crate::server::file_handler::file_handler_logic;
 use crate::server::highlight::HIGHLIGHT_CSS_URL;
 use crate::server::highlight::HIGHLIGHT_JS_URL;
@@ -104,6 +105,7 @@ pub async fn start_browse_server(config: BrowseServerConfig) -> Fallible<()> {
     let app = Router::new();
     let app = app.route("/", get(index_handler));
     let app = app.route("/browse.css", get(browse_css_handler));
+    let app = app.route("/browse.js", get(browse_js_handler));
     let app = app.route("/common.css", get(common_css_handler));
     let app = app.route("/favicon.ico", get(favicon_handler));
     let app = app.route("/file/{*path}", get(file_handler));
@@ -144,6 +146,17 @@ async fn browse_css_handler() -> impl IntoResponse {
             (CACHE_CONTROL, CACHE_CONTROL_IMMUTABLE),
         ],
         include_bytes!("resources/browse.css"),
+    )
+}
+
+async fn browse_js_handler() -> impl IntoResponse {
+    (
+        StatusCode::OK,
+        [
+            (CONTENT_TYPE, CONTENT_TYPE_JS),
+            (CACHE_CONTROL, CACHE_CONTROL_IMMUTABLE),
+        ],
+        include_bytes!("resources/browse.js"),
     )
 }
 
