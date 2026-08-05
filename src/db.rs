@@ -127,19 +127,6 @@ impl Database {
         Ok(due)
     }
 
-    /// Find the hashes of the cards due on exactly the given date.
-    pub fn due_on(&self, date: Date) -> Fallible<HashSet<CardHash>> {
-        let mut due = HashSet::new();
-        let sql = "select card_hash from cards where due_date = ?1;";
-        let mut stmt = self.conn.prepare(sql)?;
-        let mut rows = stmt.query(params![date])?;
-        while let Some(row) = rows.next()? {
-            let hash: CardHash = row.get(0)?;
-            due.insert(hash);
-        }
-        Ok(due)
-    }
-
     /// Get a card's performance information.
     pub fn get_card_performance_opt(&self, card_hash: CardHash) -> Fallible<Option<Performance>> {
         let sql = "select last_reviewed_at, stability, difficulty, interval_raw, interval_days, due_date, review_count from cards where card_hash = ?;";
