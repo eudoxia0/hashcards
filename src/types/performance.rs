@@ -32,8 +32,17 @@ use crate::types::timestamp::Timestamp;
 /// The desired recall probability.
 const TARGET_RECALL: f64 = 0.9;
 
-/// The minimum review interval in days.
+/// The minimum review interval in days, for grades other than [`Grade::Forgot`].
 const MIN_INTERVAL: f64 = 1.0;
+
+/// The minimum review interval in days for a [`Grade::Forgot`] review.
+///
+/// Forgotten cards are allowed to come due again the same day, rather than
+/// being pushed to tomorrow: `hashcards` has no Anki-style intraday
+/// relearning steps, so a same-day floor is what lets a forgotten card
+/// resurface in a later session on the same day (see `all_due`), instead of
+/// disappearing until tomorrow even though you just missed it.
+const MIN_INTERVAL_FORGOT: f64 = 0.0;
 
 /// The maximum review interval in days.
 const MAX_INTERVAL: f64 = 256.0;
@@ -95,9 +104,13 @@ pub fn update_performance(
             (stability, difficulty, review_count)
         }
     };
+    let min_interval: Interval = match grade {
+        Grade::Forgot => MIN_INTERVAL_FORGOT,
+        Grade::Hard | Grade::Good | Grade::Easy => MIN_INTERVAL,
+    };
     let interval_raw: Interval = interval(TARGET_RECALL, stability);
     let interval_rounded: Interval = interval_raw.round();
-    let interval_clamped: Interval = interval_rounded.clamp(MIN_INTERVAL, MAX_INTERVAL);
+    let interval_clamped: Interval = interval_rounded.clamp(min_interval, MAX_INTERVAL);
     let interval_days: i64 = interval_clamped as i64;
     let interval_duration: Duration = Duration::days(interval_days);
     let due_date: Date = Date::new(today + interval_duration);
@@ -185,5 +198,56 @@ mod tests {
         assert!(approx_eq(interval_raw, 25.80));
         assert_eq!(interval_days, 26);
         assert_eq!(review_count, 2);
+    }
+
+    /// Forgetting a new card must not push its due date to tomorrow: with no
+    /// intraday relearning steps, that's the only way a forgotten card can
+    /// resurface later the same day.
+    #[test]
+    fn test_forgetting_new_card_is_due_same_day() {
+        let reviewed_at = Timestamp::now();
+        let today = reviewed_at.date();
+        let result = update_performance(Performance::New, Grade::Forgot, reviewed_at);
+        assert_eq!(result.interval_days, 0);
+        assert_eq!(result.due_date, today);
+    }
+
+    /// Forgetting an already-reviewed card must likewise stay due today,
+    /// not get pushed a full day out.
+    #[test]
+    fn test_forgetting_reviewed_card_is_due_same_day() {
+        let now = Timestamp::now();
+        let today = now.date();
+        let duration = Duration::days(3);
+        let last_reviewed_at = Timestamp::new(now.into_inner() - duration);
+        let initial_perf = ReviewedPerformance {
+            last_reviewed_at,
+            stability: 3.17,
+            difficulty: 5.28,
+            interval_raw: 3.17,
+            interval_days: 3,
+            due_date: Date::new(today.into_inner() + duration),
+            review_count: 1,
+        };
+        let result = update_performance(Performance::Reviewed(initial_perf), Grade::Forgot, now);
+        assert_eq!(result.interval_days, 0);
+        assert_eq!(result.due_date, today);
+    }
+
+    /// Forgetting the same card twice in one day (e.g. across two separate
+    /// `drill` sessions) must produce a well-formed, still-diminishing
+    /// stability rather than panicking or producing nonsense -- `elapsed
+    /// days == 0` is an ordinary case for FSRS, not a special one.
+    #[test]
+    fn test_forgetting_same_card_twice_same_day() {
+        let now = Timestamp::now();
+        let first = update_performance(Performance::New, Grade::Forgot, now);
+        assert_eq!(first.due_date, now.date());
+
+        let second = update_performance(Performance::Reviewed(first), Grade::Forgot, now);
+        assert_eq!(second.due_date, now.date());
+        assert!(second.stability > 0.0);
+        assert!(second.stability.is_finite());
+        assert_eq!(second.review_count, 2);
     }
 }
