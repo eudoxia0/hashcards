@@ -35,13 +35,16 @@ pub fn parse_date_arg(s: &str) -> Fallible<Date> {
 
 /// Compute the number of cards due by `date` in each deck, and the total.
 ///
-/// A card is due if it has never been reviewed, or if its due date falls on
-/// or before `date` -- the same cumulative condition `drill` itself uses to
-/// select cards for a session (see [`crate::db::Database::all_due`]), so
-/// this reports exactly what a drill session on `date` would pull in.
+/// For today, this matches what `drill` would pull into a session: overdue,
+/// never-reviewed, and due-today cards. For any other date, it's an exact
+/// match on that date's due cards only.
 fn due_report(directory: Option<String>, date: Date) -> Fallible<(BTreeMap<String, usize>, usize)> {
     let coll = Collection::new(directory)?;
-    let due_hashes = coll.db.all_due(date)?;
+    let due_hashes = if date == Date::today() {
+        coll.db.all_due(date)?
+    } else {
+        coll.db.due_on(date)?
+    };
     // Count due cards per deck.
     let mut counts: BTreeMap<String, usize> = BTreeMap::new();
     for card in &coll.cards {
@@ -122,6 +125,49 @@ mod tests {
 
         let (_, total) = due_report(Some(directory), Date::today())?;
         assert_eq!(total, 2);
+        Ok(())
+    }
+
+    /// Regression test: querying a specific future date must be an exact
+    /// match on that date, and must NOT pull in never-reviewed or overdue
+    /// cards the way `today` does.
+    #[test]
+    fn test_due_report_future_date_is_exact_match() -> Fallible<()> {
+        let directory = create_tmp_copy_of_test_directory()?;
+        let coll = Collection::new(Some(directory.clone()))?;
+        assert!(
+            coll.cards.len() >= 2,
+            "fixture directory must contain at least two cards"
+        );
+        let now = Timestamp::now();
+        for card in &coll.cards {
+            coll.db.insert_card(card.hash(), now)?;
+        }
+        // Leave the first card never-reviewed. Mark the second as overdue.
+        let yesterday = Date::new(
+            Date::today()
+                .into_inner()
+                .checked_sub_days(Days::new(1))
+                .unwrap(),
+        );
+        coll.db.update_card_performance(
+            coll.cards[1].hash(),
+            Performance::Reviewed(ReviewedPerformance {
+                last_reviewed_at: now,
+                stability: 1.0,
+                difficulty: 1.0,
+                interval_raw: 1.0,
+                interval_days: 1,
+                due_date: yesterday,
+                review_count: 1,
+            }),
+        )?;
+        drop(coll);
+
+        // Neither the never-reviewed nor the overdue card is due "tomorrow",
+        // so querying that date should report 0.
+        let (_, total) = due_report(Some(directory), Date::tomorrow())?;
+        assert_eq!(total, 0);
         Ok(())
     }
 
