@@ -32,17 +32,8 @@ use crate::types::timestamp::Timestamp;
 /// The desired recall probability.
 const TARGET_RECALL: f64 = 0.9;
 
-/// The minimum review interval in days, for grades other than [`Grade::Forgot`].
+/// The minimum review interval in days.
 const MIN_INTERVAL: f64 = 1.0;
-
-/// The minimum review interval in days for a [`Grade::Forgot`] review.
-///
-/// Forgotten cards are allowed to come due again the same day, rather than
-/// being pushed to tomorrow: `hashcards` has no Anki-style intraday
-/// relearning steps, so a same-day floor is what lets a forgotten card
-/// resurface in a later session on the same day (see `all_due`), instead of
-/// disappearing until tomorrow even though you just missed it.
-const MIN_INTERVAL_FORGOT: f64 = 0.0;
 
 /// The maximum review interval in days.
 const MAX_INTERVAL: f64 = 256.0;
@@ -104,14 +95,14 @@ pub fn update_performance(
             (stability, difficulty, review_count)
         }
     };
-    let min_interval: Interval = match grade {
-        Grade::Forgot => MIN_INTERVAL_FORGOT,
-        Grade::Hard | Grade::Good | Grade::Easy => MIN_INTERVAL,
-    };
     let interval_raw: Interval = interval(TARGET_RECALL, stability);
-    let interval_rounded: Interval = interval_raw.round();
-    let interval_clamped: Interval = interval_rounded.clamp(min_interval, MAX_INTERVAL);
-    let interval_days: i64 = interval_clamped as i64;
+    // Forgotten cards remain due on the review date.
+    let interval_days: i64 = match grade {
+        Grade::Forgot => 0,
+        Grade::Hard | Grade::Good | Grade::Easy => {
+            interval_raw.round().clamp(MIN_INTERVAL, MAX_INTERVAL) as i64
+        }
+    };
     let interval_duration: Duration = Duration::days(interval_days);
     let due_date: Date = Date::new(today + interval_duration);
     ReviewedPerformance {
