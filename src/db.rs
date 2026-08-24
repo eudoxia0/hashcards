@@ -359,10 +359,10 @@ impl Database {
         Ok(sessions)
     }
 
-    /// Get the list of all reviews for a given card, ordered from most to
-    /// least recent.
+    /// Get the list of all reviews for a given card, ordered from least to
+    /// most recent.
     pub fn get_reviews_for_card(&self, card_hash: CardHash) -> Fallible<Vec<ReviewRow>> {
-        let sql = "select review_id, card_hash, reviewed_at, grade, stability, difficulty, interval_raw, interval_days, due_date from reviews where card_hash = ? order by reviewed_at desc;";
+        let sql = "select review_id, card_hash, reviewed_at, grade, stability, difficulty, interval_raw, interval_days, due_date from reviews where card_hash = ? order by reviewed_at asc;";
         let mut stmt = self.conn.prepare(sql)?;
         let review_iter = stmt.query_map(params![card_hash], |row| {
             Ok(ReviewRow {
@@ -591,7 +591,7 @@ mod tests {
     }
 
     /// `get_reviews_for_card` returns only the reviews for the given card,
-    /// ordered from most to least recent.
+    /// ordered from least to most recent.
     #[test]
     fn test_get_reviews_for_card() -> Fallible<()> {
         let mut db = Database::new(":memory:")?;
@@ -616,8 +616,8 @@ mod tests {
 
         let reviews = db.get_reviews_for_card(card_a)?;
         assert_eq!(reviews.len(), 2);
-        assert_eq!(reviews[0].data.reviewed_at, day2);
-        assert_eq!(reviews[1].data.reviewed_at, day1);
+        assert_eq!(reviews[0].data.reviewed_at, day1);
+        assert_eq!(reviews[1].data.reviewed_at, day2);
         assert!(reviews.iter().all(|r| r.data.card_hash == card_a));
         Ok(())
     }

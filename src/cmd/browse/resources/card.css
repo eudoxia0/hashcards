@@ -77,6 +77,10 @@ table.history td.timestamp {
     text-align: left;
 }
 
+table.history td.cell-grade {
+    text-align: center;
+}
+
 .grade-badge {
     display: inline-block;
     padding: 2px 8px;

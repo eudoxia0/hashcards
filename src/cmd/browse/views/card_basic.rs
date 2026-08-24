@@ -28,10 +28,12 @@ use crate::db::ReviewRow;
 use crate::error::Fallible;
 use crate::error::fail;
 use crate::fsrs::Grade;
+use crate::fsrs::retrievability;
 use crate::markdown::MarkdownRenderConfig;
 use crate::media::resolve::MediaResolverBuilder;
 use crate::types::card::Card;
 use crate::types::card_hash::CardHash;
+use crate::types::date::Date;
 use crate::types::performance::Performance;
 
 pub async fn card_basic_handler(
@@ -156,37 +158,58 @@ pub fn render_performance_rows(performance: Option<Performance>) -> Markup {
                 td { "New — not yet reviewed" }
             }
         },
-        Some(Performance::Reviewed(p)) => html! {
-            tr {
-                th { "Status" }
-                td { "Reviewed" }
+        Some(Performance::Reviewed(p)) => {
+            let elapsed_days = (Date::today().into_inner() - p.last_reviewed_at.date().into_inner())
+                .num_days() as f64;
+            let predicted_recall = retrievability(elapsed_days, p.stability);
+            html! {
+                tr {
+                    th { "Status" }
+                    td { "Reviewed" }
+                }
+                tr {
+                    th { "Predicted recall" }
+                    td { (format!("{:.0}%", predicted_recall * 100.0)) }
+                }
+                tr {
+                    th { "Due date" }
+                    td { (p.due_date) }
+                }
+                tr {
+                    th { "Stability" }
+                    td { (format!("{:.2}", p.stability)) }
+                }
+                tr {
+                    th { "Difficulty" }
+                    td { (render_difficulty(p.difficulty)) }
+                }
+                tr {
+                    th { "Interval" }
+                    td { (format!("{} days", p.interval_days)) }
+                }
+                tr {
+                    th { "Review count" }
+                    td { (p.review_count) }
+                }
             }
-            tr {
-                th { "Due date" }
-                td { (p.due_date) }
-            }
-            tr {
-                th { "Stability" }
-                td { (format!("{:.2}", p.stability)) }
-            }
-            tr {
-                th { "Difficulty" }
-                td { (format!("{:.2}", p.difficulty)) }
-            }
-            tr {
-                th { "Interval" }
-                td { (format!("{} days", p.interval_days)) }
-            }
-            tr {
-                th { "Review count" }
-                td { (p.review_count) }
-            }
-        },
+        }
+    }
+}
+
+/// Render a card's difficulty (1 to 10) colored from green (easy) to red
+/// (hard), shared with the cloze view.
+pub fn render_difficulty(difficulty: f64) -> Markup {
+    let t = ((difficulty - 1.0) / 9.0).clamp(0.0, 1.0);
+    let hue = 120.0 * (1.0 - t);
+    let style = format!("color: hsl({hue:.0}, 70%, 40%); font-weight: 600;");
+    html! {
+        span style=(style) { (format!("{:.2}", difficulty)) }
     }
 }
 
 /// Render a card's review history as a table, shared with the cloze view.
 pub fn render_history(title: &str, reviews: &[ReviewRow]) -> Markup {
+    let first_date: Option<Date> = reviews.iter().map(|r| r.data.reviewed_at.date()).min();
     html! {
         h2 { (title) }
         @if reviews.is_empty() {
@@ -195,6 +218,7 @@ pub fn render_history(title: &str, reviews: &[ReviewRow]) -> Markup {
             table .history {
                 thead {
                     tr {
+                        th { "Day" }
                         th { "Date" }
                         th { "Grade" }
                         th { "Stability" }
@@ -206,10 +230,15 @@ pub fn render_history(title: &str, reviews: &[ReviewRow]) -> Markup {
                 tbody {
                     @for review in reviews {
                         tr {
-                            td .timestamp { (review.data.reviewed_at) }
-                            td { (render_grade_badge(review.data.grade)) }
+                            td {
+                                (day_offset(first_date, review.data.reviewed_at.date()))
+                            }
+                            td .timestamp {
+                                (review.data.reviewed_at.into_inner().format("%Y-%m-%d %H:%M:%S"))
+                            }
+                            td .cell-grade { (render_grade_badge(review.data.grade)) }
                             td { (format!("{:.2}", review.data.stability)) }
-                            td { (format!("{:.2}", review.data.difficulty)) }
+                            td { (render_difficulty(review.data.difficulty)) }
                             td { (format!("{} days", review.data.interval_days)) }
                             td { (review.data.due_date) }
                         }
@@ -217,6 +246,15 @@ pub fn render_history(title: &str, reviews: &[ReviewRow]) -> Markup {
                 }
             }
         }
+    }
+}
+
+/// The number of days between `date` and the earliest date in the review
+/// history (`first`).
+fn day_offset(first: Option<Date>, date: Date) -> i64 {
+    match first {
+        Some(first) => (date.into_inner() - first.into_inner()).num_days(),
+        None => 0,
     }
 }
 
