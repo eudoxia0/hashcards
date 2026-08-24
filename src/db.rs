@@ -449,6 +449,40 @@ mod tests {
         Ok(())
     }
 
+    /// A forgotten reviewed card is persisted as due today and is selected
+    /// when a later session queries today's due cards.
+    #[test]
+    fn test_forgotten_reviewed_card_is_due_in_later_same_day_session() -> Fallible<()> {
+        let db = Database::new(":memory:")?;
+        let card_hash = CardHash::hash_bytes(b"a");
+        let now = Timestamp::now();
+        let three_days = chrono::Duration::days(3);
+        db.insert_card(card_hash, now)?;
+
+        let previous = ReviewedPerformance {
+            last_reviewed_at: Timestamp::new(now.into_inner() - three_days),
+            stability: 3.17,
+            difficulty: 5.28,
+            interval_raw: 3.17,
+            interval_days: 3,
+            due_date: now.date(),
+            review_count: 1,
+        };
+        let forgotten = crate::types::performance::update_performance(
+            Performance::Reviewed(previous),
+            Grade::Forgot,
+            now,
+        );
+        db.update_card_performance(card_hash, Performance::Reviewed(forgotten))?;
+
+        assert_eq!(forgotten.interval_days, 0);
+        assert_eq!(forgotten.due_date, now.date());
+        assert!(db.all_due(now.date())?.contains(&card_hash));
+        let tomorrow = Date::new(now.date().into_inner() + chrono::Duration::days(1));
+        assert!(db.all_due(tomorrow)?.contains(&card_hash));
+        Ok(())
+    }
+
     /// `get_card_performance` fails if the card does not exist.
     #[test]
     fn test_get_performance_nonexistent() -> Fallible<()> {
