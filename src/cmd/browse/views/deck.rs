@@ -59,8 +59,8 @@ fn deck_view(state: BrowseState, deck_name: String) -> Fallible<Markup> {
         .iter()
         .filter(|card| *card.deck_name() == deck_name)
         .collect();
-    let visible_cards: Vec<&Card> = visible_cards(deck_cards);
-    let body = render(&state, &deck_name, visible_cards)?;
+    let visible_cards: Vec<&Card> = visible_cards(&deck_cards);
+    let body = render(&state, &deck_name, &deck_cards, visible_cards)?;
     Ok(page_template(
         &format!("{deck_name} - hashcards"),
         Some("/deck.css"),
@@ -70,10 +70,10 @@ fn deck_view(state: BrowseState, deck_name: String) -> Fallible<Markup> {
 
 /// Reduce a deck's cards to the ones that should be shown to the user: one
 /// entry per basic card, and one entry per cloze family.
-fn visible_cards(cards: Vec<&Card>) -> Vec<&Card> {
+fn visible_cards<'a>(cards: &[&'a Card]) -> Vec<&'a Card> {
     let mut seen: HashSet<CardHash> = HashSet::new();
     let mut visible: Vec<&Card> = Vec::new();
-    for card in cards {
+    for card in cards.iter().copied() {
         let visible_hash = card.family_hash().unwrap_or_else(|| card.hash());
         if seen.insert(visible_hash) {
             visible.push(card);
@@ -83,10 +83,15 @@ fn visible_cards(cards: Vec<&Card>) -> Vec<&Card> {
     visible
 }
 
-fn render(state: &BrowseState, deck_name: &str, cards: Vec<&Card>) -> Fallible<Markup> {
+fn render(
+    state: &BrowseState,
+    deck_name: &str,
+    deck_cards: &[&Card],
+    cards: Vec<&Card>,
+) -> Fallible<Markup> {
     let mut rows: Vec<Markup> = Vec::new();
     for card in cards {
-        rows.push(render_card_row(state, card)?);
+        rows.push(render_card_row(state, deck_cards, card)?);
     }
     let body = html! {
         nav .breadcrumbs {
@@ -108,7 +113,7 @@ fn render(state: &BrowseState, deck_name: &str, cards: Vec<&Card>) -> Fallible<M
     Ok(body)
 }
 
-fn render_card_row(state: &BrowseState, card: &Card) -> Fallible<Markup> {
+fn render_card_row(state: &BrowseState, deck_cards: &[&Card], card: &Card) -> Fallible<Markup> {
     let deck_path = card.relative_file_path(&state.directory)?;
     let config = MarkdownRenderConfig {
         resolver: MediaResolverBuilder::new()
@@ -138,7 +143,12 @@ fn render_card_row(state: &BrowseState, card: &Card) -> Fallible<Markup> {
             }
         }
         CardType::Cloze => {
-            let back: Markup = card.html_back(&config)?;
+            let family: Vec<&Card> = deck_cards
+                .iter()
+                .copied()
+                .filter(|c| c.family_hash() == card.family_hash())
+                .collect();
+            let back: Markup = Card::html_back_family(&family, &config)?;
             html! {
                 div .card {
                     div .cloze {
