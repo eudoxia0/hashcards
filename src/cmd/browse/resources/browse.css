@@ -102,7 +102,8 @@ ul.card-list {
 }
 
 .front,
-.back {
+.back,
+.cloze {
     padding: 12px;
 }
 

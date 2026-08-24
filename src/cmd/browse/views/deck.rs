@@ -113,11 +113,11 @@ fn render_card_row(state: &BrowseState, card: &Card) -> Fallible<Markup> {
         resource_hostname: state.resource_hostname.clone(),
         port: state.port,
     };
-    let front = card.html_front(&config)?;
-    let back = card.html_back(&config)?;
-    Ok(html! {
-        li {
-            a .card-content href=(card_url(card)) {
+    let html: Markup = match card.card_type() {
+        CardType::Basic => {
+            let front: Markup = card.html_front(&config)?;
+            let back: Markup = card.html_back(&config)?;
+            html! {
                 div .card {
                     div .front {
                         .rich-text {
@@ -132,7 +132,27 @@ fn render_card_row(state: &BrowseState, card: &Card) -> Fallible<Markup> {
                 }
             }
         }
-    })
+        CardType::Cloze => {
+            let back: Markup = card.html_back(&config)?;
+            html! {
+                div .card {
+                    div .cloze {
+                        .rich-text {
+                            (back)
+                        }
+                    }
+                }
+            }
+        }
+    };
+    let html: Markup = html! {
+        li {
+            a .card-content href=(card_url(card)) {
+                (html)
+            }
+        }
+    };
+    Ok(html)
 }
 
 fn card_url(card: &Card) -> String {
