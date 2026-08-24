@@ -56,6 +56,7 @@ use crate::server::highlight::HIGHLIGHT_CSS_URL;
 use crate::server::highlight::HIGHLIGHT_JS_URL;
 use crate::server::highlight::highlight_css_handler;
 use crate::server::highlight::highlight_js_handler;
+use crate::server::js::escape_js_string_literal;
 use crate::server::katex::KATEX_CSS_URL;
 use crate::server::katex::KATEX_JS_URL;
 use crate::server::katex::KATEX_MHCHEM_JS_URL;
@@ -227,12 +228,6 @@ async fn script_handler(
     content.push('\n');
     content.push_str(include_str!("script.js"));
     (StatusCode::OK, [(CONTENT_TYPE, "text/javascript")], content)
-}
-
-fn escape_js_string_literal(s: &str) -> String {
-    s.replace('\\', "\\\\")
-        .replace('`', "\\`")
-        .replace('$', "\\$")
 }
 
 fn css_response(

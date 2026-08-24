@@ -15,5 +15,6 @@
 pub mod constants;
 pub mod file_handler;
 pub mod highlight;
+pub mod js;
 pub mod katex;
 pub mod resources;

@@ -43,6 +43,7 @@ use crate::server::highlight::HIGHLIGHT_CSS_URL;
 use crate::server::highlight::HIGHLIGHT_JS_URL;
 use crate::server::highlight::highlight_css_handler;
 use crate::server::highlight::highlight_js_handler;
+use crate::server::js::escape_js_string_literal;
 use crate::server::katex::KATEX_CSS_URL;
 use crate::server::katex::KATEX_JS_URL;
 use crate::server::katex::KATEX_MHCHEM_JS_URL;
@@ -155,15 +156,18 @@ async fn browse_css_handler() -> impl IntoResponse {
     )
 }
 
-async fn browse_js_handler() -> impl IntoResponse {
-    (
-        StatusCode::OK,
-        [
-            (CONTENT_TYPE, CONTENT_TYPE_JS),
-            (CACHE_CONTROL, CACHE_CONTROL_IMMUTABLE),
-        ],
-        include_bytes!("resources/browse.js"),
-    )
+async fn browse_js_handler(State(state): State<BrowseState>) -> impl IntoResponse {
+    let mut content = String::new();
+    content.push_str("let MACROS = {};\n");
+    for (name, definition) in &state.macros {
+        let name = escape_js_string_literal(name);
+        let definition = escape_js_string_literal(definition);
+        content.push_str(&format!("MACROS['{name}'] = '{definition}';\n"));
+    }
+    content.push_str("MACROS[','] = '{\\\\char`,}';\n");
+    content.push('\n');
+    content.push_str(include_str!("resources/browse.js"));
+    (StatusCode::OK, [(CONTENT_TYPE, "text/javascript")], content)
 }
 
 async fn file_handler(
