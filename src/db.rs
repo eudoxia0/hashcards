@@ -127,6 +127,19 @@ impl Database {
         Ok(due)
     }
 
+    /// Find the hashes of the cards due on exactly the given date.
+    pub fn due_on(&self, date: Date) -> Fallible<HashSet<CardHash>> {
+        let mut due = HashSet::new();
+        let sql = "select card_hash from cards where due_date = ?1;";
+        let mut stmt = self.conn.prepare(sql)?;
+        let mut rows = stmt.query(params![date])?;
+        while let Some(row) = rows.next()? {
+            let hash: CardHash = row.get(0)?;
+            due.insert(hash);
+        }
+        Ok(due)
+    }
+
     /// Get a card's performance information.
     pub fn get_card_performance_opt(&self, card_hash: CardHash) -> Fallible<Option<Performance>> {
         let sql = "select last_reviewed_at, stability, difficulty, interval_raw, interval_days, due_date, review_count from cards where card_hash = ?;";
@@ -280,6 +293,20 @@ impl Database {
         let sql = "select count(*) from cards where card_hash = ?;";
         let count: i64 = self.conn.query_row(sql, [card_hash], |row| row.get(0))?;
         Ok(count > 0)
+    }
+
+    /// Construct a map from the hash of each card to its due date.
+    pub fn card_due_dates(&self) -> Fallible<HashMap<CardHash, Option<Date>>> {
+        let sql = "select card_hash, due_date from cards;";
+        let mut stmt = self.conn.prepare(sql)?;
+        let mut rows = stmt.query([])?;
+        let mut map = HashMap::new();
+        while let Some(row) = rows.next()? {
+            let hash: CardHash = row.get(0)?;
+            let due_date: Option<Date> = row.get(1)?;
+            map.insert(hash, due_date);
+        }
+        Ok(map)
     }
 
     /// Count the number of reviews performed in the given date.
