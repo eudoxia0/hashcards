@@ -30,6 +30,11 @@
                 The card limit is now the final session cap, applied after the new
                 card limit and sibling burying.
             </change>
+            <change author="solyates">
+                The `due` command now correctly counts never-reviewed and overdue
+                cards. It previously matched due dates exactly, which under-reported
+                what a drill session would actually pull in.
+            </change>
         </fixed>
     </unreleased>
     <releases>
