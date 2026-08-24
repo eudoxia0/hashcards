@@ -79,13 +79,33 @@ ul.card-list {
     padding: 0;
 }
 
-.card-row {
-    border-bottom: 1px solid #ccc;
-}
-
 .card-content {
     display: block;
     padding: 8px 0;
     color: black;
     text-decoration: none;
+}
+
+.card-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.card {
+    border: 1px solid black;
+    max-width: 600px;
+}
+
+.front {
+    border-bottom: 1px solid #ccc;
+}
+
+.front,
+.back {
+    padding: 8px;
+}
+
+.rich-text {
+    text-align: justify;
 }

@@ -116,13 +116,19 @@ fn render_card_row(state: &BrowseState, card: &Card) -> Fallible<Markup> {
     let front = card.html_front(&config)?;
     let back = card.html_back(&config)?;
     Ok(html! {
-        li .card-row {
+        li {
             a .card-content href=(card_url(card)) {
-                div .front {
-                    (front)
-                }
-                div .back {
-                    (back)
+                div .card {
+                    div .front {
+                        .rich-text {
+                            (front)
+                        }
+                    }
+                    div .back {
+                        .rich-text {
+                            (back)
+                        }
+                    }
                 }
             }
         }
