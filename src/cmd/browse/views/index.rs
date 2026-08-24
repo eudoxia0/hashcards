@@ -162,31 +162,63 @@ fn render(
     html! {
         main .deck-list-page {
             table .deck-list {
+                thead {
+                    tr {
+                        th {
+                            "Deck"
+                        }
+                        th {
+                            "Cards"
+                        }
+                        th {
+                            "Due"
+                        }
+                        th {
+                            "New"
+                        }
+                    }
+                }
                 tbody {
                     @for (letter, group_decks) in &groups {
                         tr .group-row {
-                            td colspan="4" { (letter) }
+                            td colspan="4" {
+                                (letter)
+                            }
                         }
                         @for deck in group_decks {
                             tr .deck-row {
-                                td .col-deck {
+                                td .deck-cell {
                                     a href=(deck_url(&deck.deck_name)) {
                                         (deck.deck_name)
                                     }
                                 }
-                                td .col-stat { (deck.total) }
-                                td .col-stat { (deck.due) }
-                                td .col-stat { (deck.new) }
+                                td .stat-cell {
+                                    (deck.total)
+                                }
+                                td .stat-cell .zero[deck.due == 0] {
+                                    (deck.due)
+                                }
+                                td .stat-cell .zero[deck.new == 0] {
+                                    (deck.new)
+                                }
                             }
                         }
                     }
                 }
                 tfoot {
                     tr {
-                        td { "Total" }
-                        td.col-stat { (total_cards) }
-                        td.col-stat { (total_due) }
-                        td.col-stat { (total_new) }
+                        td {
+                            "Total"
+                        }
+                        td.stat-cell {
+                            (total_cards)
+                        }
+                        td.stat-cell {
+                            (total_due)
+                        }
+                        td.stat-cell {
+                            (total_new)
+                        }
                     }
                 }
             }
