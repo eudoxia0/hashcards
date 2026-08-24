@@ -110,6 +110,7 @@ pub async fn start_browse_server(config: BrowseServerConfig) -> Fallible<()> {
     let app = app.route("/common-browse.css", get(shared_css_handler));
     let app = app.route("/home.css", get(home_css_handler));
     let app = app.route("/deck.css", get(deck_css_handler));
+    let app = app.route("/card.css", get(card_css_handler));
     let app = app.route("/browse.js", get(browse_js_handler));
     let app = app.route("/card/basic/{card_hash}", get(card_basic_handler));
     let app = app.route("/card/cloze/{family_hash}", get(card_cloze_handler));
@@ -176,6 +177,17 @@ async fn deck_css_handler() -> impl IntoResponse {
             (CACHE_CONTROL, CACHE_CONTROL_IMMUTABLE),
         ],
         include_bytes!("resources/deck.css"),
+    )
+}
+
+async fn card_css_handler() -> impl IntoResponse {
+    (
+        StatusCode::OK,
+        [
+            (CONTENT_TYPE, CONTENT_TYPE_CSS),
+            (CACHE_CONTROL, CACHE_CONTROL_IMMUTABLE),
+        ],
+        include_bytes!("resources/card.css"),
     )
 }
 

@@ -1,0 +1,81 @@
+.card-page h1 {
+    font-size: 36px;
+    margin-bottom: 16px;
+}
+
+.card-page h2 {
+    font-size: 20px;
+    margin: 24px 0 8px;
+}
+
+.card {
+    border: 1px solid black;
+    max-width: 600px;
+    margin-bottom: 16px;
+}
+
+.front {
+    border-bottom: 1px solid #ccc;
+}
+
+.front,
+.back,
+.cloze {
+    padding: 12px;
+}
+
+table.properties,
+table.history {
+    border-collapse: collapse;
+    max-width: 600px;
+}
+
+table.properties th,
+table.properties td,
+table.history th,
+table.history td {
+    padding: 4px 12px 4px 0;
+    text-align: left;
+    font-size: 14px;
+}
+
+table.properties th {
+    color: #666;
+    font-weight: normal;
+    white-space: nowrap;
+}
+
+table.history {
+    width: 100%;
+}
+
+table.history th {
+    border-bottom: 1px solid #666;
+    font-weight: bold;
+    text-align: center;
+}
+
+table.history td {
+    text-align: right;
+}
+
+.hash-cell {
+    font-family: var(--font-mono);
+    font-size: 12px;
+}
+
+.empty {
+    color: #666;
+    font-size: 14px;
+}
+
+.cloze-section {
+    margin-top: 24px;
+    padding-top: 8px;
+    border-top: 1px solid #ccc;
+}
+
+table.history td.timestamp {
+    font-family: var(--font-mono);
+    text-align: left;
+}
