@@ -306,12 +306,19 @@ impl CardContent {
 
     /// Render the back of a cloze family, revealing every cloze deletion at
     /// once. See [`Card::html_back_family`].
-    fn html_back_family(family: &[&CardContent], config: &MarkdownRenderConfig) -> Fallible<Markup> {
+    fn html_back_family(
+        family: &[&CardContent],
+        config: &MarkdownRenderConfig,
+    ) -> Fallible<Markup> {
         let mut text: Option<&str> = None;
         let mut spans: Vec<(usize, usize)> = Vec::with_capacity(family.len());
         for content in family {
             match content {
-                CardContent::Cloze { text: t, start, end } => {
+                CardContent::Cloze {
+                    text: t,
+                    start,
+                    end,
+                } => {
                     match text {
                         None => text = Some(t),
                         Some(existing) if existing == t => {}
