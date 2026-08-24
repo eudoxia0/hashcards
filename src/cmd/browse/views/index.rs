@@ -13,6 +13,7 @@
 // limitations under the License.
 
 use std::collections::HashMap;
+use std::collections::HashSet;
 
 use axum::extract::State;
 use axum::http::StatusCode;
@@ -100,9 +101,24 @@ fn compute_deck_stats(
             .push(card.hash());
     }
 
+    // Build a map from deck names to the number of user-visible cards in that
+    // deck. Each basic card counts as one user-visible card. All the cloze
+    // cards of the same family count as one user-visible card.
+    let mut deck_visible: HashMap<String, HashSet<CardHash>> = HashMap::new();
+    for card in cards.iter() {
+        let hash: CardHash = match card.family_hash() {
+            Some(hash) => hash,
+            None => card.hash(),
+        };
+        deck_visible
+            .entry(card.deck_name().clone())
+            .or_default()
+            .insert(hash);
+    }
+
     let mut output: Vec<DeckStats> = Vec::new();
     for (deck_name, hashes) in deck_hashes.into_iter() {
-        let total: usize = hashes.len();
+        let total: usize = deck_visible.get(&deck_name).map_or(0, HashSet::len);
         let mut due: usize = 0;
         let mut new: usize = 0;
         for h in &hashes {
@@ -160,6 +176,9 @@ fn render(
     total_new: usize,
 ) -> Markup {
     html! {
+        nav .breadcrumbs {
+            span .crumb-current { "Home" }
+        }
         main .deck-list-page {
             table .deck-list {
                 thead {

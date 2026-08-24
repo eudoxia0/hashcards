@@ -1,6 +1,30 @@
 body {
-    padding: 24px;
     font-size: 16px;
+    display: flex;
+    flex-direction: column;
+}
+
+nav.breadcrumbs {
+    padding: 16px 24px;
+    border-bottom: 1px solid black;
+}
+
+nav.breadcrumbs a {
+    color: blue;
+}
+
+.crumb-sep {
+    margin: 0 6px;
+}
+
+.crumb-current {
+    color: black;
+}
+
+main {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 24px;
 }
 
 table.deck-list {
@@ -18,8 +42,7 @@ th {
 }
 
 td a {
-    color: black;
-    text-decoration: none;
+    color: blue;
 }
 
 tr.group-row td {
@@ -44,4 +67,25 @@ tfoot {
 .total-cell {
     font-weight: bold;
     text-align: center;
+}
+
+.deck-page h1 {
+    font-size: 36px;
+    margin-bottom: 16px;
+}
+
+ul.card-list {
+    list-style: none;
+    padding: 0;
+}
+
+.card-row {
+    border-bottom: 1px solid #ccc;
+}
+
+.card-content {
+    display: block;
+    padding: 8px 0;
+    color: black;
+    text-decoration: none;
 }
