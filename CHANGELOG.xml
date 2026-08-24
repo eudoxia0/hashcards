@@ -13,10 +13,10 @@
                 Add `--resource-hostname` to customize rewritten media resource URLs.
             </change>
             <change author="eudoxia0">
-                Update dependencies.
+                Markdown now renders using smart punctuation, e.g. `"foo"` renders as `“foo”`, and `'bar'` with `‘bar’`.
             </change>
             <change author="eudoxia0">
-                Markdown now renders using smart punctuation, e.g. `"foo"` renders as `“foo”`, and `'bar'` with `‘bar’`.
+                Update dependencies.
             </change>
         </changed>
         <fixed>
