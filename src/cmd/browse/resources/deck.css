@@ -13,6 +13,7 @@ ul.card-list {
     padding: 8px 0;
     color: black;
     text-decoration: none;
+    max-width: 600px;
 }
 
 .card-list {
@@ -23,7 +24,6 @@ ul.card-list {
 
 .card {
     border: 1px solid black;
-    max-width: 600px;
 }
 
 .front {
