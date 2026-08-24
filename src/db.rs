@@ -295,20 +295,6 @@ impl Database {
         Ok(count > 0)
     }
 
-    /// Construct a map from the hash of each card to its due date.
-    pub fn card_due_dates(&self) -> Fallible<HashMap<CardHash, Option<Date>>> {
-        let sql = "select card_hash, due_date from cards;";
-        let mut stmt = self.conn.prepare(sql)?;
-        let mut rows = stmt.query([])?;
-        let mut map = HashMap::new();
-        while let Some(row) = rows.next()? {
-            let hash: CardHash = row.get(0)?;
-            let due_date: Option<Date> = row.get(1)?;
-            map.insert(hash, due_date);
-        }
-        Ok(map)
-    }
-
     /// Count the number of reviews performed in the given date.
     pub fn count_reviews_in_date(&self, date: Date) -> Fallible<usize> {
         let sql = "select count(*) from reviews where substr(reviewed_at, 1, 10) = ?;";
