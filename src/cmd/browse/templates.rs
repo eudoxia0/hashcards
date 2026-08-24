@@ -23,7 +23,7 @@ use crate::server::katex::KATEX_JS_URL;
 use crate::server::katex::KATEX_MHCHEM_JS_URL;
 
 /// Page template.
-pub fn page_template(title: &str, body: Markup) -> Markup {
+pub fn page_template(title: &str, css: Option<&str>, body: Markup) -> Markup {
     html! {
         (DOCTYPE)
         html lang="en" {
@@ -37,7 +37,10 @@ pub fn page_template(title: &str, body: Markup) -> Markup {
                 script defer src=(KATEX_MHCHEM_JS_URL) {};
                 script defer src=(HIGHLIGHT_JS_URL) {};
                 link rel="stylesheet" href="/common.css";
-                link rel="stylesheet" href="/browse.css";
+                link rel="stylesheet" href="/common-browse.css";
+                @if let Some(css) = css {
+                    link rel="stylesheet" href=(css);
+                }
             }
             body {
                 (body)

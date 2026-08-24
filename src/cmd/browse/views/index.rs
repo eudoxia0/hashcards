@@ -44,6 +44,7 @@ pub async fn index_handler(State(state): State<BrowseState>) -> impl IntoRespons
         Err(e) => {
             let html = page_template(
                 "error - hashcards",
+                None,
                 html! {
                     div.error {
                         h1 { "Error" }
@@ -84,7 +85,7 @@ fn index_view(state: BrowseState) -> Fallible<Markup> {
         .map(|d| d.new)
         .sum();
     let body = render(groups, total_cards, total_due, total_new);
-    Ok(page_template("hashcards", body))
+    Ok(page_template("hashcards", Some("/home.css"), body))
 }
 
 fn compute_deck_stats(

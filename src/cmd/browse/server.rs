@@ -37,7 +37,6 @@ use crate::db::Database;
 use crate::error::Fallible;
 use crate::server::constants::CACHE_CONTROL_IMMUTABLE;
 use crate::server::constants::CONTENT_TYPE_CSS;
-use crate::server::constants::CONTENT_TYPE_JS;
 use crate::server::file_handler::file_handler_logic;
 use crate::server::highlight::HIGHLIGHT_CSS_URL;
 use crate::server::highlight::HIGHLIGHT_JS_URL;
@@ -108,7 +107,9 @@ pub async fn start_browse_server(config: BrowseServerConfig) -> Fallible<()> {
     // Construct the app.
     let app = Router::new();
     let app = app.route("/", get(index_handler));
-    let app = app.route("/browse.css", get(browse_css_handler));
+    let app = app.route("/common-browse.css", get(shared_css_handler));
+    let app = app.route("/home.css", get(home_css_handler));
+    let app = app.route("/deck.css", get(deck_css_handler));
     let app = app.route("/browse.js", get(browse_js_handler));
     let app = app.route("/card/basic/{card_hash}", get(card_basic_handler));
     let app = app.route("/card/cloze/{family_hash}", get(card_cloze_handler));
@@ -145,14 +146,36 @@ async fn not_found_handler() -> impl IntoResponse {
     (StatusCode::NOT_FOUND, Html("Not Found"))
 }
 
-async fn browse_css_handler() -> impl IntoResponse {
+async fn shared_css_handler() -> impl IntoResponse {
     (
         StatusCode::OK,
         [
             (CONTENT_TYPE, CONTENT_TYPE_CSS),
             (CACHE_CONTROL, CACHE_CONTROL_IMMUTABLE),
         ],
-        include_bytes!("resources/browse.css"),
+        include_bytes!("resources/common-browse.css"),
+    )
+}
+
+async fn home_css_handler() -> impl IntoResponse {
+    (
+        StatusCode::OK,
+        [
+            (CONTENT_TYPE, CONTENT_TYPE_CSS),
+            (CACHE_CONTROL, CACHE_CONTROL_IMMUTABLE),
+        ],
+        include_bytes!("resources/home.css"),
+    )
+}
+
+async fn deck_css_handler() -> impl IntoResponse {
+    (
+        StatusCode::OK,
+        [
+            (CONTENT_TYPE, CONTENT_TYPE_CSS),
+            (CACHE_CONTROL, CACHE_CONTROL_IMMUTABLE),
+        ],
+        include_bytes!("resources/deck.css"),
     )
 }
 

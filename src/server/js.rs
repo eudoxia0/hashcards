@@ -12,25 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use axum::extract::Path;
-use axum::extract::State;
-use axum::http::StatusCode;
-use axum::response::Html;
-use axum::response::IntoResponse;
-use maud::html;
-
-use crate::cmd::browse::server::BrowseState;
-use crate::cmd::browse::templates::page_template;
-
-pub async fn card_cloze_handler(
-    State(state): State<BrowseState>,
-    Path(family_hash): Path<String>,
-) -> impl IntoResponse {
-    let body = html! {
-        h1 {
-            "Hello, world!"
-        }
-    };
-    let html = page_template("hashcards", None, body);
-    (StatusCode::OK, Html(html.into_string()))
+pub fn escape_js_string_literal(s: &str) -> String {
+    s.replace('\\', "\\\\")
+        .replace('`', "\\`")
+        .replace('$', "\\$")
 }

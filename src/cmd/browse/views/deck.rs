@@ -40,6 +40,7 @@ pub async fn deck_handler(
         Err(e) => {
             let html = page_template(
                 "error - hashcards",
+                None,
                 html! {
                     div.error {
                         h1 { "Error" }
@@ -60,7 +61,11 @@ fn deck_view(state: BrowseState, deck_name: String) -> Fallible<Markup> {
         .collect();
     let visible_cards: Vec<&Card> = visible_cards(deck_cards);
     let body = render(&state, &deck_name, visible_cards)?;
-    Ok(page_template(&format!("{deck_name} - hashcards"), body))
+    Ok(page_template(
+        &format!("{deck_name} - hashcards"),
+        Some("/deck.css"),
+        body,
+    ))
 }
 
 /// Reduce a deck's cards to the ones that should be shown to the user: one

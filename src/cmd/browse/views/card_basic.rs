@@ -31,6 +31,6 @@ pub async fn card_basic_handler(
             "Hello, world!"
         }
     };
-    let html = page_template("hashcards", body);
+    let html = page_template("hashcards", None, body);
     (StatusCode::OK, Html(html.into_string()))
 }
