@@ -207,16 +207,16 @@ fn render(
                 }
                 tfoot {
                     tr {
-                        td {
+                        td .total-cell {
                             "Total"
                         }
-                        td.stat-cell {
+                        td .stat-cell {
                             (total_cards)
                         }
-                        td.stat-cell {
+                        td .stat-cell {
                             (total_due)
                         }
-                        td.stat-cell {
+                        td .stat-cell {
                             (total_new)
                         }
                     }

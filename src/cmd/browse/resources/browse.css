@@ -36,3 +36,12 @@ tr.group-row td {
 .zero {
     color: #aaa;
 }
+
+tfoot {
+    border-top: 1px solid #666;
+}
+
+.total-cell {
+    font-weight: bold;
+    text-align: center;
+}
