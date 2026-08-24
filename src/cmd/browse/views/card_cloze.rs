@@ -149,7 +149,7 @@ fn render(
                             (render_performance_rows(*performance))
                         }
                     }
-                    (render_history(&format!("Review History"), reviews))
+                    (render_history(&"Review History".to_string(), reviews))
                 }
             }
         }

@@ -99,7 +99,7 @@ pub async fn start_browse_server(config: BrowseServerConfig) -> Fallible<()> {
     let state = BrowseState {
         port: config.port,
         resource_hostname: config.resource_hostname.clone(),
-        directory: directory,
+        directory,
         macros,
         cards,
         db,

@@ -143,7 +143,7 @@ fn compute_deck_stats(
         output.push(deck_stats);
     }
     // Sort alphabetically, case-insensitive.
-    output.sort_by(|a, b| a.deck_name.to_lowercase().cmp(&b.deck_name.to_lowercase()));
+    output.sort_by_key(|a| a.deck_name.to_lowercase());
     output
 }
 
