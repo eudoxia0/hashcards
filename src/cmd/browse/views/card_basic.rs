@@ -27,6 +27,7 @@ use crate::cmd::browse::templates::page_template;
 use crate::db::ReviewRow;
 use crate::error::Fallible;
 use crate::error::fail;
+use crate::fsrs::Grade;
 use crate::markdown::MarkdownRenderConfig;
 use crate::media::resolve::MediaResolverBuilder;
 use crate::types::card::Card;
@@ -206,7 +207,7 @@ pub fn render_history(title: &str, reviews: &[ReviewRow]) -> Markup {
                     @for review in reviews {
                         tr {
                             td .timestamp { (review.data.reviewed_at) }
-                            td { (review.data.grade.as_str()) }
+                            td { (render_grade_badge(review.data.grade)) }
                             td { (format!("{:.2}", review.data.stability)) }
                             td { (format!("{:.2}", review.data.difficulty)) }
                             td { (format!("{} days", review.data.interval_days)) }
@@ -216,6 +217,20 @@ pub fn render_history(title: &str, reviews: &[ReviewRow]) -> Markup {
                 }
             }
         }
+    }
+}
+
+/// Render a colored badge for a review grade, shared with the cloze view.
+pub fn render_grade_badge(grade: Grade) -> Markup {
+    let label = match grade {
+        Grade::Forgot => "Forgot",
+        Grade::Hard => "Hard",
+        Grade::Good => "Good",
+        Grade::Easy => "Easy",
+    };
+    let class = format!("grade-badge grade-{}", grade.as_str());
+    html! {
+        span class=(class) { (label) }
     }
 }
 

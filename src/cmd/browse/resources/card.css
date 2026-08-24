@@ -76,3 +76,28 @@ table.history td.timestamp {
     font-family: var(--font-mono);
     text-align: left;
 }
+
+.grade-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: 600;
+    color: white;
+}
+
+.grade-forgot {
+    background: #c0392b;
+}
+
+.grade-hard {
+    background: #e67e22;
+}
+
+.grade-good {
+    background: #2980b9;
+}
+
+.grade-easy {
+    background: #27ae60;
+}
