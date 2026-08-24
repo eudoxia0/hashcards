@@ -120,36 +120,36 @@ fn render(
                     }
                 }
             }
-            h2 { "Properties" }
+            h1 { "Properties" }
             table .properties {
                 tbody {
-                    tr {
-                        th { "Deck" }
-                        td { (first.deck_name()) }
-                    }
                     tr {
                         th { "Type" }
                         td { "Cloze" }
                     }
                     tr {
-                        th { "Family hash" }
+                        th { "Family Hash" }
                         td .hash-cell { (family_hash.to_hex()) }
                     }
                     tr {
-                        th { "Clozes" }
+                        th { "Deck" }
+                        td { (first.deck_name()) }
+                    }
+                    tr {
+                        th { "Cloze Count" }
                         td { (sections.len()) }
                     }
                 }
             }
             @for (i, performance, reviews) in &sections {
                 section .cloze-section {
-                    h2 { "Cloze " (i) }
+                    h1 { "Cloze " (i) }
                     table .properties {
                         tbody {
                             (render_performance_rows(*performance))
                         }
                     }
-                    (render_history(&format!("Review history — cloze {i}"), reviews))
+                    (render_history(&format!("Review History"), reviews))
                 }
             }
         }

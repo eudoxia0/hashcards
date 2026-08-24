@@ -125,20 +125,20 @@ fn render(
 /// Render a table of card properties, shared with the cloze view.
 pub fn render_properties(card: &Card, card_type: &str, performance: Option<Performance>) -> Markup {
     html! {
-        h2 { "Properties" }
+        h1 { "Properties" }
         table .properties {
             tbody {
                 tr {
-                    th { "Deck" }
-                    td { (card.deck_name()) }
-                }
-                tr {
-                    th { "Type" }
+                    th { "Card Type" }
                     td { (card_type) }
                 }
                 tr {
                     th { "Hash" }
                     td .hash-cell { (card.hash().to_hex()) }
+                }
+                tr {
+                    th { "Deck" }
+                    td { (card.deck_name()) }
                 }
                 (render_performance_rows(performance))
             }

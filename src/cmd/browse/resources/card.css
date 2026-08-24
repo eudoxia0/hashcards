@@ -1,10 +1,10 @@
 .card-page h1 {
-    font-size: 36px;
+    font-size: 28px;
     margin-bottom: 16px;
 }
 
 .card-page h2 {
-    font-size: 20px;
+    font-size: 22px;
     margin: 24px 0 8px;
 }
 
@@ -36,12 +36,10 @@ table.history th,
 table.history td {
     padding: 4px 12px 4px 0;
     text-align: left;
-    font-size: 14px;
 }
 
 table.properties th {
-    color: #666;
-    font-weight: normal;
+    font-weight: bold;
     white-space: nowrap;
 }
 
@@ -61,12 +59,11 @@ table.history td {
 
 .hash-cell {
     font-family: var(--font-mono);
-    font-size: 12px;
+    font-size: 15px;
 }
 
 .empty {
     color: #666;
-    font-size: 14px;
 }
 
 .cloze-section {
