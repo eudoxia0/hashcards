@@ -12,10 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub mod browse;
-pub mod check;
-pub mod drill;
-pub mod due;
-pub mod export;
-pub mod orphans;
-pub mod stats;
+/// max-age is one week in seconds.
+pub const CACHE_CONTROL_IMMUTABLE: &str = "public, max-age=604800, immutable";
+
+pub const CONTENT_TYPE_CSS: &str = "text/css";
+
+pub const CONTENT_TYPE_JS: &str = "text/javascript";

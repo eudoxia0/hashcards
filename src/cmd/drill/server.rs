@@ -15,7 +15,6 @@
 use std::collections::HashSet;
 use std::fmt::Display;
 use std::fmt::Formatter;
-use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::time::SystemTime;
@@ -24,14 +23,15 @@ use std::time::UNIX_EPOCH;
 use axum::Router;
 use axum::extract::Path;
 use axum::extract::State;
-use axum::http::HeaderName;
 use axum::http::StatusCode;
-use axum::http::header::CACHE_CONTROL;
-use axum::http::header::CONTENT_TYPE;
 use axum::response::Html;
+use axum::response::IntoResponse;
 use axum::routing::get;
 use axum::routing::post;
 use clap::ValueEnum;
+use http::HeaderName;
+use http::header::CACHE_CONTROL;
+use http::header::CONTENT_TYPE;
 use tokio::net::TcpListener;
 use tokio::select;
 use tokio::signal;
@@ -40,17 +40,6 @@ use tokio::sync::oneshot::channel;
 
 use crate::cmd::drill::cache::Cache;
 use crate::cmd::drill::get::get_handler;
-use crate::cmd::drill::highlight::HIGHLIGHT_CSS_URL;
-use crate::cmd::drill::highlight::HIGHLIGHT_JS_URL;
-use crate::cmd::drill::highlight::highlight_css_handler;
-use crate::cmd::drill::highlight::highlight_js_handler;
-use crate::cmd::drill::katex::KATEX_CSS_URL;
-use crate::cmd::drill::katex::KATEX_JS_URL;
-use crate::cmd::drill::katex::KATEX_MHCHEM_JS_URL;
-use crate::cmd::drill::katex::katex_css_handler;
-use crate::cmd::drill::katex::katex_font_handler;
-use crate::cmd::drill::katex::katex_js_handler;
-use crate::cmd::drill::katex::katex_mhchem_js_handler;
 use crate::cmd::drill::post::post_handler;
 use crate::cmd::drill::state::MutableState;
 use crate::cmd::drill::state::ServerState;
@@ -58,14 +47,29 @@ use crate::collection::Collection;
 use crate::db::Database;
 use crate::error::Fallible;
 use crate::error::fail;
-use crate::media::load::MediaLoader;
 use crate::rng::TinyRng;
 use crate::rng::shuffle;
+use crate::server::constants::CACHE_CONTROL_IMMUTABLE;
+use crate::server::constants::CONTENT_TYPE_CSS;
+use crate::server::file_handler::file_handler_logic;
+use crate::server::highlight::HIGHLIGHT_CSS_URL;
+use crate::server::highlight::HIGHLIGHT_JS_URL;
+use crate::server::highlight::highlight_css_handler;
+use crate::server::highlight::highlight_js_handler;
+use crate::server::js::escape_js_string_literal;
+use crate::server::katex::KATEX_CSS_URL;
+use crate::server::katex::KATEX_JS_URL;
+use crate::server::katex::KATEX_MHCHEM_JS_URL;
+use crate::server::katex::katex_css_handler;
+use crate::server::katex::katex_font_handler;
+use crate::server::katex::katex_js_handler;
+use crate::server::katex::katex_mhchem_js_handler;
+use crate::server::resources::common_css_handler;
+use crate::server::resources::favicon_handler;
 use crate::types::card::Card;
 use crate::types::card_hash::CardHash;
 use crate::types::date::Date;
 use crate::types::timestamp::Timestamp;
-use crate::utils::CACHE_CONTROL_IMMUTABLE;
 
 #[derive(ValueEnum, Clone, Copy, PartialEq)]
 pub enum AnswerControls {
@@ -226,27 +230,17 @@ async fn script_handler(
     (StatusCode::OK, [(CONTENT_TYPE, "text/javascript")], content)
 }
 
-fn escape_js_string_literal(s: &str) -> String {
-    s.replace('\\', "\\\\")
-        .replace('`', "\\`")
-        .replace('$', "\\$")
-}
-
 fn css_response(
     bytes: &'static [u8],
 ) -> (StatusCode, [(HeaderName, &'static str); 2], &'static [u8]) {
     (
         StatusCode::OK,
         [
-            (CONTENT_TYPE, "text/css"),
+            (CONTENT_TYPE, CONTENT_TYPE_CSS),
             (CACHE_CONTROL, CACHE_CONTROL_IMMUTABLE),
         ],
         bytes,
     )
-}
-
-async fn common_css_handler() -> (StatusCode, [(HeaderName, &'static str); 2], &'static [u8]) {
-    css_response(include_bytes!("common.css"))
 }
 
 async fn drill_css_handler() -> (StatusCode, [(HeaderName, &'static str); 2], &'static [u8]) {
@@ -257,18 +251,6 @@ async fn finished_css_handler() -> (StatusCode, [(HeaderName, &'static str); 2],
     css_response(include_bytes!("finished.css"))
 }
 
-async fn favicon_handler() -> (StatusCode, [(HeaderName, &'static str); 2], &'static [u8]) {
-    let bytes = include_bytes!("favicon.png");
-    (
-        StatusCode::OK,
-        [
-            (CONTENT_TYPE, "image/png"),
-            (CACHE_CONTROL, CACHE_CONTROL_IMMUTABLE),
-        ],
-        bytes,
-    )
-}
-
 async fn not_found_handler() -> (StatusCode, Html<String>) {
     (StatusCode::NOT_FOUND, Html("Not Found".to_string()))
 }
@@ -276,44 +258,8 @@ async fn not_found_handler() -> (StatusCode, Html<String>) {
 async fn file_handler(
     State(state): State<ServerState>,
     Path(path): Path<String>,
-) -> (StatusCode, [(HeaderName, &'static str); 1], Vec<u8>) {
-    let loader = MediaLoader::new(state.directory.clone());
-    let validated_path: PathBuf = match loader.validate(&path) {
-        Ok(p) => p,
-        Err(_) => {
-            return (
-                StatusCode::NOT_FOUND,
-                [(CONTENT_TYPE, "text/plain")],
-                b"Not Found".to_vec(),
-            );
-        }
-    };
-    let extension = validated_path
-        .extension()
-        .and_then(|ext| ext.to_str())
-        .unwrap_or("")
-        .to_lowercase();
-    let content_type: &str = match extension.as_str() {
-        "png" => "image/png",
-        "jpg" | "jpeg" => "image/jpeg",
-        "gif" => "image/gif",
-        "svg" => "image/svg+xml",
-        "mp3" => "audio/mpeg",
-        "wav" => "audio/wav",
-        "ogg" => "audio/ogg",
-        "mp4" => "video/mp4",
-        "webm" => "video/webm",
-        _ => "application/octet-stream",
-    };
-    let content = tokio::fs::read(validated_path).await;
-    match content {
-        Ok(bytes) => (StatusCode::OK, [(CONTENT_TYPE, content_type)], bytes),
-        Err(_) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            [(CONTENT_TYPE, "text/plain")],
-            b"Internal Server Error".to_vec(),
-        ),
-    }
+) -> impl IntoResponse {
+    file_handler_logic(state.directory.clone(), path).await
 }
 
 async fn shutdown_signal(shutdown_rx: Receiver<()>) {

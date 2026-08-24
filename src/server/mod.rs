@@ -12,10 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub mod browse;
-pub mod check;
-pub mod drill;
-pub mod due;
-pub mod export;
-pub mod orphans;
-pub mod stats;
+pub mod constants;
+pub mod file_handler;
+pub mod highlight;
+pub mod js;
+pub mod katex;
+pub mod resources;

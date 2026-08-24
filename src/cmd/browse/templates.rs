@@ -22,36 +22,29 @@ use crate::server::katex::KATEX_CSS_URL;
 use crate::server::katex::KATEX_JS_URL;
 use crate::server::katex::KATEX_MHCHEM_JS_URL;
 
-/// Render the full HTML page. `page_stylesheet`, if present, is the URL of a
-/// page-specific stylesheet linked after the shared `common.css`.
-pub fn page_template(body: Markup, page_stylesheet: Option<&str>) -> Markup {
+/// Page template.
+pub fn page_template(title: &str, css: Option<&str>, body: Markup) -> Markup {
     html! {
         (DOCTYPE)
         html lang="en" {
             head {
                 meta charset="utf-8";
                 meta name="viewport" content="width=device-width, initial-scale=1";
-                title { "hashcards" }
+                title { (title) }
                 link rel="stylesheet" href=(KATEX_CSS_URL);
                 link rel="stylesheet" href=(HIGHLIGHT_CSS_URL);
                 script defer src=(KATEX_JS_URL) {};
                 script defer src=(KATEX_MHCHEM_JS_URL) {};
                 script defer src=(HIGHLIGHT_JS_URL) {};
                 link rel="stylesheet" href="/common.css";
-                @if let Some(href) = page_stylesheet {
-                    link rel="stylesheet" href=(href);
+                link rel="stylesheet" href="/common-browse.css";
+                @if let Some(css) = css {
+                    link rel="stylesheet" href=(css);
                 }
-                // See `script.js`. To prevent a flash of un-rendered TeX and
-                // un-highlighted source code, we make the card content
-                // invisible until the math rendering and syntax highlighting
-                // are done. If the browser has JavaScript disabled, however,
-                // we keep the content visible.
-                style { ".card-content { opacity: 0; }" }
-                noscript { style { ".card-content { opacity: 1; }" }}
             }
             body {
                 (body)
-                script src="/script.js" {};
+                script src="/browse.js" {};
             }
         }
     }

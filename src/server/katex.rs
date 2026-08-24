@@ -13,23 +13,25 @@
 // limitations under the License.
 
 use axum::extract::Path;
-use axum::http::HeaderName;
 use axum::http::StatusCode;
-use axum::http::header::CACHE_CONTROL;
-use axum::http::header::CONTENT_TYPE;
+use http::HeaderName;
+use http::header::CACHE_CONTROL;
+use http::header::CONTENT_TYPE;
 
-use crate::utils::CACHE_CONTROL_IMMUTABLE;
+use crate::server::constants::CACHE_CONTROL_IMMUTABLE;
+use crate::server::constants::CONTENT_TYPE_CSS;
+use crate::server::constants::CONTENT_TYPE_JS;
 
 pub const KATEX_JS_URL: &str = "/katex/katex.js";
 pub const KATEX_MHCHEM_JS_URL: &str = "/katex/mhchem.js";
 pub const KATEX_CSS_URL: &str = "/katex/katex.css";
 
 pub async fn katex_css_handler() -> (StatusCode, [(HeaderName, &'static str); 2], &'static [u8]) {
-    let bytes = include_bytes!("../../../vendor/katex/katex.min.css");
+    let bytes = include_bytes!("../../vendor/katex/katex.min.css");
     (
         StatusCode::OK,
         [
-            (CONTENT_TYPE, "text/css"),
+            (CONTENT_TYPE, CONTENT_TYPE_CSS),
             (CACHE_CONTROL, CACHE_CONTROL_IMMUTABLE),
         ],
         bytes,
@@ -37,11 +39,11 @@ pub async fn katex_css_handler() -> (StatusCode, [(HeaderName, &'static str); 2]
 }
 
 pub async fn katex_js_handler() -> (StatusCode, [(HeaderName, &'static str); 2], &'static [u8]) {
-    let bytes = include_bytes!("../../../vendor/katex/katex.min.js");
+    let bytes = include_bytes!("../../vendor/katex/katex.min.js");
     (
         StatusCode::OK,
         [
-            (CONTENT_TYPE, "text/javascript"),
+            (CONTENT_TYPE, CONTENT_TYPE_JS),
             (CACHE_CONTROL, CACHE_CONTROL_IMMUTABLE),
         ],
         bytes,
@@ -50,11 +52,11 @@ pub async fn katex_js_handler() -> (StatusCode, [(HeaderName, &'static str); 2],
 
 pub async fn katex_mhchem_js_handler()
 -> (StatusCode, [(HeaderName, &'static str); 2], &'static [u8]) {
-    let bytes = include_bytes!("../../../vendor/katex/contrib/mhchem.min.js");
+    let bytes = include_bytes!("../../vendor/katex/contrib/mhchem.min.js");
     (
         StatusCode::OK,
         [
-            (CONTENT_TYPE, "text/javascript"),
+            (CONTENT_TYPE, CONTENT_TYPE_JS),
             (CACHE_CONTROL, CACHE_CONTROL_IMMUTABLE),
         ],
         bytes,
@@ -76,64 +78,64 @@ pub async fn katex_font_handler(
     // Match font files (WOFF2 only)
     let bytes: &'static [u8] = match path.as_str() {
         "KaTeX_AMS-Regular.woff2" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_AMS-Regular.woff2")
+            include_bytes!("../../vendor/katex/fonts/KaTeX_AMS-Regular.woff2")
         }
         "KaTeX_Caligraphic-Bold.woff2" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_Caligraphic-Bold.woff2")
+            include_bytes!("../../vendor/katex/fonts/KaTeX_Caligraphic-Bold.woff2")
         }
         "KaTeX_Caligraphic-Regular.woff2" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_Caligraphic-Regular.woff2")
+            include_bytes!("../../vendor/katex/fonts/KaTeX_Caligraphic-Regular.woff2")
         }
         "KaTeX_Fraktur-Bold.woff2" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_Fraktur-Bold.woff2")
+            include_bytes!("../../vendor/katex/fonts/KaTeX_Fraktur-Bold.woff2")
         }
         "KaTeX_Fraktur-Regular.woff2" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_Fraktur-Regular.woff2")
+            include_bytes!("../../vendor/katex/fonts/KaTeX_Fraktur-Regular.woff2")
         }
         "KaTeX_Main-Bold.woff2" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_Main-Bold.woff2")
+            include_bytes!("../../vendor/katex/fonts/KaTeX_Main-Bold.woff2")
         }
         "KaTeX_Main-BoldItalic.woff2" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_Main-BoldItalic.woff2")
+            include_bytes!("../../vendor/katex/fonts/KaTeX_Main-BoldItalic.woff2")
         }
         "KaTeX_Main-Italic.woff2" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_Main-Italic.woff2")
+            include_bytes!("../../vendor/katex/fonts/KaTeX_Main-Italic.woff2")
         }
         "KaTeX_Main-Regular.woff2" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_Main-Regular.woff2")
+            include_bytes!("../../vendor/katex/fonts/KaTeX_Main-Regular.woff2")
         }
         "KaTeX_Math-BoldItalic.woff2" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_Math-BoldItalic.woff2")
+            include_bytes!("../../vendor/katex/fonts/KaTeX_Math-BoldItalic.woff2")
         }
         "KaTeX_Math-Italic.woff2" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_Math-Italic.woff2")
+            include_bytes!("../../vendor/katex/fonts/KaTeX_Math-Italic.woff2")
         }
         "KaTeX_SansSerif-Bold.woff2" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_SansSerif-Bold.woff2")
+            include_bytes!("../../vendor/katex/fonts/KaTeX_SansSerif-Bold.woff2")
         }
         "KaTeX_SansSerif-Italic.woff2" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_SansSerif-Italic.woff2")
+            include_bytes!("../../vendor/katex/fonts/KaTeX_SansSerif-Italic.woff2")
         }
         "KaTeX_SansSerif-Regular.woff2" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_SansSerif-Regular.woff2")
+            include_bytes!("../../vendor/katex/fonts/KaTeX_SansSerif-Regular.woff2")
         }
         "KaTeX_Script-Regular.woff2" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_Script-Regular.woff2")
+            include_bytes!("../../vendor/katex/fonts/KaTeX_Script-Regular.woff2")
         }
         "KaTeX_Size1-Regular.woff2" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_Size1-Regular.woff2")
+            include_bytes!("../../vendor/katex/fonts/KaTeX_Size1-Regular.woff2")
         }
         "KaTeX_Size2-Regular.woff2" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_Size2-Regular.woff2")
+            include_bytes!("../../vendor/katex/fonts/KaTeX_Size2-Regular.woff2")
         }
         "KaTeX_Size3-Regular.woff2" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_Size3-Regular.woff2")
+            include_bytes!("../../vendor/katex/fonts/KaTeX_Size3-Regular.woff2")
         }
         "KaTeX_Size4-Regular.woff2" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_Size4-Regular.woff2")
+            include_bytes!("../../vendor/katex/fonts/KaTeX_Size4-Regular.woff2")
         }
         "KaTeX_Typewriter-Regular.woff2" => {
-            include_bytes!("../../../vendor/katex/fonts/KaTeX_Typewriter-Regular.woff2")
+            include_bytes!("../../vendor/katex/fonts/KaTeX_Typewriter-Regular.woff2")
         }
         _ => {
             return (

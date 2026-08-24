@@ -1,0 +1,37 @@
+.deck-page h1 {
+    font-size: 36px;
+    margin-bottom: 16px;
+}
+
+ul.card-list {
+    list-style: none;
+    padding: 0;
+}
+
+.card-content {
+    display: block;
+    padding: 8px 0;
+    color: black;
+    text-decoration: none;
+}
+
+.card-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.card {
+    border: 1px solid black;
+    max-width: 600px;
+}
+
+.front {
+    border-bottom: 1px solid #ccc;
+}
+
+.front,
+.back,
+.cloze {
+    padding: 12px;
+}

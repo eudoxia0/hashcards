@@ -1,0 +1,41 @@
+table.deck-list {
+    border-collapse: collapse;
+}
+
+td,
+th {
+    padding: 0px 8px;
+}
+
+th {
+    text-align: center;
+    border-bottom: 1px solid #666;
+}
+
+td a {
+    color: blue;
+}
+
+tr.group-row td {
+    font-weight: bold;
+    padding-left: 0;
+    border-bottom: 1px solid #666;
+}
+
+.stat-cell {
+    text-align: right;
+    font-size: 14px;
+}
+
+.zero {
+    color: #aaa;
+}
+
+tfoot {
+    border-top: 1px solid #666;
+}
+
+.total-cell {
+    font-weight: bold;
+    text-align: center;
+}

@@ -628,6 +628,7 @@ dependencies = [
  "chrono",
  "clap",
  "env_logger",
+ "http",
  "log",
  "maud",
  "open",

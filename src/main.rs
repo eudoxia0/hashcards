@@ -24,6 +24,7 @@ mod markdown;
 mod media;
 mod parser;
 mod rng;
+mod server;
 mod types;
 mod utils;
 

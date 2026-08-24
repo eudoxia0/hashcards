@@ -1,0 +1,129 @@
+body {
+    font-size: 16px;
+    display: flex;
+    flex-direction: column;
+}
+
+nav.breadcrumbs {
+    padding: 16px 24px;
+    border-bottom: 1px solid black;
+}
+
+nav.breadcrumbs a {
+    color: blue;
+}
+
+.crumb-sep {
+    margin: 0 6px;
+}
+
+.crumb-current {
+    color: black;
+}
+
+main {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 24px;
+}
+
+.rich-text {
+    text-align: justify;
+
+    .cloze-reveal {
+        color: royalblue;
+    }
+
+    img {
+        display: block;
+        max-width: 100%;
+        height: auto;
+    }
+
+    p,
+    img,
+    ol,
+    ul,
+    blockquote,
+    table,
+    pre {
+        &:not(:last-child) {
+            margin-bottom: 16px;
+        }
+    }
+
+    blockquote {
+        background: #f7f7f7;
+        border-left: 4px solid #ccc;
+        padding: 8px 12px;
+    }
+
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 0.65em;
+        font-family: var(--font-sans);
+        line-height: 1.6;
+        border: 1px solid #999;
+
+        th,
+        td {
+            border: 1px solid #bbb;
+            padding: 10px 14px;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        th {
+            background: #e8e8e8;
+            font-weight: 600;
+            border: 1px solid #999;
+        }
+
+        tbody tr:nth-child(odd) {
+            background: #ffffff;
+        }
+
+        tbody tr:nth-child(even) {
+            background: #f5f5f5;
+        }
+
+        code {
+            font-size: 0.85em;
+            background: #ececec;
+        }
+    }
+
+    code {
+        background: #f7f7f7;
+        border: 1px solid #ddd;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-family: var(--font-mono);
+        font-size: 0.7em;
+        color: inherit;
+    }
+
+    pre {
+        background: #f7f7f7;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 12px;
+        overflow-x: auto;
+        font-size: 0.7em;
+        line-height: 1.5;
+
+        code {
+            background: transparent;
+            border: none;
+            padding: 0;
+            border-radius: 0;
+            font-size: 0.85em;
+            color: inherit;
+        }
+    }
+
+    .katex {
+        font-size: 1em;
+    }
+}
