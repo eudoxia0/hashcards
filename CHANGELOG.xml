@@ -18,6 +18,9 @@
             <change author="eudoxia0">
                 Update dependencies.
             </change>
+            <change author="oddish3">
+                Cards graded "Forgot" stay in the same day, rather than being re-scheduled for tomorrow.
+            </change>
         </changed>
         <fixed>
             <change author="eudoxia0">
