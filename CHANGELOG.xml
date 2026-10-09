@@ -1,46 +1,49 @@
 <changelog>
     <unreleased>
-        <added>
-            <change author="chrisdoram">
-                Added support for term-definition cards.
-            </change>
-            <change author="eudoxia0">
-                The `due` command now accepts a specific date.
-            </change>
-            <change author="eudoxia0">
-                Add `browse` command, which lets you browse your collection through a web interface, and preview how cards will render.
-            </change>
-        </added>
-        <changed>
-            <change author="IvanVergiliev">
-                Add `--resource-hostname` to customize rewritten media resource URLs.
-            </change>
-            <change author="eudoxia0">
-                Markdown now renders using smart punctuation, e.g. `"foo"` renders as `“foo”`, and `'bar'` with `‘bar’`.
-            </change>
-            <change author="eudoxia0">
-                Update dependencies.
-            </change>
-            <change author="oddish3">
-                Cards graded "Forgot" stay in the same day, rather than being re-scheduled for tomorrow.
-            </change>
-        </changed>
-        <fixed>
-            <change author="eudoxia0">
-                Stray text between flashcards produces an error.
-            </change>
-            <change author="konyahin">
-                The card limit is now the final session cap, applied after the new
-                card limit and sibling burying.
-            </change>
-            <change author="solyates">
-                The `due` command now correctly counts never-reviewed and overdue
-                cards. It previously matched due dates exactly, which under-reported
-                what a drill session would actually pull in.
-            </change>
-        </fixed>
+
     </unreleased>
     <releases>
+        <release version="0.5.0" date="2026-10-08">
+            <added>
+                <change author="chrisdoram">
+                    Added support for term-definition cards.
+                </change>
+                <change author="eudoxia0">
+                    The `due` command now accepts a specific date.
+                </change>
+                <change author="eudoxia0">
+                    Add `browse` command, which lets you browse your collection through a web interface, and preview how cards will render.
+                </change>
+            </added>
+            <changed>
+                <change author="IvanVergiliev">
+                    Add `--resource-hostname` to customize rewritten media resource URLs.
+                </change>
+                <change author="eudoxia0">
+                    Markdown now renders using smart punctuation, e.g. `"foo"` renders as `“foo”`, and `'bar'` with `‘bar’`.
+                </change>
+                <change author="eudoxia0">
+                    Update dependencies.
+                </change>
+                <change author="oddish3">
+                    Cards graded "Forgot" stay in the same day, rather than being re-scheduled for tomorrow.
+                </change>
+            </changed>
+            <fixed>
+                <change author="eudoxia0">
+                    Stray text between flashcards produces an error.
+                </change>
+                <change author="konyahin">
+                    The card limit is now the final session cap, applied after the new
+                    card limit and sibling burying.
+                </change>
+                <change author="solyates">
+                    The `due` command now correctly counts never-reviewed and overdue
+                    cards. It previously matched due dates exactly, which under-reported
+                    what a drill session would actually pull in.
+                </change>
+            </fixed>
+        </release>
         <release version="0.4.0" date="2026-07-17">
             <added>
                 <change author="eudoxia0">

@@ -1,6 +1,6 @@
 [package]
 name = "hashcards"
-version = "0.4.0"
+version = "0.5.0"
 edition = "2024"
 description = "A plain text-based spaced repetition system."
 repository = "https://github.com/eudoxia0/hashcards"
