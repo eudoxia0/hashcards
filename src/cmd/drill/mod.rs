@@ -37,6 +37,7 @@ mod tests {
     use crate::cmd::drill::server::start_server;
     use crate::error::Fallible;
     use crate::helper::create_tmp_copy_of_test_directory;
+    use crate::parser::ParseMode;
     use crate::types::timestamp::Timestamp;
     use crate::utils::wait_for_server;
 
@@ -59,6 +60,7 @@ mod tests {
             shuffle: false,
             answer_controls: AnswerControls::Full,
             bury_siblings: false,
+            parse_mode: ParseMode::Strict,
         };
         let result = start_server(config).await;
         assert!(result.is_err());
@@ -86,6 +88,7 @@ mod tests {
             shuffle: false,
             answer_controls: AnswerControls::Full,
             bury_siblings: false,
+            parse_mode: ParseMode::Strict,
         };
         start_server(config).await?;
         Ok(())
@@ -108,6 +111,7 @@ mod tests {
             shuffle: false,
             answer_controls: AnswerControls::Full,
             bury_siblings: false,
+            parse_mode: ParseMode::Strict,
         };
         spawn(async move { start_server(config).await });
         wait_for_server(TEST_HOST, port).await?;
@@ -218,6 +222,7 @@ mod tests {
             shuffle: false,
             answer_controls: AnswerControls::Full,
             bury_siblings: false,
+            parse_mode: ParseMode::Strict,
         };
         spawn(async move { start_server(config).await });
         wait_for_server(TEST_HOST, port).await?;
@@ -249,6 +254,7 @@ mod tests {
             shuffle: false,
             answer_controls: AnswerControls::Full,
             bury_siblings: false,
+            parse_mode: ParseMode::Strict,
         };
         spawn(async move { start_server(config).await });
         wait_for_server(TEST_HOST, port).await?;
@@ -299,6 +305,7 @@ mod tests {
             shuffle: false,
             answer_controls: AnswerControls::Full,
             bury_siblings: false,
+            parse_mode: ParseMode::Strict,
         };
         spawn(async move { start_server(config).await });
         wait_for_server(TEST_HOST, port).await?;
@@ -331,6 +338,7 @@ mod tests {
             shuffle: false,
             answer_controls: AnswerControls::Full,
             bury_siblings: false,
+            parse_mode: ParseMode::Strict,
         };
         spawn(async move { start_server(config).await });
         wait_for_server(TEST_HOST, port).await?;
@@ -363,6 +371,7 @@ mod tests {
             shuffle: false,
             answer_controls: AnswerControls::Full,
             bury_siblings: false,
+            parse_mode: ParseMode::Strict,
         };
         spawn(async move { start_server(config).await });
         wait_for_server(TEST_HOST, port).await?;
@@ -413,6 +422,7 @@ mod tests {
             shuffle: false,
             answer_controls: AnswerControls::Full,
             bury_siblings: false,
+            parse_mode: ParseMode::Strict,
         };
         spawn(async move { start_server(config).await });
         wait_for_server(TEST_HOST, port).await?;

@@ -35,6 +35,7 @@ use crate::cmd::browse::views::index::index_handler;
 use crate::collection::Collection;
 use crate::db::Database;
 use crate::error::Fallible;
+use crate::parser::ParseMode;
 use crate::server::constants::CACHE_CONTROL_IMMUTABLE;
 use crate::server::constants::CONTENT_TYPE_CSS;
 use crate::server::file_handler::file_handler_logic;
@@ -64,6 +65,8 @@ pub struct BrowseServerConfig {
     pub resource_hostname: String,
     /// Server port.
     pub port: u16,
+    /// How to parse deck files.
+    pub parse_mode: ParseMode,
 }
 
 /// Server state.
@@ -92,7 +95,7 @@ pub async fn start_browse_server(config: BrowseServerConfig) -> Fallible<()> {
         db,
         cards,
         macros,
-    } = Collection::new(config.directory)?;
+    } = Collection::new(config.directory, config.parse_mode)?;
     // Construct app state.
     let cards: Arc<Vec<Card>> = Arc::new(cards);
     let db: Arc<Mutex<Database>> = Arc::new(Mutex::new(db));

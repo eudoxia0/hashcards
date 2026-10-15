@@ -20,6 +20,7 @@ use serde::Serialize;
 
 use crate::collection::Collection;
 use crate::error::Fallible;
+use crate::parser::ParseMode;
 use crate::types::date::Date;
 
 #[derive(ValueEnum, Clone)]
@@ -40,8 +41,12 @@ impl Display for StatsFormat {
 }
 
 /// Print collection stats.
-pub fn print_stats(directory: Option<String>, format: StatsFormat) -> Fallible<()> {
-    let stats = get_stats(directory)?;
+pub fn print_stats(
+    directory: Option<String>,
+    format: StatsFormat,
+    mode: ParseMode,
+) -> Fallible<()> {
+    let stats = get_stats(directory, mode)?;
     // Print.
     match format {
         StatsFormat::Html => {
@@ -64,8 +69,8 @@ pub struct Stats {
     cards_reviewed_today_count: usize,
 }
 
-fn get_stats(directory: Option<String>) -> Fallible<Stats> {
-    let coll = Collection::new(directory)?;
+fn get_stats(directory: Option<String>, mode: ParseMode) -> Fallible<Stats> {
+    let coll = Collection::new(directory, mode)?;
     let cards_in_db_count = coll.db.card_hashes()?.len();
     let today = Date::today();
     let stats = Stats {
@@ -91,14 +96,14 @@ mod tests {
     #[test]
     fn test_print_stats_json() -> Fallible<()> {
         let directory = create_tmp_copy_of_test_directory()?;
-        print_stats(Some(directory), StatsFormat::Json)?;
+        print_stats(Some(directory), StatsFormat::Json, ParseMode::Strict)?;
         Ok(())
     }
 
     #[test]
     fn test_get_stats() -> Fallible<()> {
         let directory = create_tmp_copy_of_test_directory()?;
-        let stats = get_stats(Some(directory)).unwrap();
+        let stats = get_stats(Some(directory), ParseMode::Strict).unwrap();
         let Stats {
             cards_in_deck_count,
             cards_in_db_count,

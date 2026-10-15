@@ -17,6 +17,7 @@ use std::collections::BTreeMap;
 use crate::collection::Collection;
 use crate::error::ErrorReport;
 use crate::error::Fallible;
+use crate::parser::ParseMode;
 use crate::types::date::Date;
 
 /// Parse a date argument: "today", "tomorrow", or "YYYY-MM-DD".
@@ -38,8 +39,12 @@ pub fn parse_date_arg(s: &str) -> Fallible<Date> {
 /// For today, this matches what `drill` would pull into a session: overdue,
 /// never-reviewed, and due-today cards. For any other date, it's an exact
 /// match on that date's due cards only.
-fn due_report(directory: Option<String>, date: Date) -> Fallible<(BTreeMap<String, usize>, usize)> {
-    let coll = Collection::new(directory)?;
+fn due_report(
+    directory: Option<String>,
+    date: Date,
+    mode: ParseMode,
+) -> Fallible<(BTreeMap<String, usize>, usize)> {
+    let coll = Collection::new(directory, mode)?;
     let due_hashes = if date == Date::today() {
         coll.db.all_due(date)?
     } else {
@@ -57,8 +62,8 @@ fn due_report(directory: Option<String>, date: Date) -> Fallible<(BTreeMap<Strin
 }
 
 /// Print the number of cards due on `date` in each deck, and the total.
-pub fn print_due(directory: Option<String>, date: Date) -> Fallible<()> {
-    let (counts, total) = due_report(directory, date)?;
+pub fn print_due(directory: Option<String>, date: Date, mode: ParseMode) -> Fallible<()> {
+    let (counts, total) = due_report(directory, date, mode)?;
     // Print decks with non-zero due cards in alphabetical order.
     for (deck_name, count) in &counts {
         println!("{}: {}", deck_name, count);
@@ -80,7 +85,7 @@ mod tests {
     #[test]
     fn test_print_due() -> Fallible<()> {
         let directory = create_tmp_copy_of_test_directory()?;
-        print_due(Some(directory), Date::today())?;
+        print_due(Some(directory), Date::today(), ParseMode::Strict)?;
         Ok(())
     }
 
@@ -92,7 +97,7 @@ mod tests {
     #[test]
     fn test_due_report_counts_never_reviewed_and_overdue_cards() -> Fallible<()> {
         let directory = create_tmp_copy_of_test_directory()?;
-        let coll = Collection::new(Some(directory.clone()))?;
+        let coll = Collection::new(Some(directory.clone()), ParseMode::Strict)?;
         assert!(
             coll.cards.len() >= 2,
             "fixture directory must contain at least two cards"
@@ -123,7 +128,7 @@ mod tests {
         )?;
         drop(coll);
 
-        let (_, total) = due_report(Some(directory), Date::today())?;
+        let (_, total) = due_report(Some(directory), Date::today(), ParseMode::Strict)?;
         assert_eq!(total, 2);
         Ok(())
     }
@@ -134,7 +139,7 @@ mod tests {
     #[test]
     fn test_due_report_future_date_is_exact_match() -> Fallible<()> {
         let directory = create_tmp_copy_of_test_directory()?;
-        let coll = Collection::new(Some(directory.clone()))?;
+        let coll = Collection::new(Some(directory.clone()), ParseMode::Strict)?;
         assert!(
             coll.cards.len() >= 2,
             "fixture directory must contain at least two cards"
@@ -166,7 +171,7 @@ mod tests {
 
         // Neither the never-reviewed nor the overdue card is due "tomorrow",
         // so querying that date should report 0.
-        let (_, total) = due_report(Some(directory), Date::tomorrow())?;
+        let (_, total) = due_report(Some(directory), Date::tomorrow(), ParseMode::Strict)?;
         assert_eq!(total, 0);
         Ok(())
     }

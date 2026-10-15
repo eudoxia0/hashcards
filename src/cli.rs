@@ -14,6 +14,7 @@
 
 use std::process::exit;
 
+use clap::Args;
 use clap::Parser;
 use clap::Subcommand;
 use tokio::spawn;
@@ -32,6 +33,7 @@ use crate::cmd::orphans::list_orphans;
 use crate::cmd::stats::StatsFormat;
 use crate::cmd::stats::print_stats;
 use crate::error::Fallible;
+use crate::parser::ParseMode;
 use crate::types::timestamp::Timestamp;
 use crate::utils::wait_for_server;
 
@@ -42,6 +44,8 @@ enum Command {
     Drill {
         /// Path to the collection directory. By default, the current working directory is used.
         directory: Option<String>,
+        #[command(flatten)]
+        parsing: ParsingArgs,
         /// Maximum number of cards to drill in a session. By default, all cards due today are drilled.
         #[arg(long)]
         card_limit: Option<usize>,
@@ -74,6 +78,8 @@ enum Command {
     Browse {
         /// Path to the collection directory. By default, the current working directory is used.
         directory: Option<String>,
+        #[command(flatten)]
+        parsing: ParsingArgs,
         /// The host address to bind to. Default is 127.0.0.1.
         #[arg(long, default_value = "127.0.0.1")]
         host: String,
@@ -91,6 +97,8 @@ enum Command {
     Due {
         /// Path to the collection directory. By default, the current working directory is used.
         directory: Option<String>,
+        #[command(flatten)]
+        parsing: ParsingArgs,
         /// Date to check: 'today' (default), 'tomorrow', or YYYY-MM-DD.
         #[arg(default_value = "today")]
         date: String,
@@ -99,11 +107,15 @@ enum Command {
     Check {
         /// Path to the collection directory. By default, the current working directory is used.
         directory: Option<String>,
+        #[command(flatten)]
+        parsing: ParsingArgs,
     },
     /// Print collection statistics.
     Stats {
         /// Path to the collection directory. By default, the current working directory is used.
         directory: Option<String>,
+        #[command(flatten)]
+        parsing: ParsingArgs,
         /// Which output format to use.
         #[arg(long, default_value_t = StatsFormat::Html)]
         format: StatsFormat,
@@ -117,10 +129,28 @@ enum Command {
     Export {
         /// Path to the collection directory. By default, the current working directory is used.
         directory: Option<String>,
+        #[command(flatten)]
+        parsing: ParsingArgs,
         /// Optional path to the output file. By default, the output is printed to stdout.
         #[arg(long)]
         output: Option<String>,
     },
+}
+
+/// Options that affect how deck files are parsed.
+#[derive(Args)]
+struct ParsingArgs {
+    /// Treat Markdown headings as card separators, and ignore text that isn't
+    /// part of a card. Pass it to every command, or the cards it parses
+    /// differently will appear as orphans.
+    #[arg(long)]
+    lenient: bool,
+}
+
+impl ParsingArgs {
+    fn mode(&self) -> ParseMode {
+        ParseMode::from_lenient(self.lenient)
+    }
 }
 
 #[derive(Subcommand)]
@@ -129,11 +159,15 @@ enum OrphanCommand {
     List {
         /// Path to the collection directory. By default, the current working directory is used.
         directory: Option<String>,
+        #[command(flatten)]
+        parsing: ParsingArgs,
     },
     /// Remove all orphan cards from the database.
     Delete {
         /// Path to the collection directory. By default, the current working directory is used.
         directory: Option<String>,
+        #[command(flatten)]
+        parsing: ParsingArgs,
     },
 }
 
@@ -142,6 +176,7 @@ pub async fn entrypoint() -> Fallible<()> {
     match cli {
         Command::Drill {
             directory,
+            parsing,
             card_limit,
             new_card_limit,
             host,
@@ -179,11 +214,13 @@ pub async fn entrypoint() -> Fallible<()> {
                 shuffle: true,
                 answer_controls,
                 bury_siblings: bury_siblings.unwrap_or(true),
+                parse_mode: parsing.mode(),
             };
             start_server(config).await
         }
         Command::Browse {
             directory,
+            parsing,
             host,
             resource_hostname,
             port,
@@ -209,16 +246,31 @@ pub async fn entrypoint() -> Fallible<()> {
                 host,
                 resource_hostname,
                 port,
+                parse_mode: parsing.mode(),
             };
             start_browse_server(config).await
         }
-        Command::Due { directory, date } => print_due(directory, parse_date_arg(&date)?),
-        Command::Check { directory } => check_collection(directory),
-        Command::Stats { directory, format } => print_stats(directory, format),
+        Command::Due {
+            directory,
+            parsing,
+            date,
+        } => print_due(directory, parse_date_arg(&date)?, parsing.mode()),
+        Command::Check { directory, parsing } => check_collection(directory, parsing.mode()),
+        Command::Stats {
+            directory,
+            parsing,
+            format,
+        } => print_stats(directory, format, parsing.mode()),
         Command::Orphans { command } => match command {
-            OrphanCommand::List { directory } => list_orphans(directory),
-            OrphanCommand::Delete { directory } => delete_orphans(directory),
+            OrphanCommand::List { directory, parsing } => list_orphans(directory, parsing.mode()),
+            OrphanCommand::Delete { directory, parsing } => {
+                delete_orphans(directory, parsing.mode())
+            }
         },
-        Command::Export { directory, output } => export_collection(directory, output),
+        Command::Export {
+            directory,
+            parsing,
+            output,
+        } => export_collection(directory, output, parsing.mode()),
     }
 }

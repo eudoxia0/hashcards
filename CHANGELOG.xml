@@ -1,6 +1,10 @@
 <changelog>
     <unreleased>
-
+        <added>
+            <change author="kchousos">
+                Add `--lenient` flag: Markdown headings act as card separators, and text that isn't part of a card is ignored instead of producing an error.
+            </change>
+        </added>
     </unreleased>
     <releases>
         <release version="0.5.0" date="2026-10-08">
