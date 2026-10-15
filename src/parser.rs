@@ -228,6 +228,9 @@ enum Line {
     StartCloze(String),
     /// A line that's just `---` (flashcard separator).
     Separator,
+    /// A Markdown ATX heading, e.g. `## Foo`. Headings are never part of a
+    /// flashcard, so they act as separators.
+    Heading,
     /// Any other line.
     Text(String),
     /// End of file.
@@ -235,8 +238,10 @@ enum Line {
 }
 
 impl Line {
-    fn read(line: &str) -> Self {
-        if line.starts_with("Q:") {
+    fn read(line: &str, in_code_block: bool) -> Self {
+        if in_code_block {
+            Line::Text(line.to_string())
+        } else if line.starts_with("Q:") {
             Line::StartQuestion(line_content(line))
         } else if line.starts_with("A:") {
             Line::StartAnswer(line_content(line))
@@ -248,10 +253,43 @@ impl Line {
             Line::StartCloze(line_content(line))
         } else if line.trim() == "---" {
             Line::Separator
+        } else if is_heading(line) {
+            Line::Heading
         } else {
             Line::Text(line.to_string())
         }
     }
+}
+
+/// Whether the line is a Markdown ATX heading: up to three spaces of
+/// indentation, one to six `#` characters, then whitespace or end of line.
+fn is_heading(line: &str) -> bool {
+    let indent = line.len() - line.trim_start_matches(' ').len();
+    if indent > 3 {
+        return false;
+    }
+    let rest = &line[indent..];
+    let hashes = rest.len() - rest.trim_start_matches('#').len();
+    (1..=6).contains(&hashes)
+        && rest[hashes..]
+            .chars()
+            .next()
+            .is_none_or(|c| c.is_whitespace())
+}
+
+/// If the line opens or closes a fenced code block, returns the fence: the
+/// run of backticks or tildes it starts with.
+fn code_fence(line: &str) -> Option<&str> {
+    let trimmed = line.trim_start();
+    let fence_char = trimmed.chars().next().filter(|c| *c == '`' || *c == '~')?;
+    let fence_len = trimmed.len() - trimmed.trim_start_matches(fence_char).len();
+    (fence_len >= 3).then(|| &trimmed[..fence_len])
+}
+
+/// Whether `fence` closes the code block opened by `opening`: same character,
+/// at least as long.
+fn closes_fence(opening: &str, fence: &str) -> bool {
+    fence.starts_with(&opening[..1]) && fence.len() >= opening.len()
 }
 
 /// Remove the line type, e.g. remove `Q:`, and trim.
@@ -273,9 +311,18 @@ impl Parser {
         let mut state = State::Start;
         let lines: Vec<&str> = text.lines().collect();
         let last_line = if lines.is_empty() { 0 } else { lines.len() - 1 };
+        // The fence that opened the code block we're in, if any. Lines inside
+        // code blocks are always text, e.g. `# comment` is not a heading.
+        let mut open_fence: Option<&str> = None;
         for (line_num, line) in lines.iter().enumerate() {
-            let line = Line::read(line);
-            state = self.parse_line(state, line, line_num, &mut cards)?;
+            let fence = code_fence(line);
+            let parsed = Line::read(line, open_fence.is_some());
+            open_fence = match (open_fence, fence) {
+                (None, Some(fence)) => Some(fence),
+                (Some(opening), Some(fence)) if closes_fence(opening, fence) => None,
+                (open_fence, _) => open_fence,
+            };
+            state = self.parse_line(state, parsed, line_num, &mut cards)?;
         }
         self.parse_line(state, Line::Eof, last_line, &mut cards)?;
 
@@ -320,18 +367,8 @@ impl Parser {
                     text,
                     start_line: line_num,
                 }),
-                Line::Separator => Ok(State::Start),
-                Line::Text(text) => {
-                    if text.trim().is_empty() {
-                        Ok(State::Start)
-                    } else {
-                        Err(ParserError::new(
-                            "Found text that doesn't parse as a flashcard. Did you forget a 'Q:' or 'C:' tag?",
-                            self.file_path.clone(),
-                            line_num,
-                        ))
-                    }
-                }
+                // Anything that isn't part of a flashcard is ignored.
+                Line::Separator | Line::Heading | Line::Text(_) => Ok(State::Start),
                 Line::Eof => Ok(State::End),
             },
             State::ReadingQuestion {
@@ -369,6 +406,12 @@ impl Parser {
                 )),
                 Line::Separator => Err(ParserError::new_from_invalid_line_combination(
                     "flashcard separator",
+                    "question",
+                    self.file_path.clone(),
+                    line_num,
+                )),
+                Line::Heading => Err(ParserError::new_from_invalid_line_combination(
+                    "heading",
                     "question",
                     self.file_path.clone(),
                     line_num,
@@ -448,7 +491,7 @@ impl Parser {
                             start_line: line_num,
                         })
                     }
-                    Line::Separator => {
+                    Line::Separator | Line::Heading => {
                         // Finalize the current card.
                         let card = Card::new(
                             self.deck_name.clone(),
@@ -510,6 +553,12 @@ impl Parser {
                 )),
                 Line::Separator => Err(ParserError::new_from_invalid_line_combination(
                     "flashcard separator",
+                    "term",
+                    self.file_path.clone(),
+                    line_num,
+                )),
+                Line::Heading => Err(ParserError::new_from_invalid_line_combination(
+                    "heading",
                     "term",
                     self.file_path.clone(),
                     line_num,
@@ -588,7 +637,7 @@ impl Parser {
                             start_line: line_num,
                         })
                     }
-                    Line::Separator => {
+                    Line::Separator | Line::Heading => {
                         // Finalize the current card.
                         cards.extend(
                             CardContent::new_cloze_pair_from_term_definition(&term, &definition)
@@ -669,7 +718,7 @@ impl Parser {
                             start_line: line_num,
                         })
                     }
-                    Line::Separator => {
+                    Line::Separator | Line::Heading => {
                         // Finalize the current cloze card.
                         cards.extend(self.parse_cloze_cards(text, start_line, line_num)?);
                         // Return to start state.
@@ -1564,25 +1613,102 @@ A: Genetic material."#,
     }
 
     #[test]
-    fn test_unparseable_text_between_separators_errors() -> Result<(), ParserError> {
-        let input = "Q: foo\nA: bar\n\n---\n\nI'm a mistake!\n\n---\n\nQ: baz\nA: quux";
+    fn test_text_between_separators_is_ignored() -> Result<(), ParserError> {
+        let input = "Q: foo\nA: bar\n\n---\n\nI'm not a card.\n\n---\n\nQ: baz\nA: quux";
         let parser = make_test_parser();
-        let result = parser.parse(input);
+        let cards = parser.parse(input)?;
 
-        assert!(result.is_err());
-        if let Err(e) = result {
-            assert!(e.to_string().contains("doesn't parse as a flashcard"));
+        assert_eq!(cards.len(), 2);
+        assert!(matches!(
+            &cards[0].content(),
+            CardContent::Basic {
+                question,
+                answer,
+            } if question == "foo" && answer == "bar"
+        ));
+        Ok(())
+    }
+
+    #[test]
+    fn test_text_at_start_is_ignored() -> Result<(), ParserError> {
+        let input = "This is an introduction.\n\nQ: foo\nA: bar";
+        let parser = make_test_parser();
+        let cards = parser.parse(input)?;
+
+        assert_eq!(cards.len(), 1);
+        assert!(matches!(
+            &cards[0].content(),
+            CardContent::Basic {
+                question,
+                answer,
+            } if question == "foo" && answer == "bar"
+        ));
+        Ok(())
+    }
+
+    #[test]
+    fn test_headings_separate_cards() -> Result<(), ParserError> {
+        let input = "# Chapter 1\n\nQ: foo\nA: bar\n\n## Section\n\nSome notes.\n\nC: [baz]\n### Sub\nT: quux\nD: corge\n#### End";
+        let parser = make_test_parser();
+        let cards = parser.parse(input)?;
+
+        assert_eq!(cards.len(), 4);
+        assert!(cards.iter().any(|card| matches!(
+            &card.content(),
+            CardContent::Basic {
+                question,
+                answer,
+            } if question == "foo" && answer == "bar"
+        )));
+        for card in &cards {
+            if let CardContent::Cloze { text, .. } = card.content() {
+                assert!(!text.contains('#'));
+            }
         }
         Ok(())
     }
 
     #[test]
-    fn test_unparseable_text_at_start_errors() -> Result<(), ParserError> {
-        let input = "This is stray text.\n\nQ: foo\nA: bar";
+    fn test_heading_in_question_errors() -> Result<(), ParserError> {
+        let input = "Q: foo\n# Heading\nA: bar";
         let parser = make_test_parser();
         let result = parser.parse(input);
 
         assert!(result.is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn test_hash_without_space_is_not_heading() -> Result<(), ParserError> {
+        let input = "Q: foo\nA: bar\n#hashtag";
+        let parser = make_test_parser();
+        let cards = parser.parse(input)?;
+
+        assert_eq!(cards.len(), 1);
+        assert!(matches!(
+            &cards[0].content(),
+            CardContent::Basic {
+                answer,
+                ..
+            } if answer == "bar\n#hashtag"
+        ));
+        Ok(())
+    }
+
+    #[test]
+    fn test_hash_in_code_block_is_not_heading() -> Result<(), ParserError> {
+        let input = "Q: foo\nA:\n```python\n# comment\nx = 1\n```\n# Heading\nignored";
+        let parser = make_test_parser();
+        let cards = parser.parse(input)?;
+
+        assert_eq!(cards.len(), 1);
+        assert!(matches!(
+            &cards[0].content(),
+            CardContent::Basic {
+                answer,
+                ..
+            } if answer == "```python\n# comment\nx = 1\n```"
+        ));
         Ok(())
     }
 

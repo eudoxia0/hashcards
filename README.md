@@ -283,6 +283,25 @@ C: A magma where the operation is [associative] is called a [semigroup].
 
 This can help visually separate the cards better.
 
+Markdown headings are never part of a card, so they also act as separators.
+Any text that isn't part of a card (e.g. an introduction under a heading) is
+ignored:
+
+```
+# Groups
+
+Notes on group theory.
+
+C: The [order] of a group is [the cardinality of its underlying set].
+
+## Monoids
+
+C: A semigroup with an identity element is called a [monoid].
+```
+
+Lines inside fenced code blocks are never treated as headings, so `# comments`
+in code are safe.
+
 ## Features
 
 This section documents specific hashcards features.

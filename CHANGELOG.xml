@@ -1,6 +1,10 @@
 <changelog>
     <unreleased>
-
+        <changed>
+            <change author="kchousos">
+                Markdown headings act as card separators, and text that isn't part of a card is ignored instead of producing an error.
+            </change>
+        </changed>
     </unreleased>
     <releases>
         <release version="0.5.0" date="2026-10-08">
