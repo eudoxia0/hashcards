@@ -24,6 +24,7 @@ use crate::fsrs::Difficulty;
 use crate::fsrs::Grade;
 use crate::fsrs::Interval;
 use crate::fsrs::Stability;
+use crate::parser::ParseMode;
 use crate::types::aliases::DeckName;
 use crate::types::card::CardContent;
 use crate::types::card_hash::CardHash;
@@ -33,8 +34,12 @@ use crate::types::performance::ReviewedPerformance;
 use crate::types::timestamp::Timestamp;
 
 /// Export a collection to JSON.
-pub fn export_collection(directory: Option<String>, output: Option<String>) -> Fallible<()> {
-    let coll: Collection = Collection::new(directory)?;
+pub fn export_collection(
+    directory: Option<String>,
+    output: Option<String>,
+    mode: ParseMode,
+) -> Fallible<()> {
+    let coll: Collection = Collection::new(directory, mode)?;
     let export: Export = get_export(coll)?;
     let json = serde_json::to_string_pretty(&export)?;
     match output {
@@ -234,8 +239,8 @@ mod tests {
     #[test]
     fn test_full_export() -> Fallible<()> {
         let dir = create_tmp_copy_of_test_directory()?;
-        let mut coll = Collection::new(Some(dir.clone()))?;
-        let deck = parse_deck(&PathBuf::from(dir.clone()))?;
+        let mut coll = Collection::new(Some(dir.clone()), ParseMode::Strict)?;
+        let deck = parse_deck(&PathBuf::from(dir.clone()), ParseMode::Strict)?;
         let now = Timestamp::now();
         let mut reviews = Vec::new();
         for card in deck {
@@ -264,10 +269,10 @@ mod tests {
         }
         coll.db.save_session(now, now, reviews)?;
         // Export.
-        export_collection(Some(dir.clone()), None)?;
+        export_collection(Some(dir.clone()), None, ParseMode::Strict)?;
         let tmp = create_tmp_directory()?;
         let output = tmp.join("export.json").display().to_string();
-        export_collection(Some(dir), Some(output))?;
+        export_collection(Some(dir), Some(output), ParseMode::Strict)?;
         Ok(())
     }
 }

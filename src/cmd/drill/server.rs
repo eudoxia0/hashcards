@@ -47,6 +47,7 @@ use crate::collection::Collection;
 use crate::db::Database;
 use crate::error::Fallible;
 use crate::error::fail;
+use crate::parser::ParseMode;
 use crate::rng::TinyRng;
 use crate::rng::shuffle;
 use crate::server::constants::CACHE_CONTROL_IMMUTABLE;
@@ -100,6 +101,7 @@ pub struct ServerConfig {
     pub shuffle: bool,
     pub answer_controls: AnswerControls,
     pub bury_siblings: bool,
+    pub parse_mode: ParseMode,
 }
 
 pub async fn start_server(config: ServerConfig) -> Fallible<()> {
@@ -108,7 +110,7 @@ pub async fn start_server(config: ServerConfig) -> Fallible<()> {
         db,
         cards,
         macros,
-    } = Collection::new(config.directory.clone())?;
+    } = Collection::new(config.directory.clone(), config.parse_mode)?;
 
     let today: Date = config.session_started_at.date();
 
@@ -353,6 +355,7 @@ mod tests {
     use crate::cmd::drill::server::filter_deck;
     use crate::db::Database;
     use crate::error::Fallible;
+    use crate::parser::ParseMode;
     use crate::types::card::Card;
     use crate::types::card::CardContent;
     use crate::types::card_hash::CardHash;
@@ -398,6 +401,7 @@ mod tests {
             shuffle: false,
             answer_controls: AnswerControls::Full,
             bury_siblings: false,
+            parse_mode: ParseMode::Strict,
         }
     }
 

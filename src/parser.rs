@@ -94,8 +94,27 @@ fn extract_frontmatter(text: &str) -> Fallible<(DeckMetadata, &str)> {
     Ok((metadata, content))
 }
 
+/// How strictly deck files are parsed.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ParseMode {
+    /// Every non-blank line must be part of a card.
+    Strict,
+    /// Markdown headings separate cards, and text outside cards is ignored.
+    Lenient,
+}
+
+impl ParseMode {
+    pub fn from_lenient(lenient: bool) -> Self {
+        if lenient {
+            ParseMode::Lenient
+        } else {
+            ParseMode::Strict
+        }
+    }
+}
+
 /// Parses all Markdown files in the given directory.
-pub fn parse_deck(directory: &PathBuf) -> Fallible<Vec<Card>> {
+pub fn parse_deck(directory: &PathBuf, mode: ParseMode) -> Fallible<Vec<Card>> {
     let mut all_cards = Vec::new();
     for entry in WalkDir::new(directory) {
         let entry = entry?;
@@ -113,7 +132,7 @@ pub fn parse_deck(directory: &PathBuf) -> Fallible<Vec<Card>> {
                     .to_string()
             });
 
-            let parser = Parser::new(deck_name, path.to_path_buf());
+            let parser = Parser::new(deck_name, path.to_path_buf(), mode);
             let cards: Vec<Card> = parser.parse(content)?;
 
             // No cards found in this deck? Error.
@@ -141,6 +160,7 @@ pub fn parse_deck(directory: &PathBuf) -> Fallible<Vec<Card>> {
 pub struct Parser {
     deck_name: DeckName,
     file_path: PathBuf,
+    mode: ParseMode,
 }
 
 #[derive(Debug)]
@@ -228,8 +248,8 @@ enum Line {
     StartCloze(String),
     /// A line that's just `---` (flashcard separator).
     Separator,
-    /// A Markdown ATX heading, e.g. `## Foo`. Headings are never part of a
-    /// flashcard, so they act as separators.
+    /// A Markdown ATX heading, e.g. `## Foo`. In lenient mode, headings are
+    /// never part of a flashcard, so they act as separators.
     Heading,
     /// Any other line.
     Text(String),
@@ -238,10 +258,8 @@ enum Line {
 }
 
 impl Line {
-    fn read(line: &str, in_code_block: bool) -> Self {
-        if in_code_block {
-            Line::Text(line.to_string())
-        } else if line.starts_with("Q:") {
+    fn read(line: &str) -> Self {
+        if line.starts_with("Q:") {
             Line::StartQuestion(line_content(line))
         } else if line.starts_with("A:") {
             Line::StartAnswer(line_content(line))
@@ -253,10 +271,20 @@ impl Line {
             Line::StartCloze(line_content(line))
         } else if line.trim() == "---" {
             Line::Separator
+        } else {
+            Line::Text(line.to_string())
+        }
+    }
+
+    /// Like [`Line::read`], but recognizes headings. Lines inside code blocks
+    /// are always text, e.g. `# comment` is not a heading.
+    fn read_lenient(line: &str, in_code_block: bool) -> Self {
+        if in_code_block {
+            Line::Text(line.to_string())
         } else if is_heading(line) {
             Line::Heading
         } else {
-            Line::Text(line.to_string())
+            Line::read(line)
         }
     }
 }
@@ -298,10 +326,11 @@ fn line_content(line: &str) -> String {
 }
 
 impl Parser {
-    pub fn new(deck_name: DeckName, file_path: PathBuf) -> Self {
+    pub fn new(deck_name: DeckName, file_path: PathBuf, mode: ParseMode) -> Self {
         Parser {
             deck_name,
             file_path,
+            mode,
         }
     }
 
@@ -311,13 +340,14 @@ impl Parser {
         let mut state = State::Start;
         let lines: Vec<&str> = text.lines().collect();
         let last_line = if lines.is_empty() { 0 } else { lines.len() - 1 };
-        // The fence that opened the code block we're in, if any. Lines inside
-        // code blocks are always text, e.g. `# comment` is not a heading.
+        // The fence that opened the code block we're in, if any.
         let mut open_fence: Option<&str> = None;
         for (line_num, line) in lines.iter().enumerate() {
-            let fence = code_fence(line);
-            let parsed = Line::read(line, open_fence.is_some());
-            open_fence = match (open_fence, fence) {
+            let parsed = match self.mode {
+                ParseMode::Strict => Line::read(line),
+                ParseMode::Lenient => Line::read_lenient(line, open_fence.is_some()),
+            };
+            open_fence = match (open_fence, code_fence(line)) {
                 (None, Some(fence)) => Some(fence),
                 (Some(opening), Some(fence)) if closes_fence(opening, fence) => None,
                 (open_fence, _) => open_fence,
@@ -367,8 +397,19 @@ impl Parser {
                     text,
                     start_line: line_num,
                 }),
-                // Anything that isn't part of a flashcard is ignored.
-                Line::Separator | Line::Heading | Line::Text(_) => Ok(State::Start),
+                Line::Separator | Line::Heading => Ok(State::Start),
+                Line::Text(text) => {
+                    if text.trim().is_empty() || self.mode == ParseMode::Lenient {
+                        // In lenient mode, text outside flashcards is ignored.
+                        Ok(State::Start)
+                    } else {
+                        Err(ParserError::new(
+                            "Found text that doesn't parse as a flashcard. Did you forget a 'Q:' or 'C:' tag? Pass --lenient to ignore text outside flashcards.",
+                            self.file_path.clone(),
+                            line_num,
+                        ))
+                    }
+                }
                 Line::Eof => Ok(State::End),
             },
             State::ReadingQuestion {
@@ -918,7 +959,19 @@ mod tests {
 
     /// Construct a parser for testing.
     fn make_test_parser() -> Parser {
-        Parser::new("test_deck".to_string(), PathBuf::from("test.md"))
+        Parser::new(
+            "test_deck".to_string(),
+            PathBuf::from("test.md"),
+            ParseMode::Strict,
+        )
+    }
+
+    fn make_lenient_test_parser() -> Parser {
+        Parser::new(
+            "test_deck".to_string(),
+            PathBuf::from("test.md"),
+            ParseMode::Lenient,
+        )
     }
 
     /// Assert that the cards in the given range are all cloze cards, with the
@@ -1267,7 +1320,7 @@ mod tests {
     #[test]
     fn test_parse_deck() -> Fallible<()> {
         let directory = PathBuf::from("./test");
-        let deck = parse_deck(&directory);
+        let deck = parse_deck(&directory, ParseMode::Strict);
 
         assert!(deck.is_ok());
         let cards = deck?;
@@ -1304,7 +1357,7 @@ mod tests {
         let file2 = directory.join("file2.md");
         std::fs::write(&file1, "Q: foo\nA: bar").expect("Failed to write test file");
         std::fs::write(&file2, "Q: foo\nA: bar").expect("Failed to write test file");
-        let deck = parse_deck(&directory)?;
+        let deck = parse_deck(&directory, ParseMode::Strict)?;
 
         assert_eq!(deck.len(), 1);
         Ok(())
@@ -1507,7 +1560,7 @@ A: Genetic material."#,
         )
         .expect("Failed to write test file");
 
-        let deck = parse_deck(&directory)?;
+        let deck = parse_deck(&directory, ParseMode::Strict)?;
 
         // Both cards should have the custom deck name "Cell Biology"
         assert_eq!(deck.len(), 2);
@@ -1613,9 +1666,49 @@ A: Genetic material."#,
     }
 
     #[test]
-    fn test_text_between_separators_is_ignored() -> Result<(), ParserError> {
-        let input = "Q: foo\nA: bar\n\n---\n\nI'm not a card.\n\n---\n\nQ: baz\nA: quux";
+    fn test_unparseable_text_between_separators_errors() -> Result<(), ParserError> {
+        let input = "Q: foo\nA: bar\n\n---\n\nI'm a mistake!\n\n---\n\nQ: baz\nA: quux";
         let parser = make_test_parser();
+        let result = parser.parse(input);
+
+        assert!(result.is_err());
+        if let Err(e) = result {
+            assert!(e.to_string().contains("doesn't parse as a flashcard"));
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn test_unparseable_text_at_start_errors() -> Result<(), ParserError> {
+        let input = "This is stray text.\n\nQ: foo\nA: bar";
+        let parser = make_test_parser();
+        let result = parser.parse(input);
+
+        assert!(result.is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn test_strict_heading_is_part_of_answer() -> Result<(), ParserError> {
+        let input = "Q: foo\nA: bar\n## baz";
+        let parser = make_test_parser();
+        let cards = parser.parse(input)?;
+
+        assert_eq!(cards.len(), 1);
+        assert!(matches!(
+            &cards[0].content(),
+            CardContent::Basic {
+                answer,
+                ..
+            } if answer == "bar\n## baz"
+        ));
+        Ok(())
+    }
+
+    #[test]
+    fn test_lenient_text_between_separators_is_ignored() -> Result<(), ParserError> {
+        let input = "Q: foo\nA: bar\n\n---\n\nI'm not a card.\n\n---\n\nQ: baz\nA: quux";
+        let parser = make_lenient_test_parser();
         let cards = parser.parse(input)?;
 
         assert_eq!(cards.len(), 2);
@@ -1630,9 +1723,9 @@ A: Genetic material."#,
     }
 
     #[test]
-    fn test_text_at_start_is_ignored() -> Result<(), ParserError> {
+    fn test_lenient_text_at_start_is_ignored() -> Result<(), ParserError> {
         let input = "This is an introduction.\n\nQ: foo\nA: bar";
-        let parser = make_test_parser();
+        let parser = make_lenient_test_parser();
         let cards = parser.parse(input)?;
 
         assert_eq!(cards.len(), 1);
@@ -1647,9 +1740,9 @@ A: Genetic material."#,
     }
 
     #[test]
-    fn test_headings_separate_cards() -> Result<(), ParserError> {
+    fn test_lenient_headings_separate_cards() -> Result<(), ParserError> {
         let input = "# Chapter 1\n\nQ: foo\nA: bar\n\n## Section\n\nSome notes.\n\nC: [baz]\n### Sub\nT: quux\nD: corge\n#### End";
-        let parser = make_test_parser();
+        let parser = make_lenient_test_parser();
         let cards = parser.parse(input)?;
 
         assert_eq!(cards.len(), 4);
@@ -1669,9 +1762,9 @@ A: Genetic material."#,
     }
 
     #[test]
-    fn test_heading_in_question_errors() -> Result<(), ParserError> {
+    fn test_lenient_heading_in_question_errors() -> Result<(), ParserError> {
         let input = "Q: foo\n# Heading\nA: bar";
-        let parser = make_test_parser();
+        let parser = make_lenient_test_parser();
         let result = parser.parse(input);
 
         assert!(result.is_err());
@@ -1679,9 +1772,9 @@ A: Genetic material."#,
     }
 
     #[test]
-    fn test_hash_without_space_is_not_heading() -> Result<(), ParserError> {
+    fn test_lenient_hash_without_space_is_not_heading() -> Result<(), ParserError> {
         let input = "Q: foo\nA: bar\n#hashtag";
-        let parser = make_test_parser();
+        let parser = make_lenient_test_parser();
         let cards = parser.parse(input)?;
 
         assert_eq!(cards.len(), 1);
@@ -1696,9 +1789,9 @@ A: Genetic material."#,
     }
 
     #[test]
-    fn test_hash_in_code_block_is_not_heading() -> Result<(), ParserError> {
+    fn test_lenient_hash_in_code_block_is_not_heading() -> Result<(), ParserError> {
         let input = "Q: foo\nA:\n```python\n# comment\nx = 1\n```\n# Heading\nignored";
-        let parser = make_test_parser();
+        let parser = make_lenient_test_parser();
         let cards = parser.parse(input)?;
 
         assert_eq!(cards.len(), 1);

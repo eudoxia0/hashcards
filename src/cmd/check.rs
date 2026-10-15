@@ -14,9 +14,10 @@
 
 use crate::collection::Collection;
 use crate::error::Fallible;
+use crate::parser::ParseMode;
 
-pub fn check_collection(directory: Option<String>) -> Fallible<()> {
-    let _ = Collection::new(directory)?;
+pub fn check_collection(directory: Option<String>, mode: ParseMode) -> Fallible<()> {
+    let _ = Collection::new(directory, mode)?;
     println!("ok");
     Ok(())
 }
@@ -26,16 +27,17 @@ mod tests {
     use super::check_collection;
     use crate::error::Fallible;
     use crate::helper::create_tmp_copy_of_test_directory;
+    use crate::parser::ParseMode;
 
     #[test]
     fn test_non_existent_directory() {
-        assert!(check_collection(Some("./derpherp".to_string())).is_err());
+        assert!(check_collection(Some("./derpherp".to_string()), ParseMode::Strict).is_err());
     }
 
     #[test]
     fn test_directory() -> Fallible<()> {
         let directory = create_tmp_copy_of_test_directory()?;
-        assert!(check_collection(Some(directory)).is_ok());
+        assert!(check_collection(Some(directory), ParseMode::Strict).is_ok());
         Ok(())
     }
 }

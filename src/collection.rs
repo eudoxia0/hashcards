@@ -22,6 +22,7 @@ use crate::error::ErrorReport;
 use crate::error::Fallible;
 use crate::error::fail;
 use crate::media::validate::validate_media_files;
+use crate::parser::ParseMode;
 use crate::parser::parse_deck;
 use crate::types::card::Card;
 
@@ -33,7 +34,7 @@ pub struct Collection {
 }
 
 impl Collection {
-    pub fn new(directory: Option<String>) -> Fallible<Self> {
+    pub fn new(directory: Option<String>, mode: ParseMode) -> Fallible<Self> {
         let directory: PathBuf = match directory {
             Some(dir) => PathBuf::from(dir),
             None => current_dir()?,
@@ -74,7 +75,7 @@ impl Collection {
         let cards: Vec<Card> = {
             log::debug!("Loading deck...");
             let start = Instant::now();
-            let cards = parse_deck(&directory)?;
+            let cards = parse_deck(&directory, mode)?;
             let end = Instant::now();
             let duration = end.duration_since(start).as_millis();
             log::debug!("Deck loaded in {duration}ms.");

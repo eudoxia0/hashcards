@@ -283,9 +283,11 @@ C: A magma where the operation is [associative] is called a [semigroup].
 
 This can help visually separate the cards better.
 
-Markdown headings are never part of a card, so they also act as separators.
-Any text that isn't part of a card (e.g. an introduction under a heading) is
-ignored:
+### Lenient Mode
+
+By default, every non-blank line must be part of a card. Pass `--lenient` to
+any command to treat Markdown headings as separators and ignore any text that
+isn't part of a card (e.g. an introduction under a heading):
 
 ```
 # Groups
@@ -301,6 +303,10 @@ C: A semigroup with an identity element is called a [monoid].
 
 Lines inside fenced code blocks are never treated as headings, so `# comments`
 in code are safe.
+
+Lenient mode can split cards differently, which changes their hashes. Use it
+consistently across all commands: in particular, running `orphans delete`
+without it on a lenient collection can delete review history.
 
 ## Features
 

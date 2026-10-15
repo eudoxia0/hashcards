@@ -16,11 +16,12 @@ use std::collections::HashSet;
 
 use crate::collection::Collection;
 use crate::error::Fallible;
+use crate::parser::ParseMode;
 use crate::types::card_hash::CardHash;
 
 /// Print the hashes of orphan cards.
-pub fn list_orphans(directory: Option<String>) -> Fallible<()> {
-    let coll = Collection::new(directory)?;
+pub fn list_orphans(directory: Option<String>, mode: ParseMode) -> Fallible<()> {
+    let coll = Collection::new(directory, mode)?;
     let orphans: Vec<CardHash> = get_orphans(&coll)?;
     // Print.
     for hash in orphans {
@@ -30,8 +31,8 @@ pub fn list_orphans(directory: Option<String>) -> Fallible<()> {
 }
 
 /// Delete orphan card data in the database.
-pub fn delete_orphans(directory: Option<String>) -> Fallible<()> {
-    let mut coll = Collection::new(directory)?;
+pub fn delete_orphans(directory: Option<String>, mode: ParseMode) -> Fallible<()> {
+    let mut coll = Collection::new(directory, mode)?;
     let orphans: Vec<CardHash> = get_orphans(&coll)?;
     for hash in &orphans {
         println!("{}", hash);
@@ -66,7 +67,7 @@ mod tests {
     #[test]
     fn test_get_orphans() -> Fallible<()> {
         let dir: String = create_tmp_copy_of_test_directory()?;
-        let coll = Collection::new(Some(dir))?;
+        let coll = Collection::new(Some(dir), ParseMode::Strict)?;
         let hash = CardHash::hash_bytes(b"a");
         let now = Timestamp::now();
         coll.db.insert_card(hash, now)?;
@@ -78,12 +79,12 @@ mod tests {
     #[test]
     fn test_list_and_delete_orphans() -> Fallible<()> {
         let dir: String = create_tmp_copy_of_test_directory()?;
-        let coll = Collection::new(Some(dir.clone()))?;
+        let coll = Collection::new(Some(dir.clone()), ParseMode::Strict)?;
         let hash = CardHash::hash_bytes(b"a");
         let now = Timestamp::now();
         coll.db.insert_card(hash, now)?;
-        list_orphans(Some(dir.clone()))?;
-        delete_orphans(Some(dir.clone()))?;
+        list_orphans(Some(dir.clone()), ParseMode::Strict)?;
+        delete_orphans(Some(dir.clone()), ParseMode::Strict)?;
         assert!(coll.db.card_hashes()?.is_empty());
         Ok(())
     }
