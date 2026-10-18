@@ -56,13 +56,21 @@ document.addEventListener("keydown", function (event) {
     4: "easy",
   };
 
-  if (keybindings[event.key]) {
+  // Match the physical number row, so grading works on non-QWERTY layouts.
+  const codeBindings = {
+    Digit1: "forgot",
+    Digit2: "hard",
+    Digit3: "good",
+    Digit4: "easy",
+  };
+
+  const id = keybindings[event.key] || codeBindings[event.code];
+  if (id) {
     // Ignore modifiers.
     if (event.shiftKey || event.ctrlKey || event.altKey || event.metaKey) {
       return;
     }
     event.preventDefault();
-    const id = keybindings[event.key];
     const node = document.getElementById(id);
     if (node) {
       node.click();
