@@ -1,6 +1,10 @@
 <changelog>
     <unreleased>
-
+        <fixed>
+            <change author="eazar0">
+                Grading shortcuts (`1`-`4`) now work on non-QWERTY keyboard layouts, such as AZERTY.
+            </change>
+        </fixed>
     </unreleased>
     <releases>
         <release version="0.5.0" date="2026-10-08">
