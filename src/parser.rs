@@ -530,12 +530,25 @@ impl Parser {
                 start_line,
             } => {
                 match line {
-                    Line::StartQuestion(_) => Err(ParserError::new_from_invalid_line_combination(
-                        "question",
-                        "definition",
-                        self.file_path.clone(),
-                        line_num,
-                    )),
+                    Line::StartQuestion(text) => {
+                        // Finalize the term-definition card before starting
+                        // the next basic card.
+                        cards.extend(
+                            CardContent::new_cloze_pair_from_term_definition(&term, &definition)
+                                .map(|content| {
+                                    Card::new(
+                                        self.deck_name.clone(),
+                                        self.file_path.clone(),
+                                        (start_line, line_num),
+                                        content,
+                                    )
+                                }),
+                        );
+                        Ok(State::ReadingQuestion {
+                            question: text,
+                            start_line: line_num,
+                        })
+                    }
                     Line::StartAnswer(_) => Err(ParserError::new_from_invalid_line_combination(
                         "answer",
                         "definition",
@@ -1038,6 +1051,31 @@ mod tests {
         let result = parser.parse(input);
 
         assert!(result.is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn test_term_definition_followed_by_question() -> Result<(), ParserError> {
+        let input = "T: term\nD: definition\n\nQ: question\nA: answer";
+        let parser = make_test_parser();
+        let cards = parser.parse(input)?;
+
+        assert_eq!(cards.len(), 3);
+        assert_cloze(
+            &cards[0..1],
+            "Term: term\n\nDefinition: definition",
+            &[(6, 9)],
+        );
+        assert_cloze(
+            &cards[1..2],
+            "Term: term\n\nDefinition: definition",
+            &[(24, 33)],
+        );
+        assert!(matches!(
+            &cards[2].content(),
+            CardContent::Basic { question, answer }
+                if question == "question" && answer == "answer"
+        ));
         Ok(())
     }
 
